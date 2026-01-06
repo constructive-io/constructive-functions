@@ -1,0 +1,62 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: default
+
+resources:
+  - ./namespace.yaml
+  - ./postgres-local.yaml
+  - ./minio-local.yaml
+  # Core Constructive config
+  - ../../base/constructive/config.yaml
+  - ../../base/constructive/dashboard-config.yaml
+  # Local secrets (dev-only, not for staging/prod)
+  - ./constructive/server-bucket-secret.yaml
+  - ./constructive/pg-secret.yaml
+  - ./constructive/mailgun-secret.yaml
+  - ./pgadmin/pgadmin-secret.yaml
+  # App workloads (no ingress in local)
+  - ../../base/pgadmin/config.yaml
+  - ../../base/pgadmin/deployment.yaml
+  - ../../base/constructive/constructive-db-job.yaml
+  - ../../base/constructive/server.yaml
+  - ../../base/constructive/server-admin.yaml
+  - ../../base/constructive/dashboard.yaml
+  - ../../base/constructive/knative-job-service.yaml
+  # Functions
+  - ../../base/functions/simple-email.yaml
+  - ../../base/functions/send-email-link.yaml
+
+patches:
+  - path: ./constructive/config.yaml
+  - path: ./constructive/dashboard-config.yaml
+  - path: ./constructive/server.yaml
+  - path: ./constructive/server-admin.yaml
+  - path: ./constructive/dashboard.yaml
+  - path: ./pgadmin/deployment.yaml
+  - path: ./pgadmin/config.yaml
+  - path: ./constructive/knative-job-service.yaml
+  - path: ./constructive/constructive-db-job.yaml
+  # Function config: enable dry-run and dev env locally (and in CI via ../local)
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: SIMPLE_EMAIL_DRY_RUN
+          value: "true"
+    target:
+      group: serving.knative.dev
+      version: v1
+      kind: Service
+      name: simple-email
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: SEND_EMAIL_LINK_DRY_RUN
+          value: "true"
+    target:
+      group: serving.knative.dev
+      version: v1
+      kind: Service
+      name: send-email-link

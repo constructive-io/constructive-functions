@@ -1,0 +1,20 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: constructive-issuer
+spec:
+  acme:
+    email: devops@cosmoslogy.zone   # (check typo if meant "cosmology")
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: constructive-issuer
+    solvers:
+      - dns01:
+          route53:
+            region: us-east-1
+            hostedZoneID: Z00381072B5MMXZMWY1JN   # launchql.dev
+            accessKeyID: ***REMOVED***
+            secretAccessKeySecretRef:
+              name: certmgr-route53-launchql
+              key: AWS_SECRET_ACCESS_KEY
+

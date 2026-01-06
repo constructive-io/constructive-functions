@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: interweb-dashboard-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/issuer: constructive-issuer
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - "*.app.launchql.dev"
+        - "app.launchql.dev"
+      secretName: interweb-constructive-tls
+  rules:
+    - host: "*.app.launchql.dev"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dashboard
+                port:
+                  number: 3000
+    - host: "app.launchql.dev"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dashboard
+                port:
+                  number: 3000
+

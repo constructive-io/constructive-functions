@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Resources shared by all environments. Namespaces for app components
+# are set by the overlays (dev/staging/local), not here.
+resources:
+  # PostgreSQL (CloudNativePG) and storage
+  - ./cnpg/namespace.yaml
+  - ./cnpg/secret.yaml
+  - ./cnpg/cnpg-cluster.yaml
+
+  # Core Constructive stack
+  - ./constructive/config.yaml
+  - ./constructive/dashboard-config.yaml
+  - ./pgadmin/config.yaml
+  - ./pgadmin/deployment.yaml
+  - ./pgadmin/secret.yaml
+  - ./constructive/constructive-db-job.yaml
+  - ./constructive/server.yaml
+  - ./constructive/server-admin.yaml
+  - ./constructive/dashboard.yaml
+  - ./constructive/ingress.yaml
+  - ./constructive/knative-job-service.yaml
+
+  # Function workloads
+  - ./functions/simple-email.yaml
+  - ./functions/send-email-link.yaml

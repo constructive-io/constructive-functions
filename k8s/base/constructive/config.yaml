@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: constructive
+data:
+  # Server listen
+  PORT: "3000"
+  SERVER_HOST: "0.0.0.0"
+  SERVER_TRUST_PROXY: "true"
+  SERVER_ORIGIN: "*"
+  SERVER_STRICT_AUTH: "false"
+
+  # Connect to CNPG Cluster RW service
+  PGHOST: "postgres-cluster-rw.postgres-db.svc.cluster.local"
+  PGPORT: "5432"
+  PGDATABASE: "launchql"
+
+  # Run the API in static schema mode (no domain mapping) for first deploy
+  # Later you can switch to meta-based public discovery by setting API_ENABLE_META=true
+  API_ENABLE_META: "true"
+  API_EXPOSED_SCHEMAS: "collections_public,meta_public"
+  API_ANON_ROLE: "administrator"
+  API_ROLE_NAME: "administrator"
+  API_DEFAULT_DATABASE_ID: "dbe"
+
+  ## lql cli config
+  LOG_TIMESTAMP: "true"

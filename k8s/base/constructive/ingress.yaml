@@ -1,0 +1,8 @@
+---
+#
+# NOTE:
+# Ingress and public DNS/ACME configuration are environment-specific and
+# have been moved into the dev/staging overlays. The base manifest is
+# intentionally empty so local/staging/prod can each define their own
+# ingresses and issuers.
+#

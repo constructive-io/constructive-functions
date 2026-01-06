@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgadmin
+  labels:
+    app: pgadmin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgadmin
+  template:
+    metadata:
+      labels:
+        app: pgadmin
+    spec:
+      containers:
+        - name: pgadmin
+          image: dpage/pgadmin4:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: pgadmin-credentials
+          env:
+            - name: PGADMIN_DEFAULT_EMAIL
+              value: "admin@constructive.dev"
+            - name: PGADMIN_LISTEN_PORT
+              value: "80"
+            - name: PGADMIN_CONFIG_SERVER_MODE
+              value: "True"
+            - name: PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED
+              value: "False"
+            - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
+              value: "False"
+            - name: PGADMIN_CONFIG_ALLOW_SAVE_PASSWORD
+              value: "True"
+            - name: PGADMIN_CONFIG_PROXY_X_FORWARDED_HOST
+              value: "True"
+            - name: PGADMIN_CONFIG_PROXY_X_FORWARDED_PROTO
+              value: "True"
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - name: pgadmin-data
+              mountPath: /var/lib/pgadmin
+            - name: pgadmin-servers
+              mountPath: /pgadmin4/servers.json
+              subPath: servers.json
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 1024Mi
+            limits:
+              cpu: 2000m
+              memory: 2048Mi
+      volumes:
+        - name: pgadmin-data
+          emptyDir: {}
+        - name: pgadmin-servers
+          configMap:
+            name: pgadmin-servers
+

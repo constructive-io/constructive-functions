@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: constructive-server
+spec:
+  template:
+    spec:
+      containers:
+        - name: server
+          resources:
+            requests:
+              cpu: "80m"
+              memory: "256Mi"
+            limits:
+              cpu: "80m"
+              memory: "256Mi"
+        - name: explorer
+          resources:
+            requests:
+              cpu: "40m"
+              memory: "128Mi"
+            limits:
+              cpu: "40m"
+              memory: "128Mi"
+

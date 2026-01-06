@@ -1,0 +1,43 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: default
+
+resources:
+  - ../local
+
+patches:
+  # CI-specific resource tuning (smaller, requests = limits)
+  - path: ./constructive/server.yaml
+  - path: ./constructive/dashboard.yaml
+  - path: ./constructive/knative-job-service.yaml
+  - path: ./constructive/postgres.yaml
+  # Scale down non-essential components
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: pgadmin
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: minio
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: constructive-server-admin
+  # Remove non-essential debug / email-resend workloads from CI
+  - path: ./delete-simple-email.yaml

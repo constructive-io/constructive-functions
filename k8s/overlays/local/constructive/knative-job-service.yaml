@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knative-job-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: knative-job-service
+          env:
+            - name: NODE_ENV
+              value: "development"
+            - name: KNATIVE_SERVICE_URL
+              value: "default.svc.cluster.local"
+            - name: INTERNAL_JOBS_CALLBACK_URL
+              value: "http://knative-job-service.default.svc.cluster.local:8080"
+            - name: JOBS_CALLBACK_HOST
+              value: "knative-job-service.default.svc.cluster.local"
+            - name: JOBS_CALLBACK_BASE_URL
+              value: "http://knative-job-service.default.svc.cluster.local:8080/callback"
+            - name: INTERNAL_GATEWAY_URL
+              value: "http://simple-email.default.svc.cluster.local"
+            - name: INTERNAL_GATEWAY_DEVELOPMENT_MAP
+              value: '{"simple-email":"http://simple-email.default.svc.cluster.local","send-email-link":"http://send-email-link.default.svc.cluster.local"}'
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"

@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - ./namespace.yaml
+  - ./cnpg-backup.yaml
+  - ./postgres-backup-secret.yaml
+  # TODO: add staging-specific ingress/issuer and dashboard config patches.
+
+patches:
+  - path: ./cnpg-cluster-scale.yaml
+  - path: ./cnpg-pooler-scale.yaml
+  - path: ./constructive/constructive-scale.yaml

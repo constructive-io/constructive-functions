@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knative-job-service
+  labels:
+    app: knative-job-service
+    app.kubernetes.io/name: knative-job-service
+    app.kubernetes.io/component: jobs
+    app.kubernetes.io/part-of: constructive-jobs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: knative-job-service
+  template:
+    metadata:
+      labels:
+        app: knative-job-service
+        app.kubernetes.io/name: knative-job-service
+        app.kubernetes.io/component: jobs
+        app.kubernetes.io/part-of: constructive-jobs
+    spec:
+      containers:
+        - name: knative-job-service
+          image: ghcr.io/constructive-io/constructive:latest
+          imagePullPolicy: Always
+
+          # Run the knative job service entrypoint from the root image
+          command: ["node"]
+          args: ["jobs/knative-job-service/dist/run.js"]
+
+          envFrom:
+            - configMapRef:
+                name: constructive
+            - secretRef:
+                name: pg-credentials
+
+          env:
+            # Callback server config (service URL inside the cluster)
+            - name: INTERNAL_JOBS_CALLBACK_PORT
+              value: "8080"
+            - name: INTERNAL_JOBS_CALLBACK_URL
+              value: "http://knative-job-service.interweb.svc.cluster.local:8080"
+
+            # Worker task configuration (adjust to your job names)
+            - name: JOBS_SUPPORT_ANY
+              value: "false"
+            - name: JOBS_SUPPORTED
+              value: "simple-email,send-email-link"
+            - name: JOBS_CALLBACK_HOST
+              value: "knative-job-service.interweb.svc.cluster.local"
+            - name: JOBS_CALLBACK_BASE_URL
+              value: "http://knative-job-service.interweb.svc.cluster.local:8080/callback"
+
+            # Knative function base URL (adjust to your Knative namespace/name)
+            - name: KNATIVE_SERVICE_URL
+              value: "interweb.svc.cluster.local"
+            - name: INTERNAL_GATEWAY_URL
+              value: "http://simple-email.interweb.svc.cluster.local"
+            
+            - name: NODE_ENV
+              value: "development"
+
+            - name: INTERNAL_GATEWAY_DEVELOPMENT_MAP
+              value: '{"simple-email":"http://simple-email.interweb.svc.cluster.local","send-email-link":"http://send-email-link.interweb.svc.cluster.local"}'
+
+            # Optional: stable hostname for logging/coordination
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+
+          ports:
+            - containerPort: 8080
+              name: jobs-http
+
+          # Optional probes if you later add a health endpoint
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: jobs-http
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 10
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: jobs-http
+          #   initialDelaySeconds: 10
+          #   periodSeconds: 20
+
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: knative-job-service
+  labels:
+    app: knative-job-service
+    app.kubernetes.io/name: knative-job-service
+    app.kubernetes.io/component: jobs
+    app.kubernetes.io/part-of: constructive-jobs
+spec:
+  type: ClusterIP
+  selector:
+    app: knative-job-service
+  ports:
+    - name: jobs-http
+      port: 8080
+      targetPort: jobs-http
