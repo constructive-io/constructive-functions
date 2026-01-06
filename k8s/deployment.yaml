@@ -18,11 +18,13 @@ spec:
       containers:
       - name: functions-runtime
         # NOTE: Replace with your custom functions runtime image
-        # This base image is a placeholder - you need an image with a functions server
+        # This is a placeholder image that will exit immediately without a proper command
         image: node:18-alpine
         imagePullPolicy: IfNotPresent
+        # REQUIRED: Add a command to start your functions runtime server
         # Example command for a custom runtime:
         # command: ["node", "server.js"]
+        # For testing, you can use: command: ["sh", "-c", "while true; do sleep 30; done"]
         ports:
         - containerPort: 3000
           name: http
