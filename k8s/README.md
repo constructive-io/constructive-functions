@@ -1,6 +1,8 @@
 # Kubernetes Configuration
 
-This directory contains Kubernetes manifests for deploying the Constructive Functions playground.
+This directory contains Kubernetes manifest templates for deploying the Constructive Functions playground.
+
+**Important**: These are template configurations that require customization before deployment. The deployment.yaml uses a placeholder image that needs to be replaced with your actual functions runtime.
 
 ## Structure
 
@@ -30,7 +32,28 @@ kubectl get services -n constructive-functions
 
 - Kubernetes cluster (local or cloud)
 - kubectl configured to connect to your cluster
+- A custom container image with your functions runtime
+  - The runtime must serve HTTP on port 3000
+  - Should implement `/health` and `/ready` endpoints for health checks
 - Container registry access for pushing function images
+
+## Before Deployment
+
+**You must customize these templates before deploying:**
+
+1. **Update the container image** in `deployment.yaml`:
+   ```yaml
+   image: your-registry/functions-runtime:tag
+   ```
+
+2. **Add startup command** if needed:
+   ```yaml
+   command: ["node", "server.js"]
+   ```
+
+3. **Uncomment health probes** in `deployment.yaml` after implementing the endpoints
+
+4. **Update ingress host** in `ingress.yaml` to match your domain
 
 ## Configuration
 
