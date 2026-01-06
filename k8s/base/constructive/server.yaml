@@ -1,0 +1,115 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: constructive-server
+spec:
+  type: ClusterIP
+  selector:
+    app: constructive-server
+  ports:
+    - name: http
+      port: 3000
+      targetPort: server-http
+    - name: explorer
+      port: 3001
+      targetPort: explorer-http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: constructive-server
+  labels:
+    app: constructive-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: constructive-server
+  template:
+    metadata:
+      labels:
+        app: constructive-server
+    spec:
+      containers:
+        - name: server
+          image: ghcr.io/constructive-io/constructive:latest
+          imagePullPolicy: Always
+          command: ["cnc"]
+          args: ["server", "--port", "3000", "--origin", "*", "--strictAuth", "false"]
+          envFrom:
+            - configMapRef:
+                name: constructive
+            - secretRef:
+                name: pg-credentials
+            - secretRef:
+                name: constructive-uploads
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          env:
+            - name: BUCKET_NAME
+              value: constructive-uploads
+            - name: AWS_REGION
+              value: us-east-1
+            - name: LOG_LEVEL
+              value: debug
+            - name: MINIO_ENDPOINT
+              value: "https://s3.us-east-1.amazonaws.com"
+          ports:
+            - containerPort: 3000
+              name: server-http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: server-http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: server-http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+        - name: explorer
+          image: ghcr.io/constructive-io/constructive:latest
+          imagePullPolicy: Always
+          # Run Explorer alongside the API in the same Pod
+          command: ["cnc"]
+          args: ["explorer", "--port", "3001", "--origin", "*"]
+          envFrom:
+            - configMapRef:
+                name: constructive
+            - secretRef:
+                name: pg-credentials
+          # Override the shared PORT from ConfigMap so it doesn't clash with server
+          env:
+            - name: PORT
+              value: "3001"
+          ports:
+            - containerPort: 3001
+              name: explorer-http
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: explorer-http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: explorer-http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+---

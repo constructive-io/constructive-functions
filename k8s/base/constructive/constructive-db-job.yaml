@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: constructive-db
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: OnFailure
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: lql
+          image: ghcr.io/constructive-io/constructive-db-job:latest
+          imagePullPolicy: Always
+          env:
+            - name: LAUNCHQL_DOMAIN
+              value: "launchql.dev"
+          envFrom:
+            - configMapRef:
+                name: constructive
+            - secretRef:
+                name: pg-credentials
+          command: ["bash","-c"]
+          args:
+            - |
+              cd /app
+              echo "Creating database $PGDATABASE"
+              createdb -h "$PGHOST" -U "$PGUSER" "$PGDATABASE" || true
+              
+              echo "Applying bootstrap roles"
+              pgpm admin-users bootstrap --yes
+              pgpm admin-users add --test --yes
+
+              echo "Deploying Services"
+              pgpm deploy --yes --database "$PGDATABASE" --package app-svc-prod
+
+              export LAUNCHQL_DOMAIN="${LAUNCHQL_DOMAIN:-launchql.dev}"
+              echo "Rename domains to ${LAUNCHQL_DOMAIN}"
+              psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 \
+                -c "BEGIN;
+                    UPDATE services_public.domains
+                      SET domain = '${LAUNCHQL_DOMAIN}'
+                    WHERE domain = ANY(ARRAY['lql.io', 'constructive.io', 'dbe.la', 'localhost']);
+                    COMMIT;"
+
+              echo "Continue with db-meta and pgpm-database-jobs"
+              pgpm deploy --yes --database "$PGDATABASE" --package metaschema
+              pgpm deploy --yes --database "$PGDATABASE" --package pgpm-database-jobs
+
+              echo "Done"

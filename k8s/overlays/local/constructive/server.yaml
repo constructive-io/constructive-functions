@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: constructive-server
+spec:
+  template:
+    spec:
+      containers:
+        - name: server
+          env:
+            - name: MINIO_ENDPOINT
+              value: "http://minio:9000"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "300m"
+              memory: "512Mi"
+        - name: explorer
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"

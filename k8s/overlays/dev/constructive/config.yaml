@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard
+data:
+  NEXT_PUBLIC_SCHEMA_BUILDER_GRAPHQL_ENDPOINT: "https://api.launchql.dev/graphql"
+  NEXT_PUBLIC_DATABASE_SETUP_BASE_DOMAIN: "launchql.dev"
+

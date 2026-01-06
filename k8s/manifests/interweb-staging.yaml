@@ -1,0 +1,865 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: interweb
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.interweb.dev/managed: "true"
+  name: postgres-db
+---
+apiVersion: v1
+data:
+  API_ANON_ROLE: administrator
+  API_DEFAULT_DATABASE_ID: dbe
+  API_ENABLE_META: "true"
+  API_EXPOSED_SCHEMAS: collections_public,meta_public
+  API_ROLE_NAME: administrator
+  LOG_TIMESTAMP: "true"
+  PGDATABASE: launchql
+  PGHOST: postgres-cluster-rw.postgres-db.svc.cluster.local
+  PGPORT: "5432"
+  PORT: "3000"
+  SERVER_HOST: 0.0.0.0
+  SERVER_ORIGIN: '*'
+  SERVER_STRICT_AUTH: "false"
+  SERVER_TRUST_PROXY: "true"
+kind: ConfigMap
+metadata:
+  name: constructive
+---
+apiVersion: v1
+data:
+  NEXT_PUBLIC_DATABASE_SETUP_ANON_ROLE: anonymous
+  NEXT_PUBLIC_DATABASE_SETUP_BASE_DOMAIN: example.test
+  NEXT_PUBLIC_DATABASE_SETUP_DBNAME: launchql
+  NEXT_PUBLIC_DATABASE_SETUP_IS_PUBLIC: "true"
+  NEXT_PUBLIC_DATABASE_SETUP_ROLE_NAME: authenticated
+  NEXT_PUBLIC_SCHEMA_BUILDER_GRAPHQL_ENDPOINT: https://api.example.test/graphql
+kind: ConfigMap
+metadata:
+  name: dashboard
+---
+apiVersion: v1
+data:
+  servers.json: |
+    {
+      "Servers": {
+        "1": {
+          "Name": "CNPG RW",
+          "Group": "Constructive",
+          "Host": "postgres-cluster-rw.postgres-db.svc.cluster.local",
+          "Port": 5432,
+          "MaintenanceDB": "launchql",
+          "Username": "postgres",
+          "Password": "postgres123!",
+          "SSLMode": "prefer"
+        }
+      }
+    }
+kind: ConfigMap
+metadata:
+  name: pgadmin-servers
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pgadmin-credentials
+  namespace: interweb
+stringData:
+  PGADMIN_DEFAULT_PASSWORD: admin123!@Constructive
+type: Opaque
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-backup-credentials
+  namespace: postgres-db
+stringData:
+  AWS_ACCESS_KEY_ID: <replace-me>
+  AWS_SECRET_ACCESS_KEY: <replace-me>
+type: Opaque
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app.interweb.dev/managed: "true"
+    app.kubernetes.io/component: database
+    app.kubernetes.io/name: postgres-superuser
+  name: postgres-superuser
+  namespace: postgres-db
+stringData:
+  password: postgres123!
+  username: postgres
+type: kubernetes.io/basic-auth
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: function
+    app.kubernetes.io/name: send-email-link
+    app.kubernetes.io/part-of: constructive-jobs
+    networking.knative.dev/visibility: cluster-local
+  name: send-email-link
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "10"
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/target: "50"
+        run.googleapis.com/cpu-throttling: "false"
+        serving.knative.dev/timeout: 300s
+      labels:
+        app.kubernetes.io/component: function
+        app.kubernetes.io/name: send-email-link
+        app.kubernetes.io/part-of: constructive-jobs
+    spec:
+      containerConcurrency: 10
+      containers:
+      - args:
+        - functions/send-email-link/dist/index.js
+        command:
+        - node
+        env:
+        - name: NODE_ENV
+          value: production
+        - name: LOG_LEVEL
+          value: debug
+        - name: LOG_TIMESTAMP
+          value: "true"
+        - name: MAILGUN_FROM
+          value: no-reply@mg.constructive.io
+        - name: MAILGUN_REPLY
+          value: support@mg.constructive.io
+        - name: GRAPHQL_URL
+          value: https://admin.launchql.dev/graphql
+        - name: META_GRAPHQL_URL
+          value: https://admin.launchql.dev/graphql
+        envFrom:
+        - secretRef:
+            name: mailgun-credentials
+        image: ghcr.io/constructive-io/constructive:07dd24c
+        imagePullPolicy: Always
+        name: function
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+      timeoutSeconds: 300
+      volumes:
+      - emptyDir: {}
+        name: tmp
+  traffic:
+  - latestRevision: true
+    percent: 100
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: function
+    app.kubernetes.io/name: simple-email
+    app.kubernetes.io/part-of: constructive-jobs
+    networking.knative.dev/visibility: cluster-local
+  name: simple-email
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "10"
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/target: "50"
+        run.googleapis.com/cpu-throttling: "false"
+        serving.knative.dev/timeout: 300s
+      labels:
+        app.kubernetes.io/component: function
+        app.kubernetes.io/name: simple-email
+        app.kubernetes.io/part-of: constructive-jobs
+    spec:
+      containerConcurrency: 10
+      containers:
+      - args:
+        - functions/simple-email/dist/index.js
+        command:
+        - node
+        env:
+        - name: NODE_ENV
+          value: production
+        - name: LOG_LEVEL
+          value: debug
+        - name: LOG_TIMESTAMP
+          value: "true"
+        - name: MAILGUN_FROM
+          value: no-reply@mg.constructive.io
+        - name: MAILGUN_REPLY
+          value: support@mg.constructive.io
+        envFrom:
+        - secretRef:
+            name: mailgun-credentials
+        image: ghcr.io/constructive-io/constructive:07dd24c
+        imagePullPolicy: Always
+        name: function
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+      timeoutSeconds: 300
+      volumes:
+      - emptyDir: {}
+        name: tmp
+  traffic:
+  - latestRevision: true
+    percent: 100
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: constructive-server
+spec:
+  ports:
+  - name: http
+    port: 3000
+    targetPort: server-http
+  - name: explorer
+    port: 3001
+    targetPort: explorer-http
+  selector:
+    app: constructive-server
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: constructive-server-admin
+spec:
+  ports:
+  - name: http
+    port: 3000
+    targetPort: server-http
+  selector:
+    app: constructive-server-admin
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard
+spec:
+  ports:
+  - name: http
+    port: 3000
+    targetPort: http
+  selector:
+    app: dashboard
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: knative-job-service
+    app.kubernetes.io/component: jobs
+    app.kubernetes.io/name: knative-job-service
+    app.kubernetes.io/part-of: constructive-jobs
+  name: knative-job-service
+spec:
+  ports:
+  - name: jobs-http
+    port: 8080
+    targetPort: jobs-http
+  selector:
+    app: knative-job-service
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: pgadmin
+  name: pgadmin
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+  selector:
+    app: pgadmin
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: constructive-server
+  name: constructive-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: constructive-server
+  template:
+    metadata:
+      labels:
+        app: constructive-server
+    spec:
+      containers:
+      - args:
+        - server
+        - --port
+        - "3000"
+        - --origin
+        - '*'
+        - --strictAuth
+        - "false"
+        command:
+        - cnc
+        env:
+        - name: BUCKET_NAME
+          value: constructive-uploads
+        - name: AWS_REGION
+          value: us-east-1
+        - name: LOG_LEVEL
+          value: debug
+        - name: MINIO_ENDPOINT
+          value: https://s3.us-east-1.amazonaws.com
+        envFrom:
+        - configMapRef:
+            name: constructive
+        - secretRef:
+            name: pg-credentials
+        - secretRef:
+            name: constructive-uploads
+        image: ghcr.io/constructive-io/constructive:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: server-http
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        name: server
+        ports:
+        - containerPort: 3000
+          name: server-http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: server-http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1Gi
+          requests:
+            cpu: 200m
+            memory: 256Mi
+      - args:
+        - explorer
+        - --port
+        - "3001"
+        - --origin
+        - '*'
+        command:
+        - cnc
+        env:
+        - name: PORT
+          value: "3001"
+        envFrom:
+        - configMapRef:
+            name: constructive
+        - secretRef:
+            name: pg-credentials
+        image: ghcr.io/constructive-io/constructive:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: explorer-http
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        name: explorer
+        ports:
+        - containerPort: 3001
+          name: explorer-http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: explorer-http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 300m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: constructive-server-admin
+  name: constructive-server-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: constructive-server-admin
+  template:
+    metadata:
+      labels:
+        app: constructive-server-admin
+    spec:
+      containers:
+      - args:
+        - server
+        - --port
+        - "3000"
+        - --origin
+        - '*'
+        - --strictAuth
+        - "false"
+        command:
+        - cnc
+        env:
+        - name: API_IS_PUBLIC
+          value: "false"
+        envFrom:
+        - configMapRef:
+            name: constructive
+        - secretRef:
+            name: pg-credentials
+        image: ghcr.io/constructive-io/constructive:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: server-http
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        name: server
+        ports:
+        - containerPort: 3000
+          name: server-http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: server-http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1Gi
+          requests:
+            cpu: 200m
+            memory: 256Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: dashboard
+  name: dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dashboard
+  template:
+    metadata:
+      labels:
+        app: dashboard
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: dashboard
+        image: ghcr.io/constructive-io/dashboard:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        name: web
+        ports:
+        - containerPort: 3000
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1Gi
+          requests:
+            cpu: 200m
+            memory: 256Mi
+      imagePullSecrets:
+      - name: ghcr-pull
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: knative-job-service
+    app.kubernetes.io/component: jobs
+    app.kubernetes.io/name: knative-job-service
+    app.kubernetes.io/part-of: constructive-jobs
+  name: knative-job-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: knative-job-service
+  template:
+    metadata:
+      labels:
+        app: knative-job-service
+        app.kubernetes.io/component: jobs
+        app.kubernetes.io/name: knative-job-service
+        app.kubernetes.io/part-of: constructive-jobs
+    spec:
+      containers:
+      - args:
+        - jobs/knative-job-service/dist/run.js
+        command:
+        - node
+        env:
+        - name: INTERNAL_JOBS_CALLBACK_PORT
+          value: "8080"
+        - name: INTERNAL_JOBS_CALLBACK_URL
+          value: http://knative-job-service.interweb.svc.cluster.local:8080
+        - name: JOBS_SUPPORT_ANY
+          value: "false"
+        - name: JOBS_SUPPORTED
+          value: simple-email,send-email-link
+        - name: JOBS_CALLBACK_HOST
+          value: knative-job-service.interweb.svc.cluster.local
+        - name: JOBS_CALLBACK_BASE_URL
+          value: http://knative-job-service.interweb.svc.cluster.local:8080/callback
+        - name: KNATIVE_SERVICE_URL
+          value: interweb.svc.cluster.local
+        - name: INTERNAL_GATEWAY_URL
+          value: http://simple-email.interweb.svc.cluster.local
+        - name: NODE_ENV
+          value: development
+        - name: INTERNAL_GATEWAY_DEVELOPMENT_MAP
+          value: '{"simple-email":"http://simple-email.interweb.svc.cluster.local","send-email-link":"http://send-email-link.interweb.svc.cluster.local"}'
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        envFrom:
+        - configMapRef:
+            name: constructive
+        - secretRef:
+            name: pg-credentials
+        image: ghcr.io/constructive-io/constructive:latest
+        imagePullPolicy: Always
+        name: knative-job-service
+        ports:
+        - containerPort: 8080
+          name: jobs-http
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: pgadmin
+  name: pgadmin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgadmin
+  template:
+    metadata:
+      labels:
+        app: pgadmin
+    spec:
+      containers:
+      - env:
+        - name: PGADMIN_DEFAULT_EMAIL
+          value: admin@constructive.dev
+        - name: PGADMIN_LISTEN_PORT
+          value: "80"
+        - name: PGADMIN_CONFIG_SERVER_MODE
+          value: "True"
+        - name: PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED
+          value: "False"
+        - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
+          value: "False"
+        - name: PGADMIN_CONFIG_ALLOW_SAVE_PASSWORD
+          value: "True"
+        - name: PGADMIN_CONFIG_PROXY_X_FORWARDED_HOST
+          value: "True"
+        - name: PGADMIN_CONFIG_PROXY_X_FORWARDED_PROTO
+          value: "True"
+        envFrom:
+        - secretRef:
+            name: pgadmin-credentials
+        image: dpage/pgadmin4:latest
+        imagePullPolicy: Always
+        name: pgadmin
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 2048Mi
+          requests:
+            cpu: 1000m
+            memory: 1024Mi
+        volumeMounts:
+        - mountPath: /var/lib/pgadmin
+          name: pgadmin-data
+        - mountPath: /pgadmin4/servers.json
+          name: pgadmin-servers
+          subPath: servers.json
+      volumes:
+      - emptyDir: {}
+        name: pgadmin-data
+      - configMap:
+          name: pgadmin-servers
+        name: pgadmin-servers
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: constructive-db
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      containers:
+      - args:
+        - |
+          cd /app
+          echo "Creating database $PGDATABASE"
+          createdb -h "$PGHOST" -U "$PGUSER" "$PGDATABASE" || true
+
+          echo "Applying bootstrap roles"
+          pgpm admin-users bootstrap --yes
+          pgpm admin-users add --test --yes
+
+          echo "Deploying Services"
+          pgpm deploy --yes --database "$PGDATABASE" --package app-svc-prod
+
+          export LAUNCHQL_DOMAIN="${LAUNCHQL_DOMAIN:-launchql.dev}"
+          echo "Rename domains to ${LAUNCHQL_DOMAIN}"
+          psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 \
+            -c "BEGIN;
+                UPDATE services_public.domains
+                  SET domain = '${LAUNCHQL_DOMAIN}'
+                WHERE domain = ANY(ARRAY['lql.io', 'constructive.io', 'dbe.la', 'localhost']);
+                COMMIT;"
+
+          echo "Continue with db-meta and pgpm-database-jobs"
+          pgpm deploy --yes --database "$PGDATABASE" --package metaschema
+          pgpm deploy --yes --database "$PGDATABASE" --package pgpm-database-jobs
+
+          echo "Done"
+        command:
+        - bash
+        - -c
+        env:
+        - name: LAUNCHQL_DOMAIN
+          value: launchql.dev
+        envFrom:
+        - configMapRef:
+            name: constructive
+        - secretRef:
+            name: pg-credentials
+        image: ghcr.io/constructive-io/constructive-db-job:latest
+        imagePullPolicy: Always
+        name: lql
+      imagePullSecrets:
+      - name: ghcr-pull
+      restartPolicy: OnFailure
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Backup
+metadata:
+  name: postgres-cluster-backup-manual
+  namespace: postgres-db
+spec:
+  barmanObjectStore:
+    destinationPath: s3://postgres-backups/postgres-cluster
+    s3Credentials:
+      accessKeyId:
+        key: AWS_ACCESS_KEY_ID
+        name: postgres-backup-credentials
+      secretAccessKey:
+        key: AWS_SECRET_ACCESS_KEY
+        name: postgres-backup-credentials
+    wal:
+      compression: gzip
+      maxParallel: 4
+  cluster:
+    name: postgres-cluster
+  method: barmanObjectStore
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  labels:
+    app.interweb.dev/managed: "true"
+    app.kubernetes.io/component: database
+    app.kubernetes.io/name: postgres-cluster
+  name: postgres-cluster
+  namespace: postgres-db
+spec:
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: preferred
+    topologyKey: kubernetes.io/hostname
+  bootstrap:
+    initdb:
+      database: postgres
+      encoding: UTF8
+      localeCType: en_US.UTF-8
+      localeCollate: en_US.UTF-8
+      owner: postgres
+      secret:
+        name: postgres-superuser
+  enablePDB: false
+  enableSuperuserAccess: true
+  imageName: ghcr.io/launchql/pgvector-postgis:16.10
+  imagePullPolicy: Always
+  instances: 3
+  monitoring:
+    enablePodMonitor: false
+  postgresql:
+    pg_hba:
+    - host all postgres all scram-sha-256
+    - host all appuser all scram-sha-256
+  resources:
+    limits:
+      cpu: 4000m
+      memory: 4Gi
+    requests:
+      cpu: 2000m
+      memory: 2Gi
+  storage:
+    size: 6Gi
+  superuserSecret:
+    name: postgres-superuser
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Pooler
+metadata:
+  labels:
+    app.interweb.dev/managed: "true"
+    app.kubernetes.io/component: connection-pooler
+    app.kubernetes.io/name: postgres-pooler
+  name: postgres-pooler
+  namespace: postgres-db
+spec:
+  cluster:
+    name: postgres-cluster
+  instances: 2
+  pgbouncer:
+    parameters:
+      application_name_add_host: "1"
+      client_idle_timeout: "60"
+      default_pool_size: "10"
+      ignore_startup_parameters: extra_float_digits
+      log_connections: "1"
+      log_disconnections: "1"
+      log_pooler_errors: "1"
+      max_client_conn: "100"
+      max_db_connections: "10"
+      max_user_connections: "10"
+      query_timeout: "30"
+      server_idle_timeout: "30"
+      server_login_retry: "5"
+      server_reset_query: DISCARD ALL
+    poolMode: transaction
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: connection-pooler
+        app.kubernetes.io/name: postgres-pooler
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  cnpg.io/poolerName: postgres-pooler
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+      - name: pgbouncer
+        resources:
+          limits:
+            cpu: 400m
+            memory: 1024Mi
+          requests:
+            cpu: 200m
+            memory: 512Mi
+  type: rw
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: postgres-cluster-backup-schedule
+  namespace: postgres-db
+spec:
+  backupOwnerReference: self
+  barmanObjectStore:
+    destinationPath: s3://postgres-backups/postgres-cluster
+    s3Credentials:
+      accessKeyId:
+        key: AWS_ACCESS_KEY_ID
+        name: postgres-backup-credentials
+      secretAccessKey:
+        key: AWS_SECRET_ACCESS_KEY
+        name: postgres-backup-credentials
+    wal:
+      compression: gzip
+      maxParallel: 4
+  cluster:
+    name: postgres-cluster
+  method: barmanObjectStore
+  schedule: 0 3 * * *

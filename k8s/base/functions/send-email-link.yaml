@@ -1,0 +1,86 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: send-email-link
+  labels:
+    app.kubernetes.io/name: send-email-link
+    app.kubernetes.io/component: function
+    app.kubernetes.io/part-of: constructive-jobs
+    networking.knative.dev/visibility: cluster-local
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: send-email-link
+        app.kubernetes.io/component: function
+        app.kubernetes.io/part-of: constructive-jobs
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "10"
+        autoscaling.knative.dev/target: "50"
+        serving.knative.dev/timeout: "300s"
+        run.googleapis.com/cpu-throttling: "false"
+    spec:
+      containerConcurrency: 10
+      timeoutSeconds: 300
+
+      containers:
+      - name: function
+        image: ghcr.io/constructive-io/constructive:07dd24c
+        imagePullPolicy: Always
+
+        command: ["node"]
+        args: ["functions/send-email-link/dist/index.js"]
+
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+
+        envFrom:
+        - secretRef:
+            name: mailgun-credentials
+
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: LOG_LEVEL
+          value: "debug"
+        - name: LOG_TIMESTAMP
+          value: "true"
+        - name: MAILGUN_FROM
+          value: "no-reply@mg.constructive.io"
+        - name: MAILGUN_REPLY
+          value: "support@mg.constructive.io"
+        # TODO: change the urls to server-admin
+        - name: GRAPHQL_URL
+          value: "https://admin.launchql.dev/graphql"
+        - name: META_GRAPHQL_URL
+          value: "https://admin.launchql.dev/graphql"
+        # - name: GRAPHQL_URL
+        #   value: "http://constructive-server.interweb.svc.cluster.local:3000/graphql"
+        # - name: META_GRAPHQL_URL
+        #   value: "http://constructive-server-admin.interweb.svc.cluster.local:3000/graphql"
+        # - name: GRAPHQL_HOST_HEADER
+        #   value: "admin.launchql.dev"
+        # - name: META_GRAPHQL_HOST_HEADER
+        #   value: "meta.launchql.dev"
+
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+
+      volumes:
+      - name: tmp
+        emptyDir: {}
+
+  traffic:
+  - percent: 100
+    latestRevision: true

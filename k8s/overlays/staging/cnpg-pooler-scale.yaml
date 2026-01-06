@@ -1,0 +1,7 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Pooler
+metadata:
+  name: postgres-pooler
+  namespace: postgres-db
+spec:
+  instances: 2

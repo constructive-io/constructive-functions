@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - ./namespace.yaml
+  - ./ingress-issuer.yaml
+  - ./ingress-api.yaml
+  - ./ingress-dashboard.yaml
+  - ./ingress-pgadmin.yaml
+
+patches:
+  - path: ./constructive/config.yaml

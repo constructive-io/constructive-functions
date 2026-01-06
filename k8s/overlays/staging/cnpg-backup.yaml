@@ -1,0 +1,45 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Backup
+metadata:
+  name: postgres-cluster-backup-manual
+  namespace: postgres-db
+spec:
+  cluster:
+    name: postgres-cluster
+  method: barmanObjectStore
+  barmanObjectStore:
+    destinationPath: "s3://postgres-backups/postgres-cluster"
+    s3Credentials:
+      accessKeyId:
+        name: postgres-backup-credentials
+        key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        name: postgres-backup-credentials
+        key: AWS_SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
+      maxParallel: 4
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: postgres-cluster-backup-schedule
+  namespace: postgres-db
+spec:
+  schedule: "0 3 * * *" # daily at 03:00
+  backupOwnerReference: self
+  cluster:
+    name: postgres-cluster
+  method: barmanObjectStore
+  barmanObjectStore:
+    destinationPath: "s3://postgres-backups/postgres-cluster"
+    s3Credentials:
+      accessKeyId:
+        name: postgres-backup-credentials
+        key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        name: postgres-backup-credentials
+        key: AWS_SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
+      maxParallel: 4
