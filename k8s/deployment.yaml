@@ -17,8 +17,12 @@ spec:
     spec:
       containers:
       - name: functions-runtime
+        # NOTE: Replace with your custom functions runtime image
+        # This base image is a placeholder - you need an image with a functions server
         image: node:18-alpine
         imagePullPolicy: IfNotPresent
+        # Example command for a custom runtime:
+        # command: ["node", "server.js"]
         ports:
         - containerPort: 3000
           name: http
@@ -34,6 +38,7 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "500m"
+        # NOTE: Health checks require your runtime to implement these endpoints
         livenessProbe:
           httpGet:
             path: /health

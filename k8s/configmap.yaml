@@ -6,8 +6,9 @@ metadata:
   labels:
     app: functions-runtime
 data:
-  # Add your function configurations here
-  # Functions can be loaded from this ConfigMap
+  # NOTE: This is an example ConfigMap for function configurations
+  # In production, consider using persistent volumes or a source repository
+  # Functions can be loaded from this ConfigMap by mounting it as a volume
   hello-world.js: |
     module.exports = async function handler(req, res) {
       const { name = 'World' } = req.query;
