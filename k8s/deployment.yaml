@@ -38,19 +38,19 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "500m"
-        # NOTE: Health checks require your runtime to implement these endpoints
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        # NOTE: Uncomment health checks after implementing these endpoints in your runtime
+        # livenessProbe:
+        #   httpGet:
+        #     path: /health
+        #     port: 3000
+        #   initialDelaySeconds: 30
+        #   periodSeconds: 10
+        # readinessProbe:
+        #   httpGet:
+        #     path: /ready
+        #     port: 3000
+        #   initialDelaySeconds: 5
+        #   periodSeconds: 5
         volumeMounts:
         - name: functions
           mountPath: /app/functions
