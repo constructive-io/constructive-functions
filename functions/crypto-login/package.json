@@ -1,0 +1,42 @@
+{
+    "name": "@constructive-io/crypto-login-fn",
+    "version": "0.1.0",
+    "description": "Crypto Login Cloud Function",
+    "private": false,
+    "publishConfig": {
+        "access": "public",
+        "directory": "dist"
+    },
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "clean": "rimraf dist",
+        "pretest": "tsc",
+        "test": "jest --forceExit __tests__/index.test.ts"
+    },
+    "dependencies": {
+        "@constructive-io/knative-job-fn": "latest",
+        "kubernetesjs": "^0.7.6",
+        "ethers": "^6.10.0",
+        "interchainjs": "latest",
+        "@interchainjs/cosmos": "latest",
+        "@interchainjs/utils": "latest",
+        "@interchainjs/cosmos-types": "latest",
+        "@solana/web3.js": "latest",
+        "bitcoinjs-message": "^2.2.0",
+        "bitcoinjs-lib": "^6.1.5",
+        "bs58": "^5.0.0"
+    },
+    "devDependencies": {
+        "pgsql-test": "latest",
+        "@types/node": "^22.10.4",
+        "@types/jest": "^29.5.12",
+        "jest": "^29.7.0",
+        "ts-jest": "^29.1.2",
+        "typescript": "^5.1.6"
+    }
+}

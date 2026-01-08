@@ -1,7 +1,7 @@
 {
-    "name": "@constructive-io/runtime-script-fn",
-    "version": "0.0.1",
-    "description": "Runtime Script Runner using pgsql-test",
+    "name": "@constructive-io/stripe-fn",
+    "version": "0.1.0",
+    "description": "Stripe Knative function",
     "author": "Constructive",
     "private": false,
     "publishConfig": {
@@ -13,26 +13,27 @@
     "files": [
         "dist"
     ],
+    "directories": {
+        "lib": "src",
+        "test": "__tests__"
+    },
     "scripts": {
         "build": "tsc -p tsconfig.json",
-        "build:watch": "tsc -p tsconfig.json -w",
         "clean": "rimraf dist",
-        "lint": "eslint . --fix",
-        "pretest": "pnpm build:test-image && kind load docker-image constructive/runtime-script-test:v1 --name interweb-local",
-        "test": "jest __tests__/k8s_runner.test.ts",
-        "test:inner": "jest __tests__/index.test.ts",
-        "build:test-image": "docker build -t constructive/runtime-script-test:v1 -f Dockerfile.test ../../"
+        "pretest": "tsc",
+        "test": "jest --forceExit __tests__/index.test.ts",
+        "test:inner": "npm test"
     },
     "dependencies": {
         "@constructive-io/knative-job-fn": "latest",
         "@pgpmjs/env": "latest",
         "kubernetesjs": "^0.7.6",
-        "pg": "^8.11.3"
+        "stripe": "^14.14.0"
     },
     "devDependencies": {
         "pgsql-test": "latest",
-        "@types/jest": "^29.5.12",
         "@types/node": "^22.10.4",
+        "@types/jest": "^29.5.12",
         "jest": "^29.7.0",
         "ts-jest": "^29.1.2",
         "typescript": "^5.1.6"
