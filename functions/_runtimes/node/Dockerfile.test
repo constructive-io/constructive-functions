@@ -1,0 +1,35 @@
+FROM node:20-alpine
+
+# Install Postgres Client and Build Tools
+RUN apk add --no-cache postgresql-client bash make g++ python3 kubectl
+
+COPY . /app
+WORKDIR /app
+
+# Ensure clean slate
+RUN rm -rf node_modules
+
+# 3. Install Dependencies from NPM
+RUN npm install -g pnpm@9 && pnpm install --no-frozen-lockfile
+
+# 4. Build
+# 5. Install PGPM from NPM
+RUN npm install -g pgpm
+
+# Run as postgres user to avoid 'role root does not exist' in pgsql-test
+# handle existing user/group if created by apk
+RUN (getent group postgres || addgroup -S postgres) && (getent passwd postgres || adduser -S postgres -G postgres)
+RUN chown -R postgres:postgres /app
+USER postgres
+ENV USER=postgres
+ENV PGUSER=postgres
+
+# 6. Setup Entrypoint (Inlined for Minimalism)
+ENV NODE_ENV=test
+CMD ["/bin/bash", "-c", "set -e; \
+    echo \"Waiting for Postgres at $PGHOST:$PGPORT...\"; \
+    until pg_isready -h \"$PGHOST\" -p \"$PGPORT\" -U \"$PGUSER\"; do echo \"Waiting...\"; sleep 2; done; \
+    echo \"Deploying Schema...\"; \
+    pgpm deploy --package pgpm-database-jobs --database template1 --yes 2>/dev/null || echo \"Deploy continued...\"; \
+    unset PGDATABASE; \
+    pnpm test"]

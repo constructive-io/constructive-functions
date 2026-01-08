@@ -62,12 +62,33 @@ wait_for_crds() {
 }
 
 # Function to wait for pods to be ready
+# Function to wait for pods to be ready
 wait_for_pods() {
     local namespace=$1
     local timeout=${2:-300}
-    
+    local interval=5
+    local elapsed=0
+
     log $BLUE "Waiting for pods in namespace '$namespace' to be ready..."
-    kubectl wait --for=condition=Ready pods --all -n "$namespace" --timeout=${timeout}s
+
+    # 1. Wait for at least one pod to exist
+    while ! kubectl get pods -n "$namespace" --no-headers 2>/dev/null | grep -q .; do
+         if [ $elapsed -ge $timeout ]; then
+             log $RED "Timeout waiting for any pods to appear in namespace: $namespace"
+             exit 1
+         fi
+         log $YELLOW "Waiting for pods to appear in $namespace..."
+         sleep $interval
+         elapsed=$((elapsed + interval))
+    done
+
+    # 2. Wait for all pods to be Ready using kubectl wait
+    # We use 'kubectl wait' which is efficient, but we allow it to fail fast if resources disappear, then retry in the loop if needed (though kubectl wait usually handles it).
+    # Since we know pods exist, this shouldn't error with "no matching resources" unless they are all deleted instantly.
+    if ! kubectl wait --for=condition=Ready pods --all -n "$namespace" --timeout=${timeout}s; then
+        log $RED "Timeout waiting for pods in $namespace to be Ready"
+        exit 1
+    fi
 }
 
 # Install CloudNativePG operator
