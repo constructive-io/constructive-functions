@@ -22,6 +22,7 @@
     "lint": "pnpm -r run lint"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.10.4",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
@@ -29,8 +30,10 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-simple-import-sort": "^12.1.0",
     "eslint-plugin-unused-imports": "^4.0.0",
+    "kubernetesjs": "^0.7.6",
     "prettier": "^3.7.4",
     "rimraf": "^5.0.5",
+    "ts-node": "^10.9.2",
     "typescript": "^5.1.6"
   },
   "dependencies": {

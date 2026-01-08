@@ -79,7 +79,7 @@ kustomize-local:
 # Delete the local namespace and all its resources from the current context.
 # This is intended for local/kind/minikube clusters only.
 kustomize-local-delete:
-	$(KUBECTL) kustomize $(K8S_DIR)/overlays/local --load-restrictor=LoadRestrictionsNone | $(KUBECTL) delete -f - --ignore-not-found=true
+	$(KUBECTL) kustomize $(K8S_DIR)/overlays/local --load-restrictor=LoadRestrictionsNone | $(KUBECTL) delete -f - --ignore-not-found=true || true
 
 # Render local overlay to a single YAML file.
 render-local:
@@ -102,7 +102,8 @@ k8s-pull-secret:
 		--docker-server=ghcr.io \
 		--docker-username=$(GH_USERNAME) \
 		--docker-password=$(GH_PAT_TOKEN) \
-		--docker-email=$(GH_EMAIL)
+		--docker-email=$(GH_EMAIL) \
+		--dry-run=client -o yaml | $(KUBECTL) apply -f -
 
 # Diagnose TLS/ACME for Ingress and cert-manager
 .PHONY: tls-diagnose
@@ -164,3 +165,25 @@ k8s-iam-user-secret:
 ### aws s3 bucket used for uploads
 create-bucket-user:
 	./scripts/create-uploads-bucket-user-policy.sh constructive-uploads constructive-upload-iam-user us-east-1 webinc
+
+scaffold-function:
+	@./scripts/scaffold-function.sh $(NAME)
+
+.PHONY: spin-up spin-down
+
+spin-up:
+	@echo "Checking if kind cluster exists..."
+	@kind get clusters | grep -q "interweb-local" || kind create cluster --name interweb-local
+	@echo "Installing Knative operators..."
+	@$(MAKE) operators-knative-only
+	@echo "Creating Pull Secret..."
+	@$(MAKE) k8s-pull-secret
+	@echo "Deploying local stack..."
+	@$(MAKE) kustomize-local
+	@echo "Ready! Use 'make proxy-all' to access services."
+
+spin-down:
+	@echo "Deleting local stack..."
+	@$(MAKE) kustomize-local-delete
+	@echo "Deleting kind cluster..."
+	@kind delete cluster --name interweb-local

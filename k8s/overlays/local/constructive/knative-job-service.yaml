@@ -20,8 +20,10 @@ spec:
               value: "http://knative-job-service.default.svc.cluster.local:8080/callback"
             - name: INTERNAL_GATEWAY_URL
               value: "http://simple-email.default.svc.cluster.local"
+            - name: JOBS_SUPPORTED
+              value: "simple-email,send-email-link,hello-world,runtime-script"
             - name: INTERNAL_GATEWAY_DEVELOPMENT_MAP
-              value: '{"simple-email":"http://simple-email.default.svc.cluster.local","send-email-link":"http://send-email-link.default.svc.cluster.local"}'
+              value: '{"simple-email":"http://simple-email.default.svc.cluster.local","send-email-link":"http://send-email-link.default.svc.cluster.local","hello-world":"http://hello-world.default.svc.cluster.local","runtime-script":"http://runtime-script.default.svc.cluster.local"}'
           resources:
             requests:
               cpu: "50m"
