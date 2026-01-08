@@ -48,7 +48,7 @@ async function runTestForFunction(fnName: string): Promise<boolean> {
                         name: 'test-runner',
                         image: 'constructive/function-test-runner:v2',
                         imagePullPolicy: "IfNotPresent",
-                        command: ["/bin/sh", "-c", `cd functions/${fnName} && npx jest __tests__/index.test.ts`],
+                        command: ["/bin/sh", "-c", `npx jest functions/${fnName}/__tests__/index.test.ts`],
                         env: envVars
                     }]
                 }
@@ -187,7 +187,16 @@ async function main() {
     });
 
     try {
-        const functionsToTest = ['hello-world', 'simple-bash', 'runtime-script', 'simple-email', 'send-email-link'];
+        const functionsToTest = [
+            'rust-hello-world',
+            'stripe-function',
+            'crypto-login',
+            'llm-external',
+            'llm-internal-calvin',
+            'github-repo-creator',
+            'opencode-headless',
+            'pytorch-gpu'
+        ];
         const dirs = fs.readdirSync(FUNCTIONS_DIR);
         let failure = false;
 

@@ -3,8 +3,16 @@
   "version": "0.2.19",
   "description": "Simple Knative email function that sends emails directly from job payload",
   "author": "Constructive",
-  "private": true,
+  "private": false,
+  "publishConfig": {
+    "access": "public",
+    "directory": "dist"
+  },
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "directories": {
     "lib": "src",
     "test": "__tests__"
