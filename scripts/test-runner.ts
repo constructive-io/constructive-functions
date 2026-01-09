@@ -5,8 +5,13 @@ import { spawn } from 'child_process';
 import { KubernetesClient } from 'kubernetesjs';
 
 // Since we are in scripts/test-runner.ts, the functions dir is ../functions
+
+// Since we are in scripts/test-runner.ts, the functions dir is ../functions
 const FUNCTIONS_DIR = path.join(__dirname, '../functions');
 const NAMESPACE = 'default';
+
+// Load .env from root
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 let k8s: KubernetesClient;
 
@@ -26,8 +31,17 @@ async function runTestForFunction(fnName: string): Promise<boolean> {
         { name: "IS_IN_POD", value: "true" },
         { name: "NODE_TLS_REJECT_UNAUTHORIZED", value: "0" },
         { name: "PGHOST", value: "postgres" },
-        { name: "PGPASSWORD", value: "***REMOVED***" },
-        { name: "PGUSER", value: "postgres" }
+        { name: "PGPASSWORD", value: process.env.PGPASSWORD || "password" },
+        { name: "PGUSER", value: "postgres" },
+        // Inject Standard Env Vars
+        { name: "STRIPE_PUBLISHABLE_KEY", value: process.env.STRIPE_PUBLISHABLE_KEY },
+        { name: "STRIPE_SECRET_KEY", value: process.env.STRIPE_SECRET_KEY },
+        { name: "STRIPE_RESTRICTED_KEY", value: process.env.STRIPE_RESTRICTED_KEY },
+        { name: "TWILIO_ACCOUNT_SID", value: process.env.TWILIO_ACCOUNT_SID },
+        { name: "TWILIO_AUTH_TOKEN", value: process.env.TWILIO_AUTH_TOKEN },
+        { name: "TWILIO_FROM_NUMBER", value: process.env.TWILIO_FROM_NUMBER },
+        { name: "CALVIN_API_KEY", value: process.env.CALVIN_API_KEY },
+        { name: "OPENAI_API_KEY", value: process.env.OPENAI_API_KEY }
     ];
 
     const jobManifest = {
