@@ -49,7 +49,17 @@ describe('Crypto Login Function (Integration)', () => {
                             image: 'constructive/function-test-runner:v2',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/crypto-login/src/index.ts"],
-                            env: [{ name: "PORT", value: "8080" }]
+                            env: [
+                                { name: "PORT", value: "8080" },
+                                { name: "PGHOST", value: "postgres" },
+                                { name: "PGPASSWORD", value: process.env.PGPASSWORD },
+                                { name: "STRIPE_PUBLISHABLE_KEY", value: process.env.STRIPE_PUBLISHABLE_KEY },
+                                { name: "STRIPE_SECRET_KEY", value: process.env.STRIPE_SECRET_KEY },
+                                { name: "TWILIO_ACCOUNT_SID", value: process.env.TWILIO_ACCOUNT_SID },
+                                { name: "TWILIO_AUTH_TOKEN", value: process.env.TWILIO_AUTH_TOKEN },
+                                { name: "CALVIN_API_KEY", value: process.env.CALVIN_API_KEY },
+                                { name: "OPENAI_API_KEY", value: process.env.OPENAI_API_KEY }
+                            ]
                         }]
                     }
                 }
