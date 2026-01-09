@@ -70,7 +70,7 @@ describe('Simple Email Function (Integration)', () => {
                             name: 'simple-email',
                             image: 'constructive/function-test-runner:v2',
                             imagePullPolicy: "IfNotPresent",
-                            command: ["npx", "ts-node", "functions/simple-email/src/index.ts"],
+                            command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/simple-email/src/index.ts"],
                             env: [
                                 { name: "PGHOST", value: "postgres" },
                                 { name: "PGPASSWORD", value: process.env.PGPASSWORD },

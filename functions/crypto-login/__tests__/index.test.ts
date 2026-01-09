@@ -1,6 +1,7 @@
 
 import { KubernetesClient } from 'kubernetesjs';
 import * as fs from 'fs';
+import { createJobTeardown } from '../../test-utils';
 
 // Mock interaction is hard without actually signing. 
 // We will test startup for now.
@@ -23,7 +24,10 @@ describe('Crypto Login Function (Integration)', () => {
 
     it('should orchestrate the crypto-login job and verify startup', async () => {
         const jobName = `crypto-login-exec-${Math.floor(Date.now() / 1000)}`;
+        // Initial cleanup (force)
         try { await k8s.deleteBatchV1NamespacedJob({ path: { namespace: NAMESPACE, name: jobName }, query: { propagationPolicy: 'Background' } }); } catch (e) { }
+
+        const teardown = createJobTeardown(k8s, NAMESPACE, jobName);
 
         // We run a simple startup test here. 
         // Logic verification for signatures (ETH, SOL, BTC) is best done via unit tests or inside the pod if we can curl it.
@@ -44,7 +48,7 @@ describe('Crypto Login Function (Integration)', () => {
                             name: 'crypto-login',
                             image: 'constructive/function-test-runner:v2',
                             imagePullPolicy: "IfNotPresent",
-                            command: ["npx", "ts-node", "functions/crypto-login/src/index.ts"],
+                            command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/crypto-login/src/index.ts"],
                             env: [{ name: "PORT", value: "8080" }]
                         }]
                     }
@@ -83,6 +87,6 @@ describe('Crypto Login Function (Integration)', () => {
         if (!success) throw new Error(`Crypto Login Service Failed: ${logsResponse}`);
         expect(success).toBe(true); // Just test startup
 
-        try { await k8s.deleteBatchV1NamespacedJob({ path: { namespace: NAMESPACE, name: jobName }, query: { propagationPolicy: 'Background' } }); } catch (e) { }
+        await teardown();
     }, 120000);
 });

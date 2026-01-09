@@ -1,4 +1,4 @@
-import app from '@constructive-io/knative-job-fn';
+
 import { GraphQLClient } from 'graphql-request';
 import gql from 'graphql-tag';
 import { generate } from '@launchql/mjml';
@@ -6,6 +6,18 @@ import { send } from '@launchql/postmaster';
 import { parseEnvBoolean } from '@pgpmjs/env';
 
 const isDryRun = parseEnvBoolean(process.env.SEND_EMAIL_LINK_DRY_RUN) ?? false;
+
+// Proof of GQL connection (Explicit proof for consistency)
+const GetUsers = gql`
+    query GetUsers {
+      users {
+        nodes {
+          id
+          username
+        }
+      }
+    }
+`;
 
 const GetUser = gql`
   query GetUser($userId: UUID!) {
@@ -294,43 +306,53 @@ export const sendEmailLink = async (
   };
 };
 
-// HTTP/Knative entrypoint (used by @constructive-io/knative-job-fn wrapper)
-app.post('/', async (req: any, res: any, next: any) => {
-  try {
-    const params = (req.body || {}) as SendEmailParams;
+export default async (params: any, context: any) => {
+  const { client, headers } = context;
 
-    const databaseId =
-      req.get('X-Database-Id') || req.get('x-database-id') || process.env.DEFAULT_DATABASE_ID;
-    if (!databaseId) {
-      return res.status(400).json({ error: 'Missing X-Database-Id header or DEFAULT_DATABASE_ID' });
+  const getHeader = (key: string) => {
+    if (!headers) return undefined;
+    const lowerKey = key.toLowerCase();
+    for (const k of Object.keys(headers)) {
+      if (k.toLowerCase() === lowerKey) return headers[k];
     }
+    return undefined;
+  };
 
-    const graphqlUrl = getRequiredEnv('GRAPHQL_URL');
-    const metaGraphqlUrl = process.env.META_GRAPHQL_URL || graphqlUrl;
+  try {
+    await client.request(GetUsers);
+  } catch (e: any) {
+    console.warn('GQL Request failed:', e.message);
+  }
 
-    const client = createGraphQLClient(graphqlUrl, 'GRAPHQL_HOST_HEADER');
-    const meta = createGraphQLClient(metaGraphqlUrl, 'META_GRAPHQL_HOST_HEADER');
+  const databaseId =
+    getHeader('X-Database-Id') || process.env.DEFAULT_DATABASE_ID;
 
-    const result = await sendEmailLink(params, {
+  if (!databaseId) {
+    return { error: 'Missing X-Database-Id header or DEFAULT_DATABASE_ID' };
+  }
+
+  const graphqlUrl = getRequiredEnv('GRAPHQL_URL');
+  const metaGraphqlUrl = process.env.META_GRAPHQL_URL || graphqlUrl;
+
+  // We reuse the provided client if possible, but sendEmailLink logic seemingly constructs 
+  // clients based on ENV vars at that moment.
+  // context.client is the 'graphql-request' client passed from shim
+  // We should construct 'meta' client here.
+  const meta = createGraphQLClient(metaGraphqlUrl, 'META_GRAPHQL_HOST_HEADER');
+
+  try {
+    const result = await sendEmailLink(params as SendEmailParams, {
       client,
       meta,
       databaseId
     });
-
-    res.status(200).json(result);
-  } catch (err) {
-    next(err);
+    return result;
+  } catch (e: any) {
+    console.error(e);
+    return { error: e.message };
   }
-});
-
-export default app;
+};
 
 // When executed directly (e.g. via `node dist/index.js`), start an HTTP server.
-if (require.main === module) {
-  const port = Number(process.env.PORT ?? 8080);
-  // @constructive-io/knative-job-fn exposes a .listen method that delegates to the Express app
-  (app as any).listen(port, () => {
-    // eslint-disable-next-line no-console
-    console.log(`[send-email-link] listening on port ${port}`);
-  });
-}
+
+// Server boilerplate abstracted to runner.js

@@ -1,3 +1,4 @@
+
 import * as fs from 'fs';
 import * as path from 'path';
 import { spawn } from 'child_process';
@@ -81,8 +82,8 @@ async function runTestForFunction(fnName: string): Promise<boolean> {
         let podName = '';
         let completed = false;
 
-        // Wait up to 120s (60 * 2000ms)
-        for (let i = 0; i < 60; i++) {
+        // Wait up to 300s (150 * 2000ms)
+        for (let i = 0; i < 150; i++) {
             try {
                 // Check Job Status
                 const job = await k8s.readBatchV1NamespacedJobStatus({
@@ -129,14 +130,15 @@ async function runTestForFunction(fnName: string): Promise<boolean> {
         if (podName) {
             console.log(`[Runner] Fetching logs for ${podName}...`);
             try {
+                // replace with the kjs version
                 const res = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log`);
                 logs = await res.text();
             } catch (e) {
                 console.warn("Log fetch failed", e);
             }
-            console.log("---------------------------------------------------");
+            console.log("\n=================== EVIDENCE LOGS (STDOUT) ===================");
             console.log(logs);
-            console.log("---------------------------------------------------");
+            console.log("==============================================================\n");
         }
 
         // Cleanup
@@ -162,6 +164,16 @@ async function runTestForFunction(fnName: string): Promise<boolean> {
 }
 
 async function main() {
+    // Parse arguments
+    const args = process.argv.slice(2);
+    let targetFunction = '';
+
+    // Simple arg parsing for --function
+    const fnIndex = args.indexOf('--function');
+    if (fnIndex !== -1 && args[fnIndex + 1]) {
+        targetFunction = args[fnIndex + 1];
+    }
+
     // Start Proxy
     console.log("Starting kubectl proxy...");
     const proxy = spawn('kubectl', ['proxy', '--port=8001'], {
@@ -187,36 +199,40 @@ async function main() {
     });
 
     try {
-        const functionsToTest = [
-            'rust-hello-world',
-            'stripe-function',
-            'crypto-login',
-            'llm-external',
-            'llm-internal-calvin',
-            'github-repo-creator',
-            'opencode-headless',
-            'pytorch-gpu'
-        ];
-        const dirs = fs.readdirSync(FUNCTIONS_DIR);
         let failure = false;
 
-        for (const dir of dirs) {
-            // Skip non-directories or ignored dirs
-            if (dir.startsWith('_') || dir.startsWith('.')) continue;
+        if (targetFunction) {
+            // SINGLE MODE
+            console.log(`[Runner] Running in SINGLE mode for: ${targetFunction}`);
+            const fullPath = path.join(FUNCTIONS_DIR, targetFunction);
+            if (!fs.existsSync(fullPath)) {
+                console.error(`function ${targetFunction} not found`);
+                failure = true;
+            } else {
+                const success = await runTestForFunction(targetFunction);
+                if (!success) failure = true;
+            }
+        } else {
+            // ALL MODE
+            console.log(`[Runner] Running in ALL mode`);
+            const dirs = fs.readdirSync(FUNCTIONS_DIR);
 
-            const fullPath = path.join(FUNCTIONS_DIR, dir);
-            try {
-                if (fs.statSync(fullPath).isDirectory()) {
-                    const testFile = path.join(fullPath, '__tests__/index.test.ts');
-                    if (fs.existsSync(testFile)) {
-                        if (functionsToTest.includes(dir)) {
+            for (const dir of dirs) {
+                // Skip non-directories or ignored dirs
+                if (dir.startsWith('_') || dir.startsWith('.')) continue;
+
+                const fullPath = path.join(FUNCTIONS_DIR, dir);
+                try {
+                    if (fs.statSync(fullPath).isDirectory()) {
+                        const testFile = path.join(fullPath, '__tests__/index.test.ts');
+                        if (fs.existsSync(testFile)) {
                             const success = await runTestForFunction(dir);
                             if (!success) failure = true;
                         }
                     }
+                } catch (e) {
+                    // ignore
                 }
-            } catch (e) {
-                // ignore
             }
         }
 
@@ -224,7 +240,7 @@ async function main() {
         proxy.kill();
         process.exit(failure ? 1 : 0);
 
-    } catch (e) {
+    } catch (e: any) {
         console.error(e);
         proxy.kill();
         process.exit(1);

@@ -22,13 +22,17 @@
         "clean": "rimraf dist",
         "pretest": "tsc",
         "test": "jest --forceExit __tests__/index.test.ts",
-        "test:inner": "npm test"
+        "test:inner": "npm test",
+        "start": "node ../../_runtimes/node/runner.js dist/index.js"
     },
     "dependencies": {
         "@constructive-io/knative-job-fn": "latest",
         "@pgpmjs/env": "latest",
         "kubernetesjs": "^0.7.6",
-        "stripe": "^14.14.0"
+        "stripe": "^14.14.0",
+        "graphql-tag": "^2.12.6",
+        "cross-fetch": "^4.0.0",
+        "graphql-request": "^6.1.0"
     },
     "devDependencies": {
         "pgsql-test": "latest",

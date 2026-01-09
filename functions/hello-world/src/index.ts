@@ -1,17 +1,39 @@
-import app from '@constructive-io/knative-job-fn';
 
-app.post('/', (req: any, res: any) => {
-  // eslint-disable-next-line no-console
-  console.log('Hello World received', req.body);
-  res.status(200).send('Hello World');
-});
+import { GraphQLClient } from 'graphql-request';
+import gql from 'graphql-tag';
+import fetch from 'cross-fetch';
 
-export default app;
+// example GQL
+const GetUsers = gql`
+  query GetUsers {
+    users {
+      nodes {
+        id
+        username
+      }
+    }
+  }
+`;
 
-if (require.main === module) {
-  const port = Number(process.env.PORT ?? 8080);
-  (app as any).listen(port, () => {
-    // eslint-disable-next-line no-console
-    console.log(`[hello-world] listening on port ${port}`);
-  });
-}
+export default async (params: any, context: any) => {
+  const { client } = context;
+  console.log('Hello World received', params);
+
+  // Proof of GQL connection
+  let users = null;
+  try {
+    const data = await client.request(GetUsers);
+    users = data?.users;
+  } catch (e: any) {
+    console.warn('GQL Request failed (expected if server not reachable in test):', e.message);
+  }
+
+  return {
+    message: 'Hello World',
+    received: params,
+    users
+  };
+};
+
+
+// Server boilerplate abstracted to runner.js

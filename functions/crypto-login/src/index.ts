@@ -1,12 +1,37 @@
-import app from '@constructive-io/knative-job-fn';
-import { ethers } from 'ethers';
 
-app.post('/', async (req: any, res: any) => {
+import { GraphQLClient } from 'graphql-request';
+import { ethers } from 'ethers';
+import gql from 'graphql-tag';
+import fetch from 'cross-fetch';
+
+// Proof of GQL connection
+const GetUsers = gql`
+  query GetUsers {
+    users {
+      nodes {
+        id
+        username
+      }
+    }
+  }
+`;
+
+export default async (params: any, context: any) => {
+    const { client } = context;
     console.log('[crypto-login] Request received');
-    const { chain = 'ethereum', address, message, signature, publicKey } = req.body || {};
+
+    let users = null;
+    try {
+        const data = await client.request(GetUsers);
+        users = data?.users;
+    } catch (e: any) {
+        console.warn('GQL Request failed:', e.message);
+    }
+
+    const { chain = 'ethereum', address, message, signature, publicKey } = params || {};
 
     if (!address || !message || !signature) {
-        return res.status(400).json({ error: "Missing address, message, or signature" });
+        return { error: "Missing address, message, or signature" };
     }
 
     try {
@@ -20,7 +45,7 @@ app.post('/', async (req: any, res: any) => {
 
         } else if (chainlower === 'solana') {
             // Solana verification: requires publicKey + signature (Uint8Array or base64)
-            if (!publicKey) return res.status(400).json({ error: "Missing publicKey for Solana verification" });
+            if (!publicKey) return { error: "Missing publicKey for Solana verification" };
 
             // Dynamic import for esm-only modules if needed, or rely on compiled TS
             const nacl = require('tweetnacl');
@@ -49,7 +74,7 @@ app.post('/', async (req: any, res: any) => {
 
         } else if (chainlower === 'cosmos') {
             // Cosmos verification
-            if (!publicKey) return res.status(400).json({ error: "Missing publicKey for Cosmos verification" });
+            if (!publicKey) return { error: "Missing publicKey for Cosmos verification" };
 
             try {
                 // InterchainJS utils export standard secp256k1
@@ -84,28 +109,22 @@ app.post('/', async (req: any, res: any) => {
             }
 
         } else {
-            return res.status(400).json({ error: `Unsupported chain: ${chain}` });
+            return { error: `Unsupported chain: ${chain}` };
         }
 
         if (isValid) {
             console.log(`[crypto-login] Verified ${chain} signature for ${address}`);
-            return res.status(200).json({ success: true, verified: true, chain, address });
+            return { success: true, verified: true, chain, address };
         } else {
             console.warn(`[crypto-login] Signature mismatch for ${chain} address ${address}`);
-            return res.status(401).json({ success: false, error: "Signature mismatch" });
+            return { success: false, error: "Signature mismatch" };
         }
 
     } catch (error: any) {
         console.error('[crypto-login] Error verifying signature:', error);
-        res.status(500).json({ error: error.message });
+        return { error: error.message };
     }
-});
+};
 
-export default app;
 
-if (require.main === module) {
-    const port = Number(process.env.PORT ?? 8080);
-    (app as any).listen(port, () => {
-        console.log(`[crypto-login] listening on port ${port}`);
-    });
-}
+// Server boilerplate abstracted to runner.js

@@ -1,11 +1,27 @@
-import app from '@constructive-io/knative-job-fn';
+
+import { GraphQLClient } from 'graphql-request';
 import OpenAI from 'openai';
+import gql from 'graphql-tag';
+import fetch from 'cross-fetch';
 
-app.post('/', async (req: any, res: any) => {
+// Proof of GQL connection
+const GetUsers = gql`
+  query GetUsers {
+    users {
+      nodes {
+        id
+        username
+      }
+    }
+  }
+`;
+
+export default async (params: any, context: any) => {
+    const { client } = context;
     console.log('[llm-external] Request received');
-    const { provider, prompt } = req.body;
+    const { provider, prompt } = params;
 
-    if (!prompt) return res.status(400).json({ error: "Missing prompt" });
+    if (!prompt) return { error: "Missing prompt" };
 
     try {
         if (provider === 'openai') {
@@ -14,21 +30,23 @@ app.post('/', async (req: any, res: any) => {
                 messages: [{ role: "user", content: prompt }],
                 model: "gpt-3.5-turbo",
             });
-            return res.json({ result: completion.choices[0].message.content });
+
+            let users = null;
+            try {
+                const data = await client.request(GetUsers);
+                users = data?.users;
+            } catch (e: any) {
+                console.warn('GQL Request failed:', e.message);
+            }
+
+            return { result: completion.choices[0].message.content, users };
         } else {
-            return res.status(400).json({ error: "Unsupported provider" });
+            return { error: "Unsupported provider" };
         }
     } catch (e: any) {
         console.error(e);
-        res.status(500).json({ error: e.message });
+        return { error: e.message };
     }
-});
+};
 
-export default app;
-
-if (require.main === module) {
-    const port = Number(process.env.PORT ?? 8080);
-    (app as any).listen(port, () => {
-        console.log(`[llm-external] listening on port ${port}`);
-    });
-}
+// Server boilerplate abstracted to runner.js

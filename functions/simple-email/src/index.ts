@@ -1,6 +1,21 @@
-import app from '@constructive-io/knative-job-fn';
+
+import { GraphQLClient } from 'graphql-request';
 import { parseEnvBoolean } from '@pgpmjs/env';
 import { send as sendEmail } from '@launchql/postmaster';
+import gql from 'graphql-tag';
+import fetch from 'cross-fetch';
+
+// Proof of GQL connection
+const GetUsers = gql`
+  query GetUsers {
+    users {
+      nodes {
+        id
+        username
+      }
+    }
+  }
+`;
 
 type SimpleEmailPayload = {
   to: string;
@@ -27,73 +42,66 @@ const getRequiredField = (
 
 const isDryRun = parseEnvBoolean(process.env.SIMPLE_EMAIL_DRY_RUN) ?? false;
 
-app.post('/', async (req: any, res: any, next: any) => {
+
+export default async (params: any, context: any) => {
+  const { client } = context;
+  console.log('[simple-email] processing request');
+
+  let users = null;
   try {
-    const payload = (req.body || {}) as SimpleEmailPayload;
+    const data = await client.request(GetUsers);
+    users = data?.users;
+  } catch (e: any) {
+    console.warn('GQL Request failed:', e.message);
+  }
 
-    const to = getRequiredField(payload, 'to');
-    const subject = getRequiredField(payload, 'subject');
+  const payload = (params || {}) as SimpleEmailPayload;
 
-    const html = isNonEmptyString(payload.html) ? payload.html : undefined;
-    const text = isNonEmptyString(payload.text) ? payload.text : undefined;
+  const to = getRequiredField(payload, 'to');
+  const subject = getRequiredField(payload, 'subject');
 
-    if (!html && !text) {
-      throw new Error("Either 'html' or 'text' must be provided");
-    }
+  const html = isNonEmptyString(payload.html) ? payload.html : undefined;
+  const text = isNonEmptyString(payload.text) ? payload.text : undefined;
 
-    const fromEnv = process.env.MAILGUN_FROM;
-    const from = isNonEmptyString(payload.from)
-      ? payload.from
-      : isNonEmptyString(fromEnv)
-        ? fromEnv
-        : undefined;
+  if (!html && !text) {
+    return { error: "Either 'html' or 'text' must be provided" };
+  }
 
-    const replyTo = isNonEmptyString(payload.replyTo)
-      ? payload.replyTo
+  const fromEnv = process.env.MAILGUN_FROM;
+  const from = isNonEmptyString(payload.from)
+    ? payload.from
+    : isNonEmptyString(fromEnv)
+      ? fromEnv
       : undefined;
 
-    const logContext = {
+  const replyTo = isNonEmptyString(payload.replyTo)
+    ? payload.replyTo
+    : undefined;
+
+  const logContext = {
+    to,
+    subject,
+    from,
+    replyTo,
+    hasHtml: Boolean(html),
+    hasText: Boolean(text)
+  };
+
+  if (isDryRun) {
+    console.log('[simple-email] DRY RUN email (no send)', logContext);
+  } else {
+    await sendEmail({
       to,
       subject,
-      from,
-      replyTo,
-      hasHtml: Boolean(html),
-      hasText: Boolean(text)
-    };
-
-    if (isDryRun) {
-      // eslint-disable-next-line no-console
-      console.log('[simple-email] DRY RUN email (no send)', logContext);
-    } else {
-      // Send via the Postmaster package (Mailgun or configured provider)
-      await sendEmail({
-        to,
-        subject,
-        ...(html && { html }),
-        ...(text && { text }),
-        ...(from && { from }),
-        ...(replyTo && { replyTo })
-      });
-
-      // eslint-disable-next-line no-console
-      console.log('[simple-email] Sent email', logContext);
-    }
-
-    res.status(200).json({ complete: true });
-  } catch (err) {
-    next(err);
+      ...(html && { html }),
+      ...(text && { text }),
+      ...(from && { from }),
+      ...(replyTo && { replyTo })
+    });
+    console.log('[simple-email] Sent email', logContext);
   }
-});
 
-export default app;
+  return { complete: true, users };
+};
 
-// When executed directly (e.g. `node dist/index.js` in Knative),
-// start an HTTP server on the provided PORT (default 8080).
-if (require.main === module) {
-  const port = Number(process.env.PORT ?? 8080);
-  // @constructive-io/knative-job-fn exposes a .listen method that delegates to the underlying Express app
-  (app as any).listen(port, () => {
-    // eslint-disable-next-line no-console
-    console.log(`[simple-email] listening on port ${port}`);
-  });
-}
+// Server boilerplate abstracted to runner.js
