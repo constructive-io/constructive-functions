@@ -14,6 +14,7 @@ const NAMESPACE = 'default';
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 let k8s: KubernetesClient;
+let k8sEndpoint: string;
 
 // Helper to wait
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
@@ -31,7 +32,7 @@ async function runTestForFunction(fnName: string): Promise<boolean> {
         { name: "IS_IN_POD", value: "true" },
         { name: "NODE_TLS_REJECT_UNAUTHORIZED", value: "0" },
         { name: "PGHOST", value: "postgres" },
-        { name: "PGPASSWORD", value: process.env.PGPASSWORD || "password" },
+        { name: "PGPASSWORD", value: process.env.PGPASSWORD || "postgres123!" },
         { name: "PGUSER", value: "postgres" },
         // Inject Standard Env Vars
         { name: "STRIPE_PUBLISHABLE_KEY", value: process.env.STRIPE_PUBLISHABLE_KEY },
@@ -61,9 +62,9 @@ async function runTestForFunction(fnName: string): Promise<boolean> {
                     serviceAccountName: 'default',
                     containers: [{
                         name: 'test-runner',
-                        image: 'constructive/function-test-runner:v2',
+                        image: 'constructive/function-test-runner:v4',
                         imagePullPolicy: "IfNotPresent",
-                        command: ["/bin/sh", "-c", `npx jest functions/${fnName}/__tests__/index.test.ts`],
+                        command: ["/bin/sh", "-c", `pnpm exec jest functions/${fnName}/__tests__/index.test.ts -u`],
                         env: envVars
                     }]
                 }
@@ -145,7 +146,7 @@ async function runTestForFunction(fnName: string): Promise<boolean> {
             console.log(`[Runner] Fetching logs for ${podName}...`);
             try {
                 // replace with the kjs version
-                const res = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log`);
+                const res = await fetch(`${k8sEndpoint}/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log`);
                 logs = await res.text();
             } catch (e) {
                 console.warn("Log fetch failed", e);
@@ -189,8 +190,10 @@ async function main() {
     }
 
     // Start Proxy
-    console.log("Starting kubectl proxy...");
-    const proxy = spawn('kubectl', ['proxy', '--port=8001'], {
+    // Start Proxy with Dynamic Port to avoid collisions in parallel runs
+    const PROXY_PORT = Math.floor(Math.random() * (9000 - 8002 + 1)) + 8002;
+    console.log(`Starting kubectl proxy on port ${PROXY_PORT}...`);
+    const proxy = spawn('kubectl', ['proxy', `--port=${PROXY_PORT}`], {
         stdio: 'ignore'
     });
 
@@ -208,8 +211,11 @@ async function main() {
     await sleep(2000);
 
     // Init Client
+    // Set global endpoint for use in runTestForFunction
+    k8sEndpoint = `http://127.0.0.1:${PROXY_PORT}`;
+
     k8s = new KubernetesClient({
-        restEndpoint: 'http://127.0.0.1:8001'
+        restEndpoint: k8sEndpoint
     });
 
     try {
