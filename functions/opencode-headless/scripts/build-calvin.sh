@@ -18,10 +18,12 @@ fi
 # Ensure bun is present (Required for opencode build)
 if ! command -v bun &> /dev/null; then
     echo "[Info] bun not found. Installing bun..."
-    if command -v npm &> /dev/null; then
+    if command -v pnpm &> /dev/null; then
+         pnpm add -g bun
+    elif command -v npm &> /dev/null; then
          npm install -g bun
     else
-         echo "[Error] npm also not found. Cannot install bun."
+         echo "[Error] pnpm/npm not found. Cannot install bun."
          exit 1
     fi
 fi

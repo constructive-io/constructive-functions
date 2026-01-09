@@ -1,6 +1,8 @@
 
 import { getConnections, PgTestClient } from 'pgsql-test';
 import { KubernetesClient } from 'kubernetesjs';
+import * as path from 'path';
+require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
 
 describe('Twilio SMS Function (Integration)', () => {
     let db: PgTestClient;
@@ -21,7 +23,7 @@ describe('Twilio SMS Function (Integration)', () => {
             pg: {
                 user: 'postgres',
                 password: process.env.PGPASSWORD,
-                host: process.env.PGHOST,
+                host: process.env.IS_IN_POD === 'true' ? 'postgres' : '127.0.0.1',
                 port: Number(process.env.PGPORT || 5432),
                 database: String(process.env.PGDATABASE || `twilio_sms_test_${Math.floor(Math.random() * 100000)}`)
             },
@@ -85,7 +87,7 @@ describe('Twilio SMS Function (Integration)', () => {
             try {
                 if (!podName) {
                     const pods = await k8s.listCoreV1NamespacedPod({ path: { namespace: NAMESPACE }, query: { labelSelector: `job-name=${jobName}` } });
-                    if (pods.items && pods.items.length > 0) podName = pods.items[0].metadata.name;
+                    if (pods.items && pods.items.length > 0) podName = pods.items[0].metadata?.name || '';
                 }
                 if (podName) {
                     try {
@@ -94,6 +96,15 @@ describe('Twilio SMS Function (Integration)', () => {
                         if (logs.includes('listening on port')) {
                             success = true;
                             logsResponse = logs;
+
+                            // Trigger the function
+                            console.log('[Test] Triggering Twilio SMS...');
+                            await fetch(`http://127.0.0.1:8009/api/v1/namespaces/${NAMESPACE}/pods/${podName}/proxy/`, {
+                                method: 'POST',
+                                body: JSON.stringify({ to: '+15005550006', body: 'Test SMS from K8s' }),
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+
                             break;
                         }
                         logsResponse = logs;
@@ -101,6 +112,17 @@ describe('Twilio SMS Function (Integration)', () => {
                 }
             } catch (e) { }
             await new Promise(r => setTimeout(r, 2000));
+        }
+
+        // Fetch and Print Logs (Evidence)
+        if (podName) {
+            try {
+                const res = await fetch(`http://127.0.0.1:8009/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log`);
+                const logs = await res.text();
+                console.log('\n[Evidence] Function Pod Logs:\n' + logs + '\n');
+            } catch (e) {
+                console.warn("Failed to fetch logs for evidence", e);
+            }
         }
 
         if (!success) throw new Error(`Twilio SMS Service Failed: ${logsResponse}`);

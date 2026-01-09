@@ -17,36 +17,46 @@ const GetUsers = gql`
 `;
 
 export default async (params: any, context: any) => {
-    const { client } = context;
-    console.log('[llm-external] Request received');
-    const { provider, prompt } = params;
+  console.log('Constructive KNS: Request Received');
+  const { client } = context;
+  console.log('[llm-external] Request received');
+  const { provider, prompt } = params;
 
-    if (!prompt) return { error: "Missing prompt" };
+  if (!prompt) return { error: "Missing prompt" };
 
-    try {
-        if (provider === 'openai') {
-            const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-            const completion = await openai.chat.completions.create({
-                messages: [{ role: "user", content: prompt }],
-                model: "gpt-3.5-turbo",
-            });
+  try {
+    if (provider === 'openai') {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const completion = await openai.chat.completions.create({
+        messages: [{ role: "user", content: prompt }],
+        model: "gpt-3.5-turbo",
+      });
 
-            let users = null;
-            try {
-                const data = await client.request(GetUsers);
-                users = data?.users;
-            } catch (e: any) {
-                console.warn('GQL Request failed:', e.message);
-            }
+      let users = null;
+      try {
+        const data = await client.request(GetUsers);
+        users = data?.users;
+      } catch (e: any) {
+        console.warn('GQL Request failed:', e.message);
+      }
 
-            return { result: completion.choices[0].message.content, users };
-        } else {
-            return { error: "Unsupported provider" };
-        }
-    } catch (e: any) {
-        console.error(e);
-        return { error: e.message };
+      return { result: completion.choices[0].message.content, users };
+    } else if (provider === 'test') {
+      let users = null;
+      try {
+        const data = await client.request(GetUsers);
+        users = data?.users;
+      } catch (e: any) {
+        console.warn('GQL Request failed:', e.message);
+      }
+      return { result: "Mock logic works", users, works: true };
+    } else {
+      return { error: "Unsupported provider" };
     }
+  } catch (e: any) {
+    console.error(e);
+    return { error: e.message };
+  }
 };
 
 // Server boilerplate abstracted to runner.js

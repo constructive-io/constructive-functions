@@ -22,7 +22,7 @@
     "clean": "rimraf dist",
     "pretest": "tsc",
     "test": "jest --forceExit __tests__/index.test.ts",
-    "test:inner": "npm test",
+    "test:inner": "pnpm test",
     "start": "node ../../_runtimes/node/runner.js dist/index.js"
   },
   "jest": {
