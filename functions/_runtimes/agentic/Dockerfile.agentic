@@ -36,7 +36,8 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # 3. Install PostGraphile
-RUN npm install -g postgraphile @graphile-contrib/pg-simplify-inflector
+# 3. Install PostGraphile
+RUN npm install -g pnpm && pnpm add -g postgraphile @graphile-contrib/pg-simplify-inflector
 
 # 4. Install Ollama & Bake Models
 # We install Ollama, then start it in the background to pull models into the image layers.

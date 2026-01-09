@@ -16,6 +16,6 @@ test-k8s:
 	PGUSER=postgres \
 	PGPASSWORD=$$TEST_PGPASSWORD \
 	TEST_GRAPHQL_URL=$(TEST_GRAPHQL_URL) \
-	npm test -- functions/runtime-script/__tests__/index.test.ts || (echo "=== Proxy Logs ===" && cat proxy.log && kill $$PID && exit 1); \
+	pnpm test -- functions/runtime-script/__tests__/index.test.ts || (echo "=== Proxy Logs ===" && cat proxy.log && kill $$PID && exit 1); \
 	kill $$PID; \
 	rm proxy.log

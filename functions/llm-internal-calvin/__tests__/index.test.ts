@@ -16,14 +16,14 @@ describe('LLM Internal Calvin Function (Integration)', () => {
     beforeAll(async () => {
         // Start kubectl proxy in background to handle auth
         const { spawn } = require('child_process');
-        proxyProcess = spawn('kubectl', ['proxy', '--port=8006']);
+        proxyProcess = spawn('kubectl', ['proxy', '--port=8001']);
 
         // Wait for proxy to be ready
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Connect to local proxy
         k8s = new KubernetesClient({
-            restEndpoint: 'http://127.0.0.1:8006'
+            restEndpoint: 'http://127.0.0.1:8001'
         } as any);
 
         // Standard pgsql-test connection
@@ -113,7 +113,7 @@ describe('LLM Internal Calvin Function (Integration)', () => {
                     // Check logs for startup
                     let logs = '';
                     try {
-                        const res = await fetch(`http://127.0.0.1:8006/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
+                        const res = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
                         logs = await res.text();
                     } catch (e) { }
                     logsResponse = logs;
@@ -124,7 +124,7 @@ describe('LLM Internal Calvin Function (Integration)', () => {
                         if (!apiResult && triggers < 10) { // Retry multiple times for startup race conditions
                             try {
                                 console.log(`[Test] Triggering Cloud Function (Attempt ${triggers + 1})...`);
-                                const proxyRes = await fetch(`http://127.0.0.1:8006/api/v1/namespaces/${NAMESPACE}/pods/${podName}:8080/proxy/`, {
+                                const proxyRes = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}:8080/proxy/`, {
                                     method: 'POST',
                                     body: JSON.stringify({ prompt: "hello world" }),
                                     headers: { 'Content-Type': 'application/json' }

@@ -14,7 +14,7 @@ RUN npm install -g pnpm@9 && pnpm install --no-frozen-lockfile
 
 # 4. Build
 # 5. Install PGPM from NPM
-RUN npm install -g pgpm
+RUN pnpm add -g pgpm
 
 # Run as postgres user to avoid 'role root does not exist' in pgsql-test
 # handle existing user/group if created by apk

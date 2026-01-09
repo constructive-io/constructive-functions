@@ -1,6 +1,8 @@
 
 import { KubernetesClient } from 'kubernetesjs';
 import * as fs from 'fs';
+import * as path from 'path';
+require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
 import { createJobTeardown } from '../../test-utils';
 
 describe('LLM External Function (Integration)', () => {
@@ -10,9 +12,9 @@ describe('LLM External Function (Integration)', () => {
 
     beforeAll(async () => {
         const { spawn } = require('child_process');
-        proxyProcess = spawn('kubectl', ['proxy', '--port=8005']);
+        proxyProcess = spawn('kubectl', ['proxy', '--port=8001']);
         await new Promise(resolve => setTimeout(resolve, 2000));
-        k8s = new KubernetesClient({ restEndpoint: 'http://127.0.0.1:8005' } as any);
+        k8s = new KubernetesClient({ restEndpoint: 'http://127.0.0.1:8001' } as any);
     });
 
     afterAll(async () => {
@@ -40,7 +42,10 @@ describe('LLM External Function (Integration)', () => {
                             image: 'constructive/function-test-runner:v2',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/llm-external/src/index.ts"],
-                            env: [{ name: "OPENAI_API_KEY", value: "sk-mock-key" }, { name: "PORT", value: "8080" }]
+                            env: [
+                                { name: "OPENAI_API_KEY", value: process.env.OPENAI_API_KEY },
+                                { name: "PORT", value: "8080" }
+                            ]
                         }]
                     }
                 }
@@ -61,35 +66,48 @@ describe('LLM External Function (Integration)', () => {
                     if (pods.items && pods.items.length > 0) podName = pods.items[0].metadata.name;
                 }
                 if (podName) {
-                    // Check logs for startup
-                    let logs = '';
                     try {
-                        const res = await fetch(`http://127.0.0.1:8005/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
-                        logs = await res.text();
+                        const res = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
+                        const logs = await res.text();
+                        logsResponse = logs;
+
+                        if (logs.includes('listening on port')) {
+                            // Trigger with OpenAI payload
+                            // Trigger the function
+                            console.log('[Test] Triggering function...');
+                            const triggerRes = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}:8080/proxy/`, {
+                                method: 'POST',
+                                body: JSON.stringify({ provider: 'test', prompt: 'Can you explain the quantum field theory in simple terms?' }),
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+
+                            if (triggerRes.ok) {
+                                const body = await triggerRes.json();
+                                console.log('[Test] Response:', body);
+                                if (body.works) {
+                                    success = true;
+                                    logsResponse = logs;
+                                    break;
+                                }
+                            }
+                        }
+                        // logsResponse = logs; // update logsResponse in loop
                     } catch (e) { }
-                    logsResponse = logs;
-
-                    if (logs.includes('listening on port')) {
-                        // Once listening, trigger the function via Proxy
-                        if (triggers < 5) { // Retry trigger a few times
-                            try {
-                                await fetch(`http://127.0.0.1:8005/api/v1/namespaces/${NAMESPACE}/pods/${podName}/proxy/`, { method: 'POST', body: JSON.stringify({}), headers: { 'Content-Type': 'application/json' } });
-                                triggers++;
-                            } catch (e) { }
-                        }
-
-                        // Verify KNS activity (either success or DNS error proving intent)
-                        if (logs.includes('GetUsers') || logs.includes('constructive-server') || logs.includes('ENOTFOUND') || logs.includes('ECONNREFUSED') || logs.includes('runner')) {
-                            success = true;
-                            break;
-                        }
-                    }
                 }
             } catch (e) { }
             await new Promise(r => setTimeout(r, 2000));
         }
 
-        if (!success) throw new Error(`LLM External Service Failed (No KNS Activity detected): ${logsResponse}`);
+        // Fetch Logs
+        if (podName) {
+            try {
+                const res = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log`);
+                const logs = await res.text();
+                console.log('\n[Evidence] Function Pod Logs:\n' + logs + '\n');
+            } catch (e) { }
+        }
+
+        if (!success) throw new Error(`LLM External Service Failed: Did not receive success response.`);
         expect(success).toBe(true);
 
         await teardown();
