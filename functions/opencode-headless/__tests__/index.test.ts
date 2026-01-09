@@ -36,8 +36,9 @@ describe('Opencode Headless Function (Integration)', () => {
                             name: 'opencode-headless',
                             image: 'constructive/function-test-runner:v2',
                             imagePullPolicy: "IfNotPresent",
-                            command: ["npx", "ts-node", "functions/opencode-headless/src/index.ts"],
-                            env: [{ name: "PORT", value: "8080" }]
+                            command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/opencode-headless/src/index.ts"],
+                            env: [{ name: "PORT", value: "8080" }],
+                            ports: [{ containerPort: 8080 }]
                         }]
                     }
                 }
@@ -49,6 +50,7 @@ describe('Opencode Headless Function (Integration)', () => {
         let success = false;
         let logsResponse = '';
         let podName = '';
+        let triggered = false;
 
         for (let i = 0; i < 30; i++) {
             try {
@@ -60,16 +62,48 @@ describe('Opencode Headless Function (Integration)', () => {
                     try {
                         const res = await fetch(`http://127.0.0.1:8008/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
                         const logs = await res.text();
-                        if (logs.includes('listening on port')) {
+
+                        // Check if server is listening and we haven't triggered yet
+                        if (logs.includes('listening on port') && !triggered) {
+                            triggered = true;
+                            // Trigger the function
+                            try {
+                                console.log('Attempting to trigger opencode-headless via proxy...');
+                                const triggerRes = await fetch(`http://127.0.0.1:8008/api/v1/namespaces/${NAMESPACE}/pods/${podName}/proxy/`, {
+                                    method: 'POST',
+                                    body: JSON.stringify({ prompt: 'test' }),
+                                    headers: { 'Content-Type': 'application/json' }
+                                });
+                                console.log(`Trigger status: ${triggerRes.status} ${triggerRes.statusText}`);
+                                const text = await triggerRes.text();
+                                console.log(`Trigger response: ${text}`);
+                                if (!triggerRes.ok) console.error(text);
+                            } catch (e) {
+                                console.error('Trigger failed:', e);
+                            }
+                        }
+
+                        // Check for opencode server startup logs (only if triggered or just appearing)
+                        if (logs.includes('opencode server listening') || logs.includes('Using ConstructiveAdapter') || logs.includes('[opencode]')) {
                             success = true;
                             logsResponse = logs;
                             break;
                         }
+
                         logsResponse = logs;
                     } catch (e) { }
                 }
             } catch (e) { }
             await new Promise(r => setTimeout(r, 2000));
+        }
+
+        // Fetch and Print Logs (Evidence)
+        try {
+            const res = await fetch(`http://127.0.0.1:8008/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log`);
+            const logs = await res.text();
+            console.log('\n[Evidence] Function Pod Logs:\n' + logs + '\n');
+        } catch (e) {
+            console.warn("Failed to fetch logs for evidence", e);
         }
 
         if (!success) throw new Error(`Opencode Headless Failed: ${logsResponse}`);

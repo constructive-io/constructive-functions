@@ -1,6 +1,7 @@
 
 import { KubernetesClient } from 'kubernetesjs';
 import * as fs from 'fs';
+import { createJobTeardown } from '../../test-utils';
 
 describe('Github Repo Creator Function (Integration)', () => {
     let k8s: KubernetesClient;
@@ -22,6 +23,8 @@ describe('Github Repo Creator Function (Integration)', () => {
         const jobName = `gh-repo-create-exec-${Math.floor(Date.now() / 1000)}`;
         try { await k8s.deleteBatchV1NamespacedJob({ path: { namespace: NAMESPACE, name: jobName }, query: { propagationPolicy: 'Background' } }); } catch (e) { }
 
+        const teardown = createJobTeardown(k8s, NAMESPACE, jobName);
+
         const jobManifest = {
             apiVersion: 'batch/v1',
             kind: 'Job',
@@ -36,7 +39,7 @@ describe('Github Repo Creator Function (Integration)', () => {
                             name: 'github-repo-creator',
                             image: 'constructive/function-test-runner:v2',
                             imagePullPolicy: "IfNotPresent",
-                            command: ["npx", "ts-node", "functions/github-repo-creator/src/index.ts"],
+                            command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/github-repo-creator/src/index.ts"],
                             env: [{ name: "PORT", value: "8080" }]
                         }]
                     }
@@ -75,6 +78,6 @@ describe('Github Repo Creator Function (Integration)', () => {
         if (!success) throw new Error(`Github Repo Creator Failed: ${logsResponse}`);
         expect(success).toBe(true);
 
-        try { await k8s.deleteBatchV1NamespacedJob({ path: { namespace: NAMESPACE, name: jobName }, query: { propagationPolicy: 'Background' } }); } catch (e) { }
+        await teardown();
     }, 120000);
 });

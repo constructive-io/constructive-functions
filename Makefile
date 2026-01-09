@@ -49,12 +49,19 @@ docker-push-send-email-link:
 	docker push $(REGISTRY)/send-email-link:latest
 
 # Kubernetes Test Runner
-test-k8s-all: build-test-runner
-	@echo "Running All K8s Tests (Centralized Runner)..."
-	# Run the centralized TS test runner
+# Run All Tests inside K8s (Centralized Runner)
+test-k8s-all:
+	@echo "Running all K8s tests via centralized KubernetesJS runner..."
 	npx ts-node scripts/test-runner.ts
 
 build-test-runner:
 	@echo "Building Shared Test Runner Image..."
 	docker build -f functions/_runtimes/node/Dockerfile.test -t constructive/function-test-runner:v2 .
 	$(KIND_BIN) load docker-image constructive/function-test-runner:v2 --name interweb-local
+
+# Individual Test Shortcuts
+test-calvin:
+	pnpm --filter @constructive-io/llm-internal-calvin-fn test
+
+test-opencode-headless:
+	pnpm --filter @constructive-io/opencode-headless-fn test

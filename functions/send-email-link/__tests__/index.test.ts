@@ -70,7 +70,7 @@ describe('Send Email Link Function (Integration)', () => {
                             name: 'send-email-link',
                             image: 'constructive/function-test-runner:v2',
                             imagePullPolicy: "IfNotPresent",
-                            command: ["npx", "ts-node", "functions/send-email-link/src/index.ts"],
+                            command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/send-email-link/src/index.ts"],
                             env: [
                                 { name: "PGHOST", value: "postgres" },
                                 { name: "PGPASSWORD", value: process.env.PGPASSWORD },

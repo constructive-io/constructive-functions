@@ -1,16 +1,38 @@
-import app from '@constructive-io/knative-job-fn';
+
+import { GraphQLClient } from 'graphql-request';
 import { Pool } from 'pg';
 
-app.post('/', async (req: any, res: any) => {
+import gql from 'graphql-tag';
+import fetch from 'cross-fetch';
+
+// Proof of GQL connection
+const GetUsers = gql`
+  query GetUsers {
+    users {
+      nodes {
+        id
+        username
+      }
+    }
+  }
+`;
+
+export default async (params: any, context: any) => {
+    const { client } = context;
     console.log('[runtime-script] Received script request');
 
-    const payload = req.body;
-    const query = payload.query;
+    let users = null;
+    try {
+        const data = await client.request(GetUsers);
+        users = data?.users;
+    } catch (e: any) {
+        console.warn('GQL Request failed:', e.message);
+    }
+
+    const query = params.query;
 
     if (!query) {
-        console.error('[runtime-script] No query provided');
-        res.status(400).json({ error: 'Missing "query" in payload' });
-        return;
+        return { error: 'Missing "query" in payload' };
     }
 
     console.log('[runtime-script] Executing query:', query);
@@ -23,37 +45,32 @@ app.post('/', async (req: any, res: any) => {
         database: process.env.PGDATABASE || 'launchql'
     });
 
-    let client;
+    let poolClient;
     try {
-        client = await pool.connect();
-        const result = await client.query(query);
+        poolClient = await pool.connect();
+        const result = await poolClient.query(query);
 
         console.log(`[runtime-script] Query executed. Rows: ${result.rowCount}`);
 
-        res.status(200).json({
+        return {
             message: 'Script executed successfully',
             rowCount: result.rowCount,
-            rows: result.rows
-        });
+            rows: result.rows,
+            users
+        };
     } catch (error: any) {
         console.error('[runtime-script] Execution failed:', error);
-        res.status(500).json({
+        return {
             error: 'Script execution failed',
             details: error.message
-        });
+        };
     } finally {
-        if (client) {
-            client.release();
+        if (poolClient) {
+            poolClient.release();
         }
         await pool.end();
     }
-});
+};
 
-export default app;
 
-if (require.main === module) {
-    const port = Number(process.env.PORT ?? 8080);
-    (app as any).listen(port, () => {
-        console.log(`[runtime-script] listening on port ${port}`);
-    });
-}
+// Server boilerplate abstracted to runner.js
