@@ -13,15 +13,31 @@
     "build": "tsc -p tsconfig.json",
     "build:watch": "tsc -p tsconfig.json -w",
     "clean": "rimraf dist",
-    "lint": "eslint . --fix"
+    "lint": "eslint . --fix",
+    "pretest": "tsc",
+    "test": "jest --forceExit __tests__/index.test.ts"
   },
   "dependencies": {
-    "@constructive-io/knative-job-fn": "^0.2.7",
-    "@launchql/postmaster": "0.1.4",
-    "@pgpmjs/env": "^2.9.2"
+    "@constructive-io/knative-job-fn": "latest",
+    "@launchql/postmaster": "latest",
+    "@pgpmjs/env": "latest"
   },
   "devDependencies": {
-    "@types/node": "^22.10.4",
-    "typescript": "^5.1.6"
+    "@types/node": "latest",
+    "@types/jest": "latest",
+    "jest": "latest",
+    "ts-jest": "latest",
+    "typescript": "latest",
+    "kubernetesjs": "latest",
+    "pgsql-test": "latest",
+    "rimraf": "latest"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "modulePathIgnorePatterns": [
+      "<rootDir>/dist/",
+      "<rootDir>/node_modules/"
+    ]
   }
 }
