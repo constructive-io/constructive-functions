@@ -1,6 +1,7 @@
 
 import { KubernetesClient } from 'kubernetesjs';
 import * as fs from 'fs';
+import fetch from 'cross-fetch';
 import { createJobTeardown } from '../../test-utils';
 
 // Mock interaction is hard without actually signing. 
