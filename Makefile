@@ -74,3 +74,12 @@ test-llm-external:
 
 test-email:
 	pnpm exec ts-node scripts/test-runner.ts --function send-email-link
+
+# Cleanup K8s Resources
+k8s-clean:
+	@echo "Cleaning up K8s jobs for constructive-functions..."
+	# Delete all jobs matching test-* or *-exec-* pattern (batch delete)
+	@kubectl get jobs -n default --no-headers -o custom-columns=":metadata.name" | grep -E "^test-|-exec-" | xargs kubectl delete job -n default --ignore-not-found || true
+	# Delete all pods matching test-* or *-exec-* pattern (orphaned pods) (batch delete)
+	@kubectl get pods -n default --no-headers -o custom-columns=":metadata.name" | grep -E "^test-|-exec-" | xargs kubectl delete pod -n default --ignore-not-found || true
+	@echo "Done."
