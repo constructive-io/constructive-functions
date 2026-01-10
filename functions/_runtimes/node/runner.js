@@ -74,7 +74,12 @@ const run = async () => {
     }
 
     // 4. Setup GraphQL Client
-    const client = new GraphQLClient(process.env.GRAPHQL_ENDPOINT || 'http://constructive-server:3000/graphql');
+    const graphqlEndpoint = process.env.GRAPHQL_ENDPOINT || 'http://constructive-server:3000/graphql';
+    if (!process.env.GRAPHQL_ENDPOINT) {
+        // Warn if falling back, to aid debugging
+        console.warn(`[runner] GRAPHQL_ENDPOINT not set, defaulting to internal k8s service: ${graphqlEndpoint}`);
+    }
+    const client = new GraphQLClient(graphqlEndpoint);
 
     // 5. Setup Route
     app.post('/', async (req, res) => {
