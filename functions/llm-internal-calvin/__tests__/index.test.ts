@@ -82,7 +82,7 @@ describe('LLM Internal Calvin Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'llm-internal-calvin',
-                            image: 'constructive/function-test-runner:v2',
+                            image: 'constructive/function-test-runner:v4',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/llm-internal-calvin/src/index.ts"],
                             env: [

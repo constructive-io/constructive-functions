@@ -77,7 +77,7 @@ describe('Hello World Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'hello-world',
-                            image: 'constructive/function-test-runner:v2',
+                            image: 'constructive/function-test-runner:v4',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/hello-world/src/index.ts"],
                             env: [
