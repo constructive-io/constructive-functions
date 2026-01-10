@@ -25,6 +25,24 @@ jobs:
   k8s-ci-test:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        function:
+          - hello-world
+          - llm-internal-calvin
+          - opencode-headless
+          - twilio-sms
+          - llm-external
+          - send-email-link
+          - crypto-login
+          - github-repo-creator
+          - pytorch-gpu
+          - runtime-script
+          - rust-hello-world
+          - simple-bash
+          - simple-email
+          - stripe-function
 
     steps:
       - name: Checkout
@@ -212,7 +230,7 @@ jobs:
       - name: Run K8s Tests
         run: |
           # Ensure kubectl proxy port is available or managed by the runner
-          make test-k8s-all
+          pnpm exec ts-node scripts/test-runner.ts --function ${{ matrix.function }}
 
 
       - name: Dump diagnostics on failure

@@ -86,7 +86,7 @@ describe('LLM Internal Calvin Function (Integration)', () => {
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/llm-internal-calvin/src/index.ts"],
                             env: [
-                                { name: "CALVIN_API_KEY", value: "42ee96e2cf9c616c81f5b361b36c899d7bda0e1495fb4b98b46a208c923c35e7" },
+                                { name: "CALVIN_API_KEY", value: process.env.CALVIN_API_KEY },
                                 { name: "PORT", value: "8080" }
                             ]
                         }]
