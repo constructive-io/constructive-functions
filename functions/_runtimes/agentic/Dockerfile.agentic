@@ -1,0 +1,73 @@
+# Python runtime for LLM API inference (OpenAI & Claude)
+# This module makes API calls to OpenAI and Anthropic for LLM inference
+# For the full fat container with Ollama & local models, see Dockerfile.ollama
+# Based on: /Users/0xj0/Documents/projects/LQL/CONSTRUCTIVE/agentic-foundation
+
+##################### heres what is had inside of (/Users/0xj0/Documents/projects/LQL/CONSTRUCTIVE/agentic-foundation) -- GO VERIFY YOURSELF
+
+# Builder Stage
+FROM rust:latest as builder
+WORKDIR /app
+COPY . .
+# Build agent_core
+RUN cargo build --release --bin agent_core
+
+# Runtime Stage - "Fat Container"
+FROM ubuntu:22.04
+WORKDIR /app
+
+# Set non-interactive install
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 1. Install Basic Tools & Runtimes (Python, Node, System Utils)
+RUN apt-get update && apt-get install -y \
+    curl wget git build-essential \
+    python3 python3-pip python3-venv \
+    nodejs npm \
+    postgresql-14 postgresql-client-14 \
+    sudo \
+    libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 \
+    libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2 \
+    chromium-browser \
+    && rm -rf /var/lib/apt/lists/*
+
+# 2. Install Rust in Runtime (for the agent to use `cargo`)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# 3. Install PostGraphile
+RUN npm install -g postgraphile @graphile-contrib/pg-simplify-inflector
+
+# 4. Install Ollama & Bake Models
+# We install Ollama, then start it in the background to pull models into the image layers.
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
+# Pre-pull Models (Using available equivalents for the '2025' spec models)
+# GPT-OSS -> llama3.2 (Small, open, robust)
+# Qwen3-VL -> llava (Vision model standard in Ollama)
+# Devstral -> qwen2.5-coder (Excellent coding model)
+# Nemotron -> mistral (Strong reasoning)
+RUN nohup bash -c "ollama serve" & \
+    sleep 10 && \
+    ollama pull llama3.2 && \
+    ollama pull llava && \
+    ollama pull qwen2.5-coder && \
+    ollama pull mistral && \
+    pkill ollama
+
+# 5. Setup Data & Permissions
+RUN mkdir -p /var/lib/postgresql/data && chown -R postgres:postgres /var/lib/postgresql/data
+
+# 6. Copy Binaries & Scripts
+COPY --from=builder /app/target/release/agent_core /app/agent_core
+COPY scripts/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# 7. Config
+ENV DATABASE_URL=postgres://agent:agent@localhost:5432/agentic
+ENV OLLAMA_HOST=0.0.0.0:11434
+
+EXPOSE 3000 5432 11434 5000
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["./agent_core"]

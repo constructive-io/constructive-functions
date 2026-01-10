@@ -1,0 +1,34 @@
+FROM node:20-alpine
+
+# Install Bash
+RUN apk add --no-cache bash
+
+WORKDIR /app
+
+# Copy Function Context
+COPY functions/simple-bash /app
+
+# Install Dependencies
+RUN npm install -g pnpm@9 && pnpm install
+
+# Install Dependencies
+RUN pnpm install --frozen-lockfile
+
+# Note: We don't strictly need pgpm for simple-bash, but keeping it for consistency if tests evolve
+# and because k8s_runner might use libs that need it?
+# Actually, k8s_runner is in this dir. It uses kubernetesjs.
+# But keeping the full monorepo build ensures robustness.
+
+# Note: PGPM build steps removed for simple-bash as it doesn't utilize Postgres/PGPM
+
+# Setup Entrypoint
+# Setup Entrypoint
+COPY functions/simple-bash/test-entrypoint.sh /test-entrypoint.sh
+RUN chmod +x /test-entrypoint.sh && chmod +x /app/src/index.sh
+
+# Environment Defaults
+ENV NODE_ENV=test
+
+WORKDIR /app
+
+ENTRYPOINT ["/test-entrypoint.sh"]
