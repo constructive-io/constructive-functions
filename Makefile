@@ -1,7 +1,11 @@
 .PHONY: build clean lint test test-all build-test-runner docker-build docker-build-simple-email docker-build-send-email-link docker-push docker-push-simple-email docker-push-send-email-link
 
 REGISTRY := ghcr.io/constructive-io/constructive-functions
-KIND_BIN ?= /opt/homebrew/bin/kind
+# Detect kind binary (search PATH, fallback to Homebrew)
+KIND_BIN := $(shell which kind)
+ifeq ($(KIND_BIN),)
+    KIND_BIN := /opt/homebrew/bin/kind
+endif
 
 SUBDIRS := functions/hello-world functions/simple-email functions/send-email-link functions/runtime-script
 
