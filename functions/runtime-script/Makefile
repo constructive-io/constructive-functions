@@ -10,12 +10,12 @@ test-k8s:
 	sleep 2; \
 	ENV_NAMES="PGHOST,PGPASSWORD,PGUSER" \
 	TEST_PGPASSWORD=$$(kubectl get secret pg-credentials -o jsonpath="{.data.PGPASSWORD}" | base64 --decode) \
-	IMAGE_NAME="constructive/function-test-runner:v1" \
+	IMAGE_NAME="constructive/function-test-runner:v4" \
 	IS_IN_POD="false" \
 	PGHOST=postgres \
 	PGUSER=postgres \
 	PGPASSWORD=$$TEST_PGPASSWORD \
 	TEST_GRAPHQL_URL=$(TEST_GRAPHQL_URL) \
-	npm test -- functions/runtime-script/__tests__/index.test.ts || (echo "=== Proxy Logs ===" && cat proxy.log && kill $$PID && exit 1); \
+	pnpm test -- functions/runtime-script/__tests__/index.test.ts || (echo "=== Proxy Logs ===" && cat proxy.log && kill $$PID && exit 1); \
 	kill $$PID; \
 	rm proxy.log

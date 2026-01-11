@@ -44,7 +44,7 @@ describe('Send Email Link Function (Integration)', () => {
         if (proxyProcess) proxyProcess.kill();
     });
 
-    it('should orchestrate send-email-link service', async () => {
+    it('should orchestrate send-email-link service and verify trigger', async () => {
         const jobName = `send-email-link-exec-${Math.floor(Date.now() / 1000)}`;
 
         // 1. Clean up potential leftovers
@@ -68,13 +68,15 @@ describe('Send Email Link Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'send-email-link',
-                            image: 'constructive/function-test-runner:v2',
+                            image: 'constructive/function-test-runner:v4',
                             imagePullPolicy: "IfNotPresent",
-                            command: ["npx", "ts-node", "functions/send-email-link/src/index.ts"],
+                            command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/send-email-link/src/index.ts"],
                             env: [
                                 { name: "PGHOST", value: "postgres" },
                                 { name: "PGPASSWORD", value: process.env.PGPASSWORD },
                                 { name: "PORT", value: "8080" },
+                                { name: "GRAPHQL_URL", value: "http://mock-graphql" },
+                                { name: "SEND_EMAIL_LINK_DRY_RUN", value: "true" },
                                 { name: "MAILGUN_DOMAIN", value: "example.com" },
                                 { name: "MAILGUN_FROM", value: "no-reply@example.com" },
                                 { name: "MAILGUN_REPLY", value: "no-reply@example.com" },
@@ -97,9 +99,10 @@ describe('Send Email Link Function (Integration)', () => {
         let logsResponse = '';
         let podName = '';
         let success = false;
+        let triggerSuccess = false;
 
         // Poll for Pod and check status/logs
-        for (let i = 0; i < 45; i++) {
+        for (let i = 0; i < 60; i++) {
             try {
                 if (!podName) {
                     const pods = await k8s.listCoreV1NamespacedPod({
@@ -113,18 +116,48 @@ describe('Send Email Link Function (Integration)', () => {
                 }
 
                 if (podName) {
+                    // Check logs for startup
                     try {
                         const res = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
                         const logs = await res.text();
+                        if (logs) logsResponse = logs;
 
                         if (logs.includes('listening on port')) {
-                            console.log(`[Test] Service is listening! Success.`);
-                            logsResponse = logs;
                             success = true;
-                            break;
                         }
-                        if (logs) logsResponse = logs;
                     } catch (e) { }
+
+                    // If started, try to trigger
+                    if (success && !triggerSuccess) {
+                        try {
+                            console.log('[Test] Attempting to trigger function...');
+                            const triggerRes = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}:8080/proxy/`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-Database-Id': '00000000-0000-0000-0000-000000000000'
+                                },
+                                body: JSON.stringify({
+                                    email_type: 'unknown_type_for_validation_check',
+                                    email: 'test@example.com'
+                                })
+                            });
+
+                            const json = await triggerRes.json();
+                            console.log('[Test] Trigger response:', json);
+
+                            // We expect { missing: 'email_type' } because we passed a valid 'non-matching' type? 
+                            // Wait, 'unknown_type_for_validation_check' falls to default case in switch -> return { missing: 'email_type' }?
+                            // Actually switch default returns { missing: 'email_type' } based on code?
+                            // Checked code: default returns { missing: 'email_type' }.
+
+                            if (json && json.missing === 'email_type') {
+                                triggerSuccess = true;
+                                console.log('[Test] Trigger Verification Succeeded!');
+                                break;
+                            }
+                        } catch (e) { console.log('Trigger failed:', e); }
+                    }
                 }
             } catch (e) { }
             await new Promise(r => setTimeout(r, 1000));
@@ -133,9 +166,12 @@ describe('Send Email Link Function (Integration)', () => {
         if (!success) {
             throw new Error(`Service failed to start. Logs: ${logsResponse}`);
         }
+        if (!triggerSuccess) {
+            throw new Error(`Service started but failed to verify trigger. Logs: ${logsResponse}`);
+        }
 
         expect(success).toBe(true);
-        expect(logsResponse).toContain('listening on port');
+        expect(triggerSuccess).toBe(true);
 
         // Cleanup
         try {

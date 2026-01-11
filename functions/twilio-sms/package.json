@@ -1,0 +1,47 @@
+{
+    "name": "@constructive-io/twilio-sms-fn",
+    "version": "0.1.0",
+    "description": "Twilio SMS Cloud Function",
+    "private": false,
+    "publishConfig": {
+        "access": "public",
+        "directory": "dist"
+    },
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "clean": "rimraf dist",
+        "pretest": "tsc",
+        "test": "jest --forceExit __tests__/index.test.ts",
+        "start": "node ../../_runtimes/node/runner.js dist/index.js"
+    },
+    "dependencies": {
+        "@constructive-io/knative-job-fn": "latest",
+        "twilio": "^4.23.0",
+        "graphql-tag": "^2.12.6",
+        "cross-fetch": "^4.0.0",
+        "graphql-request": "^6.1.0"
+    },
+    "devDependencies": {
+        "pgsql-test": "latest",
+        "@types/node": "^22.10.4",
+        "@types/jest": "^29.5.12",
+        "jest": "^29.7.0",
+        "ts-jest": "^29.1.2",
+        "typescript": "^5.1.6"
+    },
+    "jest": {
+        "preset": "ts-jest",
+        "testEnvironment": "node",
+        "testMatch": [
+            "**/__tests__/**/*.test.ts"
+        ],
+        "modulePathIgnorePatterns": [
+            "<rootDir>/dist/"
+        ]
+    }
+}

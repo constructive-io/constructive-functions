@@ -70,9 +70,9 @@ describe('Runtime Script Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'runtime-script',
-                            image: 'constructive/function-test-runner:v2',
+                            image: 'constructive/function-test-runner:v4',
                             imagePullPolicy: "IfNotPresent",
-                            command: ["npx", "ts-node", "functions/runtime-script/src/index.ts"],
+                            command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/runtime-script/src/index.ts"],
                             env: [
                                 { name: "PGHOST", value: "postgres" },
                                 { name: "PGPASSWORD", value: process.env.PGPASSWORD },

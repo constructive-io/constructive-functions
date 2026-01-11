@@ -3,8 +3,16 @@
   "version": "0.2.19",
   "description": "Simple Knative email function that sends emails directly from job payload",
   "author": "Constructive",
-  "private": true,
+  "private": false,
+  "publishConfig": {
+    "access": "public",
+    "directory": "dist"
+  },
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "directories": {
     "lib": "src",
     "test": "__tests__"
@@ -15,12 +23,17 @@
     "clean": "rimraf dist",
     "lint": "eslint . --fix",
     "pretest": "tsc",
-    "test": "jest --forceExit __tests__/index.test.ts"
+    "test": "jest --forceExit __tests__/index.test.ts",
+    "test:inner": "npm test",
+    "start": "node ../../_runtimes/node/runner.js dist/index.js"
   },
   "dependencies": {
     "@constructive-io/knative-job-fn": "latest",
     "@launchql/postmaster": "latest",
-    "@pgpmjs/env": "latest"
+    "@pgpmjs/env": "latest",
+    "graphql-tag": "^2.12.6",
+    "cross-fetch": "^4.0.0",
+    "graphql-request": "^6.1.0"
   },
   "devDependencies": {
     "@types/node": "latest",
