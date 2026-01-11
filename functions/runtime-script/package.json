@@ -3,23 +3,35 @@
     "version": "0.0.1",
     "description": "Runtime Script Runner using pgsql-test",
     "author": "Constructive",
-    "private": true,
+    "private": false,
+    "publishConfig": {
+        "access": "public",
+        "directory": "dist"
+    },
     "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "build": "tsc -p tsconfig.json",
         "build:watch": "tsc -p tsconfig.json -w",
         "clean": "rimraf dist",
         "lint": "eslint . --fix",
-        "pretest": "pnpm build:test-image && kind load docker-image constructive/runtime-script-test:v1 --name interweb-local",
-        "test": "jest __tests__/k8s_runner.test.ts",
-        "test:inner": "jest __tests__/index.test.ts",
+        "pretest": "tsc",
+        "test": "jest --forceExit __tests__/index.test.ts",
+        "test:inner": "pnpm test",
+        "start": "node ../../_runtimes/node/runner.js dist/index.js",
         "build:test-image": "docker build -t constructive/runtime-script-test:v1 -f Dockerfile.test ../../"
     },
     "dependencies": {
         "@constructive-io/knative-job-fn": "latest",
         "@pgpmjs/env": "latest",
         "kubernetesjs": "^0.7.6",
-        "pg": "^8.11.3"
+        "pg": "^8.11.3",
+        "graphql-tag": "^2.12.6",
+        "cross-fetch": "^4.0.0",
+        "graphql-request": "^6.1.0"
     },
     "devDependencies": {
         "pgsql-test": "latest",

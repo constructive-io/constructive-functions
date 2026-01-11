@@ -25,6 +25,24 @@ jobs:
   k8s-ci-test:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        function:
+          - hello-world
+          - llm-internal-calvin
+          - opencode-headless
+          - twilio-sms
+          - llm-external
+          - send-email-link
+          - crypto-login
+          - github-repo-creator
+          - pytorch-gpu
+          - runtime-script
+          - rust-hello-world
+          - simple-bash
+          - simple-email
+          - stripe-function
 
     steps:
       - name: Checkout
@@ -195,6 +213,29 @@ jobs:
 
           echo "All pods (final):" && kubectl get pods -A
           echo "Knative services:" && kubectl get ksvc -A || true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build and Load Test Runner Image
+        run: |
+          make build-test-runner KIND_CLUSTER_NAME=local
+
+      - name: Run K8s Tests
+        run: |
+          # Ensure kubectl proxy port is available or managed by the runner
+          pnpm exec ts-node scripts/test-runner.ts --function ${{ matrix.function }}
+
 
       - name: Dump diagnostics on failure
         if: always()

@@ -1,7 +1,12 @@
 .PHONY: build clean lint test test-all build-test-runner docker-build docker-build-simple-email docker-build-send-email-link docker-push docker-push-simple-email docker-push-send-email-link
 
 REGISTRY := ghcr.io/constructive-io/constructive-functions
-KIND_BIN ?= /opt/homebrew/bin/kind
+# Detect kind binary (search PATH, fallback to Homebrew)
+KIND_BIN := $(shell which kind)
+ifeq ($(KIND_BIN),)
+    KIND_BIN := /opt/homebrew/bin/kind
+endif
+KIND_CLUSTER_NAME ?= interweb-local
 
 SUBDIRS := functions/hello-world functions/simple-email functions/send-email-link functions/runtime-script
 
@@ -49,12 +54,37 @@ docker-push-send-email-link:
 	docker push $(REGISTRY)/send-email-link:latest
 
 # Kubernetes Test Runner
-test-k8s-all: build-test-runner
-	@echo "Running All K8s Tests (Centralized Runner)..."
-	# Run the centralized TS test runner
-	npx ts-node scripts/test-runner.ts
+# Run All Tests inside K8s (Centralized Runner)
+test-k8s-all:
+	@echo "Running all K8s tests via centralized KubernetesJS runner..."
+	pnpm exec ts-node scripts/test-runner.ts
 
 build-test-runner:
 	@echo "Building Shared Test Runner Image..."
-	docker build -f functions/_runtimes/node/Dockerfile.test -t constructive/function-test-runner:v2 .
-	$(KIND_BIN) load docker-image constructive/function-test-runner:v2 --name interweb-local
+	docker build -f functions/_runtimes/node/Dockerfile.test -t constructive/function-test-runner:v4 .
+	$(KIND_BIN) load docker-image constructive/function-test-runner:v4 --name $(KIND_CLUSTER_NAME)
+
+# Individual Test Shortcuts
+test-calvin:
+	pnpm exec ts-node scripts/test-runner.ts --function llm-internal-calvin
+
+test-opencode-headless:
+	pnpm exec ts-node scripts/test-runner.ts --function opencode-headless
+
+test-twilio:
+	pnpm exec ts-node scripts/test-runner.ts --function twilio-sms
+
+test-llm-external:
+	pnpm exec ts-node scripts/test-runner.ts --function llm-external
+
+test-email:
+	pnpm exec ts-node scripts/test-runner.ts --function send-email-link
+
+# Cleanup K8s Resources
+k8s-clean:
+	@echo "Cleaning up K8s jobs for constructive-functions..."
+	# Delete all jobs matching test-* or *-exec-* pattern (batch delete)
+	@kubectl get jobs -n default --no-headers -o custom-columns=":metadata.name" | grep -E "^test-|-exec-" | xargs kubectl delete job -n default --ignore-not-found || true
+	# Delete all pods matching test-* or *-exec-* pattern (orphaned pods) (batch delete)
+	@kubectl get pods -n default --no-headers -o custom-columns=":metadata.name" | grep -E "^test-|-exec-" | xargs kubectl delete pod -n default --ignore-not-found || true
+	@echo "Done."

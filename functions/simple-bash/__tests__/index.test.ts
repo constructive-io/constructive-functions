@@ -70,7 +70,7 @@ describe('Simple Bash Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'simple-bash',
-                            image: 'constructive/function-test-runner:v2',
+                            image: 'constructive/function-test-runner:v4',
                             imagePullPolicy: "IfNotPresent",
                             // Corrected script path to index.sh
                             command: ["/bin/bash", "functions/simple-bash/src/index.sh", "arg1"],

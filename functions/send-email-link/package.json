@@ -3,8 +3,16 @@
   "version": "0.2.18",
   "description": "Knative function to send email links (invite, password reset, email verification) using Constructive jobs",
   "author": "Constructive",
-  "private": true,
+  "private": false,
+  "publishConfig": {
+    "access": "public",
+    "directory": "dist"
+  },
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "directories": {
     "lib": "src",
     "test": "__tests__"
@@ -16,7 +24,8 @@
     "lint": "eslint . --fix",
     "pretest": "tsc",
     "test": "jest --forceExit __tests__/index.test.ts",
-    "test:inner": "jest __tests__/index.test.ts",
+    "test:inner": "npm test",
+    "start": "node ../../_runtimes/node/runner.js dist/index.js",
     "build:test-image": "docker build -t constructive/send-email-link-test:v1 -f ../_runtimes/node/Dockerfile.test ."
   },
   "dependencies": {
@@ -27,6 +36,7 @@
     "@pgpmjs/env": "latest",
     "graphql-request": "^7.1.2",
     "graphql-tag": "^2.12.6",
+    "cross-fetch": "^4.0.0",
     "kubernetesjs": "^0.7.6"
   },
   "devDependencies": {
