@@ -46,7 +46,7 @@ describe('Crypto Login Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'crypto-login',
-                            image: 'constructive/function-test-runner:v2',
+                            image: 'constructive/function-test-runner:v4',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/crypto-login/src/index.ts"],
                             env: [

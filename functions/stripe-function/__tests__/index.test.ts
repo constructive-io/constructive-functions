@@ -40,7 +40,7 @@ describe('Stripe Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'stripe-fn',
-                            image: 'constructive/function-test-runner:v2', // Node runner
+                            image: 'constructive/function-test-runner:v4', // Node runner
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/stripe-function/src/index.ts"],
                             env: [{ name: "STRIPE_SECRET_KEY", value: "sk_test_mock_123" }]

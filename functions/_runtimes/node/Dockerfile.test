@@ -9,11 +9,20 @@ WORKDIR /app
 # Ensure clean slate
 RUN rm -rf node_modules
 
-# 3. Install Dependencies from NPM
-RUN npm install -g pnpm@9 && pnpm install --no-frozen-lockfile
+# 3. Configure PNPM Home
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+ENV SHELL="/bin/bash"
 
-# 4. Build
-# 5. Install PGPM from NPM
+# 4. Install Dependencies from NPM
+RUN npm install -g pnpm@9 && \
+    pnpm setup && \
+    pnpm install --no-frozen-lockfile
+
+# 5. Connect to global (not needed for pnpm v9+)
+# RUN pnpm route-global
+
+# 6. Install PGPM from NPM
 RUN pnpm add -g pgpm
 
 # Run as postgres user to avoid 'role root does not exist' in pgsql-test

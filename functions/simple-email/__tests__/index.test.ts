@@ -68,7 +68,7 @@ describe('Simple Email Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'simple-email',
-                            image: 'constructive/function-test-runner:v2',
+                            image: 'constructive/function-test-runner:v4',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/simple-email/src/index.ts"],
                             env: [
