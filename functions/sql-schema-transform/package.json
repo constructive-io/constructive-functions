@@ -1,0 +1,36 @@
+{
+  "name": "@constructive-io/sql-schema-transform-fn",
+  "version": "0.0.1",
+  "description": "Knative function to transform schema names in SQL using AST-based parsing",
+  "author": "Constructive",
+  "private": false,
+  "publishConfig": {
+    "access": "public",
+    "directory": "dist"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "directories": {
+    "lib": "src",
+    "test": "__tests__"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json -w",
+    "clean": "rimraf dist",
+    "lint": "eslint . --fix",
+    "start": "node ../../_runtimes/node/runner.js dist/index.js"
+  },
+  "dependencies": {
+    "@constructive-io/knative-job-fn": "latest",
+    "@pgsql/traverse": "^17.2.4",
+    "plpgsql-parser": "^0.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.4",
+    "typescript": "^5.1.6"
+  }
+}
