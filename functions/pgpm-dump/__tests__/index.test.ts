@@ -3,7 +3,7 @@ import { getConnections, PgTestClient } from 'pgsql-test';
 import { KubernetesClient } from 'kubernetesjs';
 import * as fs from 'fs';
 
-describe('Hello World Function (Integration)', () => {
+describe('Pgpm Dump Function (Integration)', () => {
     let db: PgTestClient;
     let pg: PgTestClient;
     let teardown: () => Promise<void>;
@@ -23,18 +23,7 @@ describe('Hello World Function (Integration)', () => {
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         // database connection in the pod
-        ({ pg, db, teardown } = await getConnections({
-            pg: {
-                user: 'postgres',
-                password: process.env.PGPASSWORD,
-                host: process.env.PGHOST,
-                port: Number(process.env.PGPORT || 5432),
-                database: String(process.env.PGDATABASE || `hello_world_test_${Math.floor(Math.random() * 100000)}`)
-            },
-            db: {
-                connections: { app: { user: 'postgres', password: process.env.PGPASSWORD } }
-            }
-        }));
+        ({ pg, db, teardown } = await getConnections());
 
         // Connect to local proxy
         k8s = new KubernetesClient({
@@ -48,8 +37,8 @@ describe('Hello World Function (Integration)', () => {
         if (proxyProcess) proxyProcess.kill();
     });
 
-    it('should orchestrate the hello-world job and verify completion', async () => {
-        const jobName = `hello-world-exec-${Math.floor(Date.now() / 1000)}`;
+    it('should orchestrate the pgpm-dump job and verify completion', async () => {
+        const jobName = `pgpm-dump-exec-${Math.floor(Date.now() / 1000)}`;
         console.log(`[Test] Orchestrating Job: ${jobName}`);
 
         // 1. Clean up potential leftovers
@@ -60,14 +49,14 @@ describe('Hello World Function (Integration)', () => {
             });
         } catch (e) { }
 
-        // 2. Create the Hello World Job
+        // 2. Create the Job
         const jobManifest = {
             apiVersion: 'batch/v1',
             kind: 'Job',
             metadata: {
                 name: jobName,
                 namespace: NAMESPACE,
-                labels: { "job-name": jobName, "app": "hello-world" }
+                labels: { "job-name": jobName, "app": "pgpm-dump" }
             },
             spec: {
                 backoffLimit: 0,
@@ -76,12 +65,14 @@ describe('Hello World Function (Integration)', () => {
                     spec: {
                         restartPolicy: 'Never',
                         containers: [{
-                            name: 'hello-world',
+                            name: 'pgpm-dump',
                             image: 'constructive/function-test-runner:v4',
                             imagePullPolicy: "IfNotPresent",
-                            command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/hello-world/src/index.ts"],
+                            command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/pgpm-dump/src/index.ts"],
                             env: [
                                 { name: "PGHOST", value: "postgres" },
+                                { name: "PGUSER", value: "postgres" },
+                                { name: "PGDATABASE", value: "postgres" },
                                 { name: "PGPASSWORD", value: process.env.PGPASSWORD }
                             ]
                         }]
@@ -127,6 +118,72 @@ describe('Hello World Function (Integration)', () => {
                             console.log(`[Test] Service is listening! Success.`);
                             console.log('\n[Evidence] Function Pod Logs:\n' + logs + '\n');
                             logsResponse = logs;
+
+
+                            // Now verify the function actually works by invoking it via the proxy
+                            console.log(`[Test] Invoking pgpm-dump function via proxy...`);
+                            // K8s API Proxy URL to reach the pod directly
+                            const proxyUrl = `http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}:8080/proxy/`;
+
+                            const dumpFile = '/tmp/test_dump.sql';
+
+                            const invokeRes = await fetch(proxyUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    "database": "postgres",
+                                    "out": dumpFile,
+                                    "user": "postgres", // Ensure explicit user if needed
+                                    // No dry-run, we want the real deal
+                                })
+                            });
+
+                            if (!invokeRes.ok) {
+                                throw new Error(`Invocation failed: ${invokeRes.status} ${invokeRes.statusText}`);
+                            }
+
+                            const invokeJson = await invokeRes.json();
+                            console.log('[Test] Invocation Response:', JSON.stringify(invokeJson));
+
+                            if (invokeJson.error) {
+                                throw new Error(`PGPM Dump internal error: ${invokeJson.error}`);
+                            }
+
+                            if (invokeJson.message !== 'PGPM Dump executed successfully') {
+                                throw new Error(`Unexpected response message: ${invokeJson.message}`);
+                            }
+
+                            console.log('[Test] Function invocation reported success. Verifying file existence in pod...');
+
+                            // Verification: Check if the file exists and has content
+                            // We use kubectl exec via child_process because the kubernetesjs REST client 
+                            // does not support WebSocket/SPDY upgrades required for 'exec' streams.
+                            const { exec } = require('child_process');
+                            const execCmd = `kubectl exec ${podName} -n ${NAMESPACE} -- ls -l ${dumpFile}`;
+
+                            await new Promise<void>((resolve, reject) => {
+                                exec(execCmd, (error: any, stdout: string, stderr: string) => {
+                                    if (error) {
+                                        console.error(`[Test] Exec Error: ${error.message}`);
+                                        reject(new Error(`Failed to find dumped file inside pod: ${stderr}`));
+                                        return;
+                                    }
+                                    console.log(`[Test] File check output: ${stdout.trim()}`);
+                                    if (!stdout.includes(dumpFile)) {
+                                        reject(new Error(`File ${dumpFile} not found in ls output`));
+                                        return;
+                                    }
+                                    resolve();
+                                });
+                            });
+
+                            console.log('[Test] Verified: SQL dump file exists inside the container.');
+
+                            // Capture logs one last time to show the pgpm dump output
+                            const finalLogsRes = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=200`);
+                            const finalLogs = await finalLogsRes.text();
+                            console.log('\n[Evidence] Final Pod Logs (incl. Dump Output):\n' + finalLogs + '\n');
+
                             success = true;
                             break;
                         }

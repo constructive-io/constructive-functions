@@ -37,7 +37,7 @@ describe('Github Repo Creator Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'github-repo-creator',
-                            image: 'constructive/function-test-runner:v2',
+                            image: 'constructive/function-test-runner:v4',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/github-repo-creator/src/index.ts"],
                             env: [{ name: "PORT", value: "8080" }]
