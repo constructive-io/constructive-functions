@@ -6,6 +6,7 @@ KIND_BIN := $(shell which kind)
 ifeq ($(KIND_BIN),)
     KIND_BIN := /opt/homebrew/bin/kind
 endif
+KIND_CLUSTER_NAME ?= interweb-local
 
 SUBDIRS := functions/hello-world functions/simple-email functions/send-email-link functions/runtime-script
 
@@ -61,7 +62,7 @@ test-k8s-all:
 build-test-runner:
 	@echo "Building Shared Test Runner Image..."
 	docker build -f functions/_runtimes/node/Dockerfile.test -t constructive/function-test-runner:v4 .
-	$(KIND_BIN) load docker-image constructive/function-test-runner:v4 --name interweb-local
+	$(KIND_BIN) load docker-image constructive/function-test-runner:v4 --name $(KIND_CLUSTER_NAME)
 
 # Individual Test Shortcuts
 test-calvin:
