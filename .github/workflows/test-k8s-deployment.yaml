@@ -229,10 +229,7 @@ jobs:
 
       - name: Build and Load Test Runner Image
         run: |
-          make build-test-runner
-          # The make target uses v3, but runner uses v4. Let's tag it v4 to match test-runner.ts
-          docker tag constructive/function-test-runner:v3 constructive/function-test-runner:v4
-          kind load docker-image constructive/function-test-runner:v4 --name local
+          make build-test-runner KIND_CLUSTER_NAME=local
 
       - name: Run K8s Tests
         run: |
