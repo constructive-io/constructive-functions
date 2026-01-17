@@ -1,0 +1,26 @@
+FROM node:22-alpine
+WORKDIR /runtime
+
+# Install Runtime Dependencies
+# We install these globally or in the runtime dir so runner.js can find them via __dirname
+RUN npm install -g pnpm@10.12.2
+
+# Initialize a package.json to hold deps
+RUN echo '{}' > package.json
+
+# Install common runtime deps
+RUN pnpm install express@4.18.2 body-parser@1.20.2 graphql-request@6.1.0 pg@8.11.3 cross-fetch@4.0.0
+
+# Copy the runner script
+COPY runner.js .
+
+# Set Environment defaults
+ENV PORT=8080
+ENV USER_CODE_PATH=/usr/src/app
+
+# The user's code will be mounted/copied here
+WORKDIR /usr/src/app
+
+# Default Command: Log that we need a script, or try to run index.js
+# We use the absolute path to runner.js, and pass the default entrypoint
+CMD ["node", "/runtime/runner.js", "/usr/src/app/dist/index.js"]
