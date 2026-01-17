@@ -18,18 +18,33 @@ importers:
         specifier: ^1.0.3
         version: 1.0.3
     devDependencies:
+      '@types/body-parser':
+        specifier: ^1.19.6
+        version: 1.19.6
+      '@types/express':
+        specifier: ^5.0.6
+        version: 5.0.6
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
       '@types/node':
         specifier: ^22.10.4
         version: 22.19.3
+      '@types/pg':
+        specifier: ^8.16.0
+        version: 8.16.0
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.0.0
         version: 8.52.0(@typescript-eslint/parser@8.52.0(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)(typescript@5.9.3)
       '@typescript-eslint/parser':
         specifier: ^8.0.0
         version: 8.52.0(eslint@9.39.2)(typescript@5.9.3)
+      body-parser:
+        specifier: ^2.2.2
+        version: 2.2.2
+      cross-fetch:
+        specifier: ^4.0.0
+        version: 4.0.0
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
@@ -45,12 +60,21 @@ importers:
       eslint-plugin-unused-imports:
         specifier: ^4.0.0
         version: 4.3.0(@typescript-eslint/eslint-plugin@8.52.0(@typescript-eslint/parser@8.52.0(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+      graphql-request:
+        specifier: ^7.4.0
+        version: 7.4.0(graphql@16.12.0)
       jest:
         specifier: ^30.2.0
         version: 30.2.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       kubernetesjs:
         specifier: ^0.7.6
         version: 0.7.6
+      pg:
+        specifier: ^8.16.3
+        version: 8.16.3
       prettier:
         specifier: ^3.7.4
         version: 3.7.4
@@ -64,11 +88,58 @@ importers:
         specifier: ^5.1.6
         version: 5.9.3
 
-  functions/crypto-login:
+  functions/create-db:
     dependencies:
       '@constructive-io/knative-job-fn':
         specifier: latest
-        version: 0.2.7
+        version: 0.4.0
+      '@pgpmjs/env':
+        specifier: latest
+        version: 2.10.0
+      cross-fetch:
+        specifier: ^4.0.0
+        version: 4.0.0
+      graphql-tag:
+        specifier: ^2.12.6
+        version: 2.12.6(graphql@16.12.0)
+      kubernetesjs:
+        specifier: ^0.7.6
+        version: 0.7.6
+      pg:
+        specifier: ^8.11.3
+        version: 8.16.3
+      pgpm:
+        specifier: latest
+        version: 2.12.0
+    devDependencies:
+      '@types/jest':
+        specifier: ^29.5.12
+        version: 29.5.14
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
+      pgsql-test:
+        specifier: latest
+        version: 2.26.0
+      ts-jest:
+        specifier: ^29.1.2
+        version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)))(typescript@5.9.3)
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+    publishDirectory: dist
+
+  functions/crypto-login:
+    dependencies:
+      '@constructive-db/constructive-sdk':
+        specifier: file:../../sdk.tgz
+        version: file:sdk.tgz
+      '@constructive-io/knative-job-fn':
+        specifier: latest
+        version: 0.4.0
       '@interchainjs/cosmos':
         specifier: latest
         version: 1.19.3(@chain-registry/v2-types@0.53.146)(@chain-registry/v2@1.71.237)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
@@ -96,9 +167,6 @@ importers:
       ethers:
         specifier: ^6.10.0
         version: 6.16.0(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      graphql-request:
-        specifier: ^6.1.0
-        version: 6.1.0(graphql@16.12.0)
       graphql-tag:
         specifier: ^2.12.6
         version: 2.12.6(graphql@16.12.0)
@@ -120,7 +188,7 @@ importers:
         version: 29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       pgsql-test:
         specifier: latest
-        version: 2.24.11
+        version: 2.26.0
       ts-jest:
         specifier: ^29.1.2
         version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)))(typescript@5.9.3)
@@ -131,15 +199,15 @@ importers:
 
   functions/github-repo-creator:
     dependencies:
+      '@constructive-db/constructive-sdk':
+        specifier: file:../../sdk.tgz
+        version: file:sdk.tgz
       '@constructive-io/knative-job-fn':
         specifier: latest
-        version: 0.2.7
+        version: 0.4.0
       cross-fetch:
         specifier: ^4.0.0
         version: 4.0.0
-      graphql-request:
-        specifier: ^6.1.0
-        version: 6.1.0(graphql@16.12.0)
       graphql-tag:
         specifier: ^2.12.6
         version: 2.12.6(graphql@16.12.0)
@@ -151,7 +219,7 @@ importers:
         version: 3.2.2
       pgpm:
         specifier: latest
-        version: 2.10.9
+        version: 2.12.0
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
@@ -164,7 +232,7 @@ importers:
         version: 29.7.0(@types/node@20.19.27)(ts-node@10.9.2(@types/node@20.19.27)(typescript@5.9.3))
       pgsql-test:
         specifier: latest
-        version: 2.24.11
+        version: 2.26.0
       ts-jest:
         specifier: ^29.1.0
         version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@29.7.0(@types/node@20.19.27)(ts-node@10.9.2(@types/node@20.19.27)(typescript@5.9.3)))(typescript@5.9.3)
@@ -175,18 +243,18 @@ importers:
 
   functions/hello-world:
     dependencies:
+      '@constructive-db/constructive-sdk':
+        specifier: file:../../sdk.tgz
+        version: file:sdk.tgz
       '@constructive-io/knative-job-fn':
         specifier: latest
-        version: 0.2.7
+        version: 0.4.0
       '@pgpmjs/env':
         specifier: latest
-        version: 2.9.3
+        version: 2.10.0
       cross-fetch:
         specifier: ^4.0.0
         version: 4.0.0
-      graphql-request:
-        specifier: ^6.1.0
-        version: 6.1.0(graphql@16.12.0)
       graphql-tag:
         specifier: ^2.12.6
         version: 2.12.6(graphql@16.12.0)
@@ -205,7 +273,7 @@ importers:
         version: 29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       pgsql-test:
         specifier: latest
-        version: 2.24.11
+        version: 2.26.0
       ts-jest:
         specifier: ^29.1.2
         version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)))(typescript@5.9.3)
@@ -219,18 +287,18 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.14.0
         version: 0.14.1
+      '@constructive-db/constructive-sdk':
+        specifier: file:../../sdk.tgz
+        version: file:sdk.tgz
       '@constructive-io/knative-job-fn':
         specifier: latest
-        version: 0.2.7
+        version: 0.4.0
       '@google/generative-ai':
         specifier: ^0.1.0
         version: 0.1.3
       cross-fetch:
         specifier: ^4.0.0
         version: 4.0.0
-      graphql-request:
-        specifier: ^6.1.0
-        version: 6.1.0(graphql@16.12.0)
       graphql-tag:
         specifier: ^2.12.6
         version: 2.12.6(graphql@16.12.0)
@@ -252,7 +320,7 @@ importers:
         version: 29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       pgsql-test:
         specifier: latest
-        version: 2.24.11
+        version: 2.26.0
       ts-jest:
         specifier: ^29.1.2
         version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)))(typescript@5.9.3)
@@ -263,18 +331,18 @@ importers:
 
   functions/llm-internal-calvin:
     dependencies:
+      '@constructive-db/constructive-sdk':
+        specifier: file:../../sdk.tgz
+        version: file:sdk.tgz
       '@constructive-io/knative-job-fn':
         specifier: latest
-        version: 0.2.7
+        version: 0.4.0
       axios:
         specifier: ^1.6.0
         version: 1.13.2
       cross-fetch:
         specifier: ^4.0.0
         version: 4.0.0
-      graphql-request:
-        specifier: ^6.1.0
-        version: 6.1.0(graphql@16.12.0)
       graphql-tag:
         specifier: ^2.12.6
         version: 2.12.6(graphql@16.12.0)
@@ -293,7 +361,7 @@ importers:
         version: 29.7.0(@types/node@20.19.27)(ts-node@10.9.2(@types/node@20.19.27)(typescript@5.9.3))
       pgsql-test:
         specifier: latest
-        version: 2.24.11
+        version: 2.26.0
       ts-jest:
         specifier: ^29.1.0
         version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@29.7.0(@types/node@20.19.27)(ts-node@10.9.2(@types/node@20.19.27)(typescript@5.9.3)))(typescript@5.9.3)
@@ -304,15 +372,15 @@ importers:
 
   functions/opencode-headless:
     dependencies:
+      '@constructive-db/constructive-sdk':
+        specifier: file:../../sdk.tgz
+        version: file:sdk.tgz
       '@constructive-io/knative-job-fn':
         specifier: latest
-        version: 0.2.7
+        version: 0.4.0
       cross-fetch:
         specifier: ^4.0.0
         version: 4.0.0
-      graphql-request:
-        specifier: ^6.1.0
-        version: 6.1.0(graphql@16.12.0)
       graphql-tag:
         specifier: ^2.12.6
         version: 2.12.6(graphql@16.12.0)
@@ -331,7 +399,7 @@ importers:
         version: 29.7.0(@types/node@20.19.27)(ts-node@10.9.2(@types/node@20.19.27)(typescript@5.9.3))
       pgsql-test:
         specifier: latest
-        version: 2.24.11
+        version: 2.26.0
       ts-jest:
         specifier: ^29.1.0
         version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@29.7.0(@types/node@20.19.27)(ts-node@10.9.2(@types/node@20.19.27)(typescript@5.9.3)))(typescript@5.9.3)
@@ -342,18 +410,18 @@ importers:
 
   functions/pgpm-dump:
     dependencies:
+      '@constructive-db/constructive-sdk':
+        specifier: file:../../sdk.tgz
+        version: file:sdk.tgz
       '@constructive-io/knative-job-fn':
         specifier: latest
-        version: 0.2.7
+        version: 0.4.0
       '@pgpmjs/env':
         specifier: latest
-        version: 2.9.4
+        version: 2.10.0
       cross-fetch:
         specifier: ^4.0.0
         version: 4.0.0
-      graphql-request:
-        specifier: ^6.1.0
-        version: 6.1.0(graphql@16.12.0)
       graphql-tag:
         specifier: ^2.12.6
         version: 2.12.6(graphql@16.12.0)
@@ -362,7 +430,7 @@ importers:
         version: 0.7.6
       pgpm:
         specifier: latest
-        version: 2.10.13
+        version: 2.12.0
     devDependencies:
       '@types/jest':
         specifier: ^29.5.12
@@ -375,7 +443,7 @@ importers:
         version: 29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       pgsql-test:
         specifier: latest
-        version: 2.24.13
+        version: 2.26.0
       ts-jest:
         specifier: ^29.1.2
         version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)))(typescript@5.9.3)
@@ -384,23 +452,22 @@ importers:
         version: 5.9.3
     publishDirectory: dist
 
+  functions/pytorch-gpu: {}
+
   functions/runtime-script:
     dependencies:
+      '@constructive-db/constructive-sdk':
+        specifier: file:../../sdk.tgz
+        version: file:sdk.tgz
       '@constructive-io/knative-job-fn':
         specifier: latest
-        version: 0.2.7
+        version: 0.4.0
       '@pgpmjs/env':
         specifier: latest
-        version: 2.9.3
+        version: 2.10.0
       cross-fetch:
         specifier: ^4.0.0
         version: 4.0.0
-      graphql-request:
-        specifier: ^6.1.0
-        version: 6.1.0(graphql@16.12.0)
-      graphql-tag:
-        specifier: ^2.12.6
-        version: 2.12.6(graphql@16.12.0)
       kubernetesjs:
         specifier: ^0.7.6
         version: 0.7.6
@@ -419,7 +486,7 @@ importers:
         version: 29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       pgsql-test:
         specifier: latest
-        version: 2.24.11
+        version: 2.26.0
       ts-jest:
         specifier: ^29.1.2
         version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)))(typescript@5.9.3)
@@ -428,11 +495,16 @@ importers:
         version: 5.9.3
     publishDirectory: dist
 
+  functions/rust-hello-world: {}
+
   functions/send-email-link:
     dependencies:
+      '@constructive-db/constructive-sdk':
+        specifier: file:../../sdk.tgz
+        version: file:sdk.tgz
       '@constructive-io/knative-job-fn':
         specifier: latest
-        version: 0.2.7
+        version: 0.4.0
       '@launchql/mjml':
         specifier: 0.1.1
         version: 0.1.1(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react-is@18.3.1)(react@16.14.0)
@@ -444,13 +516,10 @@ importers:
         version: 0.1.0(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react-is@18.3.1)(react@16.14.0)
       '@pgpmjs/env':
         specifier: latest
-        version: 2.9.3
+        version: 2.10.0
       cross-fetch:
         specifier: ^4.0.0
         version: 4.0.0
-      graphql-request:
-        specifier: ^7.1.2
-        version: 7.4.0(graphql@16.12.0)
       graphql-tag:
         specifier: ^2.12.6
         version: 2.12.6(graphql@16.12.0)
@@ -469,7 +538,7 @@ importers:
         version: 29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       pgsql-test:
         specifier: latest
-        version: 2.24.11
+        version: 2.26.0
       ts-jest:
         specifier: ^29.1.2
         version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)))(typescript@5.9.3)
@@ -501,28 +570,29 @@ importers:
         version: 29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       pgsql-test:
         specifier: latest
-        version: 2.24.11
+        version: 2.26.0
       ts-jest:
         specifier: ^29.1.2
         version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)))(typescript@5.9.3)
+    publishDirectory: dist
 
   functions/simple-email:
     dependencies:
+      '@constructive-db/constructive-sdk':
+        specifier: file:../../sdk.tgz
+        version: file:sdk.tgz
       '@constructive-io/knative-job-fn':
         specifier: latest
-        version: 0.2.7
+        version: 0.4.0
       '@launchql/postmaster':
         specifier: latest
         version: 0.1.4
       '@pgpmjs/env':
         specifier: latest
-        version: 2.9.3
+        version: 2.10.0
       cross-fetch:
         specifier: ^4.0.0
         version: 4.0.0
-      graphql-request:
-        specifier: ^6.1.0
-        version: 6.1.0(graphql@16.12.0)
       graphql-tag:
         specifier: ^2.12.6
         version: 2.12.6(graphql@16.12.0)
@@ -532,22 +602,22 @@ importers:
         version: 30.0.0
       '@types/node':
         specifier: latest
-        version: 25.0.3
+        version: 25.0.9
       jest:
         specifier: latest
-        version: 30.2.0(@types/node@25.0.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
+        version: 30.2.0(@types/node@25.0.9)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       kubernetesjs:
         specifier: latest
         version: 0.7.6
       pgsql-test:
         specifier: latest
-        version: 2.24.11
+        version: 2.26.0
       rimraf:
         specifier: latest
         version: 6.1.2
       ts-jest:
         specifier: latest
-        version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@30.2.0(@types/node@25.0.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)))(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@30.2.0(@types/node@25.0.9)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)))(typescript@5.9.3)
       typescript:
         specifier: latest
         version: 5.9.3
@@ -555,18 +625,18 @@ importers:
 
   functions/stripe-function:
     dependencies:
+      '@constructive-db/constructive-sdk':
+        specifier: file:../../sdk.tgz
+        version: file:sdk.tgz
       '@constructive-io/knative-job-fn':
         specifier: latest
-        version: 0.2.7
+        version: 0.4.0
       '@pgpmjs/env':
         specifier: latest
-        version: 2.9.3
+        version: 2.10.0
       cross-fetch:
         specifier: ^4.0.0
         version: 4.0.0
-      graphql-request:
-        specifier: ^6.1.0
-        version: 6.1.0(graphql@16.12.0)
       graphql-tag:
         specifier: ^2.12.6
         version: 2.12.6(graphql@16.12.0)
@@ -588,7 +658,7 @@ importers:
         version: 29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       pgsql-test:
         specifier: latest
-        version: 2.24.11
+        version: 2.26.0
       ts-jest:
         specifier: ^29.1.2
         version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)))(typescript@5.9.3)
@@ -599,15 +669,15 @@ importers:
 
   functions/twilio-sms:
     dependencies:
+      '@constructive-db/constructive-sdk':
+        specifier: file:../../sdk.tgz
+        version: file:sdk.tgz
       '@constructive-io/knative-job-fn':
         specifier: latest
-        version: 0.2.7
+        version: 0.4.0
       cross-fetch:
         specifier: ^4.0.0
         version: 4.0.0
-      graphql-request:
-        specifier: ^6.1.0
-        version: 6.1.0(graphql@16.12.0)
       graphql-tag:
         specifier: ^2.12.6
         version: 2.12.6(graphql@16.12.0)
@@ -626,7 +696,7 @@ importers:
         version: 29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       pgsql-test:
         specifier: latest
-        version: 2.24.11
+        version: 2.26.0
       ts-jest:
         specifier: ^29.1.2
         version: 29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@29.7.0(@types/node@22.19.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)))(typescript@5.9.3)
@@ -825,8 +895,12 @@ packages:
   '@chain-registry/v2@1.71.237':
     resolution: {integrity: sha512-c10uXxFz1+51VR0szeB1phn482O03uJiSQ+mZXpeq7IBtU2Hst6Vj1Ttjbx+nlxekhoSGG1jZ0JQ1ewXWYQ6IA==}
 
-  '@constructive-io/knative-job-fn@0.2.7':
-    resolution: {integrity: sha512-GeFMTkYkcQF3GMWP2zCMKEQIcodERlxUqc+c0+jl++pYdEpaekzXr6NDWI0UoTdx0pjTiFB9LOw5isa3DQNhcQ==}
+  '@constructive-db/constructive-sdk@file:sdk.tgz':
+    resolution: {integrity: sha512-VaxNNxmdrxA4YW0+8HN2gk3XL4Mm/ZMLcOXvIrA4mUhYS5A+hiSZh+kqYC+P5ItCEWNAjSPeqDnCcug+w/nS4g==, tarball: file:sdk.tgz}
+    version: 0.0.1
+
+  '@constructive-io/knative-job-fn@0.4.0':
+    resolution: {integrity: sha512-xFLvdm/dlFuDNsbzRx4FGEeaQBCbQYMD09VUpZzVdTM2EcQckFesBVA5BupFumnEdw0ieuZZiDghuGhybJKkAw==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -967,8 +1041,8 @@ packages:
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
 
-  '@inquirerer/utils@3.1.3':
-    resolution: {integrity: sha512-aEw6nBfbVVv77pwNT0LJNHZiEwN/2rE8jiXLzeY+93cHgt4rPs0QY2A+/CPq6ryzAfXGnI5C79o6HbwZcODZMA==}
+  '@inquirerer/utils@3.2.0':
+    resolution: {integrity: sha512-poeZdoOH/iDV9dG/J0apH92T5VOGiAgIp8me1yTK9wpEI2qGENyXXBmiYgcE2s+XMHuDr19R9d1UXE9ptaVneA==}
 
   '@interchainjs/amino@1.19.1':
     resolution: {integrity: sha512-YRGBl2DGivuwkQRoiOMai71vf8Pg94lzP2coPMg8yQIyPXn314apExJyJBKPbkhjdK9+ygVCQr30Wehb0q2w+w==}
@@ -1368,32 +1442,20 @@ packages:
   '@one-ini/wasm@0.1.1':
     resolution: {integrity: sha512-XuySG1E38YScSJoMlqovLru4KTUNSjgVTIjyh7qMX6aNN5HY5Ct5LhRJdxO79JtTzKfzV/bnWpz+zquYrISsvw==}
 
-  '@pgpmjs/core@4.13.3':
-    resolution: {integrity: sha512-m43bXw/NOu3jNahb+/rzwz71b65euEakCQ9a4dTbDjvfN5AzLRu3S7COkMWhkVKO2j5WlFqYSYD9u66aUkfZdA==}
+  '@pgpmjs/core@4.17.0':
+    resolution: {integrity: sha512-y/wLtP2byRXbA16szQKMUAPUDGPpBu4y4CtaNIAK6VPfnO5fsPxw88NOUgVqW31kHyOVXk5h+QLAcvUVHmo3PQ==}
 
-  '@pgpmjs/core@4.14.0':
-    resolution: {integrity: sha512-tghh2R1ykYbGfcfFRmjHr4C1l1oMn3+VYijDeUbp9X/Ygw/Ywd99KBvehW7V6EzUxVtSFLeijKH+wdsnIgwYyA==}
+  '@pgpmjs/env@2.10.0':
+    resolution: {integrity: sha512-x9gBDji7K+2YjOUVUTRoazFNliQhHhboM3vzp8gH0vl0em8mtPYVbQx0m0IBBnr0/Aevem0iWHoFLaTuMJRvzA==}
 
-  '@pgpmjs/env@2.9.3':
-    resolution: {integrity: sha512-JziDKDiCNTEPgfaiYa7NbG88JEZ0uws4EmcU79mTtnb7rEVAGpHSwvzTpJSe6E7IoZtusfrllBvrH8oCz316cw==}
+  '@pgpmjs/logger@1.5.0':
+    resolution: {integrity: sha512-R27o5MiOsezI5rAWdJyuOkWUK6zxr8Mg61hPs7uCu//sECoprR4/7CVeFIHwn7+gyrjUk0wBz0dQcJhjYzVDpw==}
 
-  '@pgpmjs/env@2.9.4':
-    resolution: {integrity: sha512-kogGKofZGEaeCtF47l7SL2CGVlva/L7eWTc72GWqR8yUQ0Q8qvwsGT226Locb1qmHwlxNcX1IdyRInqZHFKMLA==}
+  '@pgpmjs/server-utils@2.10.0':
+    resolution: {integrity: sha512-Eqyd3bHpudUO2rts5tmNyCHwm3vp2PxhGD0dl8WfirBpS1I5UHXLc1bZl1LEvQKX5LS0ZWWOVGWvSRob/NrpiQ==}
 
-  '@pgpmjs/logger@1.3.7':
-    resolution: {integrity: sha512-T7wD221/Gh+e649Dira+D153l9tbS3RWJ6weXM4w7ms9NWtc0Fl/p2qJztSIMZ6MBzTx7t66PHZI4FzRSYZq6w==}
-
-  '@pgpmjs/server-utils@2.8.14':
-    resolution: {integrity: sha512-SXYBvQ8BRvN2o6LBtCU8vID3etNTaGzfc3gag7vDWHcAJmrsK5q8Q09l2LSXoOIIlBCjZLxrFipYR0+c/EbM4Q==}
-
-  '@pgpmjs/server-utils@2.8.15':
-    resolution: {integrity: sha512-+E6hSH1OikG27pY2IwcphzeYtnXTWngcGxoGfIYLyP2vvLtRLQ4XOSsvq5CmbbNlKMWfg8ugNcDNWtLwdNNedg==}
-
-  '@pgpmjs/types@2.14.0':
-    resolution: {integrity: sha512-geTMuUTcqCRFA6sHZccq/2uJLildGMkHg4d2Ftfl6UrFl6+SFZFMU+cSzSyVf5hUg3r/DCaH20G2QWtb5gDWiA==}
-
-  '@pgpmjs/types@2.14.1':
-    resolution: {integrity: sha512-ELo4ktluzXLGm+TRi83fA9xNs3MK1PJYPamqldWxlOjw96SuKHt+18CTy/oXC6VkYEZe+3WYnO6Gd3CmQ+249g==}
+  '@pgpmjs/types@2.15.0':
+    resolution: {integrity: sha512-T1j8qpjfTLNpteypTuyP1cwneLejmyMt2Cmt8ESSCwbz1dQf7ATFyj3X78wbIGIhi2FKJ+l/bMuy9LIhslU6rQ==}
 
   '@pgsql/types@17.6.2':
     resolution: {integrity: sha512-1UtbELdbqNdyOShhrVfSz3a1gDi0s9XXiQemx+6QqtsrXe62a6zOGU+vjb2GRfG5jeEokI1zBBcfD42enRv0Rw==}
@@ -1531,6 +1593,9 @@ packages:
   '@types/babel__traverse@7.28.0':
     resolution: {integrity: sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q==}
 
+  '@types/body-parser@1.19.6':
+    resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
+
   '@types/bs58@5.0.0':
     resolution: {integrity: sha512-cAw/jKBzo98m6Xz1X5ETqymWfIMbXbu6nK15W4LQYjeHJkVqSmM5PO8Bd9KVHQJ/F4rHcSso9LcjtgCW6TGu2w==}
     deprecated: This is a stub types definition. bs58 provides its own type definitions, so you do not need this installed.
@@ -1544,8 +1609,17 @@ packages:
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
+  '@types/express-serve-static-core@5.1.0':
+    resolution: {integrity: sha512-jnHMsrd0Mwa9Cf4IdOzbz543y4XJepXrbia2T4b6+spXC2We3t1y6K44D3mR8XMFSXMCf3/l7rCgddfx7UNVBA==}
+
+  '@types/express@5.0.6':
+    resolution: {integrity: sha512-sKYVuV7Sv9fbPIt/442koC7+IIwK5olP1KWeD88e/idgoJqDm3JV/YUiPwkoKK92ylff2MGxSz1CSjsXelx0YA==}
+
   '@types/graceful-fs@4.1.9':
     resolution: {integrity: sha512-olP3sd1qOEe5dXTSaFvQG+02VdRXcdytWLAZsAq1PecU8uqQAhkrnbli7DagjtXKW/Bl7YJbUsa8MPcuc8LHEQ==}
+
+  '@types/http-errors@2.0.5':
+    resolution: {integrity: sha512-r8Tayk8HJnX0FztbZN7oVqGccWgw98T/0neJphO91KkmOzug1KkofZURD4UaD5uH8AqcFLfdPErnBod0u71/qg==}
 
   '@types/istanbul-lib-coverage@2.0.6':
     resolution: {integrity: sha512-2QF/t/auWm0lsy8XtKVPG19v3sSOQlJe/YHZgfjb/KBBHOGSV+J2q/S671rcq9uTBrLAXmZpqJiaQbMT+zNU1w==}
@@ -1589,8 +1663,23 @@ packages:
   '@types/node@22.7.5':
     resolution: {integrity: sha512-jML7s2NAzMWc//QSJ1a3prpk78cOPchGvXJsC3C6R6PSMoooztvRVQEz89gmBTBY1SPMaqo5teB4uNHPdetShQ==}
 
-  '@types/node@25.0.3':
-    resolution: {integrity: sha512-W609buLVRVmeW693xKfzHeIV6nJGGz98uCPfeXI1ELMLXVeKYZ9m15fAMSaUPBHYLGFsVRcMmSCksQOrZV9BYA==}
+  '@types/node@25.0.9':
+    resolution: {integrity: sha512-/rpCXHlCWeqClNBwUhDcusJxXYDjZTyE8v5oTO7WbL8eij2nKhUeU89/6xgjU7N4/Vh3He0BtyhJdQbDyhiXAw==}
+
+  '@types/pg@8.16.0':
+    resolution: {integrity: sha512-RmhMd/wD+CF8Dfo+cVIy3RR5cl8CyfXQ0tGgW6XBL8L4LM/UTEbNXYRbLwU6w+CgrKBNbrQWt4FUtTfaU5jSYQ==}
+
+  '@types/qs@6.14.0':
+    resolution: {integrity: sha512-eOunJqu0K1923aExK6y8p6fsihYEn/BYuQ4g0CxAAgFc4b/ZLN4CrsRZ55srTdqoiLzU2B2evC+apEIxprEzkQ==}
+
+  '@types/range-parser@1.2.7':
+    resolution: {integrity: sha512-hKormJbkJqzQGhziax5PItDUTMAM9uE2XXQmM37dyd4hVM+5aVl7oVxMVUiVQn2oCQFN/LKCZdvSM0pFRqbSmQ==}
+
+  '@types/send@1.2.1':
+    resolution: {integrity: sha512-arsCikDvlU99zl1g69TcAB3mzZPpxgw0UQnaHeC1Nwb015xp8bknZv5rIfri9xTOcMuaVgvabfIRA7PSZVuZIQ==}
+
+  '@types/serve-static@2.2.0':
+    resolution: {integrity: sha512-8mam4H1NHLtu7nmtalF7eyBH14QyOASmcxHhSfEoRyr0nP/YdoesEtU+uSRvMe96TW/HPTtkoKqQLl53N7UXMQ==}
 
   '@types/stack-utils@2.0.3':
     resolution: {integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==}
@@ -1855,8 +1944,8 @@ packages:
     resolution: {integrity: sha512-KMReFUr0B4t+D+OBkjR3KYqvocp2XaSzO55UcB6mgQMd3KbcE+mWTyvVV7D/zsdEbNnV6acZUutkiHQXvTr1Rw==}
     engines: {node: '>= 8'}
 
-  appstash@0.2.8:
-    resolution: {integrity: sha512-SLeV3iy7ygE7TNiU6AgDMQVhS6xVfO4ps3NDMUK3UcvZKOddykHuEtSuJr6wKzTu9yRnEeK/yisgztSARt/YJA==}
+  appstash@0.3.0:
+    resolution: {integrity: sha512-F4rMrok4wQYDVitYMWbPQh2MBoKCj7GYzmI/Gw8zDeO2vDLmCmyzmbd0zAwplghB6X3VMGQw/NKcngIc8w6oTA==}
 
   arg@4.1.3:
     resolution: {integrity: sha512-58S9QDqG0Xx27YwPSt9fJxivjYl432YCwfDMfZ+71RAqUrZef7LrKQZ3LHLOwCS4FLNBplP533Zx895SeOCHvA==}
@@ -2276,9 +2365,6 @@ packages:
   create-require@1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
 
-  cross-fetch@3.2.0:
-    resolution: {integrity: sha512-Q+xVJLoGOeIMXZmbUK4HYk+69cQH6LudR0Vu/pRm2YlU/hDV9CiS0gKUMaWY5f2NeUH9C1nV3bsTlCo0FsTV1Q==}
-
   cross-fetch@4.0.0:
     resolution: {integrity: sha512-e4a5N8lVvuLgAWgnCrLr2PP0YyDOTHa9H/Rj54dirp61qXnNq46m82bRhNqIA5VccJtWBvPTFRV3TtvHUKPB1g==}
 
@@ -2317,8 +2403,8 @@ packages:
     engines: {node: '>= 8.16.0'}
     hasBin: true
 
-  csv-to-pg@3.4.1:
-    resolution: {integrity: sha512-L1bWN8ESs3vs7nd4Jd6xx5a3xuBAXqriSqFNCmznXWUwtbx8fxKm+EeyRL4P8gUW3os41Kku0SOERfyHx//kbg==}
+  csv-to-pg@3.6.0:
+    resolution: {integrity: sha512-2S+pclQwwblkeITRM9swZ4TNOY+kCrpSTLZr+lSlzo9g3oGBaXpoIr4ljx9BjtA6LOAAax6hlOnnlmoErTObiA==}
     hasBin: true
 
   data-uri-to-buffer@1.2.0:
@@ -2767,8 +2853,8 @@ packages:
     resolution: {integrity: sha512-S8KoZgRZN+a5rNwqTxlZZePjT/4cnm0ROV70LedRHZ0p8u9fRID0hJUZQpkKLzro8LfmC8sx23bY6tVNxv8pQA==}
     engines: {node: '>= 18.0.0'}
 
-  find-and-require-package-json@0.8.6:
-    resolution: {integrity: sha512-N+funttvcGC9h7JxCs089fAyNhEpKzFnP0nUYOS+V2RWvI40rtVhANPozc72pJl9lMzqoPFTimlfqZg6zZGPRQ==}
+  find-and-require-package-json@0.9.0:
+    resolution: {integrity: sha512-e7+fnRvphmWHHgOdVQct5yLEmw38GD3wpX8CMONT/qn/BLK6F0ft/iPicNKJMX6U4GlTEFzreYbLf+FlCYh4lQ==}
 
   find-up@4.1.0:
     resolution: {integrity: sha512-PpOwAdQ/YlXQ2vj8a3h8IipDuYRi3wceVQQGYWxNINccq40Anw7BlsEXCMbt1Zt+OLA6Fq9suIpIWD0OsnISlw==}
@@ -2840,8 +2926,8 @@ packages:
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
 
-  genomic@5.2.3:
-    resolution: {integrity: sha512-h93BqFC0gZgnInrAhozkYFV1UT1Pf/ffU8kh6JgF8Cqm0ypY8Iol5AvINVsgGXcQtcA00xcBOlJ5xc4tOXXZBA==}
+  genomic@5.3.0:
+    resolution: {integrity: sha512-59rZ++BMgR4/rbh/j55n0BCYAZI/KrP9l7IgxdOHT+HEMAADA6kGaPOhDBltekw2QpHOAUeOXoRiTvntM7b1Ug==}
 
   gensync@1.0.0-beta.2:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
@@ -2898,13 +2984,11 @@ packages:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
 
+  gql-ast@2.6.0:
+    resolution: {integrity: sha512-Jqi/XmKGU3v+hMFV/R/AmhYORqYWBiQwRNSyS9ZJtmRl/rewDOF+sXZijApw6jNcjvSgTFR7TzP5BC4WtNH2Vg==}
+
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
-
-  graphql-request@6.1.0:
-    resolution: {integrity: sha512-p+XPfS4q7aIpKVcgmnZKhMNqhltk20hfXtkaIkTfjjmiKMJ5xrt5c743cL03y/K7y1rg3WrIC49xGiEQ4mxdNw==}
-    peerDependencies:
-      graphql: 14 - 16
 
   graphql-request@7.4.0:
     resolution: {integrity: sha512-xfr+zFb/QYbs4l4ty0dltqiXIp07U6sl+tOKAb0t50/EnQek6CVVBLjETXi+FghElytvgaAWtIOt3EV7zLzIAQ==}
@@ -2916,6 +3000,10 @@ packages:
     engines: {node: '>=10'}
     peerDependencies:
       graphql: ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
+
+  graphql@15.10.1:
+    resolution: {integrity: sha512-BL/Xd/T9baO6NFzoMpiMD7YUZ62R6viR5tp/MULVEnbYJXZA//kRNW7J0j1w/wXArgL0sCxhDfK5dczSKn3+cg==}
+    engines: {node: '>= 10.x'}
 
   graphql@16.12.0:
     resolution: {integrity: sha512-DKKrynuQRne0PNpEbzuEdHlYOMksHSUI8Zc9Unei5gTsMNA2/vMpoMz/yKba50pejK56qj98qM0SjYxAKi13gQ==}
@@ -3071,8 +3159,8 @@ packages:
   ini@1.3.8:
     resolution: {integrity: sha512-JV/yugV2uzW5iMRSiZAyDtQd+nxtUnjeLt0acNdw98kKLrvuRVyB80tsREOE7yvGVgalhZ6RNXCmEHkUKBKxew==}
 
-  inquirerer@4.3.1:
-    resolution: {integrity: sha512-CKbqcGXT1zdFaJrkTLuTxdEe0yplUSmm1JbmJDDm2v6LuRaS34BE85rmnX0v8HQrli98Y4iFP99f6V0ny3RkDg==}
+  inquirerer@4.4.0:
+    resolution: {integrity: sha512-zra0M4Oh+rzgr7PMJy9cNi/LbkJbtB6QRABou65nN6NTwb368/lMJ8ACHXozM7bw3+t5SOI0TP3gxKAyT0BCRw==}
 
   interchainjs@1.19.3:
     resolution: {integrity: sha512-gMkeDwwHylCvqocxaZy+pJAfmFSS8KpoSUkIs0ubdcC5S+Xr3afUuXHnnw15F1KMtzN8GhIRkY13StUHurB6YA==}
@@ -3511,8 +3599,8 @@ packages:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
 
-  komoji@0.7.14:
-    resolution: {integrity: sha512-iJlRccr/DTKcSumEHiTbvyt3V6GYmA762FmjhBAFlIKhoO87BPo7V0eHxSUgsILH8eYHHguk9KCmZ8xMIDPbHw==}
+  komoji@0.8.0:
+    resolution: {integrity: sha512-+Ud4ubAJhhTWneLv8V/1OyrQMwrK7ZCHDY7QJJBjaypvTCM8+ECCfKWVZrYz5NIcswuBfiYsDNYJ5kxGUwsoOw==}
 
   kubernetesjs@0.7.6:
     resolution: {integrity: sha512-swqDZZ7AJQSUgDI6FcIE1o6w1+5046wv4WfHkuz6E80bUY5SFVuKchQN6ivLJAPLdRlMnpTGc0WKB+MJo9LVOQ==}
@@ -4018,14 +4106,17 @@ packages:
   path-to-regexp@8.3.0:
     resolution: {integrity: sha512-7jdwVIRtsP8MYpdXSwOS0YdD0Du+qOoF/AEPIt88PcCFrZCzx41oxku1jD88hZBwbNUIEfpqvuhjFaMAqMTWnA==}
 
-  pg-cache@1.6.14:
-    resolution: {integrity: sha512-NIRuFOg6FCmpQRpMt/+F0UuEJ7jNaYEnPkORn4RPlbhOQiqYvw5ufIHVIa8MajQBlk2ZffPpehZ5yABHk3DbLA==}
-
-  pg-cache@1.6.15:
-    resolution: {integrity: sha512-gGHH4jh7Oz5dLnJmIA54u+GZeD07XnISQybHhGIA+mkY/15SS8SD2EmHN6zcyohGMJvQrG5tvU+NyEBxBwiGHQ==}
+  pg-cache@1.8.0:
+    resolution: {integrity: sha512-L9V4tYzZOtc8tS+jlZmF8pSPZ51+HsUcgT0WPbgz8oYcRSIlDhWp6K5esypzYwTamHNt21yzJR11OVby3BJR9g==}
 
   pg-cloudflare@1.2.7:
     resolution: {integrity: sha512-YgCtzMH0ptvZJslLM1ffsY4EuGaU0cx4XSdXLRFae8bPP4dS5xL1tNB3k2o/N64cHJpwU7dxKli/nZ2lUa5fLg==}
+
+  pg-cloudflare@1.3.0:
+    resolution: {integrity: sha512-6lswVVSztmHiRtD6I8hw4qP/nDm1EJbKMRhf3HCYaqud7frGysPv7FYJ5noZQdhQtN2xJnimfMtvQq21pdbzyQ==}
+
+  pg-connection-string@2.10.1:
+    resolution: {integrity: sha512-iNzslsoeSH2/gmDDKiyMqF64DATUCWj3YJ0wP14kqcsf2TUklwimd+66yYojKwZCA7h2yRNLGug71hCBA2a4sw==}
 
   pg-connection-string@2.9.1:
     resolution: {integrity: sha512-nkc6NpDcvPVpZXxrreI/FOtX3XemeLl8E0qFr6F2Lrm/I8WOnaWNhIPK2Z7OHpw7gh5XJThi6j6ppgNoaT1w4w==}
@@ -4033,8 +4124,8 @@ packages:
   pg-copy-streams@7.0.0:
     resolution: {integrity: sha512-zBvnY6wtaBRE2ae2xXWOOGMaNVPkXh1vhypAkNSKgMdciJeTyIQAHZaEeRAxUjs/p1El5jgzYmwG5u871Zj3dQ==}
 
-  pg-env@1.2.5:
-    resolution: {integrity: sha512-zjuCLPNl35RExhQPfZbm01VNjVDd1T6fsi7cz74V7fMnKhSCLvRPyb6vVf6p1r4Bu8x+DQ6f9cy5bemMFnmQ3Q==}
+  pg-env@1.3.0:
+    resolution: {integrity: sha512-iWAqXYtPL5lrJ4GIFB0juQcQHH2jO3ZVoT32fRk2E7UEhuTkKqoWxw9b6bOm9oyo1O9goReBC7cEo45Nt4wqlg==}
 
   pg-int8@1.0.1:
     resolution: {integrity: sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw==}
@@ -4045,11 +4136,19 @@ packages:
     peerDependencies:
       pg: '>=8.0'
 
+  pg-pool@3.11.0:
+    resolution: {integrity: sha512-MJYfvHwtGp870aeusDh+hg9apvOe2zmpZJpyt+BMtzUWlVqbhFmMK6bOBXLBUPd7iRtIF9fZplDc7KrPN3PN7w==}
+    peerDependencies:
+      pg: '>=8.0'
+
   pg-protocol@1.10.3:
     resolution: {integrity: sha512-6DIBgBQaTKDJyxnXaLiLR8wBpQQcGWuAESkRBX/t6OwA8YsqP+iVSiond2EDy6Y/dsGk8rh/jtax3js5NeV7JQ==}
 
-  pg-seed@0.2.2:
-    resolution: {integrity: sha512-OICqIl+D0sqQamuFOerSEomyY8A/cjz92kaK35cu0YEHVq+cG0vAb0VM2tlRJ8A3GibccfmKZi2WcwOtgjNXmg==}
+  pg-protocol@1.11.0:
+    resolution: {integrity: sha512-pfsxk2M9M3BuGgDOfuy37VNRRX3jmKgMjcvAcWqNDpZSf4cUmv8HSOl5ViRQFsfARFn0KuUQTgLxVMbNq5NW3g==}
+
+  pg-seed@0.3.1:
+    resolution: {integrity: sha512-F1ovHbUlFU8wDhu1beVODzf9sPDi4iu83md79C/B9MuEe9iK5d/TJOZW8zizeU9RqlrMj+PfllrK6OolCbVwRw==}
 
   pg-types@2.2.0:
     resolution: {integrity: sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==}
@@ -4064,22 +4163,24 @@ packages:
       pg-native:
         optional: true
 
+  pg@8.17.2:
+    resolution: {integrity: sha512-vjbKdiBJRqzcYw1fNU5KuHyYvdJ1qpcQg1CeBrHFqV1pWgHeVR6j/+kX0E1AAXfyuLUGY1ICrN2ELKA/z2HWzw==}
+    engines: {node: '>= 16.0.0'}
+    peerDependencies:
+      pg-native: '>=3.0.1'
+    peerDependenciesMeta:
+      pg-native:
+        optional: true
+
   pgpass@1.0.5:
     resolution: {integrity: sha512-FdW9r/jQZhSeohs1Z3sI1yxFQNFvMcnmfuj4WBMUTxOrAyLMaTcE1aAMBiTlbMNaXvBCQuVi0R7hd8udDSP7ug==}
 
-  pgpm@2.10.13:
-    resolution: {integrity: sha512-1oKakgAWVG9fnjuIbK5UkvnsRf1+VA8i9wkdJVV4HH1Aec0YxyHY8VqPlk9cRatuAhUr1koFj+AtGH6LY6c6Lg==}
+  pgpm@2.12.0:
+    resolution: {integrity: sha512-i47+51ROSXWsYvK6Cl4bSLcYPNp9PcsQBJgYuAbkgVDQWbIuemeyr05ZVHAyZKaifbaBX6qmPq+RFkYU3iiyRg==}
     hasBin: true
 
-  pgpm@2.10.9:
-    resolution: {integrity: sha512-vrSi6sjtO26eBj8PFyxLJMyALz2UUBS+m9rCP7QbfwBOY8BokFw74UrZfLO2Cl4KRUEiaujcT7CwuX8xmmhW2w==}
-    hasBin: true
-
-  pgsql-client@1.3.11:
-    resolution: {integrity: sha512-6PAewgN6wvlKZ0uEjO7myT6PY3qIPDvX05jNayKXncyHTZC91vAugqhQINAOq4uuP7ci2aKsmL0ufy5Yxm7BHg==}
-
-  pgsql-client@1.3.12:
-    resolution: {integrity: sha512-ybwwBXL+zmyqQai9niWrf6gGB/e/y6DSGqbNF1MhaNgm+38KSf26X2vQtvsdnwNYrd3SSHHrFhG5QphPdSNvfg==}
+  pgsql-client@1.5.0:
+    resolution: {integrity: sha512-GcesSCTPQQuX4RpShxt4mfEm4AETX6DrAM2aThHLJJBw6qBpO5TeqYgzIb2JNIvLmkR1mFH5ZR0/hWsmsvtmyA==}
 
   pgsql-deparser@17.17.2:
     resolution: {integrity: sha512-FCjqKY3Sdmce3VUd3CxCXF0kqaZ0s4a6yIMT5UJ9vETh0cF54A8Tpqjn0qBKaPUD8xqTKeLdS+SfiwjAC64wrA==}
@@ -4087,17 +4188,11 @@ packages:
   pgsql-parser@17.9.11:
     resolution: {integrity: sha512-Bqp9uLvJK0Qht9PXzI6eC/Fn+lFRL+2eMvXss4D4qt7lxPLIHS8FMKYOHUQNTI3m6ylExSOdNXhx/DL5UGm3xg==}
 
-  pgsql-seed@0.4.11:
-    resolution: {integrity: sha512-PNmjdTd9dR7gfAJ3eSPqFPS8V/ut5x4M5IQcPjkXXWSYx/bgJP8rsdSM9MR7zOtnluFui1sRc887m9Oswnl+pA==}
+  pgsql-seed@0.6.0:
+    resolution: {integrity: sha512-ZfkNYn2qDi2ZXcM25Cy++Z891Q8MS582/uBHEFq9V8z1DkJH/Ot5bQSV5LhOxPaqpdZjDQ86CjScAkZsShcuCQ==}
 
-  pgsql-seed@0.4.12:
-    resolution: {integrity: sha512-apfAxcy9arwH43iL+CTkYCl0L8UEzePl32z809WcIe130tvgn7nnPbYpvs2V+A0uVwdt/OomZFL+/p2qyKKhIA==}
-
-  pgsql-test@2.24.11:
-    resolution: {integrity: sha512-x3Un4wDEqI2LBfALVpXKRUS6dx48hzY3OBzGcwTHtZt9r9pP9mezrednskCXoBYhw3pEXL5fWcs1yBDE/ObfeQ==}
-
-  pgsql-test@2.24.13:
-    resolution: {integrity: sha512-2fJFH1MJwdcwtdmt3C2vCMqmTpsDY9rLRxx/F6DmeaEj/5COyT1Yvc4C4ktS6vXHConq35X6XbPJvAI9JAcGDQ==}
+  pgsql-test@2.26.0:
+    resolution: {integrity: sha512-gTp7XN5BmNRLSu/8kOe5ol/mGgzoJhvDFC7OwNl1Sskil3WbaiGJJGr5mgrGmuQCNE+ZO6JTjFulKMESjj7DRw==}
 
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
@@ -4912,8 +5007,8 @@ packages:
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
 
-  yanse@0.1.11:
-    resolution: {integrity: sha512-70QlVdqwpLdQH1ZqFk5HSAFk6puptS7Q6y79umsucED+uvmbSSVvKMJVDmc4Yt+89JMkf7n4gaR/Ftz6wUZKeA==}
+  yanse@0.2.0:
+    resolution: {integrity: sha512-BN6WYjJRX3mw/LpEC4d2LAlLFFdoFKKYYbd9nvhTvbbEW+/mJJccBGy0DuvcYXg75Xed2ZT8euXtplfLKBfdHA==}
 
   yargs-parser@18.1.3:
     resolution: {integrity: sha512-o50j0JeToy/4K6OZcaQmW6lyXXKhq7csREXcDwk2omFPJEwUNOVtJKvmDr9EI1fAJZUyZcRF7kxGBWmRXudrCQ==}
@@ -5163,8 +5258,13 @@ snapshots:
     dependencies:
       '@chain-registry/v2-types': 0.53.146
 
-  '@constructive-io/knative-job-fn@0.2.7':
+  '@constructive-db/constructive-sdk@file:sdk.tgz':
     dependencies:
+      gql-ast: 2.6.0
+
+  '@constructive-io/knative-job-fn@0.4.0':
+    dependencies:
+      '@pgpmjs/logger': 1.5.0
       body-parser: 1.19.0
       express: 5.2.1
     transitivePeerDependencies:
@@ -5374,11 +5474,10 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
-  '@inquirerer/utils@3.1.3':
+  '@inquirerer/utils@3.2.0':
     dependencies:
-      appstash: 0.2.8
-      find-and-require-package-json: 0.8.6
-      minimist: 1.2.8
+      appstash: 0.3.0
+      inquirerer: 4.4.0
 
   '@interchainjs/amino@1.19.1(@chain-registry/v2-types@0.53.146)(@chain-registry/v2@1.71.237)':
     dependencies:
@@ -6168,89 +6267,49 @@ snapshots:
 
   '@one-ini/wasm@0.1.1': {}
 
-  '@pgpmjs/core@4.13.3':
+  '@pgpmjs/core@4.17.0':
     dependencies:
-      '@pgpmjs/env': 2.9.4
-      '@pgpmjs/logger': 1.3.7
-      '@pgpmjs/server-utils': 2.8.14
-      '@pgpmjs/types': 2.14.0
-      csv-to-pg: 3.4.1
-      genomic: 5.2.3
+      '@pgpmjs/env': 2.10.0
+      '@pgpmjs/logger': 1.5.0
+      '@pgpmjs/server-utils': 2.10.0
+      '@pgpmjs/types': 2.15.0
+      csv-to-pg: 3.6.0
+      genomic: 5.3.0
       glob: 13.0.0
-      komoji: 0.7.14
+      komoji: 0.8.0
       parse-package-name: 1.0.0
-      pg: 8.16.3
-      pg-cache: 1.6.14
-      pg-env: 1.2.5
+      pg: 8.17.2
+      pg-cache: 1.8.0
+      pg-env: 1.3.0
       pgsql-deparser: 17.17.2
       pgsql-parser: 17.9.11
-      yanse: 0.1.11
+      yanse: 0.2.0
     transitivePeerDependencies:
       - pg-native
       - supports-color
 
-  '@pgpmjs/core@4.14.0':
+  '@pgpmjs/env@2.10.0':
     dependencies:
-      '@pgpmjs/env': 2.9.4
-      '@pgpmjs/logger': 1.3.7
-      '@pgpmjs/server-utils': 2.8.15
-      '@pgpmjs/types': 2.14.1
-      csv-to-pg: 3.4.1
-      genomic: 5.2.3
-      glob: 13.0.0
-      komoji: 0.7.14
-      parse-package-name: 1.0.0
-      pg: 8.16.3
-      pg-cache: 1.6.15
-      pg-env: 1.2.5
-      pgsql-deparser: 17.17.2
-      pgsql-parser: 17.9.11
-      yanse: 0.1.11
-    transitivePeerDependencies:
-      - pg-native
-      - supports-color
-
-  '@pgpmjs/env@2.9.3':
-    dependencies:
-      '@pgpmjs/types': 2.14.0
+      '@pgpmjs/types': 2.15.0
       deepmerge: 4.3.1
 
-  '@pgpmjs/env@2.9.4':
+  '@pgpmjs/logger@1.5.0':
     dependencies:
-      '@pgpmjs/types': 2.14.1
-      deepmerge: 4.3.1
+      yanse: 0.2.0
 
-  '@pgpmjs/logger@1.3.7':
+  '@pgpmjs/server-utils@2.10.0':
     dependencies:
-      yanse: 0.1.11
-
-  '@pgpmjs/server-utils@2.8.14':
-    dependencies:
-      '@pgpmjs/logger': 1.3.7
-      '@pgpmjs/types': 2.14.0
+      '@pgpmjs/logger': 1.5.0
+      '@pgpmjs/types': 2.15.0
       cors: 2.8.5
       express: 5.2.1
       lru-cache: 11.2.4
     transitivePeerDependencies:
       - supports-color
 
-  '@pgpmjs/server-utils@2.8.15':
+  '@pgpmjs/types@2.15.0':
     dependencies:
-      '@pgpmjs/logger': 1.3.7
-      '@pgpmjs/types': 2.14.1
-      cors: 2.8.5
-      express: 5.2.1
-      lru-cache: 11.2.4
-    transitivePeerDependencies:
-      - supports-color
-
-  '@pgpmjs/types@2.14.0':
-    dependencies:
-      pg-env: 1.2.5
-
-  '@pgpmjs/types@2.14.1':
-    dependencies:
-      pg-env: 1.2.5
+      pg-env: 1.3.0
 
   '@pgsql/types@17.6.2': {}
 
@@ -6428,6 +6487,11 @@ snapshots:
     dependencies:
       '@babel/types': 7.28.5
 
+  '@types/body-parser@1.19.6':
+    dependencies:
+      '@types/connect': 3.4.38
+      '@types/node': 22.19.3
+
   '@types/bs58@5.0.0':
     dependencies:
       bs58: 5.0.0
@@ -6440,9 +6504,24 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
+  '@types/express-serve-static-core@5.1.0':
+    dependencies:
+      '@types/node': 22.19.3
+      '@types/qs': 6.14.0
+      '@types/range-parser': 1.2.7
+      '@types/send': 1.2.1
+
+  '@types/express@5.0.6':
+    dependencies:
+      '@types/body-parser': 1.19.6
+      '@types/express-serve-static-core': 5.1.0
+      '@types/serve-static': 2.2.0
+
   '@types/graceful-fs@4.1.9':
     dependencies:
       '@types/node': 22.19.3
+
+  '@types/http-errors@2.0.5': {}
 
   '@types/istanbul-lib-coverage@2.0.6': {}
 
@@ -6496,9 +6575,28 @@ snapshots:
     dependencies:
       undici-types: 6.19.8
 
-  '@types/node@25.0.3':
+  '@types/node@25.0.9':
     dependencies:
       undici-types: 7.16.0
+
+  '@types/pg@8.16.0':
+    dependencies:
+      '@types/node': 22.19.3
+      pg-protocol: 1.10.3
+      pg-types: 2.2.0
+
+  '@types/qs@6.14.0': {}
+
+  '@types/range-parser@1.2.7': {}
+
+  '@types/send@1.2.1':
+    dependencies:
+      '@types/node': 22.19.3
+
+  '@types/serve-static@2.2.0':
+    dependencies:
+      '@types/http-errors': 2.0.5
+      '@types/node': 22.19.3
 
   '@types/stack-utils@2.0.3': {}
 
@@ -6748,7 +6846,7 @@ snapshots:
       normalize-path: 3.0.0
       picomatch: 2.3.1
 
-  appstash@0.2.8: {}
+  appstash@0.3.0: {}
 
   arg@4.1.3: {}
 
@@ -7292,12 +7390,6 @@ snapshots:
 
   create-require@1.1.1: {}
 
-  cross-fetch@3.2.0:
-    dependencies:
-      node-fetch: 2.7.0
-    transitivePeerDependencies:
-      - encoding
-
   cross-fetch@4.0.0:
     dependencies:
       node-fetch: 2.7.0
@@ -7346,12 +7438,12 @@ snapshots:
       minimist: 1.2.8
       through2: 3.0.2
 
-  csv-to-pg@3.4.1:
+  csv-to-pg@3.6.0:
     dependencies:
       '@pgsql/types': 17.6.2
       '@pgsql/utils': 17.8.11
       csv-parser: 2.3.5
-      inquirerer: 4.3.1
+      inquirerer: 4.4.0
       js-yaml: 3.14.2
       pgsql-deparser: 17.17.2
 
@@ -7838,7 +7930,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  find-and-require-package-json@0.8.6: {}
+  find-and-require-package-json@0.9.0: {}
 
   find-up@4.1.0:
     dependencies:
@@ -7908,10 +8000,10 @@ snapshots:
 
   function-bind@1.1.2: {}
 
-  genomic@5.2.3:
+  genomic@5.3.0:
     dependencies:
-      appstash: 0.2.8
-      inquirerer: 4.3.1
+      appstash: 0.3.0
+      inquirerer: 4.4.0
 
   gensync@1.0.0-beta.2: {}
 
@@ -7986,15 +8078,11 @@ snapshots:
 
   gopd@1.2.0: {}
 
-  graceful-fs@4.2.11: {}
-
-  graphql-request@6.1.0(graphql@16.12.0):
+  gql-ast@2.6.0:
     dependencies:
-      '@graphql-typed-document-node/core': 3.2.0(graphql@16.12.0)
-      cross-fetch: 3.2.0
-      graphql: 16.12.0
-    transitivePeerDependencies:
-      - encoding
+      graphql: 15.10.1
+
+  graceful-fs@4.2.11: {}
 
   graphql-request@7.4.0(graphql@16.12.0):
     dependencies:
@@ -8005,6 +8093,8 @@ snapshots:
     dependencies:
       graphql: 16.12.0
       tslib: 2.8.1
+
+  graphql@15.10.1: {}
 
   graphql@16.12.0: {}
 
@@ -8184,12 +8274,12 @@ snapshots:
 
   ini@1.3.8: {}
 
-  inquirerer@4.3.1:
+  inquirerer@4.4.0:
     dependencies:
       deepmerge: 4.3.1
-      find-and-require-package-json: 0.8.6
+      find-and-require-package-json: 0.9.0
       minimist: 1.2.8
-      yanse: 0.1.11
+      yanse: 0.2.0
 
   interchainjs@1.19.3(@chain-registry/v2-types@0.53.146)(@chain-registry/v2@1.71.237)(bufferutil@4.1.0)(utf-8-validate@5.0.10):
     dependencies:
@@ -8458,7 +8548,7 @@ snapshots:
       - supports-color
       - ts-node
 
-  jest-cli@30.2.0(@types/node@25.0.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)):
+  jest-cli@30.2.0(@types/node@25.0.9)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)):
     dependencies:
       '@jest/core': 30.2.0(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       '@jest/test-result': 30.2.0
@@ -8466,7 +8556,7 @@ snapshots:
       chalk: 4.1.2
       exit-x: 0.2.2
       import-local: 3.2.0
-      jest-config: 30.2.0(@types/node@25.0.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
+      jest-config: 30.2.0(@types/node@25.0.9)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       jest-util: 30.2.0
       jest-validate: 30.2.0
       yargs: 17.7.2
@@ -8603,7 +8693,7 @@ snapshots:
       - babel-plugin-macros
       - supports-color
 
-  jest-config@30.2.0(@types/node@25.0.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)):
+  jest-config@30.2.0(@types/node@25.0.9)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)):
     dependencies:
       '@babel/core': 7.28.5
       '@jest/get-type': 30.1.0
@@ -8630,7 +8720,7 @@ snapshots:
       slash: 3.0.0
       strip-json-comments: 3.1.1
     optionalDependencies:
-      '@types/node': 25.0.3
+      '@types/node': 25.0.9
       ts-node: 10.9.2(@types/node@22.19.3)(typescript@5.9.3)
     transitivePeerDependencies:
       - babel-plugin-macros
@@ -9103,12 +9193,12 @@ snapshots:
       - supports-color
       - ts-node
 
-  jest@30.2.0(@types/node@25.0.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)):
+  jest@30.2.0(@types/node@25.0.9)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)):
     dependencies:
       '@jest/core': 30.2.0(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       '@jest/types': 30.2.0
       import-local: 3.2.0
-      jest-cli: 30.2.0(@types/node@25.0.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
+      jest-cli: 30.2.0(@types/node@25.0.9)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -9193,7 +9283,7 @@ snapshots:
 
   kleur@3.0.3: {}
 
-  komoji@0.7.14: {}
+  komoji@0.8.0: {}
 
   kubernetesjs@0.7.6: {}
 
@@ -9871,34 +9961,29 @@ snapshots:
 
   path-to-regexp@8.3.0: {}
 
-  pg-cache@1.6.14:
+  pg-cache@1.8.0:
     dependencies:
-      '@pgpmjs/logger': 1.3.7
-      '@pgpmjs/types': 2.14.0
+      '@pgpmjs/logger': 1.5.0
+      '@pgpmjs/types': 2.15.0
       lru-cache: 11.2.4
-      pg: 8.16.3
-      pg-env: 1.2.5
-    transitivePeerDependencies:
-      - pg-native
-
-  pg-cache@1.6.15:
-    dependencies:
-      '@pgpmjs/logger': 1.3.7
-      '@pgpmjs/types': 2.14.1
-      lru-cache: 11.2.4
-      pg: 8.16.3
-      pg-env: 1.2.5
+      pg: 8.17.2
+      pg-env: 1.3.0
     transitivePeerDependencies:
       - pg-native
 
   pg-cloudflare@1.2.7:
     optional: true
 
+  pg-cloudflare@1.3.0:
+    optional: true
+
+  pg-connection-string@2.10.1: {}
+
   pg-connection-string@2.9.1: {}
 
   pg-copy-streams@7.0.0: {}
 
-  pg-env@1.2.5: {}
+  pg-env@1.3.0: {}
 
   pg-int8@1.0.1: {}
 
@@ -9906,12 +9991,18 @@ snapshots:
     dependencies:
       pg: 8.16.3
 
+  pg-pool@3.11.0(pg@8.17.2):
+    dependencies:
+      pg: 8.17.2
+
   pg-protocol@1.10.3: {}
 
-  pg-seed@0.2.2:
+  pg-protocol@1.11.0: {}
+
+  pg-seed@0.3.1:
     dependencies:
       csv-parse: 6.1.0
-      pg: 8.16.3
+      pg: 8.17.2
       pg-copy-streams: 7.0.0
     transitivePeerDependencies:
       - pg-native
@@ -9934,74 +10025,49 @@ snapshots:
     optionalDependencies:
       pg-cloudflare: 1.2.7
 
+  pg@8.17.2:
+    dependencies:
+      pg-connection-string: 2.10.1
+      pg-pool: 3.11.0(pg@8.17.2)
+      pg-protocol: 1.11.0
+      pg-types: 2.2.0
+      pgpass: 1.0.5
+    optionalDependencies:
+      pg-cloudflare: 1.3.0
+
   pgpass@1.0.5:
     dependencies:
       split2: 4.2.0
 
-  pgpm@2.10.13:
+  pgpm@2.12.0:
     dependencies:
-      '@inquirerer/utils': 3.1.3
-      '@pgpmjs/core': 4.14.0
-      '@pgpmjs/env': 2.9.4
-      '@pgpmjs/logger': 1.3.7
-      '@pgpmjs/types': 2.14.1
-      appstash: 0.2.8
-      find-and-require-package-json: 0.8.6
-      genomic: 5.2.3
-      inquirerer: 4.3.1
+      '@inquirerer/utils': 3.2.0
+      '@pgpmjs/core': 4.17.0
+      '@pgpmjs/env': 2.10.0
+      '@pgpmjs/logger': 1.5.0
+      '@pgpmjs/types': 2.15.0
+      appstash: 0.3.0
+      find-and-require-package-json: 0.9.0
+      genomic: 5.3.0
+      inquirerer: 4.4.0
       js-yaml: 4.1.1
-      minimist: 1.2.8
-      pg-cache: 1.6.15
-      pg-env: 1.2.5
+      pg-cache: 1.8.0
+      pg-env: 1.3.0
       pgsql-deparser: 17.17.2
       semver: 7.7.3
       shelljs: 0.10.0
-      yanse: 0.1.11
+      yanse: 0.2.0
     transitivePeerDependencies:
       - pg-native
       - supports-color
 
-  pgpm@2.10.9:
+  pgsql-client@1.5.0:
     dependencies:
-      '@inquirerer/utils': 3.1.3
-      '@pgpmjs/core': 4.13.3
-      '@pgpmjs/env': 2.9.3
-      '@pgpmjs/logger': 1.3.7
-      '@pgpmjs/types': 2.14.0
-      appstash: 0.2.8
-      find-and-require-package-json: 0.8.6
-      genomic: 5.2.3
-      inquirerer: 4.3.1
-      js-yaml: 4.1.1
-      minimist: 1.2.8
-      pg-cache: 1.6.14
-      pg-env: 1.2.5
-      pgsql-deparser: 17.17.2
-      semver: 7.7.3
-      shelljs: 0.10.0
-      yanse: 0.1.11
-    transitivePeerDependencies:
-      - pg-native
-      - supports-color
-
-  pgsql-client@1.3.11:
-    dependencies:
-      '@pgpmjs/core': 4.13.3
-      '@pgpmjs/logger': 1.3.7
-      '@pgpmjs/types': 2.14.0
-      pg: 8.16.3
-      pg-env: 1.2.5
-    transitivePeerDependencies:
-      - pg-native
-      - supports-color
-
-  pgsql-client@1.3.12:
-    dependencies:
-      '@pgpmjs/core': 4.14.0
-      '@pgpmjs/logger': 1.3.7
-      '@pgpmjs/types': 2.14.1
-      pg: 8.16.3
-      pg-env: 1.2.5
+      '@pgpmjs/core': 4.17.0
+      '@pgpmjs/logger': 1.5.0
+      '@pgpmjs/types': 2.15.0
+      pg: 8.17.2
+      pg-env: 1.3.0
     transitivePeerDependencies:
       - pg-native
       - supports-color
@@ -10016,54 +10082,28 @@ snapshots:
       libpg-query: 17.7.3
       pgsql-deparser: 17.17.2
 
-  pgsql-seed@0.4.11:
+  pgsql-seed@0.6.0:
     dependencies:
-      '@pgpmjs/core': 4.13.3
-      '@pgpmjs/env': 2.9.4
-      pg: 8.16.3
-      pg-env: 1.2.5
-      pg-seed: 0.2.2
+      '@pgpmjs/core': 4.17.0
+      '@pgpmjs/env': 2.10.0
+      pg: 8.17.2
+      pg-env: 1.3.0
+      pg-seed: 0.3.1
     transitivePeerDependencies:
       - pg-native
       - supports-color
 
-  pgsql-seed@0.4.12:
+  pgsql-test@2.26.0:
     dependencies:
-      '@pgpmjs/core': 4.14.0
-      '@pgpmjs/env': 2.9.4
-      pg: 8.16.3
-      pg-env: 1.2.5
-      pg-seed: 0.2.2
-    transitivePeerDependencies:
-      - pg-native
-      - supports-color
-
-  pgsql-test@2.24.11:
-    dependencies:
-      '@pgpmjs/env': 2.9.3
-      '@pgpmjs/logger': 1.3.7
-      '@pgpmjs/server-utils': 2.8.14
-      '@pgpmjs/types': 2.14.0
-      pg: 8.16.3
-      pg-cache: 1.6.14
-      pg-env: 1.2.5
-      pgsql-client: 1.3.11
-      pgsql-seed: 0.4.11
-    transitivePeerDependencies:
-      - pg-native
-      - supports-color
-
-  pgsql-test@2.24.13:
-    dependencies:
-      '@pgpmjs/env': 2.9.4
-      '@pgpmjs/logger': 1.3.7
-      '@pgpmjs/server-utils': 2.8.15
-      '@pgpmjs/types': 2.14.1
-      pg: 8.16.3
-      pg-cache: 1.6.15
-      pg-env: 1.2.5
-      pgsql-client: 1.3.12
-      pgsql-seed: 0.4.12
+      '@pgpmjs/env': 2.10.0
+      '@pgpmjs/logger': 1.5.0
+      '@pgpmjs/server-utils': 2.10.0
+      '@pgpmjs/types': 2.15.0
+      pg: 8.17.2
+      pg-cache: 1.8.0
+      pg-env: 1.3.0
+      pgsql-client: 1.5.0
+      pgsql-seed: 0.6.0
     transitivePeerDependencies:
       - pg-native
       - supports-color
@@ -10672,12 +10712,12 @@ snapshots:
       babel-jest: 30.2.0(@babel/core@7.28.5)
       jest-util: 30.2.0
 
-  ts-jest@29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@30.2.0(@types/node@25.0.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)))(typescript@5.9.3):
+  ts-jest@29.4.6(@babel/core@7.28.5)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.28.5))(jest-util@30.2.0)(jest@30.2.0(@types/node@25.0.9)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3)))(typescript@5.9.3):
     dependencies:
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
       handlebars: 4.7.8
-      jest: 30.2.0(@types/node@25.0.3)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
+      jest: 30.2.0(@types/node@25.0.9)(ts-node@10.9.2(@types/node@22.19.3)(typescript@5.9.3))
       json5: 2.2.3
       lodash.memoize: 4.1.2
       make-error: 1.3.6
@@ -10991,7 +11031,7 @@ snapshots:
 
   yallist@3.1.1: {}
 
-  yanse@0.1.11: {}
+  yanse@0.2.0: {}
 
   yargs-parser@18.1.3:
     dependencies:
