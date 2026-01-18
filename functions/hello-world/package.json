@@ -23,7 +23,7 @@
     "pretest": "tsc",
     "test": "jest --forceExit __tests__/index.test.ts",
     "test:inner": "pnpm test",
-    "start": "node ../../_runtimes/node/runner.js dist/index.js"
+    "start": "node ../_runtimes/node/runner.js dist/index.js"
   },
   "jest": {
     "preset": "ts-jest",
@@ -41,7 +41,8 @@
     "kubernetesjs": "^0.7.6",
     "graphql-tag": "^2.12.6",
     "cross-fetch": "^4.0.0",
-    "graphql-request": "^6.1.0"
+    "graphql": "^16.8.1",
+    "@constructive-db/constructive-sdk": "file:../../sdk.tgz"
   },
   "devDependencies": {
     "pgsql-test": "latest",
