@@ -1,7 +1,7 @@
 {
-  "name": "@constructive-io/pgpm-dump-fn",
+  "name": "@constructive-io/create-db-fn",
   "version": "0.1.0",
-  "description": "Pgpm Dump Knative function",
+  "description": "Create Database Cloud Function",
   "author": "Constructive",
   "private": false,
   "publishConfig": {
@@ -41,7 +41,7 @@
     "kubernetesjs": "^0.7.6",
     "graphql-tag": "^2.12.6",
     "cross-fetch": "^4.0.0",
-    "@constructive-db/constructive-sdk": "file:../../sdk.tgz",
+    "pg": "^8.11.3",
     "pgpm": "latest"
   },
   "devDependencies": {
