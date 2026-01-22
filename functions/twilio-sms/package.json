@@ -24,7 +24,7 @@
         "twilio": "^4.23.0",
         "graphql-tag": "^2.12.6",
         "cross-fetch": "^4.0.0",
-        "graphql-request": "^6.1.0"
+        "@constructive-db/constructive-sdk": "file:../../sdk.tgz"
     },
     "devDependencies": {
         "pgsql-test": "latest",
