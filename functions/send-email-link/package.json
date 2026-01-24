@@ -34,7 +34,7 @@
     "@launchql/postmaster": "0.1.4",
     "@launchql/styled-email": "0.1.0",
     "@pgpmjs/env": "latest",
-    "graphql-request": "^7.1.2",
+    "@constructive-db/constructive-sdk": "file:../../sdk.tgz",
     "graphql-tag": "^2.12.6",
     "cross-fetch": "^4.0.0",
     "kubernetesjs": "^0.7.6"
