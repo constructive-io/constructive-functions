@@ -1,31 +1,26 @@
 
-import { GraphQLClient } from 'graphql-request';
-import gql from 'graphql-tag';
+import { createClient } from '@constructive-db/constructive-sdk'; // sdk
 import fetch from 'cross-fetch';
 import { dump } from 'pgpm';
 
-// example GQL
-const GetUsers = gql`
-  query GetUsers {
-    users {
-      nodes {
-        id
-        username
-      }
-    }
-  }
-`;
-
 export default async (params: any, context: any) => {
   console.log('Pgpm Dump Request received', params);
-  const { client } = context;
+  const { headers } = context;
 
-  // Execute GQL Query as proof of connectivity
-  try {
-    const data = await client.request(GetUsers);
-    console.log('GQL Query Result:', JSON.stringify(data));
-  } catch (e: any) {
-    console.warn('GQL Request failed (expected if server not reachable in test):', e.message);
+  // Clean headers to avoid conflicts with SDK defaults
+  const safeHeaders = { ...headers };
+  ['host', 'content-length', 'connection', 'content-type', 'accept', 'user-agent', 'accept-encoding'].forEach(k => delete safeHeaders[k]);
+
+  const sdk = createClient({
+    endpoint: process.env.GRAPHQL_ENDPOINT || 'http://constructive-server:3000/graphql',
+    headers: safeHeaders || {}
+  });
+
+  // Execute GQL Query as proof of connectivity (without try-catch)
+  const result = await sdk.api.findMany({ select: { id: true, name: true }, first: 1 }).execute();
+  console.log('GQL Query Result:', JSON.stringify(result));
+  if (!result.ok) {
+    console.error('GQL Request failed:', result.errors);
   }
 
   // Map params to argv-like object expected by pgpm

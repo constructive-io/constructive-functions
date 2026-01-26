@@ -1,23 +1,10 @@
 
-import { GraphQLClient } from 'graphql-request';
+import { createClient } from '@constructive-db/constructive-sdk';
 import Stripe from 'stripe';
-import gql from 'graphql-tag';
 import fetch from 'cross-fetch';
 
-// Proof of GQL connection
-const GetUsers = gql`
-  query GetUsers {
-    users {
-      nodes {
-        id
-        username
-      }
-    }
-  }
-`;
-
 export default async (params: any, context: any) => {
-    const { client } = context;
+    const { headers } = context;
     console.log('[stripe-fn] Request received');
     const secretKey = process.env.STRIPE_SECRET_KEY;
 
@@ -26,12 +13,25 @@ export default async (params: any, context: any) => {
         return { error: 'Missing STRIPE_SECRET_KEY' };
     }
 
-    let users = null;
-    try {
-        const data = await client.request(GetUsers);
-        users = data?.users;
-    } catch (e: any) {
-        console.warn('GQL Request failed:', e.message);
+    // Clean headers to avoid conflicts with SDK defaults
+    const safeHeaders = { ...headers };
+    ['host', 'content-length', 'connection', 'content-type', 'accept', 'user-agent', 'accept-encoding'].forEach(k => delete safeHeaders[k]);
+
+    const sdk = createClient({
+        endpoint: process.env.GRAPHQL_ENDPOINT || 'http://constructive-server:3000/graphql',
+        headers: safeHeaders || {}
+    });
+
+    // SDK call without try-catch
+    // Test with sdk.api to verify connectivity
+    const result = await sdk.api.findMany({
+        select: { id: true, name: true },
+        first: 5
+    }).execute();
+
+    const users = result.ok ? result.data : null;
+    if (!result.ok) {
+        console.error('GQL Request failed:', result.errors);
     }
 
     if (!secretKey) {
