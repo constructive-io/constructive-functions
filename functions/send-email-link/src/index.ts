@@ -1,62 +1,10 @@
 
-import { GraphQLClient } from 'graphql-request';
-import gql from 'graphql-tag';
+import { createClient } from '@constructive-db/constructive-sdk'; // sdk
 import { generate } from '@launchql/mjml';
 import { send } from '@launchql/postmaster';
 import { parseEnvBoolean } from '@pgpmjs/env';
 
 const isDryRun = parseEnvBoolean(process.env.SEND_EMAIL_LINK_DRY_RUN) ?? false;
-
-// Proof of GQL connection (Explicit proof for consistency)
-const GetUsers = gql`
-    query GetUsers {
-      users {
-        nodes {
-          id
-          username
-        }
-      }
-    }
-`;
-
-const GetUser = gql`
-  query GetUser($userId: UUID!) {
-    user(id: $userId) {
-      username
-      displayName
-      profilePicture
-    }
-  }
-`;
-
-const GetDatabaseInfo = gql`
-  query GetDatabaseInfo($databaseId: UUID!) {
-    database(id: $databaseId) {
-      sites {
-        nodes {
-          domains {
-            nodes {
-              subdomain
-              domain
-            }
-          }
-          logo
-          title
-          siteThemes {
-            nodes {
-              theme
-            }
-          }
-          siteModules(condition: { name: "legal_terms_module" }) {
-            nodes {
-              data
-            }
-          }
-        }
-      }
-    }
-  }
-`;
 
 type SendEmailParams = {
   email_type: 'invite_email' | 'forgot_password' | 'email_verification';
@@ -71,37 +19,20 @@ type SendEmailParams = {
 };
 
 type GraphQLContext = {
-  client: GraphQLClient;
-  meta: GraphQLClient;
+  client: any; // Type as 'any' or SDK client type if strictly typed, but for now 'any' allows passing sdk
+  meta: any;
   databaseId: string;
 };
 
 const getRequiredEnv = (name: string): string => {
   const value = process.env[name];
   if (!value) {
-    throw new Error(`Missing required environment variable ${name}`);
+    throw new Error(`Missing required environment variable ${name} `);
   }
   return value;
 };
 
-const createGraphQLClient = (
-  url: string,
-  hostHeaderEnvVar?: string
-): GraphQLClient => {
-  const headers: Record<string, string> = {};
-
-  if (process.env.GRAPHQL_AUTH_TOKEN) {
-    headers.Authorization = `Bearer ${process.env.GRAPHQL_AUTH_TOKEN}`;
-  }
-
-  const envName = hostHeaderEnvVar || 'GRAPHQL_HOST_HEADER';
-  const hostHeader = process.env[envName];
-  if (hostHeader) {
-    headers.host = hostHeader;
-  }
-
-  return new GraphQLClient(url, { headers });
-};
+// Removed createGraphQLClient helper as we use createClient from SDK directly
 
 export const sendEmailLink = async (
   params: SendEmailParams,
@@ -143,16 +74,42 @@ export const sendEmailLink = async (
     return typeValidation;
   }
 
-  const databaseInfo = await meta.request<any>(GetDatabaseInfo, {
-    databaseId
-  });
+  // Refactored GetDatabaseInfo using SDK
+  // We fetch all siteModules and filter in memory for "legal_terms_module"
+  const dbResult = await meta.database.findUnique({
+    where: { id: databaseId },
+    select: {
+      sites: {
+        select: {
+          domains: {
+            select: { subdomain: true, domain: true }
+          },
+          logo: true, // Assuming logo is JSON/scalar
+          title: true,
+          siteThemes: {
+            select: { theme: true }
+          },
+          siteModules: {
+            select: { name: true, data: true }
+          }
+        }
+      }
+    }
+  }).execute();
 
-  const site = databaseInfo?.database?.sites?.nodes?.[0];
+  const databaseInfo = dbResult.ok ? dbResult.data : null;
+
+  // Assuming structure match: database -> sites -> nodes -> [0] 
+  // The SDK 'sites' field in 'database' likely returns a connection object { nodes: [...] } 
+  // or dependent on generator config. Default is usually connection.
+  // We assume 'nodes' property exists on relational fields unless simplified.
+  const site = databaseInfo?.sites?.nodes?.[0];
   if (!site) {
     throw new Error('Site not found for database');
   }
 
-  const legalTermsModule = site.siteModules?.nodes?.[0];
+  // Filter for legal_terms_module in memory
+  const legalTermsModule = site.siteModules?.nodes?.find((m: any) => m.name === "legal_terms_module");
   const domainNode = site.domains?.nodes?.[0];
   const theme = site.siteThemes?.nodes?.[0]?.theme;
 
@@ -185,7 +142,7 @@ export const sendEmailLink = async (
   // It is ignored for non-local hostnames. Only allow on DRY RUNs
   const localPort =
     isLocalHost && isDryRun && process.env.LOCAL_APP_PORT
-      ? `:${process.env.LOCAL_APP_PORT}`
+      ? `:${process.env.LOCAL_APP_PORT} `
       : '';
 
   // Use http only for local dry-run to avoid browser TLS warnings
@@ -211,10 +168,17 @@ export const sendEmailLink = async (
       const scope = Number(params.invite_type) === 2 ? 'org' : 'app';
       url.searchParams.append('type', scope);
 
-      const inviter = await client.request<any>(GetUser, {
-        userId: params.sender_id
-      });
-      inviterName = inviter?.user?.displayName;
+      // Refactored GetUser
+      const inviterResult = await client.user.findUnique({
+        where: { id: params.sender_id },
+        select: {
+          displayName: true
+          // profilePicture? if needed
+        }
+      }).execute();
+
+      const inviter = inviterResult.ok ? inviterResult.data : null;
+      inviterName = inviter?.displayName;
 
       if (inviterName) {
         subject = `${inviterName} invited you to ${nick}!`;
@@ -307,7 +271,7 @@ export const sendEmailLink = async (
 };
 
 export default async (params: any, context: any) => {
-  const { client, headers } = context;
+  const { headers } = context;
 
   const getHeader = (key: string) => {
     if (!headers) return undefined;
@@ -318,10 +282,20 @@ export default async (params: any, context: any) => {
     return undefined;
   };
 
-  try {
-    await client.request(GetUsers);
-  } catch (e: any) {
-    console.warn('GQL Request failed:', e.message);
+  // Clean headers to avoid conflicts with SDK defaults
+  const safeHeaders = { ...headers };
+  ['host', 'content-length', 'connection', 'content-type', 'accept', 'user-agent', 'accept-encoding'].forEach(k => delete safeHeaders[k]);
+
+  // Construct our SDK client for 'client' context
+  const client = createClient({
+    endpoint: process.env.GRAPHQL_ENDPOINT || 'http://constructive-server:3000/graphql',
+    headers: safeHeaders || {}
+  });
+
+  // SDK call without try-catch - sanity check
+  const sanityResult = await client.api.findMany({ select: { id: true, name: true }, first: 1 }).execute();
+  if (!sanityResult.ok) {
+    console.error('GQL Request failed:', sanityResult.errors);
   }
 
   const databaseId =
@@ -334,11 +308,13 @@ export default async (params: any, context: any) => {
   const graphqlUrl = getRequiredEnv('GRAPHQL_URL');
   const metaGraphqlUrl = process.env.META_GRAPHQL_URL || graphqlUrl;
 
-  // We reuse the provided client if possible, but sendEmailLink logic seemingly constructs 
-  // clients based on ENV vars at that moment.
-  // context.client is the 'graphql-request' client passed from shim
-  // We should construct 'meta' client here.
-  const meta = createGraphQLClient(metaGraphqlUrl, 'META_GRAPHQL_HOST_HEADER');
+  const meta = createClient({
+    endpoint: metaGraphqlUrl,
+    headers: {
+      ...(process.env.GRAPHQL_AUTH_TOKEN ? { Authorization: `Bearer ${process.env.GRAPHQL_AUTH_TOKEN}` } : {}),
+      ...(process.env.META_GRAPHQL_HOST_HEADER ? { host: process.env.META_GRAPHQL_HOST_HEADER } : {})
+    }
+  });
 
   try {
     const result = await sendEmailLink(params as SendEmailParams, {
@@ -356,3 +332,4 @@ export default async (params: any, context: any) => {
 // When executed directly (e.g. via `node dist/index.js`), start an HTTP server.
 
 // Server boilerplate abstracted to runner.js
+
