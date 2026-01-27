@@ -33,15 +33,15 @@ docker-build: docker-build-runtime
 	@for fn in functions/*; do \
 		if [ -f "$$fn/Dockerfile" ]; then \
 			echo "Building $$fn..."; \
-			docker build -t "$(REGISTRY)/$$(basename $$fn):latest" "$$fn"; \
+			docker build -t "$(REGISTRY)/$$(basename $$fn):latest" -f "$$fn/Dockerfile" .; \
 		fi \
 	done
 
 docker-build-simple-email:
-	docker build -t $(REGISTRY)/simple-email:latest functions/simple-email
+	docker build -t $(REGISTRY)/simple-email:latest -f functions/simple-email/Dockerfile .
 
 docker-build-send-email-link:
-	docker build -t $(REGISTRY)/send-email-link:latest functions/send-email-link
+	docker build -t $(REGISTRY)/send-email-link:latest -f functions/send-email-link/Dockerfile .
 
 docker-push:
 	@echo "Pushing Docker images to $(REGISTRY)..."
@@ -58,9 +58,20 @@ docker-push-simple-email:
 docker-push-send-email-link:
 	docker push $(REGISTRY)/send-email-link:latest
 
+# Bulk Kind Load
+kind-load-all:
+	@echo "Loading all function images into Kind..."
+	@for fn in functions/*; do \
+		if [ -f "$$fn/Dockerfile" ]; then \
+			echo "Loading $$fn..."; \
+			$(KIND_BIN) load docker-image "$(REGISTRY)/$$(basename $$fn):latest" --name $(KIND_CLUSTER_NAME); \
+		fi \
+	done
+
 # Kubernetes Test Runner
 # Run All Tests inside K8s (Centralized Runner)
-test-k8s-all:
+# Depends on building and loading ALL images to ensure environment is complete.
+test-k8s-all: docker-build kind-load-all
 	@echo "Running all K8s tests via centralized KubernetesJS runner..."
 	pnpm exec ts-node scripts/test-runner.ts
 

@@ -64,7 +64,7 @@ async function runTestForFunction(fnName: string): Promise<boolean> {
                         name: 'test-runner',
                         image: 'constructive/function-test-runner:v9',
                         imagePullPolicy: "IfNotPresent",
-                        command: ["/bin/sh", "-c", `pnpm exec jest functions/${fnName}/__tests__/index.test.ts -u`],
+                        command: ["/bin/sh", "-c", `pnpm exec jest functions/${fnName}/__tests__/index.test.ts -u --no-cache`],
                         env: envVars
                     }]
                 }

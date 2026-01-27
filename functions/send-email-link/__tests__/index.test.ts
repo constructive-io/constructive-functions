@@ -68,7 +68,7 @@ describe('Send Email Link Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'send-email-link',
-                            image: 'constructive/function-test-runner:v8',
+                            image: 'constructive/function-test-runner:v9',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/send-email-link/src/index.ts"],
                             env: [

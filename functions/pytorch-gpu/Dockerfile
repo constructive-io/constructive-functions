@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y gcc
 # For now, to keep image size manageable for local dev, use CPU torch.
 RUN pip install flask torch --no-cache-dir
 
-COPY src/ ./src/
+COPY functions/pytorch-gpu/src/ ./src/
 
 ENV PORT=8080
 

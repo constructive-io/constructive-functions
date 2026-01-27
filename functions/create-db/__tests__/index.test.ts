@@ -66,7 +66,7 @@ describe('Create DB Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'create-db',
-                            image: 'constructive/function-test-runner:v8',
+                            image: 'constructive/function-test-runner:v9',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/create-db/src/index.ts"],
                             env: [
