@@ -121,9 +121,13 @@ test-k8s-twilio-sms:
 	pnpm exec ts-node scripts/test-runner.ts --function twilio-sms
 
 test-k8s-pytorch-gpu:
+	docker build -t constructive/pytorch-gpu:latest functions/pytorch-gpu
+	$(KIND_BIN) load docker-image constructive/pytorch-gpu:latest --name $(KIND_CLUSTER_NAME)
 	pnpm exec ts-node scripts/test-runner.ts --function pytorch-gpu
 
 test-k8s-rust-hello-world:
+	docker build -t constructive/rust-hello-world:latest functions/rust-hello-world
+	$(KIND_BIN) load docker-image constructive/rust-hello-world:latest --name $(KIND_CLUSTER_NAME)
 	pnpm exec ts-node scripts/test-runner.ts --function rust-hello-world
 
 # Cleanup K8s Resources
