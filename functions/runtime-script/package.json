@@ -29,9 +29,10 @@
         "@pgpmjs/env": "latest",
         "kubernetesjs": "^0.7.6",
         "pg": "^8.11.3",
-        "graphql-tag": "^2.12.6",
         "cross-fetch": "^4.0.0",
-        "graphql-request": "^6.1.0"
+        "graphql": "^16.8.1",
+        "graphql-tag": "^2.12.6",
+        "@constructive-db/constructive-sdk": "file:../../sdk.tgz"
     },
     "devDependencies": {
         "pgsql-test": "latest",

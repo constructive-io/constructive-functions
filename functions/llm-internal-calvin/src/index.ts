@@ -1,24 +1,20 @@
 
-import { GraphQLClient } from 'graphql-request';
-import axios from 'axios';
-import gql from 'graphql-tag';
+import { createClient } from '@constructive-db/constructive-sdk';
+import axios from 'axios';  // kept although fetch is used below? fetch is imported from cross-fetch.
 import fetch from 'cross-fetch';
 
-// Proof of GQL connection
-const GetUsers = gql`
-  query GetUsers {
-    users {
-      nodes {
-        id
-        username
-      }
-    }
-  }
-`;
-
 export default async (params: any, context: any) => {
-  const { client } = context;
+  const { headers } = context;
   console.log('[llm-internal-calvin] Request received');
+
+  // Clean headers to avoid conflicts with SDK defaults
+  const safeHeaders = { ...headers };
+  ['host', 'content-length', 'connection', 'content-type', 'accept', 'user-agent', 'accept-encoding'].forEach(k => delete safeHeaders[k]);
+
+  const sdk = createClient({
+    endpoint: process.env.GRAPHQL_ENDPOINT || 'http://constructive-server:3000/graphql',
+    headers: safeHeaders || {}
+  });
   const { prompt } = params;
   const apiKey = process.env.CALVIN_API_KEY;
 

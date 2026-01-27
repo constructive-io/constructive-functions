@@ -10,4 +10,4 @@ echo "[K8s-Runner] Executing test for function: $FUNCTION_NAME"
 echo "[K8s-Runner] Root Dir: $ROOT_DIR"
 
 # Invoke the centralized test runner with the specific function argument
-pnpm exec ts-node "$ROOT_DIR/scripts/test-runner.ts" --function "$FUNCTION_NAME"
+npx ts-node "$ROOT_DIR/scripts/test-runner.ts" --function "$FUNCTION_NAME"

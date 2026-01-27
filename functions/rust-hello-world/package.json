@@ -1,0 +1,15 @@
+{
+    "name": "@constructive-io/rust-hello-world-fn",
+    "version": "0.1.0",
+    "description": "Rust Hello World Cloud Function",
+    "private": false,
+    "directories": {
+        "lib": "src",
+        "test": "__tests__"
+    },
+    "scripts": {
+        "build": "cargo build",
+        "test": "cargo test",
+        "start": "cargo run"
+    }
+}

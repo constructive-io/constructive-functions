@@ -40,7 +40,7 @@ describe('Stripe Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'stripe-fn',
-                            image: 'constructive/function-test-runner:v4', // Node runner
+                            image: 'constructive/function-test-runner:v9', // Node runner
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/stripe-function/src/index.ts"],
                             env: [{ name: "STRIPE_SECRET_KEY", value: "sk_test_mock_123" }]
@@ -69,6 +69,21 @@ describe('Stripe Function (Integration)', () => {
                         if (logs.includes('listening on port')) {
                             success = true;
                             logsResponse = logs;
+
+                            // Invoke to trigger GQL log
+                            console.log('[Test] Invoking stripe-fn via proxy...');
+                            const proxyUrl = `http://127.0.0.1:8003/api/v1/namespaces/${NAMESPACE}/pods/${podName}:8080/proxy/`;
+                            await fetch(proxyUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ type: 'payment_intent.succeeded' })
+                            });
+
+                            // Capture logs
+                            await new Promise(r => setTimeout(r, 2000));
+                            const logRes = await fetch(`http://127.0.0.1:8003/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
+                            console.log('\n[Evidence] Pod Logs:\n' + await logRes.text() + '\n');
+
                             break;
                         }
                         logsResponse = logs;

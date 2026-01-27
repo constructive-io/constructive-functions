@@ -7,11 +7,18 @@ const run = async () => {
     // regardless of where runner.js is located (Local Dev vs Docker).
     const resolveDep = (name) => {
         try {
+            // Priority 1: User's local node_modules (if present)
             return require(require.resolve(name, { paths: [process.cwd()] }));
         } catch (e) {
-            console.error(`[runner] Failed to resolve dependency '${name}' from ${process.cwd()}`);
-            console.error(e.message);
-            process.exit(1);
+            try {
+                // Priority 2: Runtime's node_modules (Base Image context)
+                return require(require.resolve(name, { paths: [__dirname] }));
+            } catch (e2) {
+                console.error(`[runner] Failed to resolve dependency '${name}'`);
+                console.error(`Checked locations: ${process.cwd()}, ${__dirname}`);
+                console.error(e.message);
+                process.exit(1);
+            }
         }
     };
 
@@ -82,9 +89,131 @@ const run = async () => {
     const client = new GraphQLClient(graphqlEndpoint);
 
     // 5. Setup Route
+    // 5. Setup Route
+    // 6. Start Server
+    const port = Number(process.env.PORT ?? 8080);
     app.post('/', async (req, res) => {
         try {
-            const result = await handler(req.body, { client, headers: req.headers });
+            console.log('[runner] Incoming Request Body:', JSON.stringify(req.body));
+            // Context Injection: Parse User Identity
+            const authHeader = req.headers['authorization'];
+            const xUserId = req.headers['x-user-id'];
+            let user = null;
+
+            if (xUserId) {
+                user = { id: xUserId };
+            } else if (authHeader && authHeader.startsWith('Bearer ')) {
+                try {
+                    const token = authHeader.split(' ')[1];
+                    const payload = token.split('.')[1];
+                    if (payload) {
+                        const decoded = JSON.parse(Buffer.from(payload, 'base64').toString());
+                        user = {
+                            id: decoded.sub || decoded.user_id,
+                            ...decoded
+                        };
+                    }
+                } catch (e) {
+                    console.warn('[runner] Failed to parse JWT token:', e.message);
+                }
+            }
+
+            const context = {
+                client,
+                headers: req.headers,
+                user
+            };
+
+            // Async/Flow Tracking Logic
+            const isAsync = req.headers['x-constructive-async'] === 'true';
+
+            if (isAsync) {
+                // Resolve pg (Available in root or container)
+                let pg;
+                try {
+                    pg = require('pg');
+                } catch (e) {
+                    // unexpected if we installed it, but fallback
+                    console.error('[runner] pg module not found, cannot run async flow');
+                    return res.status(500).json({ error: 'Async mode requires pg module' });
+                }
+
+                const { Client } = pg;
+
+                // Use standard PG env vars
+                const pgClient = new Client({
+                    user: process.env.PGUSER || 'postgres',
+                    host: process.env.PGHOST || 'postgres',
+                    database: process.env.PGDATABASE || 'postgres',
+                    password: process.env.PGPASSWORD,
+                    port: Number(process.env.PGPORT || 5432),
+                });
+
+                try {
+                    await pgClient.connect();
+                    // Insert Pending Flow
+                    // Assuming flow schema is deployed
+                    const result = await pgClient.query(`
+                        INSERT INTO flow.flows (status, meta)
+                        VALUES ($1, $2)
+                        RETURNING id
+                    `, ['pending', JSON.stringify({ headers: req.headers, body: req.body })]);
+
+                    const flowId = result.rows[0].id;
+                    await pgClient.end();
+
+                    // Respond immediately
+                    res.status(202).json({
+                        job_id: flowId,
+                        status: 'pending',
+                        message: 'Request accepted for background processing'
+                    });
+
+                    // Disable response methods to prevent later writes
+                    // But express might handle this. 
+                    // We just detached.
+
+                    // Background Execution
+                    (async () => {
+                        const bgClient = new Client({
+                            user: process.env.PGUSER || 'postgres',
+                            host: process.env.PGHOST || 'postgres',
+                            database: process.env.PGDATABASE || 'postgres',
+                            password: process.env.PGPASSWORD,
+                            port: Number(process.env.PGPORT || 5432),
+                        });
+                        await bgClient.connect();
+
+                        try {
+                            // Update Processing
+                            await bgClient.query('UPDATE flow.flows SET status = $1, progress = 10, updated_at = now() WHERE id = $2', ['processing', flowId]);
+
+                            // Execute Handler
+                            const handlerResult = await handler(req.body, context);
+
+                            // Update Completed
+                            await bgClient.query('UPDATE flow.flows SET status = $1, result = $2, progress = 100, updated_at = now() WHERE id = $3', ['completed', JSON.stringify(handlerResult), flowId]);
+
+                        } catch (err) {
+                            console.error(`[runner] Async Job ${flowId} failed:`, err);
+                            await bgClient.query('UPDATE flow.flows SET status = $1, result = $2, updated_at = now() WHERE id = $3', ['failed', JSON.stringify({ error: err.message, stack: err.stack }), flowId]);
+                        } finally {
+                            await bgClient.end();
+                        }
+                    })();
+
+                    return; // End request handling here
+
+                } catch (dbErr) {
+                    console.error('[runner] DB Error in Async setup:', dbErr);
+                    // If DB fails, fallback to sync or error? 
+                    // Error 500
+                    if (pgClient) pgClient.end().catch(() => ({}));
+                    return res.status(500).json({ error: 'Failed to initialize async flow', details: dbErr.message });
+                }
+            }
+
+            const result = await handler(req.body, context);
 
             // Standard Shim Error Handling Heuristics
             if (result && result.error) {
@@ -92,7 +221,7 @@ const run = async () => {
                 if (['Missing prompt', 'Unsupported provider', 'Missing "query" in payload',
                     'Missing repoName or githubToken', 'Missing X-Database-Id header or DEFAULT_DATABASE_ID',
                     'Missing required field', "Either 'html' or 'text' must be provided",
-                    "Missing address, message, or signature"].some(s => result.error.includes(s) || s === result.error)) {
+                    "Missing address, message, or signature"].some(s => typeof result.error === 'string' && (result.error.includes(s) || s === result.error))) {
                     return res.status(400).json(result);
                 }
                 return res.status(500).json(result);
@@ -105,8 +234,6 @@ const run = async () => {
         }
     });
 
-    // 6. Start Server
-    const port = Number(process.env.PORT ?? 8080);
     app.listen(port, () => {
         console.log(`[runner] Function '${relativePath}' listening on port ${port}`);
     });

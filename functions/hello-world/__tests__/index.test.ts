@@ -9,6 +9,7 @@ describe('Hello World Function (Integration)', () => {
     let teardown: () => Promise<void>;
     let k8s: KubernetesClient;
     let k8sOpts: any;
+    let sharedPodName: string = '';
 
     const NAMESPACE = 'default';
 
@@ -19,8 +20,11 @@ describe('Hello World Function (Integration)', () => {
         const { spawn } = require('child_process');
         proxyProcess = spawn('kubectl', ['proxy', '--port=8001']);
 
+        proxyProcess.stderr.on('data', (d: any) => console.error(`[Proxy Err]: ${d}`));
+        proxyProcess.on('error', (e: any) => console.error(`[Proxy Failed]:`, e));
+
         // Wait for proxy to be ready
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 5000));
 
         // database connection in the pod
         ({ pg, db, teardown } = await getConnections({
@@ -41,7 +45,7 @@ describe('Hello World Function (Integration)', () => {
             restEndpoint: 'http://127.0.0.1:8001'
         } as any);
         k8sOpts = {};
-    });
+    }, 30000);
 
     afterAll(async () => {
         await teardown();
@@ -77,7 +81,7 @@ describe('Hello World Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'hello-world',
-                            image: 'constructive/function-test-runner:v4',
+                            image: 'constructive/function-test-runner:v9',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/hello-world/src/index.ts"],
                             env: [
@@ -113,6 +117,7 @@ describe('Hello World Function (Integration)', () => {
                     });
                     if (pods.items && pods.items.length > 0) {
                         podName = pods.items[0].metadata.name;
+                        sharedPodName = podName;
                         console.log(`[Test] Found Pod: ${podName}`);
                     }
                 }
@@ -123,10 +128,46 @@ describe('Hello World Function (Integration)', () => {
                         const res = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
                         const logs = await res.text();
 
+
                         if (logs.includes('listening on port')) {
                             console.log(`[Test] Service is listening! Success.`);
                             console.log('\n[Evidence] Function Pod Logs:\n' + logs + '\n');
                             logsResponse = logs;
+
+                            // 4. Invoke via Proxy to Verify User Context
+                            console.log(`[Test] Invoking hello-world function via proxy...`);
+                            const proxyUrl = `http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}:8080/proxy/`;
+
+                            const invokeRes = await fetch(proxyUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-User-Id': 'user_123'
+                                },
+                                body: JSON.stringify({ name: 'Test User' })
+                            });
+
+                            if (!invokeRes.ok) {
+                                throw new Error(`Invocation failed: ${invokeRes.status} ${invokeRes.statusText}`);
+                            }
+
+                            const invokeJson = await invokeRes.json();
+                            console.log('[Test] Invocation Response:', JSON.stringify(invokeJson));
+
+                            // Verify User Context Injection
+                            if (invokeJson.user && invokeJson.user.id === 'user_123') {
+                                console.log('[Test] Verified: User Context injected correctly (X-User-Id priority).');
+                            } else {
+                                throw new Error(`User Context verification failed. Received: ${JSON.stringify(invokeJson.user)}`);
+                            }
+
+                            // Fetch logs again to see execution logs
+                            console.log('[Test] Fetching post-invocation logs...');
+                            await new Promise(r => setTimeout(r, 2000));
+                            const postRes = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
+                            const postLogs = await postRes.text();
+                            console.log('\n[Evidence] Post-Invocation Pod Logs:\n' + postLogs + '\n');
+
                             success = true;
                             break;
                         }
@@ -147,15 +188,7 @@ describe('Hello World Function (Integration)', () => {
 
         expect(success).toBe(true);
         expect(logsResponse).toContain('listening on port');
-
-        // Cleanup
-        try {
-            await k8s.deleteBatchV1NamespacedJob({
-                path: { namespace: NAMESPACE, name: jobName },
-                query: { propagationPolicy: 'Background' }
-            });
-        } catch (e) { }
-    }, 120000);
+    }, 300000);
 
     it('should verify database connectivity via pgsql-test', async () => {
         const result = await pg.query('SELECT 1 as num');

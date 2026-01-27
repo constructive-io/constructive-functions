@@ -1,11 +1,21 @@
 {
-    "name": "@constructive-io/simple-bash-test-harness",
+    "name": "@constructive-io/simple-bash-fn",
     "version": "0.1.0",
-    "private": true,
+    "private": false,
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "publishConfig": {
+        "access": "public",
+        "directory": "dist"
+    },
     "scripts": {
         "clean": "rimraf dist",
         "pretest": "tsc",
-        "test": "npx jest __tests__/index.test.ts"
+        "test": "npx jest __tests__/index.test.ts",
+        "start": "node ../../_runtimes/node/runner.js dist/index.js"
     },
     "dependencies": {
         "kubernetesjs": "^0.7.6"

@@ -19,20 +19,6 @@ describe('Simple Bash Function (Integration)', () => {
         // Wait for proxy to be ready
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Bash might not use PG but we initialize it for consistency/logging
-        ({ pg, db, teardown } = await getConnections({
-            pg: {
-                user: 'postgres',
-                password: process.env.PGPASSWORD,
-                host: process.env.PGHOST,
-                port: Number(process.env.PGPORT || 5432),
-                database: String(process.env.PGDATABASE || `simple_bash_test_${Math.floor(Math.random() * 100000)}`)
-            },
-            db: {
-                connections: { app: { user: 'postgres', password: process.env.PGPASSWORD } }
-            }
-        }));
-
         // Connect to local proxy
         k8s = new KubernetesClient({
             restEndpoint: 'http://127.0.0.1:8001'
@@ -41,7 +27,6 @@ describe('Simple Bash Function (Integration)', () => {
     });
 
     afterAll(async () => {
-        await teardown();
         if (proxyProcess) proxyProcess.kill();
     });
 
@@ -70,10 +55,10 @@ describe('Simple Bash Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'simple-bash',
-                            image: 'constructive/function-test-runner:v4',
+                            image: 'constructive/function-test-runner:v9',
                             imagePullPolicy: "IfNotPresent",
                             // Corrected script path to index.sh
-                            command: ["/bin/bash", "functions/simple-bash/src/index.sh", "arg1"],
+                            command: ["/bin/sh", "functions/simple-bash/src/index.sh", "arg1"],
                             env: []
                         }]
                     }

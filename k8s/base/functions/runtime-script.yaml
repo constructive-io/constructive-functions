@@ -21,6 +21,8 @@ spec:
         serving.knative.dev/timeout: "300s"
         run.googleapis.com/cpu-throttling: "false"
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull
       containerConcurrency: 10
       timeoutSeconds: 300
 

@@ -19,6 +19,8 @@ spec:
         autoscaling.knative.dev/maxScale: "5"
         serving.knative.dev/timeout: "300s"
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull
       containerConcurrency: 1
       timeoutSeconds: 300
       containers:

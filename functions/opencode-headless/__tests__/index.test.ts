@@ -34,7 +34,7 @@ describe('Opencode Headless Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'opencode-headless',
-                            image: 'constructive/function-test-runner:v4',
+                            image: 'constructive/function-test-runner:v9',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/opencode-headless/src/index.ts"],
                             env: [{ name: "PORT", value: "8080" }],

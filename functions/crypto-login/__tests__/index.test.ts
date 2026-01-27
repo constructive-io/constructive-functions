@@ -46,7 +46,7 @@ describe('Crypto Login Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'crypto-login',
-                            image: 'constructive/function-test-runner:v4',
+                            image: 'constructive/function-test-runner:v9',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/crypto-login/src/index.ts"],
                             env: [
@@ -85,6 +85,22 @@ describe('Crypto Login Function (Integration)', () => {
                         if (logs.includes('listening on port')) {
                             success = true;
                             logsResponse = logs;
+
+                            // Invoke to trigger GQL log
+                            console.log('[Test] Invoking crypto-login via proxy...');
+                            const proxyUrl = `http://127.0.0.1:8004/api/v1/namespaces/${NAMESPACE}/pods/${podName}:8080/proxy/`;
+                            // Dummy payload to trigger execution flow
+                            await fetch(proxyUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email: 'test', password: 'test' })
+                            });
+
+                            // Capture logs
+                            await new Promise(r => setTimeout(r, 2000));
+                            const logRes = await fetch(`http://127.0.0.1:8004/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
+                            console.log('\n[Evidence] Pod Logs:\n' + await logRes.text() + '\n');
+
                             break;
                         }
                         logsResponse = logs;

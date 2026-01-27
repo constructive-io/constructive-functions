@@ -6,6 +6,8 @@ metadata:
 spec:
   template:
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull
       containers:
       - name: function
         image: ghcr.io/constructive-io/simple-bash:latest

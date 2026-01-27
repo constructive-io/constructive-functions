@@ -70,7 +70,7 @@ describe('Runtime Script Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'runtime-script',
-                            image: 'constructive/function-test-runner:v4',
+                            image: 'constructive/function-test-runner:v9',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/runtime-script/src/index.ts"],
                             env: [
@@ -131,6 +131,35 @@ describe('Runtime Script Function (Integration)', () => {
         if (!success) {
             throw new Error(`Service failed to start. Logs: ${logsResponse}`);
         }
+
+        // 4. Invoke via Proxy to Trigger GQL Logic
+        console.log(`[Test] Invoking runtime-script function via proxy...`);
+        const proxyUrl = `http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}:8080/proxy/`;
+
+        const invokeRes = await fetch(proxyUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-User-Id': 'user_123'
+            },
+            body: JSON.stringify({ query: 'SELECT 1 as num' })
+        });
+
+        if (!invokeRes.ok) {
+            const errText = await invokeRes.text();
+            console.error(`[Test] Invocation Error Body: ${errText}`);
+            throw new Error(`Invocation failed: ${invokeRes.status} ${invokeRes.statusText} - ${errText}`);
+        }
+
+        const invokeJson = await invokeRes.json();
+        console.log('[Test] Invocation Response:', JSON.stringify(invokeJson));
+
+        // Fetch logs again to capture execution logs
+        console.log('[Test] Fetching post-invocation logs...');
+        await new Promise(r => setTimeout(r, 2000));
+        const postRes = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
+        const postLogs = await postRes.text();
+        console.log('\n[Evidence] Post-Invocation Pod Logs:\n' + postLogs + '\n');
 
         expect(success).toBe(true);
         expect(logsResponse).toContain('listening on port');

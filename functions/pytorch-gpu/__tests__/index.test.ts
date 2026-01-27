@@ -3,6 +3,7 @@ import { KubernetesClient } from 'kubernetesjs';
 import * as fs from 'fs';
 
 describe('PyTorch GPU Function (Integration)', () => {
+    // Build check removed as Makefile ensures build happens
     let k8s: KubernetesClient;
     const NAMESPACE = 'default';
     let proxyProcess: any;

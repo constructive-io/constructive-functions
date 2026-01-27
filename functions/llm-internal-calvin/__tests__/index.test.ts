@@ -46,18 +46,7 @@ describe('LLM Internal Calvin Function (Integration)', () => {
     it('should orchestrate the llm-internal-calvin job', async () => {
         const jobName = `llm-calvin-exec-${Math.floor(Date.now() / 1000)}`;
         // 5. Fetch and Print Logs (Evidence)
-        try {
-            const podName = (await k8s.listCoreV1NamespacedPod({
-                path: { namespace: NAMESPACE },
-                query: { labelSelector: `job-name=${jobName}` }
-            })).items[0].metadata.name;
-
-            const res = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log`);
-            const logs = await res.text();
-            console.log('\n[Evidence] Function Pod Logs:\n' + logs + '\n');
-        } catch (e) {
-            console.warn("Failed to fetch logs for evidence", e);
-        }
+        // Pre-creation Log Fetch Block Removed (Previously caused TypeError)
 
         // Cleanup
         try {
@@ -82,7 +71,7 @@ describe('LLM Internal Calvin Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'llm-internal-calvin',
-                            image: 'constructive/function-test-runner:v4',
+                            image: 'constructive/function-test-runner:v9',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/llm-internal-calvin/src/index.ts"],
                             env: [
@@ -151,6 +140,12 @@ describe('LLM Internal Calvin Function (Integration)', () => {
                         // Success if we got a real result or at least logged the attempt
                         if (apiResult && (apiResult.result || apiResult.error)) {
                             success = true;
+
+                            // Capture logs
+                            await new Promise(r => setTimeout(r, 2000));
+                            const logRes = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
+                            console.log('\n[Evidence] Pod Logs:\n' + await logRes.text() + '\n');
+
                             break;
                         }
                     }

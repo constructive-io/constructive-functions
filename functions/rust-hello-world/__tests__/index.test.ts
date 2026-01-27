@@ -6,6 +6,7 @@ import * as fs from 'fs';
 // But we can use the same pattern as hello-world to orchestrate the job.
 
 describe('Rust Hello World Function (Integration)', () => {
+    // Build check removed as Makefile ensures build happens
     let k8s: KubernetesClient;
     const NAMESPACE = 'default';
     let proxyProcess: any;

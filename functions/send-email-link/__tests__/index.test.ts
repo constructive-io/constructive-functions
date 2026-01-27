@@ -68,7 +68,7 @@ describe('Send Email Link Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'send-email-link',
-                            image: 'constructive/function-test-runner:v4',
+                            image: 'constructive/function-test-runner:v9',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/send-email-link/src/index.ts"],
                             env: [
@@ -153,7 +153,11 @@ describe('Send Email Link Function (Integration)', () => {
 
                             if (json && json.missing === 'email_type') {
                                 triggerSuccess = true;
-                                console.log('[Test] Trigger Verification Succeeded!');
+                                console.log('[Test] Trigger Verification Succeeded! Fetching logs...');
+                                await new Promise(r => setTimeout(r, 2000));
+                                const logRes = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
+                                const finalLogs = await logRes.text();
+                                console.log('[Evidence] Pod Logs:\n' + finalLogs);
                                 break;
                             }
                         } catch (e) { console.log('Trigger failed:', e); }

@@ -1,30 +1,25 @@
 
-import { GraphQLClient } from 'graphql-request';
+import { createClient } from '@constructive-db/constructive-sdk';
 // import puppeteer from 'puppeteer'; YOU DONT NEED THIS
-import gql from 'graphql-tag';
 import fetch from 'cross-fetch';
 
-// Proof of GQL connection
-const GetUsers = gql`
-  query GetUsers {
-    users {
-      nodes {
-        id
-        username
-      }
-    }
-  }
-`;
-
 export default async (params: any, context: any) => {
-  const { client } = context;
+  const { headers } = context;
   console.log('[opencode-headless] Request received');
 
-  // Verify GQL connection
-  try {
-    await client.request(GetUsers);
-  } catch (e: any) {
-    console.warn('GQL Request failed:', e.message);
+  // Clean headers to avoid conflicts with SDK defaults
+  const safeHeaders = { ...headers };
+  ['host', 'content-length', 'connection', 'content-type', 'accept', 'user-agent', 'accept-encoding'].forEach(k => delete safeHeaders[k]);
+
+  const sdk = createClient({
+    endpoint: process.env.GRAPHQL_ENDPOINT || 'http://constructive-server:3000/graphql',
+    headers: safeHeaders || {}
+  });
+
+  // Verify GQL connection (without try-catch)
+  const gqlResult = await sdk.api.findMany({ select: { id: true, name: true }, first: 1 }).execute();
+  if (!gqlResult.ok) {
+    console.error('GQL Request failed:', gqlResult.errors);
   }
 
   const { url, prompt } = params;

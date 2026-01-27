@@ -1,0 +1,14 @@
+{
+    "name": "@constructive-io/pytorch-gpu-fn",
+    "version": "0.1.0",
+    "description": "PyTorch GPU Cloud Function (Python)",
+    "private": false,
+    "directories": {
+        "lib": "src",
+        "test": "__tests__"
+    },
+    "scripts": {
+        "test": "echo 'Run python tests manually'",
+        "start": "python src/main.py"
+    }
+}
