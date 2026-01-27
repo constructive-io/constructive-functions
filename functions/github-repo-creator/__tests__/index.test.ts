@@ -37,7 +37,7 @@ describe('Github Repo Creator Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'github-repo-creator',
-                            image: 'constructive/function-test-runner:v4',
+                            image: 'constructive/function-test-runner:v8',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/github-repo-creator/src/index.ts"],
                             env: [{ name: "PORT", value: "8080" }]
@@ -66,6 +66,21 @@ describe('Github Repo Creator Function (Integration)', () => {
                         if (logs.includes('listening on port')) {
                             success = true;
                             logsResponse = logs;
+
+                            // Invoke to trigger GQL log
+                            console.log('[Test] Invoking github-repo-creator via proxy...');
+                            const proxyUrl = `http://127.0.0.1:8007/api/v1/namespaces/${NAMESPACE}/pods/${podName}:8080/proxy/`;
+                            await fetch(proxyUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ repoName: 'test', githubToken: 'abc' })
+                            });
+
+                            // Capture logs
+                            await new Promise(r => setTimeout(r, 2000));
+                            const logRes = await fetch(`http://127.0.0.1:8007/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
+                            console.log('\n[Evidence] Pod Logs:\n' + await logRes.text() + '\n');
+
                             break;
                         }
                         logsResponse = logs;

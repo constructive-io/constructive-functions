@@ -59,7 +59,7 @@ describe('Twilio SMS Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'twilio-sms',
-                            image: 'constructive/function-test-runner:v4',
+                            image: 'constructive/function-test-runner:v8',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/twilio-sms/src/index.ts"],
                             env: [
