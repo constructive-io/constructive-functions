@@ -39,7 +39,7 @@ describe('LLM External Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'llm-external',
-                            image: 'constructive/function-test-runner:v4',
+                            image: 'constructive/function-test-runner:v8',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/llm-external/src/index.ts"],
                             env: [
@@ -78,7 +78,10 @@ describe('LLM External Function (Integration)', () => {
                             const triggerRes = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}:8080/proxy/`, {
                                 method: 'POST',
                                 body: JSON.stringify({ provider: 'test', prompt: 'Can you explain the quantum field theory in simple terms?' }),
-                                headers: { 'Content-Type': 'application/json' }
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-User-Id': 'user_123'
+                                }
                             });
 
                             if (triggerRes.ok) {
@@ -87,6 +90,12 @@ describe('LLM External Function (Integration)', () => {
                                 if (body.works) {
                                     success = true;
                                     logsResponse = logs;
+
+                                    // Capture logs
+                                    await new Promise(r => setTimeout(r, 2000));
+                                    const logRes = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
+                                    console.log('\n[Evidence] Pod Logs:\n' + await logRes.text() + '\n');
+
                                     break;
                                 }
                             }

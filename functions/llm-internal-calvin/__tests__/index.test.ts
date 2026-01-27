@@ -82,7 +82,7 @@ describe('LLM Internal Calvin Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'llm-internal-calvin',
-                            image: 'constructive/function-test-runner:v4',
+                            image: 'constructive/function-test-runner:v8',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/llm-internal-calvin/src/index.ts"],
                             env: [
@@ -151,6 +151,12 @@ describe('LLM Internal Calvin Function (Integration)', () => {
                         // Success if we got a real result or at least logged the attempt
                         if (apiResult && (apiResult.result || apiResult.error)) {
                             success = true;
+
+                            // Capture logs
+                            await new Promise(r => setTimeout(r, 2000));
+                            const logRes = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
+                            console.log('\n[Evidence] Pod Logs:\n' + await logRes.text() + '\n');
+
                             break;
                         }
                     }

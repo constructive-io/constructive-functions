@@ -68,7 +68,7 @@ describe('Simple Email Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'simple-email',
-                            image: 'constructive/function-test-runner:v4',
+                            image: 'constructive/function-test-runner:v8',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/simple-email/src/index.ts"],
                             env: [
@@ -121,7 +121,25 @@ describe('Simple Email Function (Integration)', () => {
                             console.log(`[Test] Service is listening! Success.`);
                             logsResponse = logs;
                             success = true;
+
+                            // Invoke
+                            console.log('[Test] Invoking simple-email via proxy...');
+                            const proxyUrl = `http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}:8080/proxy/`;
+                            const invokeRes = await fetch(proxyUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ to: 'test@example.com', subject: 'Integration Test' })
+                            });
+                            const body = await invokeRes.json();
+                            console.log('[Test] Invocation Response:', JSON.stringify(body));
+
+                            // Fetch logs
+                            await new Promise(r => setTimeout(r, 2000));
+                            const logRes = await fetch(`http://127.0.0.1:8001/api/v1/namespaces/${NAMESPACE}/pods/${podName}/log?tailLines=50`);
+                            console.log('\n[Evidence] Pod Logs:\n' + await logRes.text() + '\n');
+
                             break;
+
                         }
                         if (logs) logsResponse = logs;
                     } catch (e) { }
