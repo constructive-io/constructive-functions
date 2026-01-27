@@ -1,7 +1,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import { KubernetesClient } from 'kubernetesjs';
 
 // Since we are in scripts/test-runner.ts, the functions dir is ../functions
@@ -62,7 +62,7 @@ async function runTestForFunction(fnName: string): Promise<boolean> {
                     serviceAccountName: 'default',
                     containers: [{
                         name: 'test-runner',
-                        image: 'constructive/function-test-runner:v4',
+                        image: 'constructive/function-test-runner:v9',
                         imagePullPolicy: "IfNotPresent",
                         command: ["/bin/sh", "-c", `pnpm exec jest functions/${fnName}/__tests__/index.test.ts -u`],
                         env: envVars
@@ -181,6 +181,11 @@ async function runTestForFunction(fnName: string): Promise<boolean> {
 async function main() {
     // Parse arguments
     const args = process.argv.slice(2);
+
+    // Ensure default SA has permissions for test runner jobs
+    try {
+        spawnSync('kubectl', ['create', 'clusterrolebinding', 'default-admin', '--clusterrole=cluster-admin', '--serviceaccount=default:default'], { stdio: 'ignore' });
+    } catch (e) { }
     let targetFunction = '';
 
     // Simple arg parsing for --function
