@@ -62,3 +62,121 @@ patches:
       version: v1
       kind: Service
       name: send-email-link
+
+  # -------------------------------------------------------------------------
+  # LOCAL IMAGE OVERRIDES (Bypassing GHCR)
+  # -------------------------------------------------------------------------
+  
+  # 1. Dashboard
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: constructive:local
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Never
+    target:
+      kind: Deployment
+      name: dashboard
+
+  # 2. Constructive Server
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: constructive:local
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Never
+    target:
+      kind: Deployment
+      name: constructive-server
+
+  # 3. Knative Job Service
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: constructive:local
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Never
+    target:
+      kind: Deployment
+      name: knative-job-service
+
+  # 4. Constructive DB Job
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: constructive:local
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Never
+    target:
+      kind: Job
+      name: constructive-db
+
+  # 5. Functions (Knative Services)
+  - patch: |-
+      - op: add
+        path: /spec/template/metadata/annotations
+        value:
+          serving.knative.dev/bypass-tag-resolution: "true"
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: constructive:local
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Never
+    target:
+      group: serving.knative.dev
+      version: v1
+      kind: Service
+      name: simple-email
+  - patch: |-
+      - op: add
+        path: /spec/template/metadata/annotations
+        value:
+          serving.knative.dev/bypass-tag-resolution: "true"
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: constructive:local
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Never
+    target:
+      group: serving.knative.dev
+      version: v1
+      kind: Service
+      name: send-email-link
+  - patch: |-
+      - op: add
+        path: /spec/template/metadata/annotations
+        value:
+          serving.knative.dev/bypass-tag-resolution: "true"
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: constructive:local
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Never
+    target:
+      group: serving.knative.dev
+      version: v1
+      kind: Service
+      name: hello-world
+  - patch: |-
+      - op: add
+        path: /spec/template/metadata/annotations
+        value:
+          serving.knative.dev/bypass-tag-resolution: "true"
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: constructive:local
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Never
+    target:
+      group: serving.knative.dev
+      version: v1
+      kind: Service
+      name: runtime-script
