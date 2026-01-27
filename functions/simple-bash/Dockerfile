@@ -4,7 +4,7 @@ RUN apk add --no-cache bash
 
 WORKDIR /app
 
-COPY src/index.sh .
+COPY functions/simple-bash/src/index.sh .
 RUN chmod +x index.sh
 
 ENTRYPOINT ["./index.sh"]

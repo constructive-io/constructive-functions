@@ -7,7 +7,8 @@ WORKDIR /build
 RUN apk add --no-cache musl-dev
 
 # Copy dependency manifests first (for layer caching)
-COPY Cargo.toml ./
+# Copy dependency manifests first (for layer caching)
+COPY functions/rust-hello-world/Cargo.toml ./
 
 # Create dummy src to build dependencies
 RUN mkdir src && echo "fn main() {}" > src/main.rs
@@ -15,7 +16,7 @@ RUN cargo build --release
 RUN rm -rf src
 
 # Copy actual source code
-COPY src ./src
+COPY functions/rust-hello-world/src ./src
 
 # Build the actual binary
 RUN touch src/main.rs && cargo build --release

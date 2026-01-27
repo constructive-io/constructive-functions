@@ -68,7 +68,7 @@ describe('Simple Email Function (Integration)', () => {
                         restartPolicy: 'Never',
                         containers: [{
                             name: 'simple-email',
-                            image: 'constructive/function-test-runner:v8',
+                            image: 'constructive/function-test-runner:v9',
                             imagePullPolicy: "IfNotPresent",
                             command: ["npx", "ts-node", "functions/_runtimes/node/runner.js", "functions/simple-email/src/index.ts"],
                             env: [
@@ -128,7 +128,7 @@ describe('Simple Email Function (Integration)', () => {
                             const invokeRes = await fetch(proxyUrl, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ to: 'test@example.com', subject: 'Integration Test' })
+                                body: JSON.stringify({ to: 'test@example.com', subject: 'Integration Test', text: 'Hello World' })
                             });
                             const body = await invokeRes.json();
                             console.log('[Test] Invocation Response:', JSON.stringify(body));
