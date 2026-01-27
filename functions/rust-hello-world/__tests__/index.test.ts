@@ -6,11 +6,7 @@ import * as fs from 'fs';
 // But we can use the same pattern as hello-world to orchestrate the job.
 
 describe('Rust Hello World Function (Integration)', () => {
-    // Skipped because Rust image requires cargo build not present in CI/Test Runner
-    if (!process.env.BUILD_RUST) {
-        it.skip('should orchestrate the rust-hello-world job', () => { });
-        return;
-    }
+    // Build check removed as Makefile ensures build happens
     let k8s: KubernetesClient;
     const NAMESPACE = 'default';
     let proxyProcess: any;

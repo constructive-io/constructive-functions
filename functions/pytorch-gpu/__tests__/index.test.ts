@@ -3,11 +3,7 @@ import { KubernetesClient } from 'kubernetesjs';
 import * as fs from 'fs';
 
 describe('PyTorch GPU Function (Integration)', () => {
-    // Skipped because PyTorch image requires large build context not present in CI/Test Runner
-    if (!process.env.BUILD_PYTORCH) {
-        it.skip('should orchestrate the pytorch-gpu job', () => { });
-        return;
-    }
+    // Build check removed as Makefile ensures build happens
     let k8s: KubernetesClient;
     const NAMESPACE = 'default';
     let proxyProcess: any;
