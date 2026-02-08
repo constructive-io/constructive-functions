@@ -19,22 +19,20 @@ done
 
 if [ -z "$FUNCTION_NAME" ]; then
   echo "Error: FUNCTION_NAME is required."
-  echo "Usage: $0 <function-name> [--template=node|bash]"
+  echo "Usage: $0 <function-name> [--template=node]"
+  exit 1
+fi
+
+if [ "$TEMPLATE" != "node" ]; then
+  echo "Error: Only --template=node is supported (simple-email). Bash template was removed."
   exit 1
 fi
 
 BASE_DIR=$(dirname "$0")/../base/functions
 TARGET_FILE="$BASE_DIR/${FUNCTION_NAME}.yaml"
-
-if [ "$TEMPLATE" == "bash" ]; then
-    TEMPLATE_FILE="$BASE_DIR/simple-bash.yaml"
-    SOURCE_TEMPLATE_DIR="$BASE_DIR/../../functions/simple-bash"
-    echo "Using BASH template..."
-else
-    TEMPLATE_FILE="$BASE_DIR/simple-email.yaml"
-    SOURCE_TEMPLATE_DIR="$BASE_DIR/../../functions/simple-email"
-    echo "Using NODE template (simple-email)..."
-fi
+TEMPLATE_FILE="$BASE_DIR/simple-email.yaml"
+SOURCE_TEMPLATE_DIR="$BASE_DIR/../../functions/simple-email"
+echo "Using NODE template (simple-email)..."
 
 if [ -f "$TARGET_FILE" ]; then
   echo "Error: Function '$FUNCTION_NAME' already exists at $TARGET_FILE"
