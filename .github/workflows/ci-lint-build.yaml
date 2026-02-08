@@ -1,6 +1,6 @@
-# Lint and build for send-email-link and simple-email (priority functions).
-# Ensures PRs that touch these functions pass lint and build before merge.
-name: CI Lint & Build
+# Lint and build for send-email-link and simple-email.
+# Build must pass to merge; lint and test run but do not block (continue-on-error) until eslint/test config is stable.
+name: CI Lint & Build (lint/test non-blocking)
 
 on:
   pull_request:
@@ -47,16 +47,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint (send-email-link, simple-email)
+      - name: Lint (send-email-link, simple-email) [non-blocking]
         run: |
           pnpm --filter "@constructive-io/send-email-link-fn" --filter "@constructive-io/simple-email-fn" run lint
-        continue-on-error: true  # Required until eslint config (e.g. root flat config) is available for subpackages
+        continue-on-error: true
 
       - name: Build (send-email-link, simple-email)
         run: |
           pnpm --filter "@constructive-io/send-email-link-fn" --filter "@constructive-io/simple-email-fn" run build
 
-      - name: Test (send-email-link, simple-email)
+      - name: Test (send-email-link, simple-email) [non-blocking]
         run: |
           pnpm --filter "@constructive-io/send-email-link-fn" --filter "@constructive-io/simple-email-fn" run test
         continue-on-error: true
