@@ -24,15 +24,16 @@ if [ -z "$FUNCTION_NAME" ]; then
 fi
 
 BASE_DIR=$(dirname "$0")/../base/functions
+TARGET_FILE="$BASE_DIR/${FUNCTION_NAME}.yaml"
 
 if [ "$TEMPLATE" == "bash" ]; then
     TEMPLATE_FILE="$BASE_DIR/simple-bash.yaml"
     SOURCE_TEMPLATE_DIR="$BASE_DIR/../../functions/simple-bash"
     echo "Using BASH template..."
 else
-    TEMPLATE_FILE="$BASE_DIR/hello-world.yaml"
-    SOURCE_TEMPLATE_DIR="$BASE_DIR/../../functions/hello-world"
-    echo "Using NODE template..."
+    TEMPLATE_FILE="$BASE_DIR/simple-email.yaml"
+    SOURCE_TEMPLATE_DIR="$BASE_DIR/../../functions/simple-email"
+    echo "Using NODE template (simple-email)..."
 fi
 
 if [ -f "$TARGET_FILE" ]; then
@@ -50,8 +51,8 @@ fi
 echo "Scaffolding function '$FUNCTION_NAME'..."
 cp "$TEMPLATE_FILE" "$TARGET_FILE"
 
-# Replace hello-world with the new function name in the new file
-sed -i.bak "s/hello-world/$FUNCTION_NAME/g" "$TARGET_FILE"
+# Replace template name with the new function name in the new file
+sed -i.bak "s/simple-email/$FUNCTION_NAME/g" "$TARGET_FILE"
 rm "$TARGET_FILE.bak"
 
 echo "K8s manifest created at $TARGET_FILE"
@@ -75,7 +76,7 @@ cp -R "$SOURCE_TEMPLATE_DIR" "$SOURCE_TARGET_DIR"
 # Update package.json name
 PACKAGE_JSON="$SOURCE_TARGET_DIR/package.json"
 if [ -f "$PACKAGE_JSON" ]; then
-    sed -i.bak "s/hello-world/$FUNCTION_NAME/g" "$PACKAGE_JSON"
+    sed -i.bak "s/simple-email/$FUNCTION_NAME/g" "$PACKAGE_JSON"
     rm "$PACKAGE_JSON.bak"
     echo "Updated package.json"
 fi

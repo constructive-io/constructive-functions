@@ -8,7 +8,7 @@ ifeq ($(KIND_BIN),)
 endif
 KIND_CLUSTER_NAME ?= interweb-local
 
-SUBDIRS := functions/hello-world functions/simple-email functions/send-email-link functions/runtime-script
+SUBDIRS := functions/simple-email functions/send-email-link
 
 build:
 	pnpm -r build
@@ -22,30 +22,18 @@ lint:
 test:
 	pnpm -r test
 
-# Docker Build & Push (Restored)
+# Docker Build & Push (build from repo root for runner.js)
 docker-build:
-	@echo "Building Docker images for functions..."
-	@for fn in functions/*; do \
-		if [ -f "$$fn/Dockerfile" ]; then \
-			echo "Building $$fn..."; \
-			docker build -t "$(REGISTRY)/$$(basename $$fn):latest" "$$fn"; \
-		fi \
-	done
+	$(MAKE) docker-build-send-email-link docker-build-simple-email
 
 docker-build-simple-email:
-	docker build -t $(REGISTRY)/simple-email:latest functions/simple-email
+	docker build -t $(REGISTRY)/simple-email:latest -f functions/simple-email/Dockerfile .
 
 docker-build-send-email-link:
-	docker build -t $(REGISTRY)/send-email-link:latest functions/send-email-link
+	docker build -t $(REGISTRY)/send-email-link:latest -f functions/send-email-link/Dockerfile .
 
 docker-push:
-	@echo "Pushing Docker images to $(REGISTRY)..."
-	@for fn in functions/*; do \
-		if [ -f "$$fn/Dockerfile" ]; then \
-			echo "Pushing $$fn..."; \
-			docker push "$(REGISTRY)/$$(basename $$fn):latest"; \
-		fi \
-	done
+	$(MAKE) docker-push-send-email-link docker-push-simple-email
 
 docker-push-simple-email:
 	docker push $(REGISTRY)/simple-email:latest
@@ -64,21 +52,12 @@ build-test-runner:
 	docker build -f functions/_runtimes/node/Dockerfile.test -t constructive/function-test-runner:v4 .
 	$(KIND_BIN) load docker-image constructive/function-test-runner:v4 --name $(KIND_CLUSTER_NAME)
 
-# Individual Test Shortcuts
-test-calvin:
-	pnpm exec ts-node scripts/test-runner.ts --function llm-internal-calvin
-
-test-opencode-headless:
-	pnpm exec ts-node scripts/test-runner.ts --function opencode-headless
-
-test-twilio:
-	pnpm exec ts-node scripts/test-runner.ts --function twilio-sms
-
-test-llm-external:
-	pnpm exec ts-node scripts/test-runner.ts --function llm-external
-
+# Individual Test Shortcuts (K8s)
 test-email:
 	pnpm exec ts-node scripts/test-runner.ts --function send-email-link
+
+test-simple-email:
+	pnpm exec ts-node scripts/test-runner.ts --function simple-email
 
 # Cleanup K8s Resources
 k8s-clean:
