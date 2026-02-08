@@ -4,6 +4,7 @@ namespace: default
 
 resources:
   - ../local
+  - ./test-runner-rbac.yaml
 
 patches:
   # CI-specific resource tuning (smaller, requests = limits)

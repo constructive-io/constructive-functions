@@ -1,0 +1,28 @@
+# Allow the test-runner pod (default SA) to create/list/delete Jobs and Pods
+# so that send-email-link integration test can create its inner Job via API.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: test-runner-job-manager
+  namespace: default
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "delete"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-runner-job-manager
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: test-runner-job-manager
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: default
