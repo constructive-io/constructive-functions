@@ -49,7 +49,40 @@ Email link function for invite, password reset, and verification emails.
 
 ## Development
 
-This repo includes full Kubernetes manifests for deploying functions to any cluster.
+### Run a function with Node (local iteration / debugging)
+
+For quick code changes without rebuilding Docker, you can run a function with Node after building:
+
+```bash
+pnpm install
+pnpm --filter "@constructive-io/send-email-link-fn" run build
+# Required env (e.g. for send-email-link): GRAPHQL_URL, SEND_EMAIL_LINK_DRY_RUN=true, PORT=8080
+node functions/send-email-link/dist/index.js
+```
+
+- **Port**: `8080` (default).
+- **Env**: See each function's section above; at minimum set `*_DRY_RUN=true` and `GRAPHQL_URL` (if the function calls GraphQL). For full-stack or production, use Docker or the images below.
+
+**Docker run (minimal, dry-run)** — the image validates Mailgun env at startup even when not sending; use placeholders to bring the container up for testing. Run detached (`-d`) so you can curl from the same host; use `docker logs <container_id>` if the container exits.
+
+```bash
+docker run -d -p 8080:8080 --name send-email-link-test \
+  -e SEND_EMAIL_LINK_DRY_RUN=true \
+  -e MAILGUN_DOMAIN=local.example.com \
+  -e MAILGUN_FROM=noreply@local.example.com \
+  -e MAILGUN_REPLY=reply@local.example.com \
+  -e MAILGUN_KEY=placeholder-key \
+  -e MAILGUN_API_KEY=placeholder-api-key \
+  -e GRAPHQL_URL=http://host.docker.internal:3000/graphql \
+  ghcr.io/constructive-io/constructive-functions/send-email-link:latest
+
+# Then:
+curl -X POST http://localhost:8080/ -H "Content-Type: application/json" -d '{}'
+# Expected: JSON body like {"error":"Missing X-Database-Id header or DEFAULT_DATABASE_ID"} (400) — means the server is up.
+# With header: curl -X POST http://localhost:8080/ -H "Content-Type: application/json" -H "X-Database-Id: <uuid>" -d '{"email_type":"invite_email","email":"a@b.com","invite_token":"x","sender_id":"<uuid>"}'
+docker logs send-email-link-test   # if something fails
+docker stop send-email-link-test && docker rm send-email-link-test
+```
 
 ### Local Kubernetes (kind/minikube)
 
@@ -72,7 +105,8 @@ See `k8s/DEVELOPMENT_LOCAL.md` for detailed local setup.
 
 ### CI/CD
 
-The `CI Test K8s` workflow (`.github/workflows/test-k8s-deployment.yaml`) runs on every PR/push to `main` that touches `k8s/**`. It:
+- **CI Lint & Build** (`.github/workflows/ci-lint-build.yaml`): On PR/push that touch `functions/send-email-link/**`, `functions/simple-email/**`, or root package config, runs lint and build (and optionally test) for those two packages.
+- **CI Test K8s** (`.github/workflows/test-k8s-deployment.yaml`): Runs on every PR/push to `main` that touches `k8s/**`. It:
 
 1. Spins up a `kind` cluster
 2. Installs Knative via `make operators-knative-only`
@@ -102,6 +136,11 @@ The `CI Test K8s` workflow (`.github/workflows/test-k8s-deployment.yaml`) runs o
 ├── pnpm-workspace.yaml
 └── Makefile
 ```
+
+## Source of truth and images
+
+- **Canonical source** for `send-email-link` and `simple-email` is the [constructive](https://github.com/constructive-io/constructive) repo (`constructive/functions/`). This repo builds and publishes **Docker images** for consumption by constructive (e.g. `docker-compose.jobs.yml`) and other environments.
+- **Pushing images**: After merging to `main`, whoever is responsible for releases should run `make docker-build-send-email-link` (and/or `make docker-build-simple-email`) and push to GHCR. Downstream should use the `latest` tag unless a versioned tag is agreed.
 
 ## Notes
 

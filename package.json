@@ -18,7 +18,7 @@
   "scripts": {
     "clean": "pnpm -r run clean",
     "build": "pnpm -r run build",
-    "build:docker": "make build-docker",
+    "build:docker": "make docker-build",
     "lint": "pnpm -r run lint"
   },
   "devDependencies": {

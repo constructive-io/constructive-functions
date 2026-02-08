@@ -139,3 +139,6 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 functions/opencode-headless/_calvincode_build
 functions/opencode-headless/bin/
+
+# Erroneous / temporary install directories
+**/node_modules_bad/
