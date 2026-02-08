@@ -51,19 +51,28 @@ Email link function for invite, password reset, and verification emails.
 
 ### Run a function with Node (local iteration / debugging)
 
-For quick code changes without rebuilding Docker, you can run a function with Node after building:
+Functions export a handler; the HTTP server is started by the shared runner. Do **not** run `node functions/.../dist/index.js` directly (it would exit immediately). Use one of:
 
+**Option A — pnpm start (from repo root):**
 ```bash
 pnpm install
 pnpm --filter "@constructive-io/send-email-link-fn" run build
 # Required env (e.g. for send-email-link): GRAPHQL_URL, SEND_EMAIL_LINK_DRY_RUN=true, PORT=8080
-node functions/send-email-link/dist/index.js
+pnpm --filter "@constructive-io/send-email-link-fn" start
+```
+
+**Option B — runner explicitly (from repo root):**
+```bash
+pnpm install && pnpm --filter "@constructive-io/send-email-link-fn" run build
+node functions/_runtimes/node/runner.js functions/send-email-link/dist/index.js
 ```
 
 - **Port**: `8080` (default).
 - **Env**: See each function's section above; at minimum set `*_DRY_RUN=true` and `GRAPHQL_URL` (if the function calls GraphQL). For full-stack or production, use Docker or the images below.
 
 **Docker run (minimal, dry-run)** — the image validates Mailgun env at startup even when not sending; use placeholders to bring the container up for testing. Run detached (`-d`) so you can curl from the same host; use `docker logs <container_id>` if the container exits.
+
+The runner uses `GRAPHQL_ENDPOINT` for the injected client; the function uses `GRAPHQL_URL`. For local docker run, set both to the same value (e.g. your host GraphQL URL).
 
 ```bash
 docker run -d -p 8080:8080 --name send-email-link-test \
@@ -74,6 +83,7 @@ docker run -d -p 8080:8080 --name send-email-link-test \
   -e MAILGUN_KEY=placeholder-key \
   -e MAILGUN_API_KEY=placeholder-api-key \
   -e GRAPHQL_URL=http://host.docker.internal:3000/graphql \
+  -e GRAPHQL_ENDPOINT=http://host.docker.internal:3000/graphql \
   ghcr.io/constructive-io/constructive-functions/send-email-link:latest
 
 # Then:
