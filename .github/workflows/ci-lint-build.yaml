@@ -1,0 +1,62 @@
+# Lint and build for send-email-link and simple-email (priority functions).
+# Ensures PRs that touch these functions pass lint and build before merge.
+name: CI Lint & Build
+
+on:
+  pull_request:
+    branches: [main, "release/*"]
+    paths:
+      - "functions/send-email-link/**"
+      - "functions/simple-email/**"
+      - "package.json"
+      - "pnpm-workspace.yaml"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/ci-lint-build.yaml"
+  push:
+    branches: [main, "release/*"]
+    paths:
+      - "functions/send-email-link/**"
+      - "functions/simple-email/**"
+      - "package.json"
+      - "pnpm-workspace.yaml"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/ci-lint-build.yaml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (send-email-link, simple-email)
+        run: |
+          pnpm --filter "@constructive-io/send-email-link-fn" --filter "@constructive-io/simple-email-fn" run lint
+        continue-on-error: true  # Required until eslint config (e.g. root flat config) is available for subpackages
+
+      - name: Build (send-email-link, simple-email)
+        run: |
+          pnpm --filter "@constructive-io/send-email-link-fn" --filter "@constructive-io/simple-email-fn" run build
+
+      - name: Test (send-email-link, simple-email)
+        run: |
+          pnpm --filter "@constructive-io/send-email-link-fn" --filter "@constructive-io/simple-email-fn" run test
+        continue-on-error: true

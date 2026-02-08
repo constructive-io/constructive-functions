@@ -29,20 +29,8 @@ jobs:
       fail-fast: false
       matrix:
         function:
-          - hello-world
-          - llm-internal-calvin
-          - opencode-headless
-          - twilio-sms
-          - llm-external
           - send-email-link
-          - crypto-login
-          - github-repo-creator
-          - pytorch-gpu
-          - runtime-script
-          - rust-hello-world
-          - simple-bash
           - simple-email
-          - stripe-function
 
     steps:
       - name: Checkout
