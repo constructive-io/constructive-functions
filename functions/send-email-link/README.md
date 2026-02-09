@@ -5,7 +5,7 @@ Knative-compatible email link function used with the Constructive jobs system. I
 The function:
 - Reads metadata about the tenant/site from a GraphQL API
 - Generates a styled HTML email using `@launchql/mjml`
-- Sends the email via `@launchql/postmaster`
+- Sends the email via `@constructive-io/postmaster` or `simple-smtp-server`
 - Supports invite, password reset, and email verification flows
 
 ## Expected job payload
@@ -58,7 +58,7 @@ The handler will:
 
 1. Resolve the tenant/site by `databaseId` via GraphQL
 2. Generate an email link and HTML via `@launchql/mjml`
-3. Send the email with `@launchql/postmaster`
+3. Send the email with `@constructive-io/postmaster`
 4. Respond with HTTP 200 and JSON:
 
 ```json
@@ -71,26 +71,35 @@ Errors are propagated through the Express error middleware installed by `@constr
 
 Required:
 
-- `GRAPHQL_URL`  
+- `GRAPHQL_URL`
   GraphQL endpoint for the tenant database (for `GetUser` and/or per-tenant data).
 
 Recommended / optional:
 
-- `META_GRAPHQL_URL`  
+- `META_GRAPHQL_URL`
   GraphQL endpoint for meta/database-level schema. Defaults to `GRAPHQL_URL` when not set.
-- `GRAPHQL_AUTH_TOKEN`  
+- `GRAPHQL_AUTH_TOKEN`
   Bearer token to send as `Authorization` header for GraphQL requests.
-- `DEFAULT_DATABASE_ID`  
+- `DEFAULT_DATABASE_ID`
   Used if `X-Database-Id` is not provided by the worker. In normal jobs usage, `X-Database-Id` should always be present.
-- `LOCAL_APP_PORT`  
+- `LOCAL_APP_PORT`
   Optional port suffix for localhost-style hosts (e.g. `3000`). When the resolved hostname is `localhost` / `*.localhost` and `SEND_EMAIL_LINK_DRY_RUN=true`, links are generated as `http://localhost:LOCAL_APP_PORT/...`. Ignored for non-local hostnames and in production.
 
-Email delivery (used by `@launchql/postmaster`):
+Email delivery (default: `@constructive-io/postmaster`):
 
-- Typically Mailgun or another provider; consult `@launchql/postmaster` docs. A common pattern is:
+- Set `EMAIL_SEND_USE_SMTP=true` to switch to `simple-smtp-server` (SMTP). Otherwise it uses `@constructive-io/postmaster`.
+
+- Mailgun or another provider; consult `@constructive-io/postmaster` docs. A common pattern is:
   - `MAILGUN_API_KEY`
   - `MAILGUN_DOMAIN`
   - `MAILGUN_FROM`
+
+- SMTP variables when `EMAIL_SEND_USE_SMTP=true`:
+  - `SMTP_HOST`
+  - `SMTP_PORT`
+  - `SMTP_USER`
+  - `SMTP_PASS`
+  - `SMTP_FROM`
 
 ## Building locally
 
@@ -107,20 +116,19 @@ This compiles TypeScript into `dist/`.
 The function is intended to be containerized and run as a Knative Service. A minimal Dockerfile:
 
 ```dockerfile
-FROM node:18-alpine
+FROM node:22-alpine
 
 WORKDIR /usr/src/app
 
-# Install production dependencies
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm@9 && pnpm install --prod
+COPY package.json ./
+RUN npm install -g pnpm@10.12.2 && pnpm install --prod
 
-# Copy compiled code
 COPY dist ./dist
 
 ENV NODE_ENV=production
 ENV PORT=8080
 
+USER node
 CMD ["node", "dist/index.js"]
 ```
 
