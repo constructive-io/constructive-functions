@@ -26,6 +26,8 @@ resources:
   # Functions
   - ../../base/functions/simple-email.yaml
   - ../../base/functions/send-email-link.yaml
+  - ../../base/functions/hello-world.yaml
+  - ../../base/functions/runtime-script.yaml
 
 patches:
   - path: ./constructive/config.yaml
