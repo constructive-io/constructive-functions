@@ -9,6 +9,6 @@
     "sourceMap": false,
     "resolveJsonModule": true,
     "moduleResolution": "node",
-    "typeRoots": ["./types", "./node_modules/@types"]
+    "typeRoots": ["./node_modules/@types"]
   }
 }
