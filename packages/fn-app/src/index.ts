@@ -1,10 +1,11 @@
-import express from 'express';
-import bodyParser from 'body-parser';
 import http from 'node:http';
 import https from 'node:https';
 import { URL } from 'node:url';
-import type { Server as HttpServer } from 'http';
+
 import { createLogger } from '@pgpmjs/logger';
+import bodyParser from 'body-parser';
+import express from 'express';
+import type { Server as HttpServer } from 'http';
 
 type JobCallbackStatus = 'success' | 'error';
 
@@ -226,7 +227,7 @@ const createJobApp = () => {
       // NOTE Remember that Express middleware executes in order.
       // You should define error handlers last, after all other middleware.
       // Otherwise, your error handler won't get called
-      // eslint-disable-next-line no-unused-vars
+       
       app.use(async (error: any, req: any, res: any, next: any) => {
         res.set({
           'Content-Type': 'application/json',

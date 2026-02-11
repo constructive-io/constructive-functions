@@ -1,9 +1,9 @@
-import express from 'express';
-import bodyParser from 'body-parser';
-import type { Pool, PoolClient } from 'pg';
-import * as jobs from '@constructive-io/job-utils';
 import poolManager from '@constructive-io/job-pg';
+import * as jobs from '@constructive-io/job-utils';
 import { createLogger } from '@pgpmjs/logger';
+import bodyParser from 'body-parser';
+import express from 'express';
+import type { Pool, PoolClient } from 'pg';
 
 type JobRequestBody = {
   message?: string;
