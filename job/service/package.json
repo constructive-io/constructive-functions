@@ -1,0 +1,36 @@
+{
+  "name": "@constructive-io/knative-job-service",
+  "version": "1.1.0",
+  "description": "Knative job service orchestrator — runs functions, worker, scheduler, and callback server",
+  "author": "Constructive",
+  "private": true,
+  "main": "dist/index.js",
+  "bin": {
+    "faas-job-service": "dist/run.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist",
+    "start": "node dist/run.js"
+  },
+  "dependencies": {
+    "@constructive-io/job-pg": "^1.1.0",
+    "@constructive-io/job-scheduler": "^1.1.0",
+    "@constructive-io/job-utils": "^1.1.0",
+    "@constructive-io/knative-job-fn": "workspace:^",
+    "@constructive-io/knative-job-server": "workspace:^",
+    "@constructive-io/knative-job-worker": "workspace:^",
+    "@constructive-io/send-email-link-fn": "workspace:^",
+    "@constructive-io/simple-email-fn": "workspace:^",
+    "@pgpmjs/env": "^2.11.0",
+    "@pgpmjs/logger": "^2.1.0",
+    "async-retry": "1.3.1",
+    "pg": "8.17.1"
+  },
+  "devDependencies": {
+    "@types/async-retry": "^1.4.9",
+    "@types/node": "^22.10.4",
+    "@types/pg": "^8.11.0",
+    "typescript": "^5.1.6"
+  }
+}
