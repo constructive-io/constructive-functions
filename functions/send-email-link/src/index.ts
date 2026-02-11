@@ -1,11 +1,11 @@
 import { createJobApp } from '@constructive-io/knative-job-fn';
-import { GraphQLClient } from 'graphql-request';
-import gql from 'graphql-tag';
-import { generate } from '@launchql/mjml';
 import { send as sendPostmaster } from '@constructive-io/postmaster';
-import { send as sendSmtp } from 'simple-smtp-server';
+import { generate } from '@launchql/mjml';
 import { parseEnvBoolean } from '@pgpmjs/env';
 import { createLogger } from '@pgpmjs/logger';
+import { GraphQLClient } from 'graphql-request';
+import gql from 'graphql-tag';
+import { send as sendSmtp } from 'simple-smtp-server';
 
 const isDryRun = parseEnvBoolean(process.env.SEND_EMAIL_LINK_DRY_RUN) ?? false;
 const useSmtp = parseEnvBoolean(process.env.EMAIL_SEND_USE_SMTP) ?? false;
