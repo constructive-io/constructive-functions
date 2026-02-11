@@ -44,7 +44,7 @@ importers:
     dependencies:
       '@constructive-io/knative-job-fn':
         specifier: workspace:^
-        version: link:../../packages/job-fn
+        version: link:../../packages/fn-app
     devDependencies:
       '@types/node':
         specifier: ^22.10.4
@@ -57,7 +57,7 @@ importers:
     dependencies:
       '@constructive-io/knative-job-fn':
         specifier: workspace:^
-        version: link:../../packages/job-fn
+        version: link:../../packages/fn-app
       '@constructive-io/postmaster':
         specifier: ^1.1.0
         version: 1.1.0
@@ -94,7 +94,7 @@ importers:
     dependencies:
       '@constructive-io/knative-job-fn':
         specifier: workspace:^
-        version: link:../../packages/job-fn
+        version: link:../../packages/fn-app
       '@constructive-io/postmaster':
         specifier: ^1.1.0
         version: 1.1.0
@@ -168,7 +168,7 @@ importers:
         version: 1.1.0
       '@constructive-io/knative-job-fn':
         specifier: workspace:^
-        version: link:../../packages/job-fn
+        version: link:../../packages/fn-app
       '@constructive-io/knative-job-server':
         specifier: workspace:^
         version: link:../server
@@ -238,7 +238,7 @@ importers:
         specifier: ^5.1.6
         version: 5.9.3
 
-  packages/job-fn:
+  packages/fn-app:
     dependencies:
       '@pgpmjs/logger':
         specifier: ^2.1.0
