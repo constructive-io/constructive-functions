@@ -10,9 +10,10 @@
     "test": "__tests__"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "makage build",
+    "build:dev": "makage build --dev",
     "build:watch": "tsc -p tsconfig.json -w",
-    "clean": "rimraf dist",
+    "clean": "makage clean",
     "lint": "eslint . --fix"
   },
   "dependencies": {
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.4",
+    "makage": "^0.1.10",
     "typescript": "^5.1.6"
   }
 }

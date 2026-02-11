@@ -10,8 +10,10 @@
     "knative-jobs": "dist/run.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "clean": "rimraf dist"
+    "build": "makage build",
+    "build:dev": "makage build --dev",
+    "clean": "makage clean",
+    "lint": "eslint . --fix"
   },
   "dependencies": {
     "@constructive-io/job-pg": "^1.1.0",
@@ -24,6 +26,7 @@
     "@types/node": "^22.10.4",
     "@types/pg": "^8.11.0",
     "@types/request": "^2.48.12",
+    "makage": "^0.1.10",
     "typescript": "^5.1.6"
   }
 }
