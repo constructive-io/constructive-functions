@@ -19,7 +19,7 @@
     "clean": "pnpm -r run clean",
     "build": "pnpm -r run build",
     "build:docker": "make build-docker",
-    "lint": "pnpm -r run lint"
+    "lint": "pnpm -r --if-present run lint"
   },
   "devDependencies": {
     "@types/node": "^22.10.4",
