@@ -2,9 +2,9 @@
 
 ## Overview
 
-The function templating system reduces each Constructive function to two user-authored files (`handler.ts` + `handler.json`) and generates all boilerplate (package.json, tsconfig, entry point) into a separate `generated/` directory.
+The function templating system reduces each Constructive function to two user-authored files (`handler.ts` + `handler.json`) and generates all boilerplate into a separate `generated/` directory by copying and processing template files.
 
-The `fn-runtime` package provides the runtime wiring: Express server via `fn-app`, per-request GraphQL clients, structured logging, and job metadata extraction.
+Templates live in `templates/<type>/` as real, readable files with `{{placeholder}}` tokens. The generator copies them, replaces placeholders, merges dependencies, and symlinks handler source. The `fn-runtime` package provides the runtime wiring: Express server via `fn-app`, per-request GraphQL clients, structured logging, and job metadata extraction.
 
 ## Directory Structure
 
@@ -13,7 +13,7 @@ constructive-functions/
   functions/                    # User-authored source (git tracked)
     example/
       handler.ts                # Business logic
-      handler.json              # Metadata + dependencies
+      handler.json              # Metadata + dependencies + template type
     simple-email/
       handler.ts
       handler.json
@@ -22,15 +22,22 @@ constructive-functions/
       handler.json
       types.d.ts                # Optional type declarations
 
+  templates/                    # Template definitions (git tracked)
+    node-graphql/               # Default template type
+      package.json              # Base package.json with {{name}}, {{version}}, {{description}}
+      tsconfig.json             # Static compiler config
+      index.ts                  # Entry point with {{name}} placeholder
+      Dockerfile                # Per-function production Docker build
+      k8s/
+        knative-service.yaml    # Base Knative Service manifest
+
   generated/                    # All generated (gitignored)
     example/
-      package.json              # Workspace package
-      tsconfig.json             # Compiler config
-      index.ts                  # Entry point (wires runtime + handler)
+      package.json              # Merged from template + handler.json
+      tsconfig.json             # Copied from template (+ .d.ts includes)
+      index.ts                  # Copied from template with {{name}} replaced
       handler.ts                # Symlink -> ../../functions/example/handler.ts
       dist/                     # tsc output
-        index.js
-        handler.js
     simple-email/
       ...same structure...
     send-email-link/
@@ -47,7 +54,8 @@ constructive-functions/
     service/                    # Orchestrator (loads functions + worker + scheduler)
 
   scripts/
-    generate.ts                 # Generator script (runs via Node's native type stripping)
+    generate.ts                 # Template-based generator
+    docker-build.ts             # Per-function Docker image builder
 ```
 
 ## What Developers Write
@@ -70,20 +78,55 @@ export default handler;
 
 ### handler.json
 
-Minimal manifest with name, version, and any extra npm dependencies:
+Manifest with name, version, template type, and extra npm dependencies:
 
 ```json
 {
   "name": "send-email-link",
   "version": "1.1.0",
   "description": "Sends invite, password reset, and verification emails",
+  "type": "node-graphql",
   "dependencies": {
     "graphql-tag": "^2.12.6"
   }
 }
 ```
 
-Dependencies listed here are merged with `@constructive-io/fn-runtime` (always included) into the generated `package.json`.
+| Field | Required | Description |
+|---|---|---|
+| `name` | Yes | Function name (used in package name and k8s manifests) |
+| `version` | Yes | Semver version |
+| `description` | No | Description for package.json |
+| `type` | No | Template type from `templates/<type>/` (default: `"node-graphql"`) |
+| `dependencies` | No | Extra npm deps merged into template's base package.json |
+
+## Templates
+
+Templates live in `templates/<type>/` and contain real files with `{{placeholder}}` tokens.
+
+### Placeholder Tokens
+
+| Token | Replaced With |
+|---|---|
+| `{{name}}` | `manifest.name` from handler.json |
+| `{{version}}` | `manifest.version` from handler.json |
+| `{{description}}` | `manifest.description` from handler.json (or empty string) |
+
+### Template Files
+
+| File | Processing |
+|---|---|
+| `package.json` | Placeholder replacement + deep merge of handler.json `dependencies` |
+| `tsconfig.json` | Copied verbatim + `.d.ts` filenames appended to `include` |
+| `index.ts` | Placeholder replacement only |
+| `Dockerfile` | Used by `scripts/docker-build.ts` (not copied to generated/) |
+| `k8s/*.yaml` | Reference manifests for new functions (not copied to generated/) |
+
+### Adding a New Template Type
+
+1. Create `templates/<new-type>/` with package.json, tsconfig.json, index.ts
+2. Optionally add Dockerfile and k8s/ manifests
+3. Reference it in handler.json: `"type": "<new-type>"`
 
 ## fn-runtime Package
 
@@ -128,44 +171,61 @@ GraphQL clients are created per-request (databaseId varies per job). If `GRAPHQL
 
 ## Generator Script
 
-`scripts/generate.ts` is a TypeScript script that runs during `preinstall` via Node's native type stripping (`--experimental-strip-types`).
+`scripts/generate.ts` runs during `preinstall` via Node's native type stripping (`--experimental-strip-types`). It uses only Node built-ins (no npm dependencies).
 
-For each `functions/*/handler.json` it generates into `generated/<name>/`:
+### How It Works
 
-| File | Content |
+1. Discovers all `functions/*/handler.json` files
+2. For each function, resolves the template type (default: `node-graphql`)
+3. Copies template files (`package.json`, `tsconfig.json`, `index.ts`) into `generated/<name>/`
+4. Replaces `{{placeholder}}` tokens with values from handler.json
+5. Deep merges handler.json `dependencies` into template's `package.json`
+6. Appends `.d.ts` filenames to `tsconfig.json` `include` array
+7. Creates symlinks for `handler.ts` and any `.d.ts` files
+
+### CLI Flags
+
+| Flag | Description |
 |---|---|
-| `package.json` | Workspace package: name from `@constructive-io/<name>-fn`, deps merged from handler.json |
-| `tsconfig.json` | Extends root tsconfig, compiles `index.ts` + `handler.ts` into `dist/` |
-| `index.ts` | Entry point: imports fn-runtime + handler, creates server, exports app |
-| `handler.ts` | Symlink to `../../functions/<name>/handler.ts` |
-| `*.d.ts` | Symlinks to any `.d.ts` files in the function directory |
+| `--only=<name>` | Generate only the specified function (used by per-function Dockerfile) |
 
-### Generated index.ts
+### Idempotency
 
-```typescript
-import { createFunctionServer } from '@constructive-io/fn-runtime';
-import handler from './handler';
+The generator uses `writeIfChanged()` — files are only written when content differs. Running `pnpm generate` twice produces no disk writes on the second run.
 
-const app = createFunctionServer(handler, { name: "send-email-link" });
+## Docker Build
 
-export default app;
+Each function can be built as an independent Docker image for production deployment.
 
-if (require.main === module) {
-  app.listen(Number(process.env.PORT || 8080));
-}
+### Per-Function Dockerfile
+
+The template Dockerfile (`templates/node-graphql/Dockerfile`) uses three stages:
+
+1. **build**: Copies monorepo, generates the single function, installs deps, builds
+2. **deploy**: Uses `pnpm deploy` to create a minimal production bundle
+3. **runtime**: Clean `node:22-alpine` image with only compiled output + production deps
+
+### Building Images
+
+```bash
+# Build all function images
+pnpm docker:build
+
+# Build a single function
+make docker-build-send-email-link
+
+# Build with custom tag
+node --experimental-strip-types scripts/docker-build.ts --only=send-email-link --tag=abc1234
 ```
 
-This preserves:
-- `export default app` pattern that job/service's `loadFunctionApp()` expects
-- `node dist/index.js` standalone execution for containers
-- Backward compatibility with existing K8s manifests
+Image naming: `ghcr.io/constructive-io/<name>-fn:<tag>`
 
 ## Workflow
 
 ### Build from scratch
 
 ```bash
-pnpm generate     # Generate generated/<name>/ for all functions
+pnpm generate     # Copy templates, merge deps, replace placeholders
 pnpm install      # Resolve workspace deps (preinstall runs generate.ts automatically)
 pnpm build        # Compile all packages + functions
 ```
@@ -182,6 +242,13 @@ pnpm build        # Compile all packages + functions
 ```bash
 make dev          # docker compose up (postgres + job-service with all functions)
 make dev-down     # docker compose down
+```
+
+### Production Docker images
+
+```bash
+make docker-build                    # build all
+make docker-build-send-email-link    # build one
 ```
 
 ## Data Flow

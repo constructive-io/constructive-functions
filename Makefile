@@ -1,4 +1,4 @@
-.PHONY: build clean lint generate dev dev-build dev-down
+.PHONY: build clean lint generate dev dev-build dev-down docker-build
 
 build:
 	pnpm run build
@@ -20,3 +20,10 @@ dev:
 
 dev-down:
 	docker compose down
+
+docker-build:
+	pnpm run docker:build
+
+# Build a single function image: make docker-build-send-email-link
+docker-build-%:
+	node --experimental-strip-types scripts/docker-build.ts --only=$*
