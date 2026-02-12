@@ -1,6 +1,7 @@
 {
   "name": "simple-email",
   "version": "1.1.0",
+  "type": "node-graphql",
   "description": "Simple Knative email function that sends emails directly from job payload",
   "dependencies": {
     "@constructive-io/postmaster": "^1.1.0",

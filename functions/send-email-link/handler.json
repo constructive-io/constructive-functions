@@ -1,6 +1,7 @@
 {
   "name": "send-email-link",
   "version": "1.1.0",
+  "type": "node-graphql",
   "description": "Sends invite, password reset, and verification emails",
   "dependencies": {
     "@constructive-io/postmaster": "^1.1.0",
