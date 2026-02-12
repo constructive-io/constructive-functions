@@ -15,9 +15,6 @@ const TEMPLATES_DIR: string = path.resolve(ROOT, 'templates');
 
 const DEFAULT_TEMPLATE = 'node-graphql';
 
-// Files from the template that get copied into generated/<name>/
-const WORKSPACE_FILES = ['package.json', 'tsconfig.json', 'index.ts'];
-
 interface FunctionManifest {
   name: string;
   version: string;
@@ -68,6 +65,24 @@ function resolveTemplateDir(manifest: FunctionManifest): string {
   }
 
   return templateDir;
+}
+
+// --- Template file discovery ---
+
+function walkTemplateFiles(dir: string, base: string = ''): string[] {
+  const results: string[] = [];
+  const entries = fs.readdirSync(dir) as string[];
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry);
+    const relPath = base ? path.join(base, entry) : entry;
+    const stat = fs.statSync(fullPath);
+    if (stat.isDirectory()) {
+      results.push(...walkTemplateFiles(fullPath, relPath));
+    } else {
+      results.push(relPath);
+    }
+  }
+  return results;
 }
 
 // --- Placeholder replacement ---
@@ -183,18 +198,23 @@ function main(): void {
 
     console.log(`  Generating ${fnName} (template: ${manifest.type || DEFAULT_TEMPLATE})...`);
 
-    // Copy and process template files
-    for (const fileName of WORKSPACE_FILES) {
-      const templateFile = path.join(templateDir, fileName);
-      if (!fs.existsSync(templateFile)) {
-        console.warn(`    ! Template file missing: ${fileName}`);
-        continue;
+    // Walk all template files and copy/process them
+    const templateFiles = walkTemplateFiles(templateDir);
+    for (const relPath of templateFiles) {
+      const templateFile = path.join(templateDir, relPath);
+      const outputFile = path.join(genDir, relPath);
+
+      // Ensure subdirectories exist (e.g., k8s/)
+      const outputDir = path.dirname(outputFile);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
       }
 
       const templateContent = fs.readFileSync(templateFile, 'utf-8');
-      const processed = processTemplateFile(fileName, templateContent, manifest, fnDir);
-      const changed = writeIfChanged(path.join(genDir, fileName), processed);
-      if (changed) console.log(`    - ${fileName}`);
+      const baseName = path.basename(relPath);
+      const processed = processTemplateFile(baseName, templateContent, manifest, fnDir);
+      const changed = writeIfChanged(outputFile, processed);
+      if (changed) console.log(`    - ${relPath}`);
     }
 
     // Symlink handler.ts
