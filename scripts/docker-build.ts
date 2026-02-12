@@ -1,7 +1,7 @@
-// docker-build: builds per-function Docker images using Dockerfile templates.
+// docker-build: builds per-function Docker images from generated Dockerfiles.
 //
-// Reads each function's handler.json to determine template type, processes
-// the template Dockerfile with placeholder replacement, and runs docker build.
+// Expects `pnpm generate` to have been run first, which produces
+// generated/<name>/Dockerfile from the template with placeholders resolved.
 //
 // Usage:
 //   node --experimental-strip-types scripts/docker-build.ts --all
@@ -14,9 +14,8 @@ const { execSync } = require('child_process') as typeof import('child_process');
 
 const ROOT: string = process.cwd();
 const FUNCTIONS_DIR: string = path.resolve(ROOT, 'functions');
-const TEMPLATES_DIR: string = path.resolve(ROOT, 'templates');
+const GENERATED_DIR: string = path.resolve(ROOT, 'generated');
 
-const DEFAULT_TEMPLATE = 'node-graphql';
 const DEFAULT_REGISTRY = 'ghcr.io/constructive-io';
 
 interface FunctionManifest {
@@ -72,34 +71,21 @@ function readManifest(fnDir: string): FunctionManifest {
 // --- Docker build ---
 
 function buildDockerImage(fnName: string, manifest: FunctionManifest): void {
-  const templateType = manifest.type || DEFAULT_TEMPLATE;
-  const dockerfilePath = path.join(TEMPLATES_DIR, templateType, 'Dockerfile');
+  const dockerfilePath = path.join(GENERATED_DIR, fnName, 'Dockerfile');
 
   if (!fs.existsSync(dockerfilePath)) {
-    console.error(`No Dockerfile found for template "${templateType}" at ${dockerfilePath}`);
+    console.error(`No Dockerfile found at ${dockerfilePath}. Run "pnpm generate" first.`);
     process.exit(1);
   }
 
-  // Read and process Dockerfile template
-  const dockerfile = fs.readFileSync(dockerfilePath, 'utf-8')
-    .replace(/\{\{name\}\}/g, manifest.name);
-
   const imageName = `${registry}/${manifest.name}-fn`;
-  const tmpDockerfile = path.join(ROOT, `.Dockerfile.${manifest.name}`);
 
-  fs.writeFileSync(tmpDockerfile, dockerfile, 'utf-8');
-
-  try {
-    console.log(`\nBuilding ${imageName}:${tag}...`);
-    execSync(
-      `docker build -t ${imageName}:${tag} -f ${tmpDockerfile} .`,
-      { cwd: ROOT, stdio: 'inherit' }
-    );
-    console.log(`Built ${imageName}:${tag}`);
-  } finally {
-    // Clean up temp Dockerfile
-    try { fs.unlinkSync(tmpDockerfile); } catch { /* ignore */ }
-  }
+  console.log(`\nBuilding ${imageName}:${tag}...`);
+  execSync(
+    `docker build -t ${imageName}:${tag} -f ${dockerfilePath} .`,
+    { cwd: ROOT, stdio: 'inherit' }
+  );
+  console.log(`Built ${imageName}:${tag}`);
 }
 
 // --- Main ---
