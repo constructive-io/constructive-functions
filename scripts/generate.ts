@@ -1,5 +1,6 @@
-// generate: reads functions/*/handler.json and generates workspace
-// packages into generated/<name>/ with symlinks back to handler source.
+// generate: reads functions/*/handler.json, resolves the template type,
+// and generates workspace packages into generated/<name>/ by copying
+// template files with placeholder replacement and dependency merging.
 //
 // Runs during preinstall via Node's native type stripping (--experimental-strip-types).
 // No compilation or external dependencies needed.
@@ -10,13 +11,27 @@ const path = require('path') as typeof import('path');
 const ROOT: string = process.cwd();
 const FUNCTIONS_DIR: string = path.resolve(ROOT, 'functions');
 const GENERATED_DIR: string = path.resolve(ROOT, 'generated');
+const TEMPLATES_DIR: string = path.resolve(ROOT, 'templates');
+
+const DEFAULT_TEMPLATE = 'node-graphql';
+
+// Files from the template that get copied into generated/<name>/
+const WORKSPACE_FILES = ['package.json', 'tsconfig.json', 'index.ts'];
 
 interface FunctionManifest {
   name: string;
   version: string;
   description?: string;
+  type?: string;
   dependencies?: Record<string, string>;
 }
+
+// --- CLI args ---
+
+const onlyArg = process.argv.find((a: string) => a.startsWith('--only='));
+const onlyName: string | undefined = onlyArg?.split('=')[1];
+
+// --- Discovery ---
 
 function findFunctions(): string[] {
   if (!fs.existsSync(FUNCTIONS_DIR)) {
@@ -29,7 +44,8 @@ function findFunctions(): string[] {
     .filter((name: string) => {
       const handlerJson = path.join(FUNCTIONS_DIR, name, 'handler.json');
       return fs.existsSync(handlerJson);
-    });
+    })
+    .filter((name: string) => !onlyName || name === onlyName);
 }
 
 function readManifest(fnDir: string): FunctionManifest {
@@ -38,69 +54,80 @@ function readManifest(fnDir: string): FunctionManifest {
   return JSON.parse(raw);
 }
 
-function generatePackageJson(manifest: FunctionManifest): string {
-  const pkg = {
-    name: `@constructive-io/${manifest.name}-fn`,
-    version: manifest.version,
-    description: manifest.description || '',
-    private: true,
-    main: 'dist/index.js',
-    scripts: {
-      build: 'tsc -p tsconfig.json',
-      clean: 'rimraf dist'
-    },
-    dependencies: {
-      '@constructive-io/fn-runtime': 'workspace:^',
-      ...(manifest.dependencies || {})
-    },
-    devDependencies: {
-      '@types/node': '^22.10.4',
-      typescript: '^5.1.6'
-    }
-  };
+// --- Template resolution ---
+
+function resolveTemplateDir(manifest: FunctionManifest): string {
+  const templateType = manifest.type || DEFAULT_TEMPLATE;
+  const templateDir = path.join(TEMPLATES_DIR, templateType);
+
+  if (!fs.existsSync(templateDir)) {
+    throw new Error(
+      `Template "${templateType}" not found at ${templateDir}. ` +
+      `Check the "type" field in handler.json for function "${manifest.name}".`
+    );
+  }
+
+  return templateDir;
+}
+
+// --- Placeholder replacement ---
+
+function replacePlaceholders(content: string, manifest: FunctionManifest): string {
+  return content
+    .replace(/\{\{name\}\}/g, manifest.name)
+    .replace(/\{\{version\}\}/g, manifest.version)
+    .replace(/\{\{description\}\}/g, manifest.description || '');
+}
+
+// --- File processors ---
+
+function processPackageJson(templateContent: string, manifest: FunctionManifest): string {
+  const pkg = JSON.parse(replacePlaceholders(templateContent, manifest));
+
+  // Deep merge handler.json dependencies into template dependencies
+  if (manifest.dependencies) {
+    pkg.dependencies = {
+      ...(pkg.dependencies || {}),
+      ...manifest.dependencies
+    };
+  }
 
   return JSON.stringify(pkg, null, 2) + '\n';
 }
 
-function generateTsconfig(fnName: string, fnDir: string): string {
-  const include = ['index.ts', 'handler.ts'];
+function processTsconfig(templateContent: string, fnDir: string): string {
+  const tsconfig = JSON.parse(templateContent);
 
-  // Include any .d.ts files (they'll be symlinked)
+  // Append any .d.ts files from the function directory
   if (fs.existsSync(fnDir)) {
-    const files = fs.readdirSync(fnDir);
+    const files = fs.readdirSync(fnDir) as string[];
     for (const file of files) {
-      if (file.endsWith('.d.ts')) {
-        include.push(file);
+      if (file.endsWith('.d.ts') && !tsconfig.include.includes(file)) {
+        tsconfig.include.push(file);
       }
     }
   }
 
-  const tsconfig = {
-    extends: '../../tsconfig.json',
-    compilerOptions: {
-      outDir: 'dist',
-      rootDir: '.'
-    },
-    include,
-    exclude: ['dist', 'node_modules']
-  };
-
   return JSON.stringify(tsconfig, null, 2) + '\n';
 }
 
-function generateEntryPoint(manifest: FunctionManifest): string {
-  return `import { createFunctionServer } from '@constructive-io/fn-runtime';
-import handler from './handler';
-
-const app = createFunctionServer(handler, { name: ${JSON.stringify(manifest.name)} });
-
-export default app;
-
-if (require.main === module) {
-  app.listen(Number(process.env.PORT || 8080));
+function processTemplateFile(
+  fileName: string,
+  templateContent: string,
+  manifest: FunctionManifest,
+  fnDir: string
+): string {
+  switch (fileName) {
+    case 'package.json':
+      return processPackageJson(templateContent, manifest);
+    case 'tsconfig.json':
+      return processTsconfig(templateContent, fnDir);
+    default:
+      return replacePlaceholders(templateContent, manifest);
+  }
 }
-`;
-}
+
+// --- Utilities ---
 
 function writeIfChanged(filePath: string, content: string): boolean {
   if (fs.existsSync(filePath)) {
@@ -112,7 +139,6 @@ function writeIfChanged(filePath: string, content: string): boolean {
 }
 
 function ensureSymlink(target: string, linkPath: string): boolean {
-  // Compute relative target from linkPath's directory
   const linkDir = path.dirname(linkPath);
   const relTarget = path.relative(linkDir, target);
 
@@ -129,6 +155,8 @@ function ensureSymlink(target: string, linkPath: string): boolean {
   return true;
 }
 
+// --- Main ---
+
 function main(): void {
   const functions = findFunctions();
 
@@ -137,7 +165,6 @@ function main(): void {
     return;
   }
 
-  // Ensure generated/ directory exists
   if (!fs.existsSync(GENERATED_DIR)) {
     fs.mkdirSync(GENERATED_DIR, { recursive: true });
   }
@@ -148,34 +175,27 @@ function main(): void {
     const fnDir = path.join(FUNCTIONS_DIR, fnName);
     const genDir = path.join(GENERATED_DIR, fnName);
     const manifest = readManifest(fnDir);
+    const templateDir = resolveTemplateDir(manifest);
 
-    // Ensure generated/<name>/ exists
     if (!fs.existsSync(genDir)) {
       fs.mkdirSync(genDir, { recursive: true });
     }
 
-    console.log(`  Generating ${fnName}...`);
+    console.log(`  Generating ${fnName} (template: ${manifest.type || DEFAULT_TEMPLATE})...`);
 
-    // Write package.json
-    const pkgChanged = writeIfChanged(
-      path.join(genDir, 'package.json'),
-      generatePackageJson(manifest)
-    );
-    if (pkgChanged) console.log(`    - package.json`);
+    // Copy and process template files
+    for (const fileName of WORKSPACE_FILES) {
+      const templateFile = path.join(templateDir, fileName);
+      if (!fs.existsSync(templateFile)) {
+        console.warn(`    ! Template file missing: ${fileName}`);
+        continue;
+      }
 
-    // Write tsconfig.json
-    const tsconfigChanged = writeIfChanged(
-      path.join(genDir, 'tsconfig.json'),
-      generateTsconfig(fnName, fnDir)
-    );
-    if (tsconfigChanged) console.log(`    - tsconfig.json`);
-
-    // Write index.ts entry point
-    const entryChanged = writeIfChanged(
-      path.join(genDir, 'index.ts'),
-      generateEntryPoint(manifest)
-    );
-    if (entryChanged) console.log(`    - index.ts`);
+      const templateContent = fs.readFileSync(templateFile, 'utf-8');
+      const processed = processTemplateFile(fileName, templateContent, manifest, fnDir);
+      const changed = writeIfChanged(path.join(genDir, fileName), processed);
+      if (changed) console.log(`    - ${fileName}`);
+    }
 
     // Symlink handler.ts
     const handlerTarget = path.join(fnDir, 'handler.ts');
@@ -185,7 +205,7 @@ function main(): void {
     }
 
     // Symlink any .d.ts files
-    const files = fs.readdirSync(fnDir);
+    const files = fs.readdirSync(fnDir) as string[];
     for (const file of files) {
       if (file.endsWith('.d.ts')) {
         const target = path.join(fnDir, file);

@@ -4,9 +4,10 @@ RUN npm install -g pnpm@10.12.2
 
 WORKDIR /usr/src/app
 
-# Copy config files and generate script
+# Copy config files, generate script, and templates
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.json ./
 COPY scripts/ scripts/
+COPY templates/ templates/
 
 # Copy all package/job manifests for caching
 COPY packages/fn-app/package.json packages/fn-app/

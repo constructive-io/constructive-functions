@@ -1,0 +1,18 @@
+{
+  "name": "@constructive-io/{{name}}-fn",
+  "version": "{{version}}",
+  "description": "{{description}}",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@constructive-io/fn-runtime": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.4",
+    "typescript": "^5.1.6"
+  }
+}
