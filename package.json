@@ -19,21 +19,19 @@
     "clean": "pnpm -r run clean",
     "build": "pnpm -r run build",
     "build:docker": "make build-docker",
-    "lint": "pnpm -r run lint"
+    "lint": "pnpm -r --if-present run lint"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@types/node": "^22.10.4",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-simple-import-sort": "^12.1.0",
     "eslint-plugin-unused-imports": "^4.0.0",
+    "globals": "^16.5.0",
     "prettier": "^3.7.4",
-    "rimraf": "^5.0.5",
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "typescript-eslint": "^8.33.0"
   },
-  "dependencies": {
-    "rimraf": "^5.0.5"
-  }
+  "dependencies": {}
 }

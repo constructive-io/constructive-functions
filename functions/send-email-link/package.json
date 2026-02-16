@@ -10,13 +10,14 @@
     "test": "__tests__"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "makage build",
+    "build:dev": "makage build --dev",
     "build:watch": "tsc -p tsconfig.json -w",
-    "clean": "rimraf dist",
+    "clean": "makage clean",
     "lint": "eslint . --fix"
   },
   "dependencies": {
-    "@constructive-io/knative-job-fn": "^1.1.0",
+    "@constructive-io/knative-job-fn": "workspace:^",
     "@constructive-io/postmaster": "^1.1.0",
     "@launchql/mjml": "0.1.1",
     "@launchql/styled-email": "0.1.0",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.4",
+    "makage": "^0.1.10",
     "typescript": "^5.1.6"
   }
 }
