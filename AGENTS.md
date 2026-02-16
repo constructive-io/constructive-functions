@@ -2,95 +2,137 @@
 
 This guide helps AI agents quickly navigate the constructive-functions workspace.
 
+## Architecture
+
+See [docs/spec/function-templating.md](docs/spec/function-templating.md) for the full specification.
+
+Functions use a **template-based system**: developers write `handler.ts` + `handler.json` in `functions/`, and `scripts/generate.ts` copies template files from `templates/<type>/` into `generated/` with placeholder replacement and dependency merging.
+
 ## Quick Start
 
-**Most important commands:**
-- `pnpm build` — Build all function packages (TypeScript → `dist/`)
-- `make docker-build` — Build Docker images for all functions
-- `make docker-build-simple-email` — Build just the simple-email image
-- `make docker-build-send-email-link` — Build just the send-email-link image
-- `cd k8s && make kustomize-local` — Deploy functions to a local Kubernetes cluster
-
-**Entry points:**
-- Function HTTP handlers: `functions/*/src/index.ts`
-- Docker entrypoints: `functions/*/Dockerfile` (`CMD ["node", "dist/index.js"]`)
-- K8s manifests: `k8s/base/functions/*` and `k8s/overlays/local/functions/*`
+```bash
+pnpm generate     # Generate generated/<name>/ from functions/*/handler.json
+pnpm install      # Install deps (preinstall runs generate.ts automatically)
+pnpm build        # Build all packages + functions
+```
 
 ## Monorepo Layout
 
-- `functions/*` — Function packages (`send-email-link`, `simple-email`)
-- `k8s/` — Kubernetes manifests, overlays, and setup scripts
-- `types/` — Custom type definitions for `@launchql/*` packages
+```
+functions/              # User-authored source (git tracked)
+  <name>/
+    handler.ts          # Business logic (default export)
+    handler.json        # Metadata + dependencies + template type
+    *.d.ts              # Optional type declarations
 
-## Function Architecture
+templates/              # Template definitions (git tracked)
+  node-graphql/         # Default template type
+    package.json        # Base package.json with {{placeholders}}
+    tsconfig.json       # Static compiler config
+    index.ts            # Entry point template with {{name}}
+    Dockerfile          # Per-function production Docker build
+    k8s/
+      knative-service.yaml  # Base Knative Service manifest
 
-**Image naming:**
+generated/              # Generated workspace packages (gitignored)
+  <name>/
+    package.json        # Merged from template + handler.json deps
+    tsconfig.json       # Copied from template (+ .d.ts includes)
+    index.ts            # Copied from template with {{name}} replaced
+    handler.ts          # Symlink -> functions/<name>/handler.ts
+    dist/               # Compiled output
 
-All Docker images use the registry prefix `ghcr.io/constructive-io/constructive-functions/`:
+packages/
+  fn-app/               # Express app factory with job callbacks
+  fn-runtime/           # Runtime: createFunctionServer, GraphQL clients, context
 
-- `ghcr.io/constructive-io/constructive-functions/simple-email:latest`
-- `ghcr.io/constructive-io/constructive-functions/send-email-link:latest`
+job/
+  server/               # Callback receiver
+  worker/               # Job dispatcher
+  service/              # Orchestrator (loads functions + worker + scheduler)
 
-The `REGISTRY` variable in the Makefile controls this prefix.
+scripts/
+  generate.ts           # Template-based generator (copies + merges + replaces)
+  docker-build.ts       # Per-function Docker image builder
+```
 
-Both functions follow the same pattern:
+## Function Pattern
 
-1. **Source** (`src/index.ts`):
-   - Import `app` from `@constructive-io/knative-job-fn` (Express app)
-   - Define HTTP handler with `app.post('/', ...)`
-   - Export `app` and start server if `require.main === module`
-2. **Build** (`package.json` → `tsc`):
-   - TypeScript compiles to `dist/index.js`
-3. **Docker** (`Dockerfile`):
-   - Uses `node:22-alpine`
-   - Installs production deps via `pnpm`
-   - Copies `dist/` and runs `node dist/index.js`
+Each function exports a `FunctionHandler` that receives params and a context:
+
+```typescript
+import type { FunctionHandler } from '@constructive-io/fn-runtime';
+
+const handler: FunctionHandler = async (params, context) => {
+  const { client, meta, log, env, job } = context;
+  // client/meta: GraphQL clients (tenant-scoped, created per-request)
+  // log: structured logger
+  // env: process.env
+  // job: { jobId, workerId, databaseId }
+  return { complete: true };
+};
+
+export default handler;
+```
+
+## handler.json Schema
+
+```json
+{
+  "name": "send-email-link",
+  "version": "1.1.0",
+  "description": "Sends invite, password reset, and verification emails",
+  "type": "node-graphql",
+  "dependencies": {
+    "graphql-tag": "^2.12.6"
+  }
+}
+```
+
+- `type` selects the template from `templates/<type>/` (default: `"node-graphql"`)
+- `dependencies` are merged into the template's base package.json
+
+## Entry Points
+
+- Function handlers: `functions/*/handler.ts`
+- Generated entry points: `generated/*/index.ts` (compiled to `generated/*/dist/index.js`)
+- Job orchestrator: `job/service/src/index.ts`
+- Generator script: `scripts/generate.ts`
+- Docker builder: `scripts/docker-build.ts`
 
 ## Common Workflows
 
-**Build all functions locally:**
-
-```bash
-pnpm install
-pnpm build
-```
+**Add a new function:**
+1. Create `functions/<name>/handler.json` with name, version, type, dependencies
+2. Create `functions/<name>/handler.ts` with default export
+3. Run `pnpm generate && pnpm install && pnpm build`
+4. Add to function registry in `job/service/src/index.ts` if needed
 
 **Build Docker images:**
-
 ```bash
-make docker-build                    # Build all functions
-make docker-build-simple-email         # Build one function
-make docker-build-send-email-link
+make docker-build                    # build all function images
+make docker-build-send-email-link    # build single function image
 ```
 
-**Deploy to Kubernetes (local):**
-
+**Local development with Docker:**
 ```bash
-cd k8s
-make operators-knative-only   # Install Knative
-make kustomize-local          # Apply manifests
-make proxy-server            # Forward API to localhost:8080
+make dev          # docker compose up (postgres + job-service)
+make dev-down     # docker compose down
 ```
 
-**Run locally with Docker (manual):**
-
+**Regenerate after changing handler.json:**
 ```bash
-docker run -p 8080:8080 -e SIMPLE_EMAIL_DRY_RUN=true ghcr.io/constructive-io/constructive-functions/simple-email:latest
+pnpm generate     # Copies templates, merges deps, replaces placeholders
+pnpm install      # Picks up any new dependencies
+pnpm build        # Recompile
 ```
 
-## Type Definitions
+## Key Details
 
-The `types/` directory contains manual type definitions for packages without built-in types:
-
-- `@launchql/mjml` — Styled-email generator (MJML-based email templates)
-- `@launchql/postmaster` — Mailgun email sender
-- `@launchql/styled-email` — Email template components
-
-These are referenced in `tsconfig.json` via `"typeRoots": ["./types", "./node_modules/@types"]`.
-
-## Tips
-
-1. Build functions before building Docker images — `dist/` must exist
-2. Functions run on `PORT=8080` (Knative default)
-3. Email functions support dry-run mode via env vars (`SIMPLE_EMAIL_DRY_RUN`, `SEND_EMAIL_LINK_DRY_RUN`)
-4. K8s manifests reference Docker images; update image tags after pushing to registry
+- Functions run on `PORT=8080` (Knative default)
+- Email functions support dry-run via `SIMPLE_EMAIL_DRY_RUN` / `SEND_EMAIL_LINK_DRY_RUN`
+- `loadFunctionApp()` in job/service resolves modules by name (e.g. `@constructive-io/simple-email-fn`)
+- GraphQL clients require `GRAPHQL_URL` env var and `X-Database-Id` header
+- The `generated/` directory is entirely gitignored
+- Templates use `{{name}}`, `{{version}}`, `{{description}}` placeholders
+- Generator supports `--only=<name>` for single-function generation

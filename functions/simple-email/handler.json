@@ -1,0 +1,12 @@
+{
+  "name": "simple-email",
+  "version": "1.1.0",
+  "type": "node-graphql",
+  "description": "Simple Knative email function that sends emails directly from job payload",
+  "dependencies": {
+    "@constructive-io/postmaster": "^1.1.0",
+    "@pgpmjs/env": "^2.11.0",
+    "@pgpmjs/logger": "^2.1.0",
+    "simple-smtp-server": "^0.3.0"
+  }
+}

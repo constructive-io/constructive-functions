@@ -1,6 +1,4 @@
-.PHONY: build clean lint docker-build docker-build-simple-email docker-build-send-email-link docker-push docker-push-simple-email docker-push-send-email-link
-
-REGISTRY := ghcr.io/constructive-io/constructive-functions
+.PHONY: build clean lint generate dev dev-build dev-down docker-build
 
 build:
 	pnpm run build
@@ -11,32 +9,21 @@ clean:
 lint:
 	pnpm run lint
 
+generate:
+	pnpm run generate
+
+dev-build:
+	docker compose build
+
+dev:
+	docker compose up
+
+dev-down:
+	docker compose down
+
 docker-build:
-	@echo "Building Docker images for functions..."
-	@for fn in functions/*; do \
-		if [ -f "$$fn/Dockerfile" ]; then \
-			echo "Building $$fn..."; \
-			docker build -t "$(REGISTRY)/$$(basename $$fn):latest" "$$fn"; \
-		fi \
-	done
+	pnpm run docker:build
 
-docker-build-simple-email:
-	docker build -t $(REGISTRY)/simple-email:latest functions/simple-email
-
-docker-build-send-email-link:
-	docker build -t $(REGISTRY)/send-email-link:latest functions/send-email-link
-
-docker-push:
-	@echo "Pushing Docker images to $(REGISTRY)..."
-	@for fn in functions/*; do \
-		if [ -f "$$fn/Dockerfile" ]; then \
-			echo "Pushing $$fn..."; \
-			docker push "$(REGISTRY)/$$(basename $$fn):latest"; \
-		fi \
-	done
-
-docker-push-simple-email:
-	docker push $(REGISTRY)/simple-email:latest
-
-docker-push-send-email-link:
-	docker push $(REGISTRY)/send-email-link:latest
+# Build a single function image: make docker-build-send-email-link
+docker-build-%:
+	node --experimental-strip-types scripts/docker-build.ts --only=$*

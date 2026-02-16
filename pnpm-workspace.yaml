@@ -1,4 +1,4 @@
 packages:
-  - 'functions/*'
+  - 'generated/*'
   - 'packages/*'
   - 'job/*'
