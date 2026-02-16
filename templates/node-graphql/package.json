@@ -1,8 +1,7 @@
 {
-  "name": "@constructive-io/knative-job-example",
-  "version": "1.1.0",
-  "description": "Example Knative job function",
-  "author": "Constructive",
+  "name": "@constructive-io/{{name}}-fn",
+  "version": "{{version}}",
+  "description": "{{description}}",
   "private": true,
   "main": "dist/index.js",
   "scripts": {
@@ -12,7 +11,7 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
-    "@constructive-io/knative-job-fn": "workspace:^"
+    "@constructive-io/fn-runtime": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^22.10.4",

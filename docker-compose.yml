@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: ghcr.io/launchql/pgvector-postgis:16.10
+    environment:
+      POSTGRES_DB: launchql
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  job-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: node job/service/dist/run.js
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: password
+      PGDATABASE: launchql
+      CONSTRUCTIVE_FUNCTIONS: all
+      CONSTRUCTIVE_JOBS_ENABLED: "true"
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+      - "8082:8082"
+
+volumes:
+  pgdata:

@@ -1,0 +1,29 @@
+FROM node:22-alpine
+
+RUN npm install -g pnpm@10.12.2
+
+WORKDIR /usr/src/app
+
+# Copy config files, generate script, and templates
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.json ./
+COPY scripts/ scripts/
+COPY templates/ templates/
+
+# Copy all package/job manifests for caching
+COPY packages/fn-app/package.json packages/fn-app/
+COPY packages/fn-runtime/package.json packages/fn-runtime/
+COPY job/server/package.json job/server/
+COPY job/worker/package.json job/worker/
+COPY job/service/package.json job/service/
+
+# Copy function handler.json manifests
+COPY functions/ functions/
+
+# Generate workspace packages + install deps
+RUN node --experimental-strip-types scripts/generate.ts && pnpm install --frozen-lockfile
+
+# Copy source and build
+COPY . .
+RUN pnpm generate && pnpm build
+
+ENV NODE_ENV=production

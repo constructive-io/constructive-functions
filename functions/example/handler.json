@@ -1,0 +1,6 @@
+{
+  "name": "knative-job-example",
+  "version": "1.1.0",
+  "type": "node-graphql",
+  "description": "Example Knative job function"
+}

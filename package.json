@@ -16,9 +16,12 @@
   },
   "packageManager": "pnpm@10.12.2",
   "scripts": {
+    "generate": "node --experimental-strip-types scripts/generate.ts",
+    "generate:all": "node --experimental-strip-types scripts/generate.ts",
+    "preinstall": "node --experimental-strip-types scripts/generate.ts",
     "clean": "pnpm -r run clean",
     "build": "pnpm -r run build",
-    "build:docker": "make build-docker",
+    "docker:build": "node --experimental-strip-types scripts/docker-build.ts --all",
     "lint": "pnpm -r --if-present run lint"
   },
   "devDependencies": {
