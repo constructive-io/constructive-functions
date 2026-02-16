@@ -21,6 +21,7 @@ jobs:
         with:
           node-version: '22'
       - run: npm install -g pnpm@10.12.2
+      - run: node --experimental-strip-types scripts/generate.ts
       - run: pnpm install
       - run: pnpm test:unit
 
@@ -33,6 +34,7 @@ jobs:
         with:
           node-version: '22'
       - run: npm install -g pnpm@10.12.2
+      - run: node --experimental-strip-types scripts/generate.ts
       - run: pnpm install
       - run: pnpm build
       - run: pnpm test:integration
