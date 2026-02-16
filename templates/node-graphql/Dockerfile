@@ -2,7 +2,7 @@ FROM node:22-alpine AS build
 RUN npm install -g pnpm@10.12.2
 WORKDIR /app
 COPY . .
-RUN node --experimental-strip-types scripts/generate.ts --only={{name}} \
+RUN node --experimental-strip-types scripts/generate.ts \
     && pnpm install --frozen-lockfile \
     && pnpm --filter @constructive-io/{{name}}-fn... build
 
