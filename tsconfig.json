@@ -5,10 +5,13 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
+    "strictNullChecks": false,
     "skipLibCheck": true,
     "sourceMap": false,
+    "declaration": true,
     "resolveJsonModule": true,
     "moduleResolution": "node",
     "typeRoots": ["./node_modules/@types"]
-  }
+  },
+  "exclude": ["dist", "node_modules"]
 }

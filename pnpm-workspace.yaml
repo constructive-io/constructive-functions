@@ -1,2 +1,4 @@
 packages:
   - 'functions/*'
+  - 'packages/*'
+  - 'job/*'

@@ -1,30 +1,31 @@
 {
-  "name": "@constructive-io/simple-email-fn",
+  "name": "@constructive-io/knative-job-worker",
   "version": "1.1.0",
-  "description": "Simple Knative email function that sends emails directly from job payload",
+  "description": "Job worker that polls PostgreSQL and dispatches to Knative functions",
   "author": "Constructive",
   "private": true,
   "main": "dist/index.js",
-  "directories": {
-    "lib": "src",
-    "test": "__tests__"
+  "bin": {
+    "faas-jobs": "dist/run.js",
+    "knative-jobs": "dist/run.js"
   },
   "scripts": {
     "build": "makage build",
     "build:dev": "makage build --dev",
-    "build:watch": "tsc -p tsconfig.json -w",
     "clean": "makage clean",
     "lint": "eslint . --fix"
   },
   "dependencies": {
-    "@constructive-io/knative-job-fn": "workspace:^",
-    "@constructive-io/postmaster": "^1.1.0",
-    "@pgpmjs/env": "^2.11.0",
+    "@constructive-io/job-pg": "^1.1.0",
+    "@constructive-io/job-utils": "^1.1.0",
     "@pgpmjs/logger": "^2.1.0",
-    "simple-smtp-server": "^0.3.0"
+    "pg": "8.17.1",
+    "request": "2.88.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.4",
+    "@types/pg": "^8.11.0",
+    "@types/request": "^2.48.12",
     "makage": "^0.1.10",
     "typescript": "^5.1.6"
   }
