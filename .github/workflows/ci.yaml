@@ -31,6 +31,9 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
 
+      - name: Generate function packages
+        run: node --experimental-strip-types scripts/generate.ts
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

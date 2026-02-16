@@ -10,7 +10,7 @@ FROM node:22-alpine AS deploy
 RUN npm install -g pnpm@10.12.2
 COPY --from=build /app /app
 WORKDIR /app
-RUN pnpm --filter @constructive-io/{{name}}-fn deploy /deploy --prod
+RUN pnpm --filter @constructive-io/{{name}}-fn deploy --legacy /deploy --prod
 
 FROM node:22-alpine
 WORKDIR /app
