@@ -3,6 +3,7 @@ import type { GraphQLClient } from 'graphql-request';
 import gql from 'graphql-tag';
 import { generate } from '@launchql/mjml';
 import { send as sendPostmaster } from '@constructive-io/postmaster';
+import { send as sendSmtp } from 'simple-smtp-server';
 import { parseEnvBoolean } from '@pgpmjs/env';
 
 const GetUser = gql`
