@@ -1,28 +1,28 @@
-import jobServerFactory from '@constructive-io/knative-job-server';
-import Worker from '@constructive-io/knative-job-worker';
-import Scheduler from '@constructive-io/job-scheduler';
 import poolManager from '@constructive-io/job-pg';
+import Scheduler from '@constructive-io/job-scheduler';
 import {
   getJobPgConfig,
+  getJobsCallbackPort,
   getJobSchema,
   getJobSupported,
-  getJobsCallbackPort,
   getSchedulerHostname,
   getWorkerHostname
 } from '@constructive-io/job-utils';
+import jobServerFactory from '@constructive-io/knative-job-server';
+import Worker from '@constructive-io/knative-job-worker';
 import { parseEnvBoolean } from '@pgpmjs/env';
 import { Logger } from '@pgpmjs/logger';
 import retry from 'async-retry';
-import { Client } from 'pg';
-import { createRequire } from 'module';
 import type { Server as HttpServer } from 'http';
+import { createRequire } from 'module';
+import { Client } from 'pg';
 
 import {
-  KnativeJobsSvcOptions,
-  KnativeJobsSvcResult,
   FunctionName,
   FunctionServiceConfig,
   FunctionsOptions,
+  KnativeJobsSvcOptions,
+  KnativeJobsSvcResult,
   StartedFunction
 } from './types';
 
@@ -117,17 +117,17 @@ const startFunction = async (
   await new Promise<void>((resolve, reject) => {
     const server = app.listen(port, () => {
       log.info(`function:${service.name} listening on ${port}`);
+      functionServers.set(service.name, server);
       resolve();
     }) as HttpServer & { on?: (event: string, cb: (err: Error) => void) => void };
 
     if (server?.on) {
       server.on('error', (err) => {
         log.error(`function:${service.name} failed to start`, err);
+        functionServers.delete(service.name);
         reject(err);
       });
     }
-
-    functionServers.set(service.name, server);
   });
 
   return { name: service.name, port };

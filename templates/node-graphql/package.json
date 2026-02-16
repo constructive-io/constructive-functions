@@ -5,14 +5,17 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "clean": "rimraf dist"
+    "build": "makage build",
+    "build:dev": "makage build --dev",
+    "clean": "makage clean",
+    "lint": "eslint . --fix"
   },
   "dependencies": {
     "@constructive-io/fn-runtime": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^22.10.4",
+    "makage": "^0.1.10",
     "typescript": "^5.1.6"
   }
 }
