@@ -22,17 +22,23 @@
     "clean": "pnpm -r run clean",
     "build": "pnpm -r run build",
     "docker:build": "node --experimental-strip-types scripts/docker-build.ts --all",
-    "lint": "pnpm -r --if-present run lint"
+    "lint": "pnpm -r --if-present run lint",
+    "test": "jest",
+    "test:unit": "jest --testPathPatterns='functions/.+/__tests__'",
+    "test:integration": "jest --testPathPatterns='tests/integration'"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.10.4",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-simple-import-sort": "^12.1.0",
     "eslint-plugin-unused-imports": "^4.0.0",
     "globals": "^16.5.0",
+    "jest": "^30.2.0",
     "prettier": "^3.7.4",
+    "ts-jest": "^29.4.0",
     "typescript": "^5.1.6",
     "typescript-eslint": "^8.33.0"
   },
