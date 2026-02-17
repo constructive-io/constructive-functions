@@ -1,3 +1,3 @@
-# @constructive-io/{{name}}-fn
+# {{name}}-fn
 
 {{description}}

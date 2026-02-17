@@ -3,6 +3,7 @@
   "compilerOptions": {
     "outDir": "dist/esm",
     "module": "es2022",
+    "rootDir": ".",
     "declaration": false
   }
 }
