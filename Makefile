@@ -1,4 +1,8 @@
-.PHONY: build clean lint generate dev dev-build dev-down docker-build
+.PHONY: install build clean lint generate dev dev-build dev-down docker-build
+
+install:
+	node --experimental-strip-types scripts/generate.ts
+	pnpm install
 
 build:
 	pnpm run build
