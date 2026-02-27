@@ -1,4 +1,4 @@
-import type { FunctionHandler } from '@constructive-io/fn-runtime';
+import type { FunctionContext, FunctionHandler } from '@constructive-io/fn-runtime';
 import { send as sendSmtp } from 'simple-smtp-server';
 import { send as sendPostmaster } from '@constructive-io/postmaster';
 import { parseEnvBoolean } from '@pgpmjs/env';
@@ -31,7 +31,10 @@ const isDryRun = parseEnvBoolean(process.env.SIMPLE_EMAIL_DRY_RUN) ?? false;
 const useSmtp = parseEnvBoolean(process.env.EMAIL_SEND_USE_SMTP) ?? false;
 const logger = createLogger('simple-email');
 
-const handler: FunctionHandler<SimpleEmailPayload> = async (params) => {
+const handler: FunctionHandler<SimpleEmailPayload> = async (
+  params: SimpleEmailPayload,
+  _context: FunctionContext
+) => {
   const to = getRequiredField(params, 'to');
   const subject = getRequiredField(params, 'subject');
 

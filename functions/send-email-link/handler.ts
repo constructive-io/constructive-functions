@@ -1,4 +1,4 @@
-import type { FunctionHandler } from '@constructive-io/fn-runtime';
+import type { FunctionContext, FunctionHandler } from '@constructive-io/fn-runtime';
 import type { GraphQLClient } from 'graphql-request';
 import gql from 'graphql-tag';
 import { generate } from '@launchql/mjml';
@@ -269,7 +269,10 @@ const sendEmailLink = async (
   };
 };
 
-const handler: FunctionHandler<SendEmailParams> = async (params, context) => {
+const handler: FunctionHandler<SendEmailParams> = async (
+  params: SendEmailParams,
+  context: FunctionContext
+) => {
   const { client, meta, job, log, env } = context;
 
   const databaseId = job.databaseId;
