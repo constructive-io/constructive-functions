@@ -1,4 +1,4 @@
-.PHONY: install build clean lint generate dev dev-build dev-down docker-build
+.PHONY: install build clean lint generate dev dev-fn dev-down dev-logs docker-build
 
 install:
 	node --experimental-strip-types scripts/generate.ts
@@ -16,14 +16,23 @@ lint:
 generate:
 	pnpm run generate
 
-dev-build:
-	docker compose build
+# --- Local development ---
+# Infrastructure (postgres, db-setup, graphql-server, mailpit) runs in Docker.
+# Functions run as local Node processes for fast edit-run cycles.
 
 dev:
-	docker compose up
+	docker compose up -d
+
+dev-fn:
+	node --experimental-strip-types scripts/dev.ts
 
 dev-down:
 	docker compose down
+
+dev-logs:
+	docker compose logs -f
+
+# --- Docker image builds ---
 
 docker-build:
 	pnpm run docker:build
