@@ -57,6 +57,9 @@ importers:
 
   generated/export-metaschema:
     dependencies:
+      '@constructive-io/fn-core':
+        specifier: workspace:^
+        version: link:../../packages/fn-core
       '@constructive-io/fn-pgpm-runtime':
         specifier: workspace:^
         version: link:../../packages/fn-pgpm-runtime
@@ -305,11 +308,24 @@ importers:
         specifier: ^5.1.6
         version: 5.9.3
 
-  packages/fn-pgpm-runtime:
+  packages/fn-core:
     dependencies:
       '@constructive-io/knative-job-fn':
         specifier: workspace:^
         version: link:../fn-app
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+
+  packages/fn-pgpm-runtime:
+    dependencies:
+      '@constructive-io/fn-core':
+        specifier: workspace:^
+        version: link:../fn-core
       '@pgpmjs/core':
         specifier: ^6.2.0
         version: 6.3.0
@@ -332,9 +348,9 @@ importers:
 
   packages/fn-runtime:
     dependencies:
-      '@constructive-io/knative-job-fn':
+      '@constructive-io/fn-core':
         specifier: workspace:^
-        version: link:../fn-app
+        version: link:../fn-core
       '@pgpmjs/logger':
         specifier: ^2.1.0
         version: 2.1.0

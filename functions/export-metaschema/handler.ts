@@ -1,4 +1,5 @@
 import type { PgpmFunctionContext, PgpmFunctionHandler } from '@constructive-io/fn-pgpm-runtime';
+import { DEFAULT_DATABASE_NAME } from '@constructive-io/fn-core';
 import { exportMigrations } from '@pgpmjs/core';
 import { getPgPool } from 'pg-cache';
 import { resolve } from 'path';
@@ -21,7 +22,7 @@ const handler: PgpmFunctionHandler<ExportMetaschemaParams> = async (
   const { project, options, log, env } = context;
 
   // Resolve database name: params > PGDATABASE env > default
-  const dbname = params.dbname || env.PGDATABASE || 'constructive';
+  const dbname = params.dbname || env.PGDATABASE || DEFAULT_DATABASE_NAME;
 
   log.info('[export-metaschema] Connecting to database', { dbname });
 

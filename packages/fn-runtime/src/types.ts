@@ -1,22 +1,11 @@
 import type { GraphQLClient } from 'graphql-request';
+import type { BaseContext, BaseFunctionHandler, BaseServerOptions } from '@constructive-io/fn-core';
 
-export type FunctionHandler<P = unknown, R = unknown> = (
-  params: P,
-  context: FunctionContext
-) => Promise<R> | R;
-
-export type FunctionContext = {
-  job: {
-    jobId?: string;
-    workerId?: string;
-    databaseId?: string;
-  };
+export type FunctionContext = BaseContext & {
   client: GraphQLClient;
   meta: GraphQLClient;
-  log: { info: (...args: any[]) => void; error: (...args: any[]) => void; warn: (...args: any[]) => void };
-  env: Record<string, string | undefined>;
 };
 
-export type ServerOptions = {
-  name?: string;
-};
+export type FunctionHandler<P = unknown, R = unknown> = BaseFunctionHandler<P, FunctionContext, R>;
+
+export type ServerOptions = BaseServerOptions;

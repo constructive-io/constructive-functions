@@ -11,7 +11,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@constructive-io/knative-job-fn": "workspace:^",
+    "@constructive-io/fn-core": "workspace:^",
     "@pgpmjs/logger": "^2.1.0",
     "graphql-request": "^7.1.2"
   },
