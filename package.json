@@ -22,6 +22,9 @@
     "build": "pnpm -r run build",
     "docker:build": "node --experimental-strip-types scripts/docker-build.ts --all",
     "lint": "pnpm -r --if-present run lint",
+    "dev": "docker compose up -d",
+    "dev:fn": "node --experimental-strip-types scripts/dev.ts",
+    "dev:down": "docker compose down",
     "test": "jest",
     "test:unit": "jest --testPathPatterns='functions/.+/__tests__'",
     "test:integration": "jest --testPathPatterns='tests/integration'"
