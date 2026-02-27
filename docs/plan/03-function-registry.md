@@ -1,8 +1,8 @@
-# WS3: Auto-Generated Function Registry
+# WS3: Dynamic Function Registry
 
 **Branch**: `feat/function-registry`
-**Dependencies**: None — can start immediately (env integration from WS4 is additive)
-**Estimated files**: 2 modified, 3 auto-generated
+**Dependencies**: None — can start immediately
+**Approach**: HTTP-based dynamic discovery (functions self-register)
 
 ## Context
 
@@ -12,11 +12,6 @@ The function registry in `job/service/src/index.ts` is hardcoded:
 
 ```typescript
 // job/service/src/index.ts lines 29-43
-type FunctionRegistryEntry = {
-  moduleName: string;
-  defaultPort: number;
-};
-
 const functionRegistry: Record<FunctionName, FunctionRegistryEntry> = {
   'simple-email': {
     moduleName: '@constructive-io/simple-email-fn',
@@ -35,355 +30,470 @@ And the `FunctionName` type is a hardcoded union:
 export type FunctionName = 'simple-email' | 'send-email-link';
 ```
 
-Adding a new function requires editing 3 files: `handler.json`, `types.ts`, and `index.ts`.
+Functions are loaded in-process via `createRequire` (`index.ts:56-71`). Adding a new function requires editing 3 files. The current architecture tightly couples the service to specific function packages.
 
 ### Goal
 
-Auto-generate a `@constructive-io/fn-registry` package during `pnpm generate` that:
-1. Imports all function apps
-2. Exports a typed registry object
-3. Exports the `FunctionName` type
-4. Allows `job/service` to consume it without hardcoding
+Replace the hardcoded registry with HTTP-based dynamic discovery: each function starts as an independent process, registers itself with the job-service via HTTP, and the worker dispatches to registered URLs. This aligns with the K8s service mesh pattern already used in production, where functions are separate Knative services.
 
-### How functions are currently loaded
+### Architecture flow
 
-`job/service/src/index.ts` lines 56-71:
+```
+                          docker-compose up
+                                |
+                  +-------------+-------------+
+                  |             |             |
+            job-service    simple-email  send-email-link
+                  |             |             |
+            1. Start HTTP   2. Listen     2. Listen
+               server          on :8080      on :8080
+            (port 8080)        |             |
+                  |        3. POST          3. POST
+            Start worker    /functions/     /functions/
+            + scheduler     register        register
+                  |         {name,url}      {name,url}
+                  |             |             |
+                  +<------------+<------------+
+                  |
+            Registry stores:
+            simple-email -> http://simple-email:8080
+            send-email-link -> http://send-email-link:8080
+                  |
+            Worker picks job (task_identifier="simple-email")
+            -> registry.resolve("simple-email")
+            -> HTTP POST http://simple-email:8080
+```
+
+## Phased Implementation
+
+### Phase 1: Foundation (create registry + mount routes)
+
+Create the FunctionRegistry class and mount registration HTTP endpoints on the job-service. The existing hardcoded registry and in-process loading remain functional — this is purely additive.
+
+#### 1a. Create `job/service/src/registry.ts`
+
+In-memory registry with HTTP routes for registration/deregistration/listing.
+
 ```typescript
-const requireFn = createRequire(__filename);
+import { createLogger } from '@pgpmjs/logger';
 
-const loadFunctionApp = (moduleName: string) => {
-  const knativeModuleId = requireFn.resolve('@constructive-io/knative-job-fn');
-  delete requireFn.cache[knativeModuleId];
-  const moduleId = requireFn.resolve(moduleName);
-  delete requireFn.cache[moduleId];
-  const mod = requireFn(moduleName);
-  const app = mod.default ?? mod;
-  if (!app || typeof app.listen !== 'function') {
-    throw new Error(`Function module "${moduleName}" does not export a listenable app.`);
-  }
-  return app;
+const log = createLogger('fn-registry');
+
+export type RegisteredFunction = {
+  name: string;
+  url: string;
+  registeredAt: Date;
 };
-```
 
-This uses `createRequire` + `require.resolve` for dynamic module loading. With the registry, we can import statically instead.
+export class FunctionRegistry {
+  private functions = new Map<string, RegisteredFunction>();
 
-### How generated functions export their app
-
-```typescript
-// generated/<name>/index.ts (from template)
-import { createFunctionServer } from '@constructive-io/fn-runtime';
-import handler from './handler';
-const app = createFunctionServer(handler, { name: '<name>' });
-export default app;
-```
-
-Each `@constructive-io/<name>-fn` package exports an Express app with `.listen()`.
-
-## Requirements
-
-1. `pnpm generate` produces `generated/registry/` with `package.json`, `index.ts`, `tsconfig.json`
-2. Registry exports all function apps with their default ports
-3. `FunctionName` type is derived from the registry (no hardcoding)
-4. `job/service` imports from `@constructive-io/fn-registry` instead of hardcoding
-5. Adding a new `functions/<name>/handler.json` + re-running generate updates the registry automatically
-6. Build passes: `pnpm generate && pnpm install && pnpm build`
-
-## Implementation
-
-### 1. Extend `scripts/generate.ts`
-
-Add `generateRegistry()` function and call it at the end of `main()`.
-
-#### New function: `generateRegistry()`
-
-```typescript
-function generateRegistry(functionNames: string[]): void {
-  const registryDir = path.join(GENERATED_DIR, 'registry');
-  if (!fs.existsSync(registryDir)) {
-    fs.mkdirSync(registryDir, { recursive: true });
+  register(name: string, url: string): void {
+    this.functions.set(name, { name, url, registeredAt: new Date() });
+    log.info(`registered function: ${name} -> ${url}`);
   }
 
-  // Read all manifests
-  const manifests = functionNames.map((fnName) => {
-    const fnDir = path.join(FUNCTIONS_DIR, fnName);
-    return readManifest(fnDir);
-  });
-
-  // --- package.json ---
-  const deps: Record<string, string> = {
-    '@constructive-io/fn-runtime': 'workspace:^'
-  };
-  for (const m of manifests) {
-    deps[`@constructive-io/${m.name}-fn`] = 'workspace:^';
+  unregister(name: string): boolean {
+    const existed = this.functions.delete(name);
+    if (existed) log.info(`unregistered function: ${name}`);
+    return existed;
   }
 
-  const pkg = {
-    name: '@constructive-io/fn-registry',
-    version: '1.0.0',
-    description: 'Auto-generated registry of all constructive function apps',
-    private: true,
-    main: 'dist/index.js',
-    types: 'dist/index.d.ts',
-    scripts: {
-      build: 'tsc -p tsconfig.json',
-      clean: 'rimraf dist'
-    },
-    dependencies: deps,
-    devDependencies: {
-      '@types/node': '^22.10.4',
-      typescript: '^5.1.6'
-    }
-  };
-  writeIfChanged(
-    path.join(registryDir, 'package.json'),
-    JSON.stringify(pkg, null, 2) + '\n'
-  );
+  getUrl(name: string): string | undefined {
+    return this.functions.get(name)?.url;
+  }
 
-  // --- index.ts ---
-  const toVarName = (name: string): string =>
-    name.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+  resolve(name: string): string {
+    const url = this.getUrl(name);
+    if (!url) throw new Error(`Function "${name}" not registered`);
+    return url;
+  }
 
-  const imports = manifests.map(
-    (m) => `import ${toVarName(m.name)} from '@constructive-io/${m.name}-fn';`
-  );
+  getAll(): RegisteredFunction[] {
+    return Array.from(this.functions.values());
+  }
 
-  const entries = manifests.map((m, i) =>
-    `  '${m.name}': { app: ${toVarName(m.name)}, defaultPort: ${8081 + i} }`
-  );
+  has(name: string): boolean {
+    return this.functions.has(name);
+  }
 
-  const indexTs = [
-    ...imports,
-    '',
-    'export const registry = {',
-    entries.join(',\n'),
-    '} as const;',
-    '',
-    'export type FunctionName = keyof typeof registry;',
-    '',
-    'export default registry;',
-    ''
-  ].join('\n');
+  get size(): number {
+    return this.functions.size;
+  }
 
-  writeIfChanged(path.join(registryDir, 'index.ts'), indexTs);
+  mountRoutes(app: { post: Function; delete: Function; get: Function }): void {
+    app.post('/functions/register', (req: any, res: any) => {
+      const { name, url } = req.body;
+      if (!name || !url) {
+        return res.status(400).json({ error: 'Missing name or url' });
+      }
+      this.register(name, url);
+      res.status(200).json({ registered: true, name, url });
+    });
 
-  // --- tsconfig.json ---
-  const tsconfig = {
-    extends: '../../tsconfig.json',
-    compilerOptions: { outDir: 'dist', rootDir: '.', declaration: true },
-    include: ['index.ts'],
-    exclude: ['dist', 'node_modules']
-  };
-  writeIfChanged(
-    path.join(registryDir, 'tsconfig.json'),
-    JSON.stringify(tsconfig, null, 2) + '\n'
-  );
+    app.delete('/functions/:name', (req: any, res: any) => {
+      const removed = this.unregister(req.params.name);
+      res.status(200).json({ removed, name: req.params.name });
+    });
 
-  console.log('  Generated registry package.');
+    app.get('/functions', (_req: any, res: any) => {
+      res.status(200).json(this.getAll());
+    });
+  }
 }
 ```
 
-#### Call in `main()`
+#### 1b. Mount routes on job-service (`job/service/src/index.ts`)
 
-At end of `main()`, before `console.log('Done.')`:
-
-```typescript
-  // Generate registry package
-  generateRegistry(functions);
-
-  console.log('Done.');
-```
-
-### 2. Generated output: `generated/registry/`
-
-For current functions (example, send-email-link, simple-email), the generated `index.ts`:
+Add registry to `KnativeJobsSvc` and mount routes in `startJobs()`. Everything else stays as-is.
 
 ```typescript
-import knativeJobExample from '@constructive-io/knative-job-example-fn';
-import sendEmailLink from '@constructive-io/send-email-link-fn';
-import simpleEmail from '@constructive-io/simple-email-fn';
+// Add import
+import { FunctionRegistry } from './registry';
 
-export const registry = {
-  'knative-job-example': { app: knativeJobExample, defaultPort: 8081 },
-  'send-email-link': { app: sendEmailLink, defaultPort: 8082 },
-  'simple-email': { app: simpleEmail, defaultPort: 8083 }
-} as const;
+// Add to KnativeJobsSvc class
+private registry = new FunctionRegistry();
 
-export type FunctionName = keyof typeof registry;
+getRegistry(): FunctionRegistry {
+  return this.registry;
+}
 
-export default registry;
+// In startJobs(), after creating jobsApp but before listenApp():
+this.registry.mountRoutes(jobsApp);
 ```
 
-**Note on naming**: Registry keys use `manifest.name` (from handler.json), not directory names. For `example/handler.json` with `"name": "knative-job-example"`, the key is `'knative-job-example'`.
+The callback server (port 8080) now also serves:
+- `POST /functions/register` — `{ name, url }` → stores in registry
+- `DELETE /functions/:name` → removes from registry
+- `GET /functions` → lists all registered functions
 
-**Note on port assignment**: Ports are auto-assigned (8081 + index) in alphabetical order of function names. The existing `CONSTRUCTIVE_FUNCTION_PORTS` env var can override ports at runtime (`job/service/src/index.ts` lines 300-329).
+Existing `/callback` route is unaffected.
 
-### 3. Refactor `job/service/src/types.ts`
-
-**Before** (line 1):
-```typescript
-export type FunctionName = 'simple-email' | 'send-email-link';
-```
-
-**After**:
-```typescript
-export type { FunctionName } from '@constructive-io/fn-registry';
-```
-
-All other types (`FunctionServiceConfig`, `FunctionsOptions`, `KnativeJobsSvcOptions`, etc.) remain unchanged — they reference `FunctionName` which is now re-exported.
-
-### 4. Refactor `job/service/src/index.ts`
-
-**Remove** (lines 17, 46):
-```typescript
-import { createRequire } from 'module';
-// ...
-const requireFn = createRequire(__filename);
-```
-
-**Remove** (lines 29-43):
-```typescript
-type FunctionRegistryEntry = { ... };
-const functionRegistry: Record<FunctionName, FunctionRegistryEntry> = { ... };
-```
-
-**Remove** (lines 56-71):
-```typescript
-const loadFunctionApp = (moduleName: string) => { ... };
-```
-
-**Add** (near top, after other imports):
-```typescript
-import fnRegistry from '@constructive-io/fn-registry';
-import type { FunctionName } from '@constructive-io/fn-registry';
-```
-
-**Replace** `resolveFunctionEntry()` (line 48-54):
-
-```typescript
-// Before:
-const resolveFunctionEntry = (name: FunctionName): FunctionRegistryEntry => {
-  const entry = functionRegistry[name];
-  if (!entry) throw new Error(`Unknown function "${name}".`);
-  return entry;
-};
-
-// After:
-const resolveFunctionEntry = (name: FunctionName) => {
-  const entry = fnRegistry.registry[name];
-  if (!entry) throw new Error(`Unknown function "${name}".`);
-  return entry;
-};
-```
-
-**Replace** `startFunction()` (lines 109-134) — use `entry.app.listen()` directly instead of `loadFunctionApp()`:
-
-```typescript
-const startFunction = async (
-  service: FunctionServiceConfig,
-  functionServers: Map<FunctionName, HttpServer>
-): Promise<StartedFunction> => {
-  const entry = resolveFunctionEntry(service.name);
-  const port = resolveFunctionPort(service);
-  const app = entry.app;
-
-  await new Promise<void>((resolve, reject) => {
-    const server = app.listen(port, () => {
-      log.info(`function:${service.name} listening on ${port}`);
-      resolve();
-    }) as HttpServer & { on?: (event: string, cb: (err: Error) => void) => void };
-
-    if (server?.on) {
-      server.on('error', (err) => {
-        log.error(`function:${service.name} failed to start`, err);
-        reject(err);
-      });
-    }
-
-    functionServers.set(service.name, server);
-  });
-
-  return { name: service.name, port };
-};
-```
-
-**Replace** `normalizeFunctionServices()` (lines 79-91) — use `fnRegistry.registry` instead of `functionRegistry`:
-
-```typescript
-const normalizeFunctionServices = (
-  options?: FunctionsOptions
-): FunctionServiceConfig[] => {
-  if (!shouldEnableFunctions(options)) return [];
-
-  if (!options?.services?.length) {
-    return (Object.keys(fnRegistry.registry) as FunctionName[]).map((name) => ({
-      name
-    }));
-  }
-
-  return options.services;
-};
-```
-
-**Replace** `resolveFunctionPort()` (lines 93-96):
-
-```typescript
-const resolveFunctionPort = (service: FunctionServiceConfig): number => {
-  const entry = resolveFunctionEntry(service.name);
-  return service.port ?? entry.defaultPort;
-};
-```
-
-### 5. Update `job/service/package.json`
-
-**Add** dependency:
-```json
-"@constructive-io/fn-registry": "workspace:^"
-```
-
-**Remove** individual function deps (if present):
-```json
-"@constructive-io/send-email-link-fn": "workspace:^",
-"@constructive-io/simple-email-fn": "workspace:^"
-```
-
-The registry transitively depends on all function packages, so they'll still be installed.
-
-## Files Summary
+#### Phase 1 files
 
 | Action | File |
 |--------|------|
-| Modify | `scripts/generate.ts` — add `generateRegistry()`, call at end of `main()` |
-| Modify | `job/service/src/index.ts` — import from registry, remove hardcoded registry + loadFunctionApp + createRequire |
-| Modify | `job/service/src/types.ts` — re-export FunctionName from registry |
-| Modify | `job/service/package.json` — add fn-registry dep, remove per-fn deps |
-| Generated | `generated/registry/package.json` |
-| Generated | `generated/registry/index.ts` |
-| Generated | `generated/registry/tsconfig.json` |
+| Create | `job/service/src/registry.ts` |
+| Modify | `job/service/src/index.ts` |
 
-## Verification
+---
+
+### Phase 2: Worker integration
+
+Make the worker's URL resolution pluggable so it can use the dynamic registry.
+
+#### 2a. `job/worker/src/req.ts` — add optional URL resolver
+
+```typescript
+export type ResolveFunctionUrl = (fn: string) => string;
+
+interface RequestOptions {
+  body: unknown;
+  databaseId?: string;
+  workerId: string;
+  jobId: string | number;
+  resolveFunctionUrl?: ResolveFunctionUrl;
+}
+
+const request = (
+  fn: string,
+  { body, databaseId, workerId, jobId, resolveFunctionUrl }: RequestOptions
+) => {
+  const url = resolveFunctionUrl ? resolveFunctionUrl(fn) : getFunctionUrl(fn);
+  // ...rest unchanged
+};
+```
+
+#### 2b. `job/worker/src/index.ts` — Worker accepts resolver
+
+```typescript
+constructor({ tasks, idleDelay, pgPool, workerId, resolveFunctionUrl }: {
+  // ...existing options
+  resolveFunctionUrl?: ResolveFunctionUrl;
+}) {
+  // ...existing
+  this.resolveFunctionUrl = resolveFunctionUrl;
+}
+
+async doWork(job: JobRow) {
+  await req(task_identifier, {
+    body: payload,
+    databaseId: job.database_id,
+    workerId: this.workerId,
+    jobId: job.id,
+    resolveFunctionUrl: this.resolveFunctionUrl
+  });
+}
+```
+
+#### 2c. Job-service passes resolver to Worker
+
+In `startJobs()`:
+
+```typescript
+this.worker = new Worker({
+  pgPool,
+  tasks,
+  workerId: getWorkerHostname(),
+  resolveFunctionUrl: (name: string) => this.registry.resolve(name)
+});
+```
+
+**Backwards-compatible**: If no resolver is provided, falls back to existing `getFunctionUrl()` (DEV_MAP / gateway env vars).
+
+#### Phase 2 files
+
+| Action | File |
+|--------|------|
+| Modify | `job/worker/src/req.ts` |
+| Modify | `job/worker/src/index.ts` |
+| Modify | `job/service/src/index.ts` |
+
+---
+
+### Phase 3: Auto-registration in fn-runtime
+
+Add `startWithRegistration()` to fn-runtime so functions can self-register on startup.
+
+#### 3a. Create `packages/fn-runtime/src/register.ts`
+
+Uses Node's built-in `http` module (no new deps). Retries registration up to 10 times with backoff. Deregisters on SIGTERM/SIGINT.
+
+```typescript
+import http from 'http';
+import https from 'https';
+import { createLogger } from '@pgpmjs/logger';
+
+const log = createLogger('fn-register');
+
+const postJson = (url: string, data: object): Promise<void> => { /* Node http.request */ };
+const deleteReq = (url: string): Promise<void> => { /* Node http.request */ };
+
+export type StartOptions = {
+  name: string;
+  port: number;
+  selfUrl?: string;
+};
+
+export const startWithRegistration = async (
+  app: { listen: (port: number, cb?: () => void) => unknown },
+  options: StartOptions
+): Promise<void> => {
+  const { name, port } = options;
+  const registryUrl = process.env.FUNCTION_REGISTRY_URL;
+  const selfUrl = options.selfUrl
+    || process.env.FUNCTION_SELF_URL
+    || `http://localhost:${port}`;
+
+  // 1. Start listening
+  await new Promise<void>((resolve) => {
+    app.listen(port, () => resolve());
+  });
+
+  // 2. Register with retry (if FUNCTION_REGISTRY_URL is set)
+  if (registryUrl) {
+    let registered = false;
+    for (let i = 0; i < 10 && !registered; i++) {
+      try {
+        await postJson(registryUrl, { name, url: selfUrl });
+        registered = true;
+      } catch {
+        await new Promise((r) => setTimeout(r, (i + 1) * 1000));
+      }
+    }
+
+    // 3. Deregister on graceful shutdown
+    const deregisterUrl = registryUrl.replace(/\/register$/, `/${name}`);
+    process.on('SIGTERM', async () => { await deleteReq(deregisterUrl); process.exit(0); });
+    process.on('SIGINT', async () => { await deleteReq(deregisterUrl); process.exit(0); });
+  }
+};
+```
+
+#### 3b. Export from `packages/fn-runtime/src/index.ts`
+
+```typescript
+export { startWithRegistration } from './register';
+export type { StartOptions } from './register';
+```
+
+#### 3c. Update template (`templates/node-graphql/index.ts`)
+
+```typescript
+import { createFunctionServer, startWithRegistration } from '@constructive-io/fn-runtime';
+import handler from './handler';
+
+const app = createFunctionServer(handler, { name: '{{name}}' });
+
+export default app;
+
+if (require.main === module) {
+  startWithRegistration(app, {
+    name: '{{name}}',
+    port: Number(process.env.PORT || 8080)
+  });
+}
+```
+
+When imported as a module (e.g., tests), only the app is created. When run standalone, it listens + registers.
+
+#### Phase 3 env vars
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `FUNCTION_REGISTRY_URL` | Registration endpoint on job-service | `http://job-service:8080/functions/register` |
+| `FUNCTION_SELF_URL` | This function's externally-reachable URL | `http://simple-email:8080` |
+
+#### Phase 3 files
+
+| Action | File |
+|--------|------|
+| Create | `packages/fn-runtime/src/register.ts` |
+| Modify | `packages/fn-runtime/src/index.ts` |
+| Modify | `templates/node-graphql/index.ts` |
+
+---
+
+### Phase 4: Remove hardcoded registry + split docker-compose
+
+Remove the old hardcoded registry and in-process function loading. Each function becomes its own docker-compose service.
+
+#### 4a. Remove from `job/service/src/index.ts`
+
+- `import { createRequire } from 'module'` (line 17)
+- `FunctionRegistryEntry` type + `functionRegistry` constant (lines 29-43)
+- `const requireFn = createRequire(__filename)` (line 46)
+- `resolveFunctionEntry()` (lines 48-54)
+- `loadFunctionApp()` (lines 56-71)
+- `shouldEnableFunctions()` (lines 73-77)
+- `normalizeFunctionServices()` (lines 79-91)
+- `resolveFunctionPort()`, `ensureUniquePorts()` (lines 93-107)
+- `startFunction()`, `startFunctions()` (lines 109-151)
+- `parseList()`, `parsePortMap()`, `buildFunctionsOptionsFromEnv()` (lines 292-354)
+
+#### 4b. Simplify types (`job/service/src/types.ts`)
+
+```typescript
+export type FunctionName = string;
+
+export type JobsOptions = {
+  enabled?: boolean;
+};
+
+export type KnativeJobsSvcOptions = {
+  jobs?: JobsOptions;
+};
+
+export type KnativeJobsSvcResult = {
+  jobs: boolean;
+};
+```
+
+Remove: `FunctionServiceConfig`, `FunctionsOptions`, `StartedFunction`
+
+#### 4c. Update `job/service/package.json`
+
+Remove individual function deps (service no longer loads them):
+```
+"@constructive-io/send-email-link-fn": "workspace:^"
+"@constructive-io/simple-email-fn": "workspace:^"
+```
+
+#### 4d. Update `docker-compose.yml`
+
+Each function becomes its own service:
+
+```yaml
+services:
+  postgres:
+    # ...unchanged
+
+  job-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: node job/service/dist/run.js
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: password
+      PGDATABASE: launchql
+      CONSTRUCTIVE_JOBS_ENABLED: "true"
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+
+  simple-email:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: node generated/simple-email/dist/index.js
+    environment:
+      PORT: "8080"
+      FUNCTION_REGISTRY_URL: "http://job-service:8080/functions/register"
+      FUNCTION_SELF_URL: "http://simple-email:8080"
+    depends_on:
+      - job-service
+    ports:
+      - "8081:8080"
+
+  send-email-link:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: node generated/send-email-link/dist/index.js
+    environment:
+      PORT: "8080"
+      FUNCTION_REGISTRY_URL: "http://job-service:8080/functions/register"
+      FUNCTION_SELF_URL: "http://send-email-link:8080"
+      GRAPHQL_URL: "http://api:5000/graphql"
+    depends_on:
+      - job-service
+    ports:
+      - "8082:8080"
+
+volumes:
+  pgdata:
+```
+
+#### Phase 4 files
+
+| Action | File |
+|--------|------|
+| Modify | `job/service/src/index.ts` |
+| Modify | `job/service/src/types.ts` |
+| Modify | `job/service/package.json` |
+| Modify | `docker-compose.yml` |
+
+---
+
+## Verification (end-to-end after all phases)
 
 ```bash
-# 1. Clean generate
-rm -rf generated/
-pnpm generate
-# Verify: generated/registry/ exists with index.ts, package.json, tsconfig.json
-cat generated/registry/index.ts
-# Should show imports for all 3 functions
+# 1. Build
+pnpm generate && pnpm install && pnpm build
 
-# 2. Full build
-pnpm install
-pnpm build
-# Should compile all packages including registry and job/service
+# 2. Run tests
+pnpm test:unit
+pnpm test:integration
 
-# 3. Test adding a new function
-mkdir -p functions/test-fn
-echo '{"name":"test-fn","version":"1.0.0","type":"node-graphql"}' > functions/test-fn/handler.json
-cp functions/example/handler.ts functions/test-fn/handler.ts
-pnpm generate
-cat generated/registry/index.ts
-# Should now include testFn import and registry entry
+# 3. Docker-compose test
+docker-compose up --build
 
-# 4. Verify runtime (if docker compose is available)
-make dev
-# job-service should start all functions without errors
+# Verify registration:
+curl http://localhost:8080/functions
+# → [{ "name": "simple-email", ... }, { "name": "send-email-link", ... }]
+
+# Verify registration API:
+curl -X POST http://localhost:8080/functions/register \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"test-fn","url":"http://localhost:9999"}'
+# → { "registered": true, "name": "test-fn", "url": "http://localhost:9999" }
+
+curl -X DELETE http://localhost:8080/functions/test-fn
+# → { "removed": true, "name": "test-fn" }
+
+# 4. Verify backwards compat (Phase 2)
+# Worker without resolveFunctionUrl still uses INTERNAL_GATEWAY_DEVELOPMENT_MAP
 ```
