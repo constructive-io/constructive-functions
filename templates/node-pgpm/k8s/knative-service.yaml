@@ -1,0 +1,72 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: {{name}}
+  labels:
+    app.kubernetes.io/name: {{name}}
+    app.kubernetes.io/component: function
+    app.kubernetes.io/part-of: constructive-jobs
+    networking.knative.dev/visibility: cluster-local
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{name}}
+        app.kubernetes.io/component: function
+        app.kubernetes.io/part-of: constructive-jobs
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "10"
+        autoscaling.knative.dev/target: "50"
+    spec:
+      containerConcurrency: 10
+      timeoutSeconds: 300
+      containers:
+      - name: function
+        image: ghcr.io/constructive-io/{{name}}-fn:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "8080"
+        - name: PGHOST
+          valueFrom:
+            secretKeyRef:
+              name: constructive-db-credentials
+              key: host
+        - name: PGPORT
+          valueFrom:
+            secretKeyRef:
+              name: constructive-db-credentials
+              key: port
+              optional: true
+        - name: PGUSER
+          valueFrom:
+            secretKeyRef:
+              name: constructive-db-credentials
+              key: user
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: constructive-db-credentials
+              key: password
+        - name: PGDATABASE
+          valueFrom:
+            secretKeyRef:
+              name: constructive-db-credentials
+              key: database
+              optional: true
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+  traffic:
+  - percent: 100
+    latestRevision: true

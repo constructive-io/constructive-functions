@@ -1,6 +1,13 @@
-import type { FunctionHandler } from '@constructive-io/fn-runtime';
+import type { FunctionContext, FunctionHandler } from '@constructive-io/fn-runtime';
 
-const handler: FunctionHandler = async (params: any) => {
+type ExampleParams = {
+  throw?: boolean;
+};
+
+const handler: FunctionHandler<ExampleParams> = async (
+  params: ExampleParams,
+  _context: FunctionContext
+) => {
   if (params.throw) {
     throw new Error('THROWN_ERROR');
   }
