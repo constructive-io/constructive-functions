@@ -1,4 +1,8 @@
-import { createJobApp } from '@constructive-io/knative-job-fn';
+import { createServer } from '@constructive-io/fn-core';
+import type { Env, RequestHeaders } from '@constructive-io/fn-core';
+import { PgpmPackage } from '@pgpmjs/core';
+import { getEnvOptions } from '@pgpmjs/env';
+import { createLogger } from '@pgpmjs/logger';
 import { buildPgpmContext } from './context';
 import type { PgpmFunctionHandler, PgpmServerOptions } from './types';
 
@@ -6,27 +10,16 @@ export const createPgpmFunctionServer = (
   handler: PgpmFunctionHandler<any, any>,
   options: PgpmServerOptions = {}
 ) => {
-  const app = createJobApp();
+  // Initialize shared resources once at server startup (not per-request)
+  const env = process.env as Env;
+  const cwd = options.cwd || env.PGPM_CWD || process.cwd();
+  const project = new PgpmPackage(cwd);
+  const pgpmOptions = getEnvOptions();
+  const log = createLogger(options.name || 'fn-pgpm');
 
-  app.post('/', async (req: any, res: any, next: any) => {
-    try {
-      const context = buildPgpmContext(
-        {
-          databaseId: req.get('X-Database-Id') || req.get('x-database-id') || process.env.DEFAULT_DATABASE_ID,
-          workerId: req.get('X-Worker-Id') || req.get('x-worker-id'),
-          jobId: req.get('X-Job-Id') || req.get('x-job-id')
-        },
-        options
-      );
+  const resources = { project, options: pgpmOptions, log, env };
 
-      const params = req.body || {};
-      const result = await handler(params, context);
-
-      res.status(200).json(result);
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  return app;
+  return createServer(handler, (headers: RequestHeaders) =>
+    buildPgpmContext(headers, resources)
+  );
 };

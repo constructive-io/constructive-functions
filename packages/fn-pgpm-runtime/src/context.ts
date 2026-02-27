@@ -1,34 +1,26 @@
-import { PgpmPackage } from '@pgpmjs/core';
-import { getEnvOptions } from '@pgpmjs/env';
-import { createLogger } from '@pgpmjs/logger';
-import type { PgpmFunctionContext, PgpmServerOptions } from './types';
+import type { Env, LogFn, RequestHeaders } from '@constructive-io/fn-core';
+import type { PgpmPackage } from '@pgpmjs/core';
+import type { PgpmOptions } from '@pgpmjs/types';
+import type { PgpmFunctionContext } from './types';
 
-type RequestHeaders = {
-  databaseId?: string;
-  workerId?: string;
-  jobId?: string;
+export type PgpmServerResources = {
+  project: PgpmPackage;
+  options: PgpmOptions;
+  log: LogFn;
+  env: Env;
 };
 
 export const buildPgpmContext = (
   headers: RequestHeaders,
-  options: PgpmServerOptions = {}
-): PgpmFunctionContext => {
-  const env = process.env as Record<string, string | undefined>;
-  const log = createLogger(options.name || 'fn-pgpm');
-
-  const cwd = options.cwd || env.PGPM_CWD || process.cwd();
-  const project = new PgpmPackage(cwd);
-  const pgpmOptions = getEnvOptions();
-
-  return {
-    job: {
-      jobId: headers.jobId,
-      workerId: headers.workerId,
-      databaseId: headers.databaseId
-    },
-    project,
-    options: pgpmOptions,
-    log,
-    env
-  };
-};
+  resources: PgpmServerResources
+): PgpmFunctionContext => ({
+  job: {
+    jobId: headers.jobId,
+    workerId: headers.workerId,
+    databaseId: headers.databaseId
+  },
+  project: resources.project,
+  options: resources.options,
+  log: resources.log,
+  env: resources.env
+});

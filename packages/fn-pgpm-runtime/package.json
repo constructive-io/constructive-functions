@@ -11,7 +11,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@constructive-io/knative-job-fn": "workspace:^",
+    "@constructive-io/fn-core": "workspace:^",
     "@pgpmjs/core": "^6.2.0",
     "@pgpmjs/env": "^2.11.0",
     "@pgpmjs/logger": "^2.1.0",
