@@ -1,33 +1,97 @@
+# Infrastructure services for local development and integration testing.
+#
+# Functions run as local Node processes (via `make dev-fn` or `pnpm dev:fn`),
+# NOT inside Docker. This keeps the edit-run cycle fast — no rebuild needed.
+#
+# Usage:
+#   docker compose up -d          # Start infra (postgres, graphql, mailpit)
+#   docker compose down           # Stop everything
+#   docker compose logs -f        # Follow logs
+
 services:
   postgres:
     image: ghcr.io/launchql/pgvector-postgis:16.10
     environment:
-      POSTGRES_DB: launchql
+      POSTGRES_DB: constructive
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  job-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    command: node job/service/dist/run.js
+  db-setup:
+    image: ghcr.io/constructive-io/constructive:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       PGHOST: postgres
+      PGPORT: "5432"
       PGUSER: postgres
       PGPASSWORD: password
-      PGDATABASE: launchql
-      CONSTRUCTIVE_FUNCTIONS: all
-      CONSTRUCTIVE_JOBS_ENABLED: "true"
+      PGDATABASE: constructive
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
+        cd /app
+        echo "Creating database $$PGDATABASE"
+        createdb -h "$$PGHOST" -U "$$PGUSER" "$$PGDATABASE" || true
+
+        echo "Applying bootstrap roles"
+        pgpm admin-users bootstrap --yes
+        pgpm admin-users add --test --yes
+
+        echo "Deploying packages"
+        pgpm deploy --yes --database "$$PGDATABASE" --package constructive
+        pgpm deploy --yes --database "$$PGDATABASE" --package constructive-services
+        pgpm deploy --yes --database "$$PGDATABASE" --package constructive-prod
+
+        echo "Deploying metaschema and jobs"
+        pgpm deploy --yes --database "$$PGDATABASE" --package metaschema
+        pgpm deploy --yes --database "$$PGDATABASE" --package pgpm-database-jobs
+
+        echo "Done"
+
+  graphql-server:
+    image: ghcr.io/constructive-io/constructive:latest
     depends_on:
-      - postgres
+      db-setup:
+        condition: service_completed_successfully
+    entrypoint: ["constructive", "server", "--host", "0.0.0.0", "--port", "3000", "--origin", "*"]
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      SERVER_HOST: "0.0.0.0"
+      SERVER_TRUST_PROXY: "true"
+      SERVER_ORIGIN: "*"
+      SERVER_STRICT_AUTH: "false"
+      # Postgres connection
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: password
+      PGDATABASE: constructive
+      # API configuration — header-based routing (X-Api-Name, X-Database-Id)
+      API_ENABLE_SERVICES: "true"
+      API_EXPOSED_SCHEMAS: "metaschema_public,services_public,constructive_auth_public"
+      API_IS_PUBLIC: "false"
+      API_META_SCHEMAS: "metaschema_public,services_public,metaschema_modules_public,constructive_auth_public"
+      API_ANON_ROLE: "administrator"
+      API_ROLE_NAME: "administrator"
     ports:
-      - "8080:8080"
-      - "8081:8081"
-      - "8082:8082"
+      - "3002:3000"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
 
 volumes:
   pgdata:
