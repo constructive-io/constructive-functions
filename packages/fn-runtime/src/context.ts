@@ -1,16 +1,11 @@
+import type { RequestHeaders } from '@constructive-io/fn-core';
 import { createLogger } from '@pgpmjs/logger';
 import { createClients } from './graphql';
-import type { FunctionContext } from './types';
-
-type RequestHeaders = {
-  databaseId?: string;
-  workerId?: string;
-  jobId?: string;
-};
+import type { FunctionContext, ServerOptions } from './types';
 
 export const buildContext = (
   headers: RequestHeaders,
-  options: { name?: string } = {}
+  options: ServerOptions = {}
 ): FunctionContext => {
   const env = process.env as Record<string, string | undefined>;
   const log = createLogger(options.name || 'fn-runtime');

@@ -1,0 +1,11 @@
+{
+  "name": "export-metaschema",
+  "version": "1.0.0",
+  "type": "node-pgpm",
+  "description": "Exports database metaschema migrations via pgpm export",
+  "dependencies": {
+    "@constructive-io/fn-core": "workspace:^",
+    "@pgpmjs/core": "^6.2.0",
+    "pg-cache": "^3.1.0"
+  }
+}

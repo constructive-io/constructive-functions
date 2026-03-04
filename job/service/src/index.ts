@@ -39,6 +39,10 @@ const functionRegistry: Record<FunctionName, FunctionRegistryEntry> = {
   'send-email-link': {
     moduleName: '@constructive-io/send-email-link-fn',
     defaultPort: 8082
+  },
+  'export-metaschema': {
+    moduleName: '@constructive-io/export-metaschema-fn',
+    defaultPort: 8083
   }
 };
 

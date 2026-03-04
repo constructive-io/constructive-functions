@@ -1,4 +1,4 @@
-export type FunctionName = 'simple-email' | 'send-email-link';
+export type FunctionName = 'simple-email' | 'send-email-link' | 'export-metaschema';
 
 export type FunctionServiceConfig = {
   name: FunctionName;
