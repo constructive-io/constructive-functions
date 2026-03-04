@@ -6,7 +6,7 @@ import { resolve } from 'path';
 
 type ExportMetaschemaParams = {
   dbname?: string;
-  databaseName?: string;
+  databaseName: string;
   author?: string;
   extensionName?: string;
   metaExtensionName?: string;
@@ -30,43 +30,20 @@ const handler: PgpmFunctionHandler<ExportMetaschemaParams> = async (
 
   const pgPool = getPgPool({ database: dbname });
 
-  // Discover database_id and name from metaschema
+  // Discover database_id from metaschema
   const dbsResult = await pgPool.query(
-    'SELECT id, name FROM metaschema_public.database'
+    'SELECT id, name FROM metaschema_public.database WHERE name = $1',
+    [params.databaseName]
   );
 
   if (!dbsResult.rows.length) {
-    throw new Error(`No databases found in metaschema_public.database on ${dbname}`);
-  }
-
-  const targetRow = params.databaseName
-    ? dbsResult.rows.find((r: any) => r.name === params.databaseName)
-    : dbsResult.rows[0];
-
-  if (!targetRow) {
     throw new Error(`Database '${params.databaseName}' not found in metaschema_public.database`);
   }
 
+  const targetRow = dbsResult.rows[0];
+
   const databaseName = targetRow.name;
   const database_ids = [targetRow.id];
-
-  // Check that sql_actions exist for this database before exporting
-  const actionsResult = await pgPool.query(
-    'SELECT count(*)::int AS cnt FROM db_migrate.sql_actions WHERE database_id = $1',
-    [database_ids[0]]
-  );
-  const actionCount = actionsResult.rows[0]?.cnt ?? 0;
-
-  if (actionCount === 0) {
-    log.info('[export-metaschema] No sql_actions found, nothing to export', {
-      databaseName,
-      database_id: database_ids[0]
-    });
-    return {
-      complete: false,
-      reason: `No sql_actions found for database '${databaseName}' (${database_ids[0]}). The database may have been deployed from pre-built packages.`
-    };
-  }
 
   // Discover schemas if not provided
   let schema_names = params.schema_names;
@@ -94,8 +71,7 @@ const handler: PgpmFunctionHandler<ExportMetaschemaParams> = async (
     databaseName,
     database_ids,
     extensionName,
-    schema_names,
-    actionCount
+    schema_names
   });
 
   project.ensureWorkspace();
@@ -127,7 +103,7 @@ const handler: PgpmFunctionHandler<ExportMetaschemaParams> = async (
 
   log.info('[export-metaschema] Export complete', { outdir });
 
-  return { complete: true, outdir, extensionName, metaExtensionName, actionCount };
+  return { complete: true, outdir, extensionName, metaExtensionName };
 };
 
 export default handler;
