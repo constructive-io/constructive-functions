@@ -1,6 +1,6 @@
 import { DeleteObjectCommand, GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
-import type { FunctionHandler } from '@constructive-io/fn-runtime';
+import type { FunctionContext, FunctionHandler } from '@constructive-io/fn-runtime';
 import { getPgPool } from 'pg-cache';
 import { extname } from 'path';
 import sharp from 'sharp';
@@ -137,7 +137,7 @@ async function streamToBuffer(stream: Readable): Promise<Buffer> {
 async function deleteS3Objects(
   s3: S3Client,
   objects: { bucket: string; key: string }[],
-  log: { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void },
+  log: FunctionContext['log'],
 ): Promise<void> {
   for (const obj of objects) {
     try {
@@ -265,11 +265,28 @@ const handler: FunctionHandler<ProcessImageParams> = async (params, context) => 
         new GetObjectCommand({ Bucket: bucket, Key: key }),
       );
 
+      const maxImageSize = Number(env.MAX_IMAGE_SIZE) || 52_428_800; // 50MB
+      if (response.ContentLength && response.ContentLength > maxImageSize) {
+        log.warn(
+          `[process-image] field "${field}" file too large (${response.ContentLength} bytes, max ${maxImageSize}), skipping`,
+        );
+        results[field] = { skipped: true, reason: 'file_too_large', size: response.ContentLength };
+        continue;
+      }
+
       if (!(response.Body instanceof Readable)) {
         throw new Error(`S3 response body is not a readable stream for key=${key}`);
       }
 
       const originalBuffer = await streamToBuffer(response.Body);
+
+      if (originalBuffer.length > maxImageSize) {
+        log.warn(
+          `[process-image] field "${field}" buffer too large (${originalBuffer.length} bytes, max ${maxImageSize}), skipping`,
+        );
+        results[field] = { skipped: true, reason: 'file_too_large', size: originalBuffer.length };
+        continue;
+      }
 
       // --- Gate: verify this is a processable image ---
 
@@ -304,49 +321,63 @@ const handler: FunctionHandler<ProcessImageParams> = async (params, context) => 
       // --- Generate versions ---
 
       const generatedVersions: ImageVersion[] = [];
+      const uploadedObjects: { bucket: string; key: string }[] = [];
 
-      for (const ver of versions) {
-        if (originalWidth <= ver.maxWidth && originalHeight <= ver.maxHeight) {
+      try {
+        for (const ver of versions) {
+          if (originalWidth <= ver.maxWidth && originalHeight <= ver.maxHeight) {
+            log.info(
+              `[process-image] original (${originalWidth}x${originalHeight}) fits within ${ver.name} (${ver.maxWidth}x${ver.maxHeight}), skipping`,
+            );
+            continue;
+          }
+
+          const resized = await sharp(originalBuffer)
+            .resize(ver.maxWidth, ver.maxHeight, {
+              fit: 'inside',
+              withoutEnlargement: true,
+            })
+            .toBuffer({ resolveWithObject: true });
+
+          const vKey = deriveVersionKey(key, ver.name);
+          const vUrl = buildObjectUrl(env, bucket, vKey);
+          const mime = resized.info.format
+            ? `image/${resized.info.format}`
+            : (fieldValue.mime || 'image/jpeg');
+
+          const uploadResult = await new Upload({
+            client: s3,
+            params: {
+              Bucket: bucket,
+              Key: vKey,
+              Body: resized.data,
+              ContentType: mime,
+            },
+          }).done();
+
+          uploadedObjects.push({ bucket, key: vKey });
+
+          generatedVersions.push({
+            name: ver.name,
+            key: vKey,
+            bucket,
+            url: uploadResult.Location || vUrl,
+            width: resized.info.width,
+            height: resized.info.height,
+            mime,
+          });
+
           log.info(
-            `[process-image] original (${originalWidth}x${originalHeight}) fits within ${ver.name} (${ver.maxWidth}x${ver.maxHeight}), skipping`,
+            `[process-image] uploaded ${ver.name}: ${resized.info.width}x${resized.info.height}`,
           );
-          continue;
         }
-
-        const resized = await sharp(originalBuffer)
-          .resize(ver.maxWidth, ver.maxHeight, {
-            fit: 'inside',
-            withoutEnlargement: true,
-          })
-          .toBuffer({ resolveWithObject: true });
-
-        const vKey = deriveVersionKey(key, ver.name);
-        const vUrl = buildObjectUrl(env, bucket, vKey);
-        const mime = fieldValue.mime || 'image/jpeg';
-
-        const uploadResult = await new Upload({
-          client: s3,
-          params: {
-            Bucket: bucket,
-            Key: vKey,
-            Body: resized.data,
-            ContentType: mime,
-          },
-        }).done();
-
-        generatedVersions.push({
-          name: ver.name,
-          key: vKey,
-          bucket,
-          url: uploadResult.Location || vUrl,
-          width: resized.info.width,
-          height: resized.info.height,
-          mime,
-        });
-
-        log.info(
-          `[process-image] uploaded ${ver.name}: ${resized.info.width}x${resized.info.height}`,
+      } catch (err) {
+        log.error(
+          `[process-image] version generation failed for "${field}", rolling back ${uploadedObjects.length} uploads`,
+          err,
         );
+        await deleteS3Objects(s3, uploadedObjects, log);
+        throw err;
       }
 
       // --- Update database (rollback uploads on failure) ---
