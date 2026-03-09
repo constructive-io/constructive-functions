@@ -38,6 +38,13 @@ const sharedEnv: Record<string, string> = {
   SMTP_PORT: '1025',
   LOCAL_APP_PORT: '3000',
   SEND_EMAIL_LINK_DRY_RUN: 'true',
+  // MinIO / S3 (for process-image and other upload functions)
+  BUCKET_PROVIDER: 'minio',
+  BUCKET_NAME: 'test-bucket',
+  AWS_ACCESS_KEY: 'minioadmin',
+  AWS_SECRET_KEY: 'minioadmin',
+  AWS_REGION: 'us-east-1',
+  MINIO_ENDPOINT: 'http://localhost:9000',
 };
 
 // --- Process definitions ---
@@ -64,6 +71,11 @@ const allProcesses: ProcessDef[] = [
     script: path.resolve(ROOT, 'generated/send-email-link/dist/index.js'),
     port: 8082,
   },
+  {
+    name: 'process-image',
+    script: path.resolve(ROOT, 'generated/process-image/dist/index.js'),
+    port: 8083,
+  },
 ];
 
 // --- CLI args ---
@@ -78,7 +90,7 @@ function getJobServiceEnv(): Record<string, string> {
   return {
     JOBS_SCHEMA: 'app_jobs',
     JOBS_SUPPORT_ANY: 'false',
-    JOBS_SUPPORTED: 'send-email-link',
+    JOBS_SUPPORTED: 'send-email-link,process-image',
     HOSTNAME: 'knative-job-service-local',
     INTERNAL_JOBS_CALLBACK_PORT: '8080',
     INTERNAL_JOBS_CALLBACK_URL: 'http://localhost:8080/callback',
@@ -87,6 +99,7 @@ function getJobServiceEnv(): Record<string, string> {
     INTERNAL_GATEWAY_DEVELOPMENT_MAP: JSON.stringify({
       'send-email-link': 'http://localhost:8082',
       'simple-email': 'http://localhost:8081',
+      'process-image': 'http://localhost:8083',
     }),
   };
 }
