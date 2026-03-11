@@ -76,6 +76,16 @@ const allProcesses: ProcessDef[] = [
     script: path.resolve(ROOT, 'generated/process-image/dist/index.js'),
     port: 8083,
   },
+  {
+    name: 'delete-s3-object',
+    script: path.resolve(ROOT, 'generated/delete-s3-object/dist/index.js'),
+    port: 8084,
+  },
+  {
+    name: 'file-cleanup',
+    script: path.resolve(ROOT, 'generated/file-cleanup/dist/index.js'),
+    port: 8085,
+  },
 ];
 
 // --- CLI args ---
@@ -90,7 +100,7 @@ function getJobServiceEnv(): Record<string, string> {
   return {
     JOBS_SCHEMA: 'app_jobs',
     JOBS_SUPPORT_ANY: 'false',
-    JOBS_SUPPORTED: 'send-email-link,process-image',
+    JOBS_SUPPORTED: 'send-email-link,process-image,delete-s3-object,file-cleanup',
     HOSTNAME: 'knative-job-service-local',
     INTERNAL_JOBS_CALLBACK_PORT: '8080',
     INTERNAL_JOBS_CALLBACK_URL: 'http://localhost:8080/callback',
@@ -100,6 +110,8 @@ function getJobServiceEnv(): Record<string, string> {
       'send-email-link': 'http://localhost:8082',
       'simple-email': 'http://localhost:8081',
       'process-image': 'http://localhost:8083',
+      'delete-s3-object': 'http://localhost:8084',
+      'file-cleanup': 'http://localhost:8085',
     }),
   };
 }

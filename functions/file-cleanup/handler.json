@@ -1,0 +1,9 @@
+{
+  "name": "file-cleanup",
+  "version": "1.0.0",
+  "type": "node-graphql",
+  "description": "Scheduled cleanup: pending reaper, error cleanup, unattached file cleanup",
+  "dependencies": {
+    "pg-cache": "^3.1.0"
+  }
+}
