@@ -2,7 +2,7 @@
   "name": "process-image",
   "version": "1.0.0",
   "type": "node-graphql",
-  "description": "Downloads images from MinIO, generates resized versions via sharp, uploads back, and updates the database record",
+  "description": "Processes uploaded files and images: generates resized versions via sharp, manages object_store_public.files status, and updates database records",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1001.0",
     "@aws-sdk/lib-storage": "^3.1001.0",
