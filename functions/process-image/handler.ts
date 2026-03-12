@@ -374,16 +374,30 @@ async function handleFileMode(
           height: v.height,
         }));
 
-        await pool.query(
-          `UPDATE ${file.source_table}
-           SET ${file.source_column} = jsonb_set(
-             ${file.source_column}::jsonb,
-             '{versions}',
-             $1::jsonb
-           )
-           WHERE id = $2`,
-          [JSON.stringify(versionsArray), file.source_id]
-        );
+        const sourceClient = await pool.connect();
+        try {
+          await sourceClient.query('BEGIN');
+          await sourceClient.query(
+            `SELECT set_config('app.database_id', $1, true)`,
+            [String(file.database_id)]
+          );
+          await sourceClient.query(
+            `UPDATE ${file.source_table}
+             SET ${file.source_column} = jsonb_set(
+               ${file.source_column}::jsonb,
+               '{versions}',
+               $1::jsonb
+             )
+             WHERE id = $2`,
+            [JSON.stringify(versionsArray), file.source_id]
+          );
+          await sourceClient.query('COMMIT');
+        } catch (domainUpdateErr) {
+          await sourceClient.query('ROLLBACK');
+          throw domainUpdateErr;
+        } finally {
+          sourceClient.release();
+        }
       }
 
       return { success: true, versions: versionRows.length };
@@ -395,16 +409,21 @@ async function handleFileMode(
       // ---------------------------------------------------------------
       await deleteS3Objects(s3, bucket, uploadedS3Keys, log);
 
-      await pool.query(
-        `UPDATE object_store_public.files SET status = 'error', status_reason = $3
-         WHERE id = $1 AND database_id = $2`,
-        [file.id, file.database_id, (processingErr as Error).message]
-      );
+      try {
+        await pool.query(
+          `UPDATE object_store_public.files SET status = 'error', status_reason = $3
+           WHERE id = $1 AND database_id = $2`,
+          [file.id, file.database_id, (processingErr as Error).message]
+        );
+      } catch (statusErr) {
+        log.error('[process-image] failed to mark file as error', statusErr);
+      }
 
       throw processingErr;
     }
   } finally {
     client.release();
+    s3.destroy();
   }
 }
 
