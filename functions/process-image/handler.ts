@@ -239,6 +239,17 @@ async function handleFileMode(
     }));
     const mimeType = headResult.ContentType ?? 'application/octet-stream';
 
+    // Check file size before downloading
+    const maxFileSize = Number(env.MAX_FILE_SIZE) || Number(env.MAX_IMAGE_SIZE) || 52_428_800; // 50MB
+    if (headResult.ContentLength && headResult.ContentLength > maxFileSize) {
+      log.warn(`[process-image] file too large (${headResult.ContentLength} bytes, max ${maxFileSize}), marking as ready`);
+      await pool.query(
+        `UPDATE object_store_public.files SET status = 'ready' WHERE id = $1 AND database_id = $2`,
+        [file.id, file.database_id]
+      );
+      return { success: true, mime: mimeType, skipped: true, reason: 'file_too_large' };
+    }
+
     if (!mimeType.startsWith('image/')) {
       // Non-image: mark as ready immediately, no versions to generate
       await pool.query(
@@ -289,8 +300,8 @@ async function handleFileMode(
         });
       }
 
-      // Generate medium (max 1200px wide, skip if original is smaller)
-      if ((metadata.width ?? 0) > 1200) {
+      // Generate medium (max 1200px, skip if original is smaller)
+      if ((metadata.width ?? 0) > 1200 || (metadata.height ?? 0) > 1200) {
         const medKey = `${baseKey}_medium`;
         const medResult = await image.clone()
           .resize(1200, null, { withoutEnlargement: true }).jpeg()

@@ -30,11 +30,12 @@ const ENV: Record<string, string> = {
   PGUSER: 'postgres',
   PGPASSWORD: 'password',
   PGDATABASE: 'constructive',
+  BUCKET_PROVIDER: 'minio',
+  BUCKET_NAME: BUCKET,
+  AWS_ACCESS_KEY: 'minioadmin',
+  AWS_SECRET_KEY: 'minioadmin',
   AWS_REGION: 'us-east-1',
-  AWS_ACCESS_KEY_ID: 'minioadmin',
-  AWS_SECRET_ACCESS_KEY: 'minioadmin',
-  S3_ENDPOINT: 'http://localhost:9000',
-  S3_BUCKET: BUCKET,
+  MINIO_ENDPOINT: 'http://localhost:9000',
 };
 
 function makeS3(): S3Client {
