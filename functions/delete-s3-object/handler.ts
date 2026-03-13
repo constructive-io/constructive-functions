@@ -8,6 +8,34 @@ type DeleteParams = {
   key: string;
 };
 
+function createS3Client(env: Record<string, string | undefined>): S3Client {
+  const provider = env.BUCKET_PROVIDER || 'minio';
+  const isMinio = provider === 'minio';
+  return new S3Client({
+    region: env.AWS_REGION || 'us-east-1',
+    credentials: {
+      accessKeyId: env.AWS_ACCESS_KEY || 'minioadmin',
+      secretAccessKey: env.AWS_SECRET_KEY || 'minioadmin',
+    },
+    ...(isMinio
+      ? {
+          endpoint: env.MINIO_ENDPOINT || 'http://localhost:9000',
+          forcePathStyle: true,
+        }
+      : {}),
+  });
+}
+
+function createPgPool(env: Record<string, string | undefined>) {
+  return getPgPool({
+    host: env.PGHOST || 'localhost',
+    port: Number(env.PGPORT || 5432),
+    database: env.PGDATABASE || 'constructive',
+    user: env.PGUSER || 'postgres',
+    password: env.PGPASSWORD || 'password',
+  });
+}
+
 const handler: FunctionHandler<DeleteParams> = async (
   params: DeleteParams,
   context: FunctionContext
@@ -16,42 +44,31 @@ const handler: FunctionHandler<DeleteParams> = async (
 
   log.info('[delete-s3-object] deleting', { key: params.key });
 
-  const s3 = new S3Client({
-    region: env.AWS_REGION || 'us-east-1',
-    endpoint: env.S3_ENDPOINT,
-    forcePathStyle: true,
-    credentials: {
-      accessKeyId: env.AWS_ACCESS_KEY_ID!,
-      secretAccessKey: env.AWS_SECRET_ACCESS_KEY!,
-    },
-  });
+  const s3 = createS3Client(env);
+  const pool = createPgPool(env);
 
-  const pool = getPgPool({
-    host: env.PGHOST,
-    port: Number(env.PGPORT || 5432),
-    database: env.PGDATABASE || 'constructive',
-    user: env.PGUSER,
-    password: env.PGPASSWORD,
-  });
+  try {
+    // Step 1: Delete from S3 (idempotent -- delete ignores missing keys)
+    await s3.send(new DeleteObjectCommand({
+      Bucket: env.BUCKET_NAME || 'test-bucket',
+      Key: params.key,
+    }));
 
-  // Step 1: Delete from S3 (idempotent -- delete ignores missing keys)
-  await s3.send(new DeleteObjectCommand({
-    Bucket: env.S3_BUCKET!,
-    Key: params.key,
-  }));
+    // Step 2: Delete the DB row
+    const result = await pool.query(
+      'DELETE FROM object_store_public.files WHERE id = $1 AND database_id = $2',
+      [params.file_id, params.database_id]
+    );
 
-  // Step 2: Delete the DB row
-  const result = await pool.query(
-    'DELETE FROM object_store_public.files WHERE id = $1 AND database_id = $2',
-    [params.file_id, params.database_id]
-  );
+    log.info('[delete-s3-object] complete', {
+      key: params.key,
+      rowsDeleted: result.rowCount,
+    });
 
-  log.info('[delete-s3-object] complete', {
-    key: params.key,
-    rowsDeleted: result.rowCount,
-  });
-
-  return { success: true, key: params.key };
+    return { success: true, key: params.key };
+  } finally {
+    s3.destroy();
+  }
 };
 
 export default handler;
