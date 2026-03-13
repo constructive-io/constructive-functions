@@ -16,7 +16,7 @@ interface VersionConfig {
   maxHeight: number;
 }
 
-/** File mode: process a file from object_store_public.files */
+/** File mode: process a file from files_store_public.files */
 interface ProcessFileParams {
   file_id: string;
   database_id: number;
@@ -183,7 +183,7 @@ async function deleteS3Objects(
 }
 
 // ---------------------------------------------------------------------------
-// File Mode: process a file from object_store_public.files
+// File Mode: process a file from files_store_public.files
 //
 // Locks the row with FOR UPDATE SKIP LOCKED, transitions status through
 // pending -> processing -> ready, generates thumbnail + medium versions,
@@ -208,7 +208,7 @@ async function handleFileMode(
     await client.query('BEGIN');
 
     const { rows } = await client.query(
-      `SELECT * FROM object_store_public.files
+      `SELECT * FROM files_store_public.files
        WHERE id = $1 AND database_id = $2 AND status = 'pending'
        FOR UPDATE SKIP LOCKED`,
       [params.file_id, params.database_id]
@@ -224,7 +224,7 @@ async function handleFileMode(
 
     // Transition to processing
     await client.query(
-      `UPDATE object_store_public.files SET status = 'processing' WHERE id = $1 AND database_id = $2`,
+      `UPDATE files_store_public.files SET status = 'processing' WHERE id = $1 AND database_id = $2`,
       [file.id, file.database_id]
     );
 
@@ -244,7 +244,7 @@ async function handleFileMode(
     if (headResult.ContentLength && headResult.ContentLength > maxFileSize) {
       log.warn(`[process-image] file too large (${headResult.ContentLength} bytes, max ${maxFileSize}), marking as ready`);
       await pool.query(
-        `UPDATE object_store_public.files SET status = 'ready' WHERE id = $1 AND database_id = $2`,
+        `UPDATE files_store_public.files SET status = 'ready' WHERE id = $1 AND database_id = $2`,
         [file.id, file.database_id]
       );
       return { success: true, mime: mimeType, skipped: true, reason: 'file_too_large' };
@@ -253,7 +253,7 @@ async function handleFileMode(
     if (!mimeType.startsWith('image/')) {
       // Non-image: mark as ready immediately, no versions to generate
       await pool.query(
-        `UPDATE object_store_public.files SET status = 'ready' WHERE id = $1 AND database_id = $2`,
+        `UPDATE files_store_public.files SET status = 'ready' WHERE id = $1 AND database_id = $2`,
         [file.id, file.database_id]
       );
       return { success: true, mime: mimeType, versions: 0 };
@@ -334,7 +334,7 @@ async function handleFileMode(
 
         for (const ver of versionRows) {
           await txClient.query(
-            `INSERT INTO object_store_public.files
+            `INSERT INTO files_store_public.files
                (database_id, bucket_key, key, status, etag, created_by,
                 source_table, source_column, source_id)
              VALUES ($1, $2, $3, 'ready', $4, $5, $6, $7, $8)`,
@@ -347,7 +347,7 @@ async function handleFileMode(
 
         // Mark origin as ready
         await txClient.query(
-          `UPDATE object_store_public.files SET status = 'ready' WHERE id = $1 AND database_id = $2`,
+          `UPDATE files_store_public.files SET status = 'ready' WHERE id = $1 AND database_id = $2`,
           [file.id, file.database_id]
         );
 
@@ -422,7 +422,7 @@ async function handleFileMode(
 
       try {
         await pool.query(
-          `UPDATE object_store_public.files SET status = 'error', status_reason = $3
+          `UPDATE files_store_public.files SET status = 'error', status_reason = $3
            WHERE id = $1 AND database_id = $2`,
           [file.id, file.database_id, (processingErr as Error).message]
         );
