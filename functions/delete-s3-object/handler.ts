@@ -56,7 +56,7 @@ const handler: FunctionHandler<DeleteParams> = async (
 
     // Step 2: Delete the DB row
     const result = await pool.query(
-      'DELETE FROM object_store_public.files WHERE id = $1 AND database_id = $2',
+      'DELETE FROM files_store_public.files WHERE id = $1 AND database_id = $2',
       [params.file_id, params.database_id]
     );
 

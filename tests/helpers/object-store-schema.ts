@@ -1,5 +1,5 @@
 /**
- * Shared setup/teardown for the object_store_public schema used by
+ * Shared setup/teardown for the files_store_public schema used by
  * process-file and delete-s3-object e2e tests.
  *
  * Creates the schema, enum, table, and triggers once. Multiple test
@@ -9,7 +9,7 @@
  */
 import { Client as PgClient } from 'pg';
 
-const SCHEMA = 'object_store_public';
+const SCHEMA = 'files_store_public';
 const TABLE = 'files';
 
 export function makePgClient(): PgClient {
@@ -22,7 +22,7 @@ export function makePgClient(): PgClient {
   });
 }
 
-export async function setupObjectStoreSchema(pg: PgClient): Promise<void> {
+export async function setupFilesStoreSchema(pg: PgClient): Promise<void> {
   await pg.query('CREATE EXTENSION IF NOT EXISTS pgcrypto');
   await pg.query(`CREATE SCHEMA IF NOT EXISTS ${SCHEMA}`);
 
@@ -51,7 +51,7 @@ export async function setupObjectStoreSchema(pg: PgClient): Promise<void> {
       created_by      uuid,
       created_at      timestamptz   NOT NULL DEFAULT now(),
       updated_at      timestamptz   NOT NULL DEFAULT now(),
-      CONSTRAINT object_store_files_pkey PRIMARY KEY (id, database_id)
+      CONSTRAINT files_store_files_pkey PRIMARY KEY (id, database_id)
     )
   `);
 
@@ -164,7 +164,7 @@ export async function setupObjectStoreSchema(pg: PgClient): Promise<void> {
   `);
 }
 
-export async function teardownObjectStoreSchema(pg: PgClient): Promise<void> {
+export async function teardownFilesStoreSchema(pg: PgClient): Promise<void> {
   await pg.query(`DROP TABLE IF EXISTS ${SCHEMA}.${TABLE} CASCADE`);
   await pg.query(`DROP FUNCTION IF EXISTS ${SCHEMA}.mark_files_deleting_on_source_delete CASCADE`);
   await pg.query(`DROP FUNCTION IF EXISTS ${SCHEMA}.populate_file_back_reference CASCADE`);
@@ -173,6 +173,6 @@ export async function teardownObjectStoreSchema(pg: PgClient): Promise<void> {
   await pg.query(`DROP SCHEMA IF EXISTS ${SCHEMA} CASCADE`);
 }
 
-export async function cleanObjectStoreRows(pg: PgClient): Promise<void> {
+export async function cleanFilesStoreRows(pg: PgClient): Promise<void> {
   await pg.query(`DELETE FROM ${SCHEMA}.${TABLE}`);
 }

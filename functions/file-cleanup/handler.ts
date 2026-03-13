@@ -13,10 +13,10 @@ const CLEANUP_QUERIES: Record<CleanupType, { query: string; description: string 
   pending_reaper: {
     description: 'Mark stale pending files as error (upload timeout after 24h)',
     query: `
-      UPDATE object_store_public.files
+      UPDATE files_store_public.files
       SET status = 'error', status_reason = 'upload timeout'
       WHERE id IN (
-        SELECT id FROM object_store_public.files
+        SELECT id FROM files_store_public.files
         WHERE status = 'pending' AND created_at < now() - interval '24 hours'
         LIMIT ${BATCH_SIZE}
       )
@@ -25,10 +25,10 @@ const CLEANUP_QUERIES: Record<CleanupType, { query: string; description: string 
   error_cleanup: {
     description: 'Mark old error files as deleting (expired after 30 days)',
     query: `
-      UPDATE object_store_public.files
+      UPDATE files_store_public.files
       SET status = 'deleting', status_reason = 'expired error'
       WHERE id IN (
-        SELECT id FROM object_store_public.files
+        SELECT id FROM files_store_public.files
         WHERE status = 'error' AND updated_at < now() - interval '30 days'
         LIMIT ${BATCH_SIZE}
       )
@@ -37,10 +37,10 @@ const CLEANUP_QUERIES: Record<CleanupType, { query: string; description: string 
   unattached_cleanup: {
     description: 'Mark unattached ready files as error (never attached after 7 days)',
     query: `
-      UPDATE object_store_public.files
+      UPDATE files_store_public.files
       SET status = 'error', status_reason = 'never attached'
       WHERE id IN (
-        SELECT id FROM object_store_public.files
+        SELECT id FROM files_store_public.files
         WHERE status = 'ready' AND source_table IS NULL AND created_at < now() - interval '7 days'
         LIMIT ${BATCH_SIZE}
       )

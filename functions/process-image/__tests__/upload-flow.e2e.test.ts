@@ -11,10 +11,10 @@ import { Readable } from 'stream';
 
 import handler from '../handler';
 import {
-  cleanObjectStoreRows,
+  cleanFilesStoreRows,
   makePgClient,
-  setupObjectStoreSchema,
-  teardownObjectStoreSchema,
+  setupFilesStoreSchema,
+  teardownFilesStoreSchema,
 } from '../../../tests/helpers/object-store-schema';
 
 jest.setTimeout(60000);
@@ -32,7 +32,7 @@ jest.mock('@constructive-io/graphql-env', () => ({
   }),
 }), { virtual: true });
 
-const OBJECT_STORE_SCHEMA = 'object_store_public';
+const OBJECT_STORE_SCHEMA = 'files_store_public';
 const SOURCE_SCHEMA = 'public';
 const SOURCE_TABLE = 'test_upload_flow_images';
 const SOURCE_COLUMN = 'image';
@@ -137,7 +137,7 @@ describe('upload to process-image flow e2e', () => {
     await pg.connect();
     s3 = makeS3();
 
-    await setupObjectStoreSchema(pg);
+    await setupFilesStoreSchema(pg);
     await pg.query(`
       CREATE TABLE IF NOT EXISTS ${SOURCE_SCHEMA}.${SOURCE_TABLE} (
         id uuid PRIMARY KEY,
@@ -177,7 +177,7 @@ describe('upload to process-image flow e2e', () => {
     }
 
     await pg.query(`DELETE FROM ${SOURCE_SCHEMA}.${SOURCE_TABLE}`);
-    await cleanObjectStoreRows(pg);
+    await cleanFilesStoreRows(pg);
   });
 
   afterAll(async () => {
@@ -186,7 +186,7 @@ describe('upload to process-image flow e2e', () => {
     await pg.query(
       `DROP TABLE IF EXISTS ${SOURCE_SCHEMA}.${SOURCE_TABLE} CASCADE`
     );
-    await teardownObjectStoreSchema(pg);
+    await teardownFilesStoreSchema(pg);
     await pg.end();
     s3.destroy();
 

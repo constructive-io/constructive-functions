@@ -12,16 +12,16 @@ import handler from '../handler';
 import { createMockContext } from '../../../tests/helpers/mock-context';
 import {
   makePgClient,
-  setupObjectStoreSchema,
-  teardownObjectStoreSchema,
-  cleanObjectStoreRows,
+  setupFilesStoreSchema,
+  teardownFilesStoreSchema,
+  cleanFilesStoreRows,
 } from '../../../tests/helpers/object-store-schema';
 
 // ---------------------------------------------------------------------------
 // Infra helpers
 // ---------------------------------------------------------------------------
 
-const SCHEMA = 'object_store_public';
+const SCHEMA = 'files_store_public';
 const BUCKET = 'test-bucket';
 
 const ENV: Record<string, string> = {
@@ -60,7 +60,7 @@ describe('delete-s3-object handler e2e', () => {
     pg = makePgClient();
     await pg.connect();
     s3 = makeS3();
-    await setupObjectStoreSchema(pg);
+    await setupFilesStoreSchema(pg);
   });
 
   afterAll(async () => {
@@ -69,7 +69,7 @@ describe('delete-s3-object handler e2e', () => {
         await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
       } catch { /* ignore */ }
     }
-    await teardownObjectStoreSchema(pg);
+    await teardownFilesStoreSchema(pg);
     await pg.end();
     s3.destroy();
     try {
@@ -79,7 +79,7 @@ describe('delete-s3-object handler e2e', () => {
   });
 
   afterEach(async () => {
-    await cleanObjectStoreRows(pg);
+    await cleanFilesStoreRows(pg);
   });
 
   function callHandler(file_id: string, database_id: number, key: string) {
