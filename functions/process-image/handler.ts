@@ -1,8 +1,6 @@
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { Upload } from '@aws-sdk/lib-storage';
 import type { FunctionContext, FunctionHandler } from '@constructive-io/fn-runtime';
 import { getPgPool } from 'pg-cache';
-import { extname } from 'path';
 import sharp from 'sharp';
 import { Readable } from 'stream';
 
@@ -16,62 +14,15 @@ interface VersionConfig {
   maxHeight: number;
 }
 
-/** File mode: process a file from files_store_public.files */
+/** Process a file from files_store_public.files */
 interface ProcessFileParams {
   file_id: string;
   database_id: number;
 }
 
-/** Image mode: process JSONB image fields on an arbitrary table */
-interface ProcessImageFieldParams {
-  schema: string;
-  table: string;
-  idFields: string[];
-  idValues: (string | number)[];
-  fields: string[];
-  versions?: VersionConfig[];
-}
-
-type ProcessParams = ProcessFileParams | ProcessImageFieldParams;
-
-interface ImageFieldValue {
-  url?: string;
-  id?: string;
-  key?: string;
-  bucket?: string;
-  provider?: string;
-  mime?: string;
-  filename?: string;
-  versions?: ImageVersion[];
-}
-
-interface ImageVersion {
-  name: string;
-  key: string;
-  bucket: string;
-  url: string;
-  width: number;
-  height: number;
-  mime: string;
-}
-
-const DEFAULT_VERSIONS: VersionConfig[] = [
-  { name: 'thumbnail', maxWidth: 150, maxHeight: 150 },
-  { name: 'medium', maxWidth: 600, maxHeight: 600 },
-  { name: 'large', maxWidth: 1200, maxHeight: 1200 },
-];
-
-const PROCESSABLE_FORMATS = new Set([
-  'jpeg', 'png', 'webp', 'gif', 'tiff', 'avif', 'heif', 'jp2',
-]);
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function isFileMode(params: ProcessParams): params is ProcessFileParams {
-  return 'file_id' in params;
-}
 
 function validateIdentifier(name: string): string {
   if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
@@ -118,46 +69,6 @@ function createPgPool(env: Record<string, string | undefined>) {
   });
 }
 
-function parseS3Url(url: string): { bucket: string; key: string } | null {
-  try {
-    const parsed = new URL(url);
-    const parts = parsed.pathname.split('/').filter(Boolean);
-
-    const host = parsed.hostname;
-    if (host.endsWith('.s3.amazonaws.com')) {
-      const bucket = host.replace('.s3.amazonaws.com', '');
-      return { bucket, key: parts.join('/') };
-    }
-
-    if (parts.length >= 2) {
-      return { bucket: parts[0], key: parts.slice(1).join('/') };
-    }
-  } catch {
-    // not a valid URL
-  }
-  return null;
-}
-
-function deriveVersionKey(originalKey: string, versionName: string): string {
-  const ext = extname(originalKey);
-  const base = ext ? originalKey.slice(0, -ext.length) : originalKey;
-  return `${base}_${versionName}${ext}`;
-}
-
-function buildObjectUrl(
-  env: Record<string, string | undefined>,
-  bucket: string,
-  key: string,
-): string {
-  const provider = env.BUCKET_PROVIDER || 'minio';
-  if (provider === 'minio') {
-    const endpoint = env.MINIO_ENDPOINT || 'http://localhost:9000';
-    return `${endpoint.replace(/\/$/, '')}/${bucket}/${key}`;
-  }
-  const region = env.AWS_REGION || 'us-east-1';
-  return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
-}
-
 async function streamToBuffer(stream: Readable): Promise<Buffer> {
   const chunks: Buffer[] = [];
   for await (const chunk of stream) {
@@ -183,7 +94,7 @@ async function deleteS3Objects(
 }
 
 // ---------------------------------------------------------------------------
-// File Mode: process a file from files_store_public.files
+// Process a file from files_store_public.files
 //
 // Locks the row with FOR UPDATE SKIP LOCKED, transitions status through
 // pending -> processing -> ready, generates thumbnail + medium versions,
@@ -439,290 +350,11 @@ async function handleFileMode(
 }
 
 // ---------------------------------------------------------------------------
-// Image Mode: process JSONB image fields on an arbitrary table
-//
-// For each specified field, downloads the original image from S3, generates
-// resized versions (thumbnail, medium, large by default), uploads them back,
-// and updates the JSONB field with version metadata.
-// ---------------------------------------------------------------------------
-
-async function handleImageMode(
-  params: ProcessImageFieldParams,
-  context: FunctionContext,
-): Promise<unknown> {
-  const { log, env } = context;
-  const {
-    schema,
-    table,
-    idFields,
-    idValues,
-    fields,
-    versions = DEFAULT_VERSIONS,
-  } = params;
-
-  // --- Validation ---
-
-  if (!schema || !table) return { error: 'Missing schema or table' };
-  if (!idFields?.length || !idValues?.length)
-    return { error: 'Missing idFields or idValues' };
-  if (idFields.length !== idValues.length)
-    return { error: 'idFields and idValues must have same length' };
-  if (!fields?.length) return { error: 'Missing fields' };
-
-  validateIdentifier(schema);
-  validateIdentifier(table);
-  idFields.forEach(validateIdentifier);
-  fields.forEach(validateIdentifier);
-
-  const defaultBucket = env.BUCKET_NAME || 'test-bucket';
-
-  log.info('[process-image] starting', {
-    schema,
-    table,
-    idFields,
-    fields,
-    versionCount: versions.length,
-  });
-
-  const s3 = createS3Client(env);
-  const pool = createPgPool(env);
-
-  // --- Query the record ---
-
-  const fieldList = fields.map((f: string) => `"${f}"`).join(', ');
-  const whereClauses = idFields
-    .map((f: string, i: number) => `"${f}" = $${i + 1}`)
-    .join(' AND ');
-  const selectSql = `SELECT ${fieldList} FROM "${schema}"."${table}" WHERE ${whereClauses}`;
-
-  log.info('[process-image] querying record');
-  const { rows } = await pool.query(selectSql, idValues);
-
-  if (rows.length === 0) {
-    s3.destroy();
-    return { error: 'Record not found' };
-  }
-
-  const record = rows[0];
-  const results: Record<string, unknown> = {};
-
-  try {
-    for (const field of fields) {
-      const fieldValue: ImageFieldValue | null =
-        typeof record[field] === 'string'
-          ? JSON.parse(record[field])
-          : record[field];
-
-      if (!fieldValue) {
-        log.info(`[process-image] field "${field}" is null, skipping`);
-        results[field] = { skipped: true, reason: 'null_value' };
-        continue;
-      }
-
-      if (fieldValue.versions && fieldValue.versions.length > 0) {
-        log.info(
-          `[process-image] field "${field}" already has ${fieldValue.versions.length} versions, skipping`,
-        );
-        results[field] = { skipped: true, reason: 'versions_exist' };
-        continue;
-      }
-
-      // Resolve bucket + key
-      let key = fieldValue.key;
-      let bucket = fieldValue.bucket || defaultBucket;
-
-      if (!key && fieldValue.url) {
-        const parsed = parseS3Url(fieldValue.url);
-        if (parsed) {
-          key = parsed.key;
-          bucket = parsed.bucket;
-        }
-      }
-
-      if (!key) {
-        log.warn(
-          `[process-image] field "${field}" has no resolvable key, skipping`,
-        );
-        results[field] = { skipped: true, reason: 'no_key' };
-        continue;
-      }
-
-      log.info(`[process-image] processing "${field}"`, { key, bucket });
-
-      // --- Download original to buffer ---
-
-      const response = await s3.send(
-        new GetObjectCommand({ Bucket: bucket, Key: key }),
-      );
-
-      const maxImageSize = Number(env.MAX_IMAGE_SIZE) || 52_428_800; // 50MB
-      if (response.ContentLength && response.ContentLength > maxImageSize) {
-        log.warn(
-          `[process-image] field "${field}" file too large (${response.ContentLength} bytes, max ${maxImageSize}), skipping`,
-        );
-        results[field] = { skipped: true, reason: 'file_too_large', size: response.ContentLength };
-        continue;
-      }
-
-      if (!(response.Body instanceof Readable)) {
-        throw new Error(`S3 response body is not a readable stream for key=${key}`);
-      }
-
-      const originalBuffer = await streamToBuffer(response.Body);
-
-      if (originalBuffer.length > maxImageSize) {
-        log.warn(
-          `[process-image] field "${field}" buffer too large (${originalBuffer.length} bytes, max ${maxImageSize}), skipping`,
-        );
-        results[field] = { skipped: true, reason: 'file_too_large', size: originalBuffer.length };
-        continue;
-      }
-
-      // --- Gate: verify this is a processable image ---
-
-      let metadata: sharp.Metadata;
-      try {
-        metadata = await sharp(originalBuffer).metadata();
-      } catch {
-        log.warn(`[process-image] field "${field}" is not a valid image, skipping`);
-        results[field] = { skipped: true, reason: 'not_an_image' };
-        continue;
-      }
-
-      if (!metadata.format || !PROCESSABLE_FORMATS.has(metadata.format)) {
-        log.warn(
-          `[process-image] field "${field}" has unsupported format "${metadata.format || 'unknown'}", skipping`,
-        );
-        results[field] = { skipped: true, reason: 'unsupported_format', format: metadata.format };
-        continue;
-      }
-
-      const originalWidth = metadata.width || 0;
-      const originalHeight = metadata.height || 0;
-
-      if (!originalWidth || !originalHeight) {
-        log.warn(`[process-image] field "${field}" has no dimensions, skipping`);
-        results[field] = { skipped: true, reason: 'no_dimensions' };
-        continue;
-      }
-
-      log.info(`[process-image] original: ${originalWidth}x${originalHeight} (${metadata.format})`);
-
-      // --- Generate versions ---
-
-      const generatedVersions: ImageVersion[] = [];
-      const uploadedKeys: string[] = [];
-
-      try {
-        for (const ver of versions) {
-          if (originalWidth <= ver.maxWidth && originalHeight <= ver.maxHeight) {
-            log.info(
-              `[process-image] original (${originalWidth}x${originalHeight}) fits within ${ver.name} (${ver.maxWidth}x${ver.maxHeight}), skipping`,
-            );
-            continue;
-          }
-
-          const resized = await sharp(originalBuffer)
-            .resize(ver.maxWidth, ver.maxHeight, {
-              fit: 'inside',
-              withoutEnlargement: true,
-            })
-            .toBuffer({ resolveWithObject: true });
-
-          const vKey = deriveVersionKey(key, ver.name);
-          const vUrl = buildObjectUrl(env, bucket, vKey);
-          const mime = resized.info.format
-            ? `image/${resized.info.format}`
-            : (fieldValue.mime || 'image/jpeg');
-
-          const uploadResult = await new Upload({
-            client: s3,
-            params: {
-              Bucket: bucket,
-              Key: vKey,
-              Body: resized.data,
-              ContentType: mime,
-            },
-          }).done();
-
-          uploadedKeys.push(vKey);
-
-          generatedVersions.push({
-            name: ver.name,
-            key: vKey,
-            bucket,
-            url: uploadResult.Location || vUrl,
-            width: resized.info.width,
-            height: resized.info.height,
-            mime,
-          });
-
-          log.info(
-            `[process-image] uploaded ${ver.name}: ${resized.info.width}x${resized.info.height}`,
-          );
-        }
-      } catch (err) {
-        log.error(
-          `[process-image] version generation failed for "${field}", rolling back ${uploadedKeys.length} uploads`,
-          err,
-        );
-        await deleteS3Objects(s3, bucket, uploadedKeys, log);
-        throw err;
-      }
-
-      // --- Update database (rollback uploads on failure) ---
-
-      if (generatedVersions.length > 0) {
-        const updatedValue: ImageFieldValue = {
-          ...fieldValue,
-          versions: generatedVersions,
-        };
-
-        const updateWhere = idFields
-          .map((f: string, i: number) => `"${f}" = $${i + 2}`)
-          .join(' AND ');
-        const updateSql = `UPDATE "${schema}"."${table}" SET "${field}" = $1::jsonb WHERE ${updateWhere}`;
-        const updateValues = [JSON.stringify(updatedValue), ...idValues];
-
-        try {
-          await pool.query(updateSql, updateValues);
-          log.info(
-            `[process-image] updated "${field}" with ${generatedVersions.length} versions`,
-          );
-        } catch (err) {
-          log.error(`[process-image] DB update failed for "${field}", rolling back uploads`, err);
-          await deleteS3Objects(
-            s3,
-            bucket,
-            generatedVersions.map((v) => v.key),
-            log,
-          );
-          throw err;
-        }
-      }
-
-      results[field] = {
-        original: { width: originalWidth, height: originalHeight },
-        versions: generatedVersions,
-      };
-    }
-  } finally {
-    s3.destroy();
-  }
-
-  log.info('[process-image] complete');
-  return { success: true, results };
-}
-
-// ---------------------------------------------------------------------------
 // Main Handler
 // ---------------------------------------------------------------------------
 
-const handler: FunctionHandler<ProcessParams> = async (params, context) => {
-  if (isFileMode(params)) {
-    return handleFileMode(params, context);
-  }
-  return handleImageMode(params as ProcessImageFieldParams, context);
+const handler: FunctionHandler<ProcessFileParams> = async (params, context) => {
+  return handleFileMode(params, context);
 };
 
 export default handler;
