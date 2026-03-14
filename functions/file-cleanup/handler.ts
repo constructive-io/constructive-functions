@@ -35,10 +35,10 @@ const CLEANUP_QUERIES: Record<CleanupType, { query: string; description: string 
     `,
   },
   unattached_cleanup: {
-    description: 'Mark unattached ready files as error (never attached after 7 days)',
+    description: 'Mark unattached ready files as deleting (never attached after 7 days)',
     query: `
       UPDATE files_store_public.files
-      SET status = 'error', status_reason = 'never attached'
+      SET status = 'deleting', status_reason = 'never attached'
       WHERE id IN (
         SELECT id FROM files_store_public.files
         WHERE status = 'ready' AND source_table IS NULL AND created_at < now() - interval '7 days'
