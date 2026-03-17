@@ -150,6 +150,12 @@ async function handleFileMode(
     }));
     const mimeType = headResult.ContentType ?? 'application/octet-stream';
 
+    // Update origin with detected mime_type
+    await pool.query(
+      `UPDATE files_store_public.files SET mime_type = $3 WHERE id = $1 AND database_id = $2`,
+      [file.id, file.database_id, mimeType]
+    );
+
     // Check file size before downloading
     const maxFileSize = Number(env.MAX_FILE_SIZE) || Number(env.MAX_IMAGE_SIZE) || 52_428_800; // 50MB
     if (headResult.ContentLength && headResult.ContentLength > maxFileSize) {
@@ -247,11 +253,12 @@ async function handleFileMode(
           await txClient.query(
             `INSERT INTO files_store_public.files
                (database_id, bucket_key, key, status, etag, created_by,
-                source_table, source_column, source_id)
-             VALUES ($1, $2, $3, 'ready', $4, $5, $6, $7, $8)`,
+                source_table, source_column, source_id, origin_id, mime_type)
+             VALUES ($1, $2, $3, 'ready', $4, $5, $6, $7, $8, $9, $10)`,
             [
               file.database_id, file.bucket_key, ver.key, ver.etag,
               file.created_by, file.source_table, file.source_column, file.source_id,
+              file.id, ver.mime,
             ]
           );
         }
@@ -320,6 +327,11 @@ async function handleFileMode(
         } finally {
           sourceClient.release();
         }
+      } else if (versionRows.length > 0) {
+        log.info(
+          `[process-image] source_* not yet populated, skipping domain write-back. ` +
+          `Versions will be written when domain trigger fires. file_id=${file.id}`
+        );
       }
 
       return { success: true, versions: versionRows.length };
