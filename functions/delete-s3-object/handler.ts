@@ -4,7 +4,7 @@ import { getPgPool } from 'pg-cache';
 
 type DeleteParams = {
   file_id: string;
-  database_id: number;
+  database_id: string;
   key: string;
 };
 

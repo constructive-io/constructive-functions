@@ -17,7 +17,7 @@ interface VersionConfig {
 /** Process a file from files_store_public.files */
 interface ProcessFileParams {
   file_id: string;
-  database_id: number;
+  database_id: string;
 }
 
 // ---------------------------------------------------------------------------
