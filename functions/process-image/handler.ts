@@ -287,15 +287,17 @@ async function handleFileMode(
             `SELECT set_config('app.database_id', $1, true)`,
             [String(file.database_id)]
           );
+          // Use COALESCE to handle NULL domain column: if NULL, build a
+          // minimal object with key + versions; if not NULL, merge versions in.
           await sourceClient.query(
             `UPDATE ${file.source_table}
              SET ${file.source_column} = jsonb_set(
-               ${file.source_column}::jsonb,
+               COALESCE(${file.source_column}::jsonb, jsonb_build_object('key', $3::text)),
                '{versions}',
                $1::jsonb
              )
              WHERE id = $2`,
-            [JSON.stringify(versionsArray), file.source_id]
+            [JSON.stringify(versionsArray), file.source_id, file.key]
           );
           await sourceClient.query('COMMIT');
         } catch (domainUpdateErr) {
