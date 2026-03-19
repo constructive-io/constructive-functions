@@ -38,7 +38,7 @@ export async function setupFilesStoreSchema(pg: PgClient): Promise<void> {
   await pg.query(`
     CREATE TABLE IF NOT EXISTS ${SCHEMA}.${TABLE} (
       id              uuid          NOT NULL DEFAULT gen_random_uuid(),
-      database_id     integer       NOT NULL,
+      database_id     uuid          NOT NULL,
       bucket_key      text          NOT NULL DEFAULT 'default',
       key             text          NOT NULL,
       status          ${SCHEMA}.file_status NOT NULL DEFAULT 'pending',
@@ -49,7 +49,7 @@ export async function setupFilesStoreSchema(pg: PgClient): Promise<void> {
       source_id       uuid,
       processing_started_at timestamptz,
       created_by      uuid,
-      origin_id       uuid,
+      versions        jsonb,
       mime_type       text,
       created_at      timestamptz   NOT NULL DEFAULT now(),
       updated_at      timestamptz   NOT NULL DEFAULT now(),
@@ -57,29 +57,9 @@ export async function setupFilesStoreSchema(pg: PgClient): Promise<void> {
     )
   `);
 
-  // Ensure new columns exist on pre-existing tables (CREATE TABLE IF NOT EXISTS
-  // does not add missing columns to an already-existing table)
-  await pg.query(`ALTER TABLE ${SCHEMA}.${TABLE} ADD COLUMN IF NOT EXISTS origin_id uuid`);
+  // Ensure new columns exist on pre-existing tables
+  await pg.query(`ALTER TABLE ${SCHEMA}.${TABLE} ADD COLUMN IF NOT EXISTS versions jsonb`);
   await pg.query(`ALTER TABLE ${SCHEMA}.${TABLE} ADD COLUMN IF NOT EXISTS mime_type text`);
-
-  // Self-referential FK (version -> origin)
-  await pg.query(`
-    DO $$ BEGIN
-      ALTER TABLE ${SCHEMA}.${TABLE}
-        ADD CONSTRAINT files_origin_fk
-        FOREIGN KEY (origin_id, database_id)
-        REFERENCES ${SCHEMA}.${TABLE} (id, database_id)
-        ON DELETE CASCADE;
-    EXCEPTION WHEN duplicate_object THEN NULL;
-    END $$
-  `);
-
-  // Index for version lookups
-  await pg.query(`
-    CREATE INDEX IF NOT EXISTS files_origin_id_idx
-      ON ${SCHEMA}.${TABLE} (origin_id, database_id)
-      WHERE origin_id IS NOT NULL
-  `);
 
   await pg.query(`
     CREATE OR REPLACE FUNCTION ${SCHEMA}.populate_file_back_reference()
@@ -91,12 +71,12 @@ export async function setupFilesStoreSchema(pg: PgClient): Promise<void> {
       old_val jsonb;
       new_key text;
       old_key text;
-      db_id integer;
-      origin_file_id uuid;
-      old_origin_file_id uuid;
-      versions_json json;
+      db_id uuid;
+      file_id uuid;
+      old_file_id uuid;
+      versions_json jsonb;
     BEGIN
-      db_id := current_setting('app.database_id')::integer;
+      db_id := current_setting('app.database_id')::uuid;
 
       EXECUTE format('SELECT ($1).%I::jsonb', col_name) INTO new_val USING NEW;
       EXECUTE format('SELECT ($1).%I::jsonb', col_name) INTO old_val USING OLD;
@@ -109,48 +89,27 @@ export async function setupFilesStoreSchema(pg: PgClient): Promise<void> {
       END IF;
 
       IF old_key IS NOT NULL AND old_key <> '' THEN
-        SELECT id INTO old_origin_file_id
+        SELECT id INTO old_file_id
         FROM ${SCHEMA}.${TABLE}
         WHERE key = old_key AND database_id = db_id;
 
-        IF old_origin_file_id IS NOT NULL THEN
+        IF old_file_id IS NOT NULL THEN
           UPDATE ${SCHEMA}.${TABLE}
           SET status = 'deleting', status_reason = 'replaced by new file'
-          WHERE id = old_origin_file_id AND database_id = db_id
-            AND status NOT IN ('deleting');
-
-          UPDATE ${SCHEMA}.${TABLE}
-          SET status = 'deleting', status_reason = 'replaced by new file'
-          WHERE origin_id = old_origin_file_id AND database_id = db_id
+          WHERE id = old_file_id AND database_id = db_id
             AND status NOT IN ('deleting');
         END IF;
       END IF;
 
       IF new_key IS NOT NULL AND new_key <> '' THEN
-        SELECT id INTO origin_file_id
+        SELECT id, versions INTO file_id, versions_json
         FROM ${SCHEMA}.${TABLE}
         WHERE key = new_key AND database_id = db_id;
 
-        IF origin_file_id IS NOT NULL THEN
+        IF file_id IS NOT NULL THEN
           UPDATE ${SCHEMA}.${TABLE}
           SET source_table = table_name, source_column = col_name, source_id = NEW.id
-          WHERE id = origin_file_id AND database_id = db_id;
-
-          UPDATE ${SCHEMA}.${TABLE}
-          SET source_table = table_name, source_column = col_name, source_id = NEW.id
-          WHERE origin_id = origin_file_id AND database_id = db_id;
-
-          SELECT json_agg(json_build_object(
-            'key', f.key,
-            'mime', COALESCE(f.mime_type, 'image/jpeg'),
-            'width', 0,
-            'height', 0
-          ))
-          INTO versions_json
-          FROM ${SCHEMA}.${TABLE} f
-          WHERE f.origin_id = origin_file_id
-            AND f.database_id = db_id
-            AND f.status = 'ready';
+          WHERE id = file_id AND database_id = db_id;
 
           IF versions_json IS NOT NULL THEN
             EXECUTE format(
@@ -172,9 +131,9 @@ export async function setupFilesStoreSchema(pg: PgClient): Promise<void> {
     DECLARE
       col_name text := TG_ARGV[0];
       table_name text := TG_ARGV[1];
-      db_id integer;
+      db_id uuid;
     BEGIN
-      db_id := current_setting('app.database_id')::integer;
+      db_id := current_setting('app.database_id')::uuid;
 
       UPDATE ${SCHEMA}.${TABLE}
       SET status = 'deleting', status_reason = 'source row deleted'
@@ -223,38 +182,9 @@ export async function setupFilesStoreSchema(pg: PgClient): Promise<void> {
       EXECUTE FUNCTION ${SCHEMA}.files_before_update_timestamp()
   `);
 
-  // Propagate deleting status from origin to version rows
-  await pg.query(`
-    CREATE OR REPLACE FUNCTION ${SCHEMA}.files_propagate_deleting_to_versions()
-    RETURNS trigger AS $fn$
-    BEGIN
-      UPDATE ${SCHEMA}.${TABLE}
-      SET status = 'deleting', status_reason = COALESCE(NEW.status_reason, 'origin marked deleting')
-      WHERE origin_id = NEW.id
-        AND database_id = NEW.database_id
-        AND status NOT IN ('deleting');
-      RETURN NEW;
-    END;
-    $fn$ LANGUAGE plpgsql
-  `);
-
-  await pg.query(`
-    DROP TRIGGER IF EXISTS files_after_update_propagate_deleting ON ${SCHEMA}.${TABLE};
-    CREATE TRIGGER files_after_update_propagate_deleting
-      AFTER UPDATE ON ${SCHEMA}.${TABLE}
-      FOR EACH ROW
-      WHEN (NEW.status = 'deleting' AND OLD.status <> 'deleting' AND NEW.origin_id IS NULL)
-      EXECUTE FUNCTION ${SCHEMA}.files_propagate_deleting_to_versions()
-  `);
 }
 
 export async function teardownFilesStoreSchema(pg: PgClient): Promise<void> {
-  await pg.query(`DROP TABLE IF EXISTS ${SCHEMA}.${TABLE} CASCADE`);
-  await pg.query(`DROP FUNCTION IF EXISTS ${SCHEMA}.files_propagate_deleting_to_versions CASCADE`);
-  await pg.query(`DROP FUNCTION IF EXISTS ${SCHEMA}.mark_files_deleting_on_source_delete CASCADE`);
-  await pg.query(`DROP FUNCTION IF EXISTS ${SCHEMA}.populate_file_back_reference CASCADE`);
-  await pg.query(`DROP FUNCTION IF EXISTS ${SCHEMA}.files_before_update_timestamp CASCADE`);
-  await pg.query(`DROP TYPE IF EXISTS ${SCHEMA}.file_status CASCADE`);
   await pg.query(`DROP SCHEMA IF EXISTS ${SCHEMA} CASCADE`);
 }
 

@@ -242,66 +242,43 @@ async function handleFileMode(
       }
 
       // ---------------------------------------------------------------
-      // Step 4: Transactional batch commit
-      // All version row INSERTs + origin status update in single transaction.
+      // Step 4: Update origin row with versions JSONB + mark ready
       // ---------------------------------------------------------------
-      const txClient = await pool.connect();
+      const versionsJsonb = versionRows.map((v) => ({
+        key: v.key,
+        mime: v.mime,
+        width: v.width,
+        height: v.height,
+      }));
+
       try {
-        await txClient.query('BEGIN');
-
-        for (const ver of versionRows) {
-          await txClient.query(
-            `INSERT INTO files_store_public.files
-               (database_id, bucket_key, key, status, etag, created_by,
-                source_table, source_column, source_id, origin_id, mime_type)
-             VALUES ($1, $2, $3, 'ready', $4, $5, $6, $7, $8, $9, $10)`,
-            [
-              file.database_id, file.bucket_key, ver.key, ver.etag,
-              file.created_by, file.source_table, file.source_column, file.source_id,
-              file.id, ver.mime,
-            ]
-          );
-        }
-
-        // Mark origin as ready
-        await txClient.query(
-          `UPDATE files_store_public.files SET status = 'ready' WHERE id = $1 AND database_id = $2`,
-          [file.id, file.database_id]
+        await pool.query(
+          `UPDATE files_store_public.files
+           SET status = 'ready',
+               versions = $3::jsonb
+           WHERE id = $1 AND database_id = $2`,
+          [file.id, file.database_id, JSON.stringify(versionsJsonb.length > 0 ? versionsJsonb : null)]
         );
-
-        await txClient.query('COMMIT');
       } catch (txErr: any) {
-        await txClient.query('ROLLBACK');
-
-        // ---------------------------------------------------------------
         // Graceful deleting handling:
-        // If the file was marked 'deleting' during processing (source row
-        // deleted), the state machine rejects processing->ready. This is
-        // correct behavior -- the file is already marked for deletion.
-        // ---------------------------------------------------------------
+        // If the file was marked 'deleting' during processing, the state
+        // machine rejects processing->ready. This is correct behavior.
         if (txErr.message?.includes('Invalid status transition')) {
           log.info('[process-image] file transitioned to deleting during processing, exiting gracefully');
           await deleteS3Objects(s3, bucket, uploadedS3Keys, log);
           return { success: true, reason: 'file_marked_deleting_during_processing' };
         }
         throw txErr;
-      } finally {
-        txClient.release();
       }
 
       // ---------------------------------------------------------------
       // Step 5: Write version info to domain table (if back-reference populated)
       // ---------------------------------------------------------------
-      if (file.source_table && file.source_column && file.source_id && versionRows.length > 0) {
+      if (file.source_table && file.source_column && file.source_id && versionsJsonb.length > 0) {
         validateQualifiedName(file.source_table);
         validateIdentifier(file.source_column);
 
-        const versionsArray = versionRows.map((v) => ({
-          key: v.key,
-          mime: v.mime,
-          width: v.width,
-          height: v.height,
-        }));
+        const versionsArray = versionsJsonb;
 
         const sourceClient = await pool.connect();
         try {
@@ -327,7 +304,7 @@ async function handleFileMode(
         } finally {
           sourceClient.release();
         }
-      } else if (versionRows.length > 0) {
+      } else if (versionsJsonb.length > 0) {
         log.info(
           `[process-image] source_* not yet populated, skipping domain write-back. ` +
           `Versions will be written when domain trigger fires. file_id=${file.id}`
