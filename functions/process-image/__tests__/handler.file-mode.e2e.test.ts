@@ -24,6 +24,7 @@ const SOURCE_SCHEMA = 'public';
 const SOURCE_TABLE = 'test_process_file_uploads';
 const BUCKET = 'test-bucket';
 const USER_ID = 'aaaaaaaa-0000-0000-0000-000000000001';
+const TEST_DB_ID = 'aaaaaaaa-0000-0000-0000-000000000099';
 
 const ENV: Record<string, string> = {
   PGHOST: 'localhost',
@@ -139,9 +140,10 @@ describe('process-image handler file mode e2e', () => {
         `INSERT INTO ${OBJECT_STORE_SCHEMA}.files
            (id, database_id, bucket_key, key, status, etag, created_by,
             source_table, source_column, source_id)
-         VALUES ($1, 1, 'default', $2, 'pending', 'etag-origin', $3, $4, 'image', $5)`,
+         VALUES ($1, $2, 'default', $3, 'pending', 'etag-origin', $4, $5, 'image', $6)`,
         [
           opts.fileId,
+          TEST_DB_ID,
           opts.key,
           USER_ID,
           `${SOURCE_SCHEMA}.${SOURCE_TABLE}`,
@@ -154,23 +156,23 @@ describe('process-image handler file mode e2e', () => {
     await pg.query(
       `INSERT INTO ${OBJECT_STORE_SCHEMA}.files
          (id, database_id, bucket_key, key, status, etag, created_by)
-       VALUES ($1, 1, 'default', $2, 'pending', 'etag-origin', $3)`,
-      [opts.fileId, opts.key, USER_ID]
+       VALUES ($1, $2, 'default', $3, 'pending', 'etag-origin', $4)`,
+      [opts.fileId, TEST_DB_ID, opts.key, USER_ID]
     );
   }
 
   async function callHandler(fileId: string) {
     const ctx = createMockContext({ env: ENV });
-    return handler({ file_id: fileId, database_id: 1 }, ctx as any);
+    return handler({ file_id: fileId, database_id: TEST_DB_ID }, ctx as any);
   }
 
-  it('processes an attached image into ready thumbnail and medium versions', async () => {
+  it('processes an attached image into ready with versions JSONB', async () => {
     const fileId = randomUUID();
     const sourceId = randomUUID();
     const baseId = randomUUID();
-    const originKey = `1/default/${baseId}_origin`;
-    const thumbKey = `1/default/${baseId}_thumbnail`;
-    const mediumKey = `1/default/${baseId}_medium`;
+    const originKey = `${TEST_DB_ID}/default/${baseId}_origin`;
+    const thumbKey = `${TEST_DB_ID}/default/${baseId}_thumbnail`;
+    const mediumKey = `${TEST_DB_ID}/default/${baseId}_medium`;
     const imageBuffer = await generateTestImage(1600, 900);
 
     await putOriginImage(originKey, imageBuffer);
@@ -197,44 +199,33 @@ describe('process-image handler file mode e2e', () => {
     s3Keys.add(thumbKey);
     s3Keys.add(mediumKey);
 
+    // Only 1 row — origin with versions JSONB
     const files = await pg.query(
-      `SELECT key, status, source_table, source_column, source_id
+      `SELECT key, status, versions, source_table, source_column, source_id
          FROM ${OBJECT_STORE_SCHEMA}.files
-        WHERE key LIKE $1
-        ORDER BY key`,
-      [`1/default/${baseId}%`]
+        WHERE id = $1`,
+      [fileId]
     );
 
-    expect(files.rows).toEqual([
-      {
-        key: mediumKey,
-        status: 'ready',
-        source_table: `${SOURCE_SCHEMA}.${SOURCE_TABLE}`,
-        source_column: 'image',
-        source_id: sourceId,
-      },
-      {
-        key: originKey,
-        status: 'ready',
-        source_table: `${SOURCE_SCHEMA}.${SOURCE_TABLE}`,
-        source_column: 'image',
-        source_id: sourceId,
-      },
-      {
-        key: thumbKey,
-        status: 'ready',
-        source_table: `${SOURCE_SCHEMA}.${SOURCE_TABLE}`,
-        source_column: 'image',
-        source_id: sourceId,
-      },
-    ]);
+    expect(files.rows).toHaveLength(1);
+    const row = files.rows[0];
+    expect(row.status).toBe('ready');
+    expect(row.key).toBe(originKey);
+    expect(row.source_table).toBe(`${SOURCE_SCHEMA}.${SOURCE_TABLE}`);
+    expect(row.versions).toHaveLength(2);
+    expect(row.versions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: thumbKey, mime: 'image/jpeg', width: 150 }),
+        expect.objectContaining({ key: mediumKey, mime: 'image/jpeg', width: 1200 }),
+      ])
+    );
 
+    // Domain table also has versions
     const sourceRow = await pg.query(
       `SELECT image FROM ${SOURCE_SCHEMA}.${SOURCE_TABLE} WHERE id = $1`,
       [sourceId]
     );
     const versions = sourceRow.rows[0].image.versions;
-
     expect(versions).toHaveLength(2);
     expect(versions).toEqual(
       expect.arrayContaining([
@@ -243,6 +234,7 @@ describe('process-image handler file mode e2e', () => {
       ])
     );
 
+    // Idempotency
     const secondRun: any = await callHandler(fileId);
     expect(secondRun).toEqual({ skipped: true, reason: 'not_pending_or_locked' });
   });
@@ -250,9 +242,9 @@ describe('process-image handler file mode e2e', () => {
   it('processes an unattached image without writing domain metadata', async () => {
     const fileId = randomUUID();
     const baseId = randomUUID();
-    const originKey = `1/default/${baseId}_origin`;
-    const thumbKey = `1/default/${baseId}_thumbnail`;
-    const mediumKey = `1/default/${baseId}_medium`;
+    const originKey = `${TEST_DB_ID}/default/${baseId}_origin`;
+    const thumbKey = `${TEST_DB_ID}/default/${baseId}_thumbnail`;
+    const mediumKey = `${TEST_DB_ID}/default/${baseId}_medium`;
     const imageBuffer = await generateTestImage(1600, 900);
 
     await putOriginImage(originKey, imageBuffer);
@@ -266,36 +258,17 @@ describe('process-image handler file mode e2e', () => {
     s3Keys.add(thumbKey);
     s3Keys.add(mediumKey);
 
+    // Only 1 row with versions JSONB
     const files = await pg.query(
-      `SELECT key, status, source_table, source_column, source_id
+      `SELECT key, status, versions, source_table
          FROM ${OBJECT_STORE_SCHEMA}.files
-        WHERE key LIKE $1
-        ORDER BY key`,
-      [`1/default/${baseId}%`]
+        WHERE id = $1`,
+      [fileId]
     );
 
-    expect(files.rows).toEqual([
-      {
-        key: mediumKey,
-        status: 'ready',
-        source_table: null,
-        source_column: null,
-        source_id: null,
-      },
-      {
-        key: originKey,
-        status: 'ready',
-        source_table: null,
-        source_column: null,
-        source_id: null,
-      },
-      {
-        key: thumbKey,
-        status: 'ready',
-        source_table: null,
-        source_column: null,
-        source_id: null,
-      },
-    ]);
+    expect(files.rows).toHaveLength(1);
+    expect(files.rows[0].status).toBe('ready');
+    expect(files.rows[0].versions).toHaveLength(2);
+    expect(files.rows[0].source_table).toBeNull();
   });
 });

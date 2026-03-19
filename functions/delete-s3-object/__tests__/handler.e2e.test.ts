@@ -82,18 +82,21 @@ describe('delete-s3-object handler e2e', () => {
     await cleanFilesStoreRows(pg);
   });
 
-  function callHandler(file_id: string, database_id: number, key: string) {
+  const TEST_DB_ID = 'aaaaaaaa-0000-0000-0000-000000000099';
+
+  function callHandler(file_id: string, database_id: string, key: string, version_keys?: string[]) {
     const ctx = createMockContext({ env: ENV });
-    return handler({ file_id, database_id, key }, ctx as any);
+    return handler({ file_id, database_id, key, version_keys }, ctx as any);
   }
 
   async function insertFile(opts: {
     s3Key: string;
     body: Buffer;
     status?: string;
-    databaseId?: number;
-  }): Promise<{ id: string; database_id: number }> {
-    const databaseId = opts.databaseId ?? 1;
+    databaseId?: string;
+    versions?: object[];
+  }): Promise<{ id: string; database_id: string }> {
+    const databaseId = opts.databaseId ?? TEST_DB_ID;
     s3Keys.push(opts.s3Key);
 
     await s3.send(new PutObjectCommand({
@@ -105,10 +108,10 @@ describe('delete-s3-object handler e2e', () => {
 
     const res = await pg.query(
       `INSERT INTO ${SCHEMA}.files
-         (database_id, key, bucket_key, status)
-       VALUES ($1, $2, 'default', $3::${SCHEMA}.file_status)
+         (database_id, key, bucket_key, status, versions)
+       VALUES ($1, $2, 'default', $3::${SCHEMA}.file_status, $4::jsonb)
        RETURNING id, database_id`,
-      [databaseId, opts.s3Key, opts.status ?? 'deleting']
+      [databaseId, opts.s3Key, opts.status ?? 'deleting', opts.versions ? JSON.stringify(opts.versions) : null]
     );
     return res.rows[0];
   }
@@ -164,9 +167,9 @@ describe('delete-s3-object handler e2e', () => {
     const res = await pg.query(
       `INSERT INTO ${SCHEMA}.files
          (database_id, key, bucket_key, status)
-       VALUES (1, $1, 'default', 'deleting')
+       VALUES ($1, $2, 'default', 'deleting')
        RETURNING id, database_id`,
-      [key]
+      [TEST_DB_ID, key]
     );
     const { id, database_id } = res.rows[0];
 
@@ -198,7 +201,7 @@ describe('delete-s3-object handler e2e', () => {
 
     const result: any = await callHandler(
       '00000000-0000-0000-0000-000000000000',
-      1,
+      TEST_DB_ID,
       key
     );
 
@@ -210,10 +213,54 @@ describe('delete-s3-object handler e2e', () => {
   // Test 4: Both already deleted — fully idempotent
   // -----------------------------------------------------------------------
 
+  // -----------------------------------------------------------------------
+  // Test 4: Delete with version S3 objects
+  // -----------------------------------------------------------------------
+
+  it('deletes origin + version S3 objects and DB row', async () => {
+    const originKey = `e2e-del-ver-${Date.now()}-origin.bin`;
+    const thumbKey = `e2e-del-ver-${Date.now()}-thumb.bin`;
+    const mediumKey = `e2e-del-ver-${Date.now()}-medium.bin`;
+    const body = Buffer.from('test');
+
+    // Upload origin + versions to S3
+    for (const k of [originKey, thumbKey, mediumKey]) {
+      s3Keys.push(k);
+      await s3.send(new PutObjectCommand({ Bucket: BUCKET, Key: k, Body: body }));
+    }
+
+    const { id, database_id } = await insertFile({
+      s3Key: originKey,
+      body,
+      status: 'deleting',
+      versions: [
+        { key: thumbKey, mime: 'image/jpeg', width: 150, height: 150 },
+        { key: mediumKey, mime: 'image/jpeg', width: 1200, height: 675 },
+      ],
+    });
+
+    const result: any = await callHandler(id, database_id, originKey, [thumbKey, mediumKey]);
+
+    expect(result.success).toBe(true);
+    expect(await s3ObjectExists(originKey)).toBe(false);
+    expect(await s3ObjectExists(thumbKey)).toBe(false);
+    expect(await s3ObjectExists(mediumKey)).toBe(false);
+
+    const dbRes = await pg.query(
+      `SELECT * FROM ${SCHEMA}.files WHERE id = $1`,
+      [id]
+    );
+    expect(dbRes.rows.length).toBe(0);
+  });
+
+  // -----------------------------------------------------------------------
+  // Test 5: Both already deleted — fully idempotent
+  // -----------------------------------------------------------------------
+
   it('succeeds when both S3 and DB are already gone', async () => {
     const result: any = await callHandler(
       '00000000-0000-0000-0000-000000000000',
-      999,
+      TEST_DB_ID,
       `nonexistent-key-${Date.now()}`
     );
 

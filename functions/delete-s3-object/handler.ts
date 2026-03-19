@@ -6,6 +6,7 @@ type DeleteParams = {
   file_id: string;
   database_id: string;
   key: string;
+  version_keys?: string[];
 };
 
 function createS3Client(env: Record<string, string | undefined>): S3Client {
@@ -48,13 +49,22 @@ const handler: FunctionHandler<DeleteParams> = async (
   const pool = createPgPool(env);
 
   try {
-    // Step 1: Delete from S3 (idempotent -- delete ignores missing keys)
-    await s3.send(new DeleteObjectCommand({
-      Bucket: env.BUCKET_NAME || 'test-bucket',
-      Key: params.key,
-    }));
+    const bucket = env.BUCKET_NAME || 'test-bucket';
 
-    // Step 2: Delete the DB row
+    // Step 1: Delete origin S3 object (idempotent)
+    await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: params.key }));
+
+    // Step 2: Delete version S3 objects (from job payload)
+    const versionKeys = params.version_keys || [];
+    for (const vk of versionKeys) {
+      try {
+        await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: vk }));
+      } catch (err) {
+        log.error(`[delete-s3-object] failed to delete version ${vk}`, err);
+      }
+    }
+
+    // Step 3: Delete the DB row
     const result = await pool.query(
       'DELETE FROM files_store_public.files WHERE id = $1 AND database_id = $2',
       [params.file_id, params.database_id]
@@ -62,6 +72,7 @@ const handler: FunctionHandler<DeleteParams> = async (
 
     log.info('[delete-s3-object] complete', {
       key: params.key,
+      versionKeysDeleted: versionKeys.length,
       rowsDeleted: result.rowCount,
     });
 
