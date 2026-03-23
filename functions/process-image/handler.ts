@@ -287,17 +287,19 @@ async function handleFileMode(
             `SELECT set_config('app.database_id', $1, true)`,
             [String(file.database_id)]
           );
-          // Use COALESCE to handle NULL domain column: if NULL, build a
-          // minimal object with key + versions; if not NULL, merge versions in.
+          // Write the full image object to the domain column using || merge.
+          // Since dashboard no longer patches the img field (to avoid race conditions),
+          // process-image is the sole writer. Includes key, mime, and versions.
           await sourceClient.query(
             `UPDATE ${file.source_table}
-             SET ${file.source_column} = jsonb_set(
-               COALESCE(${file.source_column}::jsonb, jsonb_build_object('key', $3::text)),
-               '{versions}',
-               $1::jsonb
-             )
+             SET ${file.source_column} = COALESCE(${file.source_column}::jsonb, '{}'::jsonb)
+               || jsonb_build_object(
+                    'key', $3::text,
+                    'mime', $4::text,
+                    'versions', $1::jsonb
+                  )
              WHERE id = $2`,
-            [JSON.stringify(versionsArray), file.source_id, file.key]
+            [JSON.stringify(versionsArray), file.source_id, file.key, mimeType]
           );
           await sourceClient.query('COMMIT');
         } catch (domainUpdateErr) {
@@ -306,10 +308,34 @@ async function handleFileMode(
         } finally {
           sourceClient.release();
         }
+      } else if (file.source_table && file.source_column && file.source_id) {
+        // No versions generated (image too small), but still write key + mime
+        validateQualifiedName(file.source_table);
+        validateIdentifier(file.source_column);
+        const sourceClient = await pool.connect();
+        try {
+          await sourceClient.query('BEGIN');
+          await sourceClient.query(
+            `SELECT set_config('app.database_id', $1, true)`,
+            [String(file.database_id)]
+          );
+          await sourceClient.query(
+            `UPDATE ${file.source_table}
+             SET ${file.source_column} = COALESCE(${file.source_column}::jsonb, '{}'::jsonb)
+               || jsonb_build_object('key', $2::text, 'mime', $3::text)
+             WHERE id = $1`,
+            [file.source_id, file.key, mimeType]
+          );
+          await sourceClient.query('COMMIT');
+        } catch (err) {
+          await sourceClient.query('ROLLBACK');
+          log.error('[process-image] failed to write key+mime to domain table', err);
+        } finally {
+          sourceClient.release();
+        }
       } else if (versionsJsonb.length > 0) {
         log.info(
-          `[process-image] source_* not yet populated, skipping domain write-back. ` +
-          `Versions will be written when domain trigger fires. file_id=${file.id}`
+          `[process-image] source_* not yet populated, skipping domain write-back. file_id=${file.id}`
         );
       }
 
