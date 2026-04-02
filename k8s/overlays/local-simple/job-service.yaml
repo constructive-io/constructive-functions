@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knative-job-service
+  labels:
+    app: knative-job-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: knative-job-service
+  template:
+    metadata:
+      labels:
+        app: knative-job-service
+    spec:
+      containers:
+        - name: knative-job-service
+          image: constructive-functions:local
+          command: ["node"]
+          args: ["job/service/dist/run.js"]
+          envFrom:
+            - configMapRef:
+                name: constructive
+            - secretRef:
+                name: pg-credentials
+          env:
+            - name: NODE_ENV
+              value: "development"
+            - name: INTERNAL_JOBS_CALLBACK_PORT
+              value: "8080"
+            - name: INTERNAL_JOBS_CALLBACK_URL
+              value: "http://knative-job-service.default.svc.cluster.local:8080"
+            - name: JOBS_SUPPORT_ANY
+              value: "false"
+            - name: JOBS_SUPPORTED
+              value: "simple-email,send-email-link"
+            - name: JOBS_CALLBACK_HOST
+              value: "knative-job-service.default.svc.cluster.local"
+            - name: JOBS_CALLBACK_BASE_URL
+              value: "http://knative-job-service.default.svc.cluster.local:8080/callback"
+            - name: KNATIVE_SERVICE_URL
+              value: "default.svc.cluster.local"
+            - name: INTERNAL_GATEWAY_URL
+              value: "http://simple-email.default.svc.cluster.local"
+            - name: INTERNAL_GATEWAY_DEVELOPMENT_MAP
+              value: '{"simple-email":"http://simple-email.default.svc.cluster.local","send-email-link":"http://send-email-link.default.svc.cluster.local"}'
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - containerPort: 8080
+              name: jobs-http
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: knative-job-service
+  labels:
+    app: knative-job-service
+spec:
+  type: ClusterIP
+  selector:
+    app: knative-job-service
+  ports:
+    - name: jobs-http
+      port: 8080
+      targetPort: jobs-http

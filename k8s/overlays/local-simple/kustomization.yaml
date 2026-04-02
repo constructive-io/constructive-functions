@@ -1,6 +1,22 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: default
+
 resources:
-  - simple-email.yaml
-  - send-email-link.yaml
+  # Infrastructure
+  - ./postgres-local.yaml
+  - ./minio-local.yaml
+  # Secrets & config
+  - ./config.yaml
+  - ./pg-secret.yaml
+  - ./mailgun-secret.yaml
+  - ./server-bucket-secret.yaml
+  # Constructive server + db setup
+  - ./constructive-server.yaml
+  - ./constructive-db-job.yaml
+  # Job service
+  - ./job-service.yaml
+  # Functions (plain Deployments, no Knative)
+  - ./simple-email.yaml
+  - ./send-email-link.yaml
