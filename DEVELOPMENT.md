@@ -179,6 +179,72 @@ Local Node processes (functions):
 
 Infrastructure runs in Docker. Functions run as local Node processes from `generated/` — no Docker rebuild needed when function code changes. Edit `functions/*/handler.ts`, rebuild (`pnpm build`), restart `make dev-fn`.
 
+## K8s Local Development (Skaffold)
+
+Run the entire stack in Kubernetes with hot-reload for handler code changes. Two modes are available:
+
+### Prerequisites
+
+- Docker Desktop with Kubernetes enabled (`kubectl get nodes` should work)
+- [Skaffold](https://skaffold.dev/docs/install/) CLI installed
+- For Knative mode: `cd k8s && make operators-knative-only`
+
+### Option A: Plain k8s (no Knative)
+
+Uses plain Deployments + Services. No operators needed beyond stock k8s.
+
+```bash
+make skaffold-dev
+```
+
+This runs `skaffold dev -p local-simple` which:
+1. Builds the `constructive-functions` Docker image from `Dockerfile.dev`
+2. Deploys postgres, constructive-server, db-setup, job-service, and functions to k8s
+3. Sets up port-forwarding automatically
+4. Watches `functions/**/*.ts` — edits are synced into running containers
+5. `tsx --watch` inside each function container detects changes and restarts
+
+### Option B: Knative
+
+Uses Knative Serving for functions (production parity). Requires Knative + Kourier.
+
+```bash
+# One-time setup
+cd k8s && make operators-knative-only && cd ..
+
+# Start dev loop
+make skaffold-dev-knative
+```
+
+### Hot Reload
+
+Handler code changes are hot-reloaded without rebuilding the Docker image:
+
+1. Edit `functions/<name>/handler.ts`
+2. Skaffold detects the change and syncs the file into the running container
+3. `tsx --watch` picks up the change and restarts the process (~2-5 seconds)
+
+Changes to runtime packages (`packages/fn-runtime`, `packages/fn-app`) or `package.json` trigger a full image rebuild (Skaffold handles this automatically).
+
+### Port Map (Skaffold)
+
+| Service | Local Port |
+|---------|------------|
+| simple-email | 8081 |
+| send-email-link | 8082 |
+| Job Service | 8080 |
+| PostgreSQL | 5432 |
+| Constructive Server | 3002 (Knative profile only) |
+
+### Skaffold Commands Reference
+
+| Command | Description |
+|---------|-------------|
+| `make skaffold-dev` | Start plain k8s dev loop |
+| `make skaffold-dev-knative` | Start Knative dev loop |
+| `skaffold build -p local-simple` | Build image only (no deploy) |
+| `skaffold delete -p local-simple` | Delete deployed resources |
+
 ## Troubleshooting
 
 **db-setup fails or graphql-server won't start**
