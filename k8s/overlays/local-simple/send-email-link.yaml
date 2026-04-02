@@ -17,8 +17,8 @@ spec:
       containers:
         - name: send-email-link
           image: constructive-functions:local
-          command: ["tsx"]
-          args: ["--watch", "generated/send-email-link/index.ts"]
+          command: ["npx"]
+          args: ["tsx", "--watch", "generated/send-email-link/index.ts"]
           ports:
             - containerPort: 8080
           envFrom:

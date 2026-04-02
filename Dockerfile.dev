@@ -1,6 +1,6 @@
 FROM node:22-alpine
 
-RUN npm install -g pnpm@10.12.2 tsx
+RUN npm install -g pnpm@10.12.2
 
 WORKDIR /usr/src/app
 
