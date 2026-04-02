@@ -27,6 +27,11 @@ resources:
   - ../../base/functions/simple-email.yaml
   - ../../base/functions/send-email-link.yaml
 
+# Skaffold image replacement: map the GHCR image to the locally-built image
+images:
+  - name: ghcr.io/constructive-io/constructive
+    newName: constructive-functions
+
 patches:
   - path: ./constructive/config.yaml
   - path: ./constructive/dashboard-config.yaml
