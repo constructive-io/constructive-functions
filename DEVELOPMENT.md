@@ -8,6 +8,18 @@ Local development setup for running functions against real infrastructure (Postg
 - pnpm >= 10
 - Docker Desktop
 
+Check what's installed and what's missing:
+
+```bash
+make setup-check
+```
+
+Install all missing tools (kubectl, skaffold, pnpm):
+
+```bash
+make setup-dev
+```
+
 ## Quick Start
 
 ```bash

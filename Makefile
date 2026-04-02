@@ -32,6 +32,13 @@ dev-down:
 dev-logs:
 	docker compose logs -f
 
+# --- Setup ---
+setup-dev:
+	./scripts/setup-dev.sh
+
+setup-check:
+	./scripts/setup-dev.sh --check
+
 # --- Skaffold k8s development ---
 # Plain k8s (Deployments + Services, no Knative operators needed)
 skaffold-dev:
