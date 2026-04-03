@@ -32,6 +32,22 @@ dev-down:
 dev-logs:
 	docker compose logs -f
 
+# --- Setup ---
+setup-dev:
+	./scripts/setup-dev.sh
+
+setup-check:
+	./scripts/setup-dev.sh --check
+
+# --- Skaffold k8s development ---
+# Plain k8s (Deployments + Services, no Knative operators needed)
+skaffold-dev:
+	skaffold dev -p local-simple
+
+# Full Knative setup (requires: cd k8s && make operators-knative-only)
+skaffold-dev-knative:
+	skaffold dev -p local
+
 # --- Docker image builds ---
 
 docker-build:

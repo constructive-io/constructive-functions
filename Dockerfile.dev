@@ -26,4 +26,4 @@ RUN node --experimental-strip-types scripts/generate.ts && pnpm install --frozen
 COPY . .
 RUN pnpm generate && pnpm build
 
-ENV NODE_ENV=production
+ENV NODE_ENV=development

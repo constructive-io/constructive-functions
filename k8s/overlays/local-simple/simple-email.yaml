@@ -17,12 +17,43 @@ spec:
       containers:
         - name: simple-email
           image: constructive-functions:local
-          command: ["node", "generated/simple-email/dist/index.js"]
+          command: ["npx"]
+          args: ["tsx", "--watch", "generated/simple-email/index.ts"]
           ports:
             - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: pg-credentials
+            - secretRef:
+                name: mailgun-credentials
           env:
             - name: PORT
               value: "8080"
+            - name: NODE_ENV
+              value: "development"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: GRAPHQL_URL
+              value: "http://constructive-server.default.svc.cluster.local:3000/graphql"
+            - name: META_GRAPHQL_URL
+              value: "http://constructive-server.default.svc.cluster.local:3000/graphql"
+            - name: GRAPHQL_API_NAME
+              value: "private"
+            - name: DEFAULT_DATABASE_ID
+              value: "dbe"
+            - name: MAILGUN_FROM
+              value: "no-reply@mg.constructive.io"
+            - name: MAILGUN_REPLY
+              value: "support@mg.constructive.io"
+            - name: SIMPLE_EMAIL_DRY_RUN
+              value: "true"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
 ---
 apiVersion: v1
 kind: Service
