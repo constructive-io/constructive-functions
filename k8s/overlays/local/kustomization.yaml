@@ -28,6 +28,32 @@ resources:
   - ../../base/functions/send-email-link.yaml
 
 patches:
+  # Skaffold image replacement: only rewrite function images, not server/dashboard/db-job
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: constructive-functions:local
+    target:
+      group: serving.knative.dev
+      version: v1
+      kind: Service
+      name: simple-email
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: constructive-functions:local
+    target:
+      group: serving.knative.dev
+      version: v1
+      kind: Service
+      name: send-email-link
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: constructive-functions:local
+    target:
+      kind: Deployment
+      name: knative-job-service
   - path: ./constructive/config.yaml
   - path: ./constructive/dashboard-config.yaml
   - path: ./constructive/server.yaml

@@ -1,0 +1,81 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: constructive-functions
+
+profiles:
+  # Plain k8s (Deployments + Services) — no Knative operators needed.
+  - name: local-simple
+    build:
+      artifacts:
+        - image: constructive-functions
+          context: .
+          docker:
+            dockerfile: Dockerfile.dev
+          sync:
+            manual:
+              - src: 'functions/**/*.ts'
+                dest: /usr/src/app
+      local:
+        push: false
+    deploy:
+      kustomize:
+        paths:
+          - k8s/overlays/local-simple
+    portForward:
+      - resourceType: service
+        resourceName: simple-email
+        port: 80
+        localPort: 8081
+      - resourceType: service
+        resourceName: send-email-link
+        port: 80
+        localPort: 8082
+      - resourceType: service
+        resourceName: knative-job-service
+        port: 8080
+        localPort: 8080
+      - resourceType: service
+        resourceName: postgres
+        port: 5432
+        localPort: 5432
+
+  # Full Knative setup — requires `cd k8s && make operators-knative-only` first.
+  - name: local
+    build:
+      artifacts:
+        - image: constructive-functions
+          context: .
+          docker:
+            dockerfile: Dockerfile.dev
+          sync:
+            manual:
+              - src: 'functions/**/*.ts'
+                dest: /usr/src/app
+      local:
+        push: false
+    deploy:
+      kustomize:
+        paths:
+          - k8s/overlays/local
+    portForward:
+      - resourceType: service
+        resourceName: simple-email
+        port: 80
+        localPort: 8081
+      - resourceType: service
+        resourceName: send-email-link
+        port: 80
+        localPort: 8082
+      - resourceType: service
+        resourceName: knative-job-service
+        port: 8080
+        localPort: 8080
+      - resourceType: service
+        resourceName: postgres
+        port: 5432
+        localPort: 5432
+      - resourceType: service
+        resourceName: constructive-server
+        port: 3000
+        localPort: 3002
