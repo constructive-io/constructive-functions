@@ -10,7 +10,7 @@
 
 services:
   postgres:
-    image: ghcr.io/launchql/pgvector-postgis:16.10
+    image: ghcr.io/constructive-io/docker/postgres-plus:18
     environment:
       POSTGRES_DB: constructive
       POSTGRES_USER: postgres

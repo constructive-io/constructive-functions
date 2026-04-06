@@ -16,11 +16,11 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: ghcr.io/launchql/pgvector-postgis:16.10
+          image: ghcr.io/constructive-io/docker/postgres-plus:18
           imagePullPolicy: IfNotPresent
           env:
             - name: POSTGRES_DB
-              value: launchql
+              value: constructive
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:

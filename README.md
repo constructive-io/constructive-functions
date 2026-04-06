@@ -97,7 +97,7 @@ The `CI Test K8s` workflow (`.github/workflows/test-k8s-deployment.yaml`) runs o
 │   ├── scripts/
 │   └── Makefile
 ├── types/
-│   └── (custom type definitions for launchql packages)
+│   └── (custom type definitions for external packages)
 ├── package.json
 ├── pnpm-workspace.yaml
 └── Makefile
@@ -106,7 +106,7 @@ The `CI Test K8s` workflow (`.github/workflows/test-k8s-deployment.yaml`) runs o
 ## Notes
 
 - Functions use `@constructive-io/knative-job-fn` for the Express/Knative HTTP wrapper
-- Email providers use `@launchql/postmaster` (Mailgun) and `@launchql/mjml` (styled-email templates via MJML)
+- Email providers use `@constructive-io/postmaster` (Mailgun) and `@launchql/mjml` (styled-email templates via MJML)
 - No `docker-compose` — this repo is Kubernetes-focused for functions deployment
 - Root workspace manages shared linting/formatting configs; each function has its own build config
 

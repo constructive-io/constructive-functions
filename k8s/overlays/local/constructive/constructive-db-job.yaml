@@ -8,5 +8,5 @@ spec:
       containers:
         - name: lql
           env:
-            - name: LAUNCHQL_DOMAIN
+            - name: CONSTRUCTIVE_DOMAIN
               value: "localhost"

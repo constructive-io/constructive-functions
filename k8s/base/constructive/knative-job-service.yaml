@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: knative-job-service
-          image: ghcr.io/constructive-io/constructive:latest
+          image: ghcr.io/constructive-io/constructive:e0b55cc
           imagePullPolicy: Always
 
           # Run the knative job service entrypoint from the root image
@@ -36,6 +36,8 @@ spec:
                 name: pg-credentials
 
           env:
+            - name: JOBS_SCHEMA
+              value: "app_jobs"
             # Callback server config (service URL inside the cluster)
             - name: INTERNAL_JOBS_CALLBACK_PORT
               value: "8080"
