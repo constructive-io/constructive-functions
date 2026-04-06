@@ -26,7 +26,7 @@
     "dev:fn": "node --experimental-strip-types scripts/dev.ts",
     "dev:down": "docker compose down",
     "test": "jest",
-    "test:unit": "jest --testPathPatterns='functions/.+/__tests__'",
+    "test:unit": "jest --testPathPatterns='functions/[^/]+/__tests__'",
     "test:integration": "jest --testPathPatterns='tests/integration'",
     "test:e2e": "jest --testPathPatterns='tests/e2e'"
   },
