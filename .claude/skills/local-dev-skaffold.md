@@ -1,0 +1,1 @@
+../../docs/skills/local-dev-skaffold.md

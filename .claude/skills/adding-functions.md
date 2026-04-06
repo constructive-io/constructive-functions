@@ -1,0 +1,1 @@
+../../docs/skills/adding-functions.md
