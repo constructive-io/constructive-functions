@@ -230,7 +230,7 @@ const createJobApp = () => {
       app.use(async (error: any, req: any, res: any, next: any) => {
         res.set({
           'Content-Type': 'application/json',
-          'X-Job-Error': 'true'
+          'X-Job-Error': true
         });
 
         // Mark job as having errored via callback, if available.
