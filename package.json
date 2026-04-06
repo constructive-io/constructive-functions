@@ -26,14 +26,17 @@
     "dev:fn": "node --experimental-strip-types scripts/dev.ts",
     "dev:down": "docker compose down",
     "test": "jest",
-    "test:unit": "jest --testPathPatterns='functions/.+/__tests__'",
-    "test:integration": "jest --testPathPatterns='tests/integration'"
+    "test:unit": "jest --testPathPatterns='functions/[^/]+/__tests__'",
+    "test:integration": "jest --testPathPatterns='tests/integration'",
+    "test:e2e": "jest --testPathPatterns='tests/e2e'"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.10.4",
+    "@types/pg": "^8.11.0",
     "eslint": "^9.39.2",
+    "pg": "^8.20.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-simple-import-sort": "^12.1.0",
     "eslint-plugin-unused-imports": "^4.0.0",

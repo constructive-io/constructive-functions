@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: constructive
 data:
-  PGHOST: "postgres.default.svc.cluster.local"
+  PGHOST: "postgres.constructive-functions.svc.cluster.local"

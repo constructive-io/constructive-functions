@@ -9,7 +9,7 @@ data:
   SERVER_ORIGIN: "*"
   SERVER_STRICT_AUTH: "false"
 
-  PGHOST: "postgres.default.svc.cluster.local"
+  PGHOST: "postgres.constructive-functions.svc.cluster.local"
   PGPORT: "5432"
   PGDATABASE: "constructive"
 
