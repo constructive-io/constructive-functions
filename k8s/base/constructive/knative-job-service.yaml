@@ -36,6 +36,8 @@ spec:
                 name: pg-credentials
 
           env:
+            - name: JOBS_SCHEMA
+              value: "app_jobs"
             # Callback server config (service URL inside the cluster)
             - name: INTERNAL_JOBS_CALLBACK_PORT
               value: "8080"
