@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: default
+namespace: constructive-functions
 
 resources:
   # Infrastructure
@@ -12,11 +12,12 @@ resources:
   - ./pg-secret.yaml
   - ./mailgun-secret.yaml
   - ./server-bucket-secret.yaml
-  # Constructive server + db setup
+  # Constructive servers + db setup
   - ./constructive-server.yaml
+  - ./constructive-server-admin.yaml
   - ./constructive-db-job.yaml
   # Job service
   - ./job-service.yaml
-  # Functions (plain Deployments, no Knative)
-  - ./simple-email.yaml
-  - ./send-email-link.yaml
+  # Functions (generated from templates/node-graphql/k8s/local-deployment.yaml)
+  - ../../../generated/simple-email/k8s/local-deployment.yaml
+  - ../../../generated/send-email-link/k8s/local-deployment.yaml

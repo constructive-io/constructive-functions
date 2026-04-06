@@ -18,10 +18,12 @@ profiles:
                 dest: /usr/src/app
       local:
         push: false
-    deploy:
+    manifests:
       kustomize:
         paths:
           - k8s/overlays/local-simple
+        buildArgs:
+          - --load-restrictor=LoadRestrictionsNone
     portForward:
       - resourceType: service
         resourceName: simple-email
@@ -39,6 +41,10 @@ profiles:
         resourceName: postgres
         port: 5432
         localPort: 5432
+      - resourceType: service
+        resourceName: constructive-server
+        port: 3000
+        localPort: 3002
 
   # Full Knative setup — requires `cd k8s && make operators-knative-only` first.
   - name: local
@@ -54,7 +60,7 @@ profiles:
                 dest: /usr/src/app
       local:
         push: false
-    deploy:
+    manifests:
       kustomize:
         paths:
           - k8s/overlays/local
