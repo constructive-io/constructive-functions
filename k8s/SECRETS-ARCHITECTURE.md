@@ -4,7 +4,7 @@ This document describes a secret‑management model that:
 
 - Uses **Postgres (Constructive‑DB)** to store *metadata* about secrets.
 - Stores the **actual secret values** in a dedicated **secret provider** (Kubernetes Secrets, Vault, cloud secret managers, etc).
-- Integrates with **Constructive / LaunchQL server** and **job/functions** such as Knative services.
+- Integrates with **Constructive server** and **job/functions** such as Knative services.
 
 The goal is: database‑first metadata and access control, externalized secret material.
 
@@ -40,11 +40,11 @@ Constructive‑DB already includes `secrets_module` and `encrypted_secrets_modul
 - Only owners/administrators of a given `app_id` (or `site`) can:
   - Create/update/delete secrets for that app.
   - Read secret *metadata* (not values).
-- System roles (e.g. `launchql_server`) can read metadata for all apps.
+- System roles (e.g. `constructive_server`) can read metadata for all apps.
 
 If desired, `encrypted_secrets_module` can still be used for “fully in‑DB encrypted secrets” as a special provider type; the above model is flexible enough to support both.
 
-### 2. Constructive / LaunchQL Server
+### 2. Constructive Server
 
 Constructive server gains a **Secret Service** with a pluggable **Secret Provider** interface.
 
@@ -111,7 +111,7 @@ This pattern works identically whether jobs run via Knative, a queue worker, or 
 User (Dashboard) 
    │ GraphQL mutation: createAppSecret(appId, key, value, providerId)
    ▼
-Constructive / LaunchQL API
+Constructive API
    │ 1. Auth + RLS: ensure user can manage secrets for appId
    │ 2. Load provider config from meta_public.secret_providers
    │ 3. Compute provider_ref (e.g. "interweb/app-<id>/mailgun")
@@ -145,7 +145,7 @@ The worker only sees the plaintext secret at the moment of use. Rotation can occ
 Operator or App Owner
    │ GraphQL mutation: rotateAppSecret(appId, key, newValue?)
    ▼
-Constructive / LaunchQL API
+Constructive API
    │ 1. Lookup secret row (appId, key)
    │ 2. SecretProvider.setSecret existing provider_ref with newValue
    │ 3. Update meta_public.secrets.rotated_at, updated_at
@@ -249,7 +249,7 @@ Use an `ExternalSecrets` operator to sync Vault/Cloud secrets **into** Kubernete
   - Introduce a provider type `db_encrypted`.
   - Migrations can map existing rows into the new metadata table with a back‑reference.
 
-### In Constructive / LaunchQL Server
+### In Constructive Server
 
 - Add a (versioned) `SecretService` and `SecretProvider` registry in the `server` package:
   - Load provider configs at startup from `meta_public.secret_providers`.

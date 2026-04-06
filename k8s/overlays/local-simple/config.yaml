@@ -11,12 +11,13 @@ data:
 
   PGHOST: "postgres.default.svc.cluster.local"
   PGPORT: "5432"
-  PGDATABASE: "launchql"
+  PGDATABASE: "constructive"
 
   API_ENABLE_META: "true"
   API_EXPOSED_SCHEMAS: "collections_public,meta_public"
   API_ANON_ROLE: "administrator"
   API_ROLE_NAME: "administrator"
-  API_DEFAULT_DATABASE_ID: "dbe"
+  API_ENABLE_SERVICES: "true"
+  API_DEFAULT_DATABASE_ID: "constructive"
 
   LOG_TIMESTAMP: "true"

@@ -27,6 +27,8 @@ spec:
           env:
             - name: NODE_ENV
               value: "development"
+            - name: JOBS_SCHEMA
+              value: "app_jobs"
             - name: INTERNAL_JOBS_CALLBACK_PORT
               value: "8080"
             - name: INTERNAL_JOBS_CALLBACK_URL

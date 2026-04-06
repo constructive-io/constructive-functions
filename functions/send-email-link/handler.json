@@ -1,16 +1,16 @@
 {
   "name": "send-email-link",
-  "version": "1.1.0",
+  "version": "2.6.4",
   "type": "node-graphql",
   "description": "Sends invite, password reset, and verification emails",
   "dependencies": {
-    "@constructive-io/postmaster": "^1.1.0",
+    "@constructive-io/postmaster": "^1.5.2",
     "@launchql/mjml": "0.1.1",
     "@launchql/styled-email": "0.1.0",
-    "@pgpmjs/env": "^2.11.0",
-    "@pgpmjs/logger": "^2.1.0",
+    "@pgpmjs/env": "^2.15.3",
+    "@pgpmjs/logger": "^2.4.3",
     "graphql-request": "^7.1.2",
     "graphql-tag": "^2.12.6",
-    "simple-smtp-server": "^0.3.0"
+    "simple-smtp-server": "^0.7.3"
   }
 }

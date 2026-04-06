@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: ghcr.io/constructive-io/constructive:latest
+          image: ghcr.io/constructive-io/constructive:e0b55cc
           imagePullPolicy: Always
           command: ["cnc"]
           args: ["server", "--port", "3000", "--origin", "*", "--strictAuth", "false"]
@@ -76,7 +76,7 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 20
         - name: explorer
-          image: ghcr.io/constructive-io/constructive:latest
+          image: ghcr.io/constructive-io/constructive:e0b55cc
           imagePullPolicy: Always
           # Run Explorer alongside the API in the same Pod
           command: ["cnc"]

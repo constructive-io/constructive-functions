@@ -28,7 +28,7 @@ The `Makefile` in `interweb/k8s` wires this together via `install-pg` / `uninsta
 
 - Defined in `base/cnpg/cnpg-cluster.yaml`:
   - `Cluster postgres-cluster` in namespace `postgres-db`.
-  - Custom image `ghcr.io/launchql/pgvector-postgis:16.10`.
+  - Custom image `ghcr.io/constructive-io/docker/postgres-plus:18`.
   - PgBouncer `Pooler postgres-pooler` for read‑write connections.
 - Access pattern:
   - Applications connect via `postgres-cluster-rw.postgres-db.svc.cluster.local:5432` (dev/staging) or `postgres` (local overlay).
@@ -48,7 +48,7 @@ The `Makefile` in `interweb/k8s` wires this together via `install-pg` / `uninsta
   - `ConfigMap constructive` with:
     - API host/port (`PORT=3000`, `SERVER_HOST=0.0.0.0`, `SERVER_ORIGIN=*`).
     - Database target (`PGHOST=postgres-cluster-rw.postgres-db.svc.cluster.local`).
-    - LaunchQL meta/API settings (schemas, roles, default database id).
+    - Constructive meta/API settings (schemas, roles, default database id).
   - `ConfigMap dashboard` with Next.js env:
     - GraphQL endpoint, base domains, and DB metadata for the setup flow.
 
@@ -104,7 +104,7 @@ The `Makefile` in `interweb/k8s` wires this together via `install-pg` / `uninsta
 
 - `functions/simple-email.yaml`:
   - Knative Service `simple-email` in namespace `interweb`.
-  - Runs `node functions/simple-email/dist/index.js` from the LaunchQL image.
+  - Runs `node functions/simple-email/dist/index.js` from the Constructive image.
   - Uses Mailgun credentials from `mailgun-credentials` secret.
   - Autoscaling constrained via Knative annotations.
 
@@ -157,7 +157,7 @@ The `Makefile` in `interweb/k8s` wires this together via `install-pg` / `uninsta
 - Internal‑only Knative setup using Kourier and `svc.cluster.local`.
 - PgBouncer in front of Postgres for better connection handling.
 - Makefile and scripts provide reproducible cluster bring‑up and teardown.
-- Reuse of a single LaunchQL image across API, explorer, jobs, and functions.
+- Reuse of a single Constructive image across API, explorer, jobs, and functions.
 
 ## Known Shortcomings / Improvement Areas
 
@@ -208,4 +208,4 @@ The `Makefile` in `interweb/k8s` wires this together via `install-pg` / `uninsta
      - Optionally disables Knative and runs functions as simple Deployments/Services or Docker‑compose services.
      - Uses smaller resource requests to run comfortably on a laptop.
 
-The next step is to complement this document with concrete manifests for a local‑development topology (either via docker‑compose or a lightweight local Kubernetes setup) that share the same core LaunchQL/Constructive image and config but run without CNPG/Knative operators.
+The next step is to complement this document with concrete manifests for a local‑development topology (either via docker‑compose or a lightweight local Kubernetes setup) that share the same core Constructive image and config but run without CNPG/Knative operators.
