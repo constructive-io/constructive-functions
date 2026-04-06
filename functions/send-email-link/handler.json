@@ -1,6 +1,6 @@
 {
   "name": "send-email-link",
-  "version": "2.5.1",
+  "version": "2.6.4",
   "type": "node-graphql",
   "description": "Sends invite, password reset, and verification emails",
   "dependencies": {
