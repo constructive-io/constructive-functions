@@ -28,79 +28,42 @@ concurrency:
 jobs:
   k8s-ci-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pnpm
+        run: npm install -g pnpm@10.12.2
+
+      - name: Install project dependencies
+        run: pnpm install
+
+      - name: Generate workspace packages
+        run: pnpm generate
+
       - name: Setup kind cluster
         uses: helm/kind-action@v1
         with:
-          cluster_name: local
+          cluster_name: ci
           wait: 120s
-
-      - name: Install jq (for resource diagnostics)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
 
       - name: Verify cluster
         run: |
           kubectl version
           kubectl get nodes -o wide
 
-      - name: Install Knative (operators-knative-only)
+      - name: Install Skaffold
         run: |
-          cd k8s/scripts/setup
-          make operators-knative-only
-
-      - name: Trim Knative resources for CI
-        run: |
-          set -e
-
-          echo "=== Shrinking Knative control-plane resources ==="
-
-          echo "Patching knative-serving activator..."
-          kubectl -n knative-serving set resources deploy/activator \
-            --requests=cpu=50m,memory=80Mi --limits=cpu=200m,memory=256Mi \
-            || echo "WARN: failed to patch activator"
-
-          echo "Patching knative-serving autoscaler..."
-          kubectl -n knative-serving set resources deploy/autoscaler \
-            --requests=cpu=25m,memory=80Mi --limits=cpu=200m,memory=256Mi \
-            || echo "WARN: failed to patch autoscaler"
-
-          echo "Patching knative-serving controller..."
-          kubectl -n knative-serving set resources deploy/controller \
-            --requests=cpu=50m,memory=100Mi --limits=cpu=300m,memory=512Mi \
-            || echo "WARN: failed to patch controller"
-
-          echo "Patching knative-serving webhook..."
-          kubectl -n knative-serving set resources deploy/webhook \
-            --requests=cpu=25m,memory=80Mi --limits=cpu=200m,memory=256Mi \
-            || echo "WARN: failed to patch webhook"
-
-          echo "Patching knative net-kourier controller..."
-          kubectl -n knative-serving set resources deploy/net-kourier-controller \
-            --requests=cpu=25m,memory=80Mi --limits=cpu=200m,memory=256Mi \
-            || echo "WARN: failed to patch net-kourier-controller"
-
-          echo "Patching kourier gateway..."
-          kubectl -n kourier-system set resources deploy/3scale-kourier-gateway \
-            --requests=cpu=25m,memory=80Mi --limits=cpu=200m,memory=256Mi \
-            || echo "WARN: failed to patch 3scale-kourier-gateway"
-
-          echo "Optionally shrinking coredns..."
-          kubectl -n kube-system scale deploy/coredns --replicas=1 || echo "WARN: failed to scale coredns"
-          kubectl -n kube-system set resources deploy/coredns \
-            --requests=cpu=50m,memory=70Mi --limits=cpu=200m,memory=170Mi \
-            || echo "WARN: failed to patch coredns"
-
-          echo "Restarting control-plane pods so resource changes take effect..."
-          kubectl -n knative-serving rollout restart deploy/activator deploy/autoscaler deploy/controller deploy/webhook deploy/net-kourier-controller || true
-          kubectl -n kourier-system rollout restart deploy/3scale-kourier-gateway || true
-          kubectl -n kube-system rollout restart deploy/coredns || true
+          curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
+          chmod +x skaffold
+          sudo mv skaffold /usr/local/bin/
 
       - name: Create namespace and GHCR pull secret
         env:
@@ -124,95 +87,20 @@ jobs:
             echo "GHCR_USERNAME/GHCR_TOKEN not set; assuming images are public."
           fi
 
-      - name: Sleep for a bit before install
-        run: |
-          sleep 10
+      - name: Deploy with Skaffold (local-simple)
+        run: skaffold run -p local-simple
 
-      - name: Apply CI overlay (on top of local)
+      - name: Wait for pods to stabilize
         run: |
-          cd k8s
-          kubectl kustomize overlays/ci --load-restrictor=LoadRestrictionsNone | kubectl apply -f -
-      
-      - name: Sleep for a bit
-        run: |
-          sleep 100
-
-      - name: Dump pod resource requests/limits (all namespaces)
-        if: always()
-        run: |
-          echo "=== Per-pod resource requests/limits ==="
-          kubectl get pods -A -o json \
-            | jq -r '
-                .items[]
-                | .metadata.namespace as $ns
-                | .metadata.name as $pod
-                | .spec.containers[]
-                | [$ns, $pod, .name,
-                   (.resources.requests.cpu // "0"),
-                   (.resources.requests.memory // "0"),
-                   (.resources.limits.cpu // "0"),
-                   (.resources.limits.memory // "0")]
-                | @tsv
-              ' \
-            | column -t
-
-          echo
-          echo "=== Aggregated resource requests per namespace (CPU cores, MiB) ==="
-          kubectl get pods -A -o json \
-            | jq -r '
-                [ .items[]
-                  | .metadata.namespace as $ns
-                  | {
-                      ns: $ns,
-                      cpu: ([.spec.containers[].resources.requests.cpu // "0"]
-                            | map(
-                                if test("m$") then (sub("m$";"") | tonumber / 1000)
-                                elif . == "0" then 0
-                                else tonumber
-                                end
-                              )
-                            | add),
-                      memMi: ([.spec.containers[].resources.requests.memory // "0"]
-                              | map(
-                                  if test("Gi$") then (sub("Gi$";"") | tonumber * 1024)
-                                  elif test("Mi$") then (sub("Mi$";"") | tonumber)
-                                  elif . == "0" then 0
-                                  else 0
-                                  end
-                                )
-                              | add)
-                    }
-                ]
-                | group_by(.ns)
-                | map({ns: .[0].ns, cpu: (map(.cpu) | add), memMi: (map(.memMi) | add)})
-                | sort_by(.ns)
-                | .[]
-                | [.ns, ( .cpu | tostring ), ( .memMi | tostring )]
-                | @tsv
-              ' \
-            | awk 'BEGIN{print "NAMESPACE\tCPU_CORES\tMEM_MIB"} {print}'
-
-      - name: Wait for workloads
-        run: |
-          set -e
-          echo "Namespaces:" && kubectl get ns
-          echo "All pods:" && kubectl get pods -n constructive-functions -o wide
-          echo "Knative services:" && kubectl get ksvc -n constructive-functions || true
+          echo "Waiting for deployments..."
+          kubectl rollout status deploy --all -n constructive-functions --timeout=180s || true
+          echo "Pod status:"
+          kubectl get pods -n constructive-functions -o wide
 
       - name: Wait for DB setup job
         run: |
           kubectl wait --for=condition=complete job/constructive-db \
             -n constructive-functions --timeout=180s
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install pnpm and project deps
-        run: |
-          npm install -g pnpm@10.12.2
-          pnpm install
 
       - name: Port-forward postgres and run e2e tests
         env:
