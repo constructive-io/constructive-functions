@@ -1,6 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: default
+namespace: constructive-functions
 
 resources:
   - ../local
@@ -30,14 +30,4 @@ patches:
       version: v1
       kind: Deployment
       name: minio
-  - patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 0
-    target:
-      group: apps
-      version: v1
-      kind: Deployment
-      name: constructive-server-admin
-  # Remove non-essential debug / email-resend workloads from CI
-  - path: ./delete-simple-email.yaml
+  # constructive-server-admin and simple-email are kept running for e2e tests

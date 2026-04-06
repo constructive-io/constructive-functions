@@ -7,6 +7,8 @@ on:
       - release/*
     paths:
       - "k8s/**"
+      - "tests/e2e/**"
+      - "functions/**"
       - ".github/workflows/test-k8s-deployment.yaml"
   push:
     branches:
@@ -14,6 +16,8 @@ on:
       - release/*
     paths:
       - "k8s/**"
+      - "tests/e2e/**"
+      - "functions/**"
       - ".github/workflows/test-k8s-deployment.yaml"
   workflow_dispatch: {}
 
@@ -98,25 +102,27 @@ jobs:
           kubectl -n kourier-system rollout restart deploy/3scale-kourier-gateway || true
           kubectl -n kube-system rollout restart deploy/coredns || true
 
-      - name: Create ghcr-pull image pull secret (optional)
+      - name: Create namespace and GHCR pull secret
+        env:
+          GHCR_USERNAME: ${{ secrets.GH_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
+          GHCR_EMAIL: ${{ secrets.GH_EMAIL }}
         run: |
           set -e
+          kubectl create namespace constructive-functions --dry-run=client -o yaml | kubectl apply -f -
           if [ -n "${GHCR_USERNAME:-}" ] && [ -n "${GHCR_TOKEN:-}" ]; then
-            echo "Creating ghcr-pull secret in default namespace"
-            kubectl create namespace default --dry-run=client -o yaml | kubectl apply -f -
+            echo "Creating ghcr-pull secret in constructive-functions namespace"
             kubectl create secret docker-registry ghcr-pull \
               --docker-server=ghcr.io \
               --docker-username="${GHCR_USERNAME}" \
               --docker-password="${GHCR_TOKEN}" \
               --docker-email="${GHCR_EMAIL:-devnull@example.com}" \
-              --dry-run=client -o yaml | kubectl apply -n default -f -
+              --dry-run=client -o yaml | kubectl apply -n constructive-functions -f -
+            kubectl patch serviceaccount default -n constructive-functions \
+              -p '{"imagePullSecrets": [{"name": "ghcr-pull"}]}'
           else
-            echo "GHCR_USERNAME/GHCR_TOKEN not set; assuming dashboard/db-job images are public."
+            echo "GHCR_USERNAME/GHCR_TOKEN not set; assuming images are public."
           fi
-        env:
-          GHCR_USERNAME: ${{ secrets.GH_USERNAME }}
-          GHCR_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
-          GHCR_EMAIL: ${{ secrets.GH_EMAIL }}
 
       - name: Sleep for a bit before install
         run: |
@@ -186,35 +192,60 @@ jobs:
               ' \
             | awk 'BEGIN{print "NAMESPACE\tCPU_CORES\tMEM_MIB"} {print}'
 
-      - name: Wait for local workloads
-        continue-on-error: true
+      - name: Wait for workloads
         run: |
           set -e
           echo "Namespaces:" && kubectl get ns
-          echo "All pods (initial):" && kubectl get pods -A
+          echo "All pods:" && kubectl get pods -n constructive-functions -o wide
+          echo "Knative services:" && kubectl get ksvc -n constructive-functions || true
 
-          echo "All pods (final):" && kubectl get pods -A
-          echo "Knative services:" && kubectl get ksvc -A || true
+      - name: Wait for DB setup job
+        run: |
+          kubectl wait --for=condition=complete job/constructive-db \
+            -n constructive-functions --timeout=180s
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pnpm and project deps
+        run: |
+          npm install -g pnpm@10.12.2
+          pnpm install
+
+      - name: Port-forward postgres and run e2e tests
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: "postgres123!"
+          PGDATABASE: constructive
+        run: |
+          kubectl port-forward -n constructive-functions svc/postgres 5432:5432 &
+          sleep 3
+          pnpm test:e2e
 
       - name: Dump diagnostics on failure
-        if: always()
+        if: failure()
         run: |
+          NS=constructive-functions
           echo "=== Namespaces ==="
           kubectl get ns
 
-          echo "=== Pods (all namespaces) ==="
-          kubectl get pods -A -o wide || true
+          echo "=== Pods ==="
+          kubectl get pods -n $NS -o wide || true
 
-          echo "=== Events (default) ==="
-          kubectl get events --sort-by=.lastTimestamp || true
+          echo "=== Events ==="
+          kubectl get events -n $NS --sort-by=.lastTimestamp || true
 
-          echo "=== Deployments (default) ==="
-          kubectl get deploy -o wide || true
+          echo "=== Deployments ==="
+          kubectl get deploy -n $NS -o wide || true
 
-          echo "=== Logs for default pods ==="
-          for pod in $(kubectl get pods -o jsonpath='{.items[*].metadata.name}'); do
+          echo "=== Logs ==="
+          for pod in $(kubectl get pods -n $NS -o jsonpath='{.items[*].metadata.name}'); do
             echo "--------------------------------------------------"
             echo "Logs for $pod"
-            kubectl describe pod "$pod" || true
-            kubectl logs "$pod" --all-containers --tail=200 || true
+            kubectl describe pod -n $NS "$pod" || true
+            kubectl logs -n $NS "$pod" --all-containers --tail=200 || true
           done

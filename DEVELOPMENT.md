@@ -191,14 +191,49 @@ Local Node processes (functions):
 
 Infrastructure runs in Docker. Functions run as local Node processes from `generated/` — no Docker rebuild needed when function code changes. Edit `functions/*/handler.ts`, rebuild (`pnpm build`), restart `make dev-fn`.
 
+## GHCR Authentication
+
+Several container images are hosted on GitHub Container Registry (`ghcr.io/constructive-io/`). You need a GitHub Personal Access Token (PAT) with `read:packages` scope to pull them.
+
+### Docker login (for local builds and Docker Compose)
+
+```bash
+echo $GH_PAT_TOKEN | docker login ghcr.io -u YOUR_USERNAME --password-stdin
+```
+
+### Kubernetes pull secret (for Skaffold / k8s dev)
+
+The `constructive-functions` namespace needs a `ghcr-pull` secret so k8s nodes can pull private GHCR images:
+
+```bash
+kubectl create namespace constructive-functions --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl create secret docker-registry ghcr-pull \
+  --docker-server=ghcr.io \
+  --docker-username=YOUR_USERNAME \
+  --docker-password=YOUR_GH_PAT_TOKEN \
+  --docker-email=your@email.com \
+  -n constructive-functions
+
+kubectl patch serviceaccount default -n constructive-functions \
+  -p '{"imagePullSecrets": [{"name": "ghcr-pull"}]}'
+```
+
+If pods show `ImagePullBackOff`, this secret is missing or the PAT has expired.
+
+### CI (GitHub Actions)
+
+Set these repository secrets: `GH_USERNAME`, `GH_PAT_TOKEN`, `GH_EMAIL`. The `test-k8s-deployment.yaml` workflow uses them to create the pull secret in CI.
+
 ## K8s Local Development (Skaffold)
 
-Run the entire stack in Kubernetes with hot-reload for handler code changes. Two modes are available:
+Run the entire stack in Kubernetes with hot-reload for handler code changes. All resources deploy to the `constructive-functions` namespace.
 
 ### Prerequisites
 
-- Docker Desktop with Kubernetes enabled (`kubectl get nodes` should work)
+- A local k8s cluster (Docker Desktop, k3d, kind — `kubectl get nodes` should work)
 - [Skaffold](https://skaffold.dev/docs/install/) CLI installed
+- GHCR pull secret set up (see above)
 - For Knative mode: `cd k8s && make operators-knative-only`
 
 ### Option A: Plain k8s (no Knative)
@@ -211,10 +246,11 @@ make skaffold-dev
 
 This runs `skaffold dev -p local-simple` which:
 1. Builds the `constructive-functions` Docker image from `Dockerfile.dev`
-2. Deploys postgres, constructive-server, db-setup, job-service, and functions to k8s
-3. Sets up port-forwarding automatically
-4. Watches `functions/**/*.ts` — edits are synced into running containers
-5. `tsx --watch` inside each function container detects changes and restarts
+2. Deploys infrastructure (postgres, minio, constructive-server, constructive-server-admin, db-setup, job-service) via kustomize
+3. Deploys functions (simple-email, send-email-link) via generated rawYaml manifests
+4. Sets up port-forwarding automatically
+5. Watches `functions/**/*.ts` — edits are synced into running containers
+6. `tsx --watch` inside each function container detects changes and restarts
 
 ### Option B: Knative
 
@@ -246,7 +282,7 @@ Changes to runtime packages (`packages/fn-runtime`, `packages/fn-app`) or `packa
 | send-email-link | 8082 |
 | Job Service | 8080 |
 | PostgreSQL | 5432 |
-| Constructive Server | 3002 (Knative profile only) |
+| Constructive Server | 3002 |
 
 ### Skaffold Commands Reference
 
@@ -257,7 +293,96 @@ Changes to runtime packages (`packages/fn-runtime`, `packages/fn-app`) or `packa
 | `skaffold build -p local-simple` | Build image only (no deploy) |
 | `skaffold delete -p local-simple` | Delete deployed resources |
 
+## Adding a New Function
+
+1. **Create the function source:**
+
+   ```bash
+   mkdir functions/my-function
+   ```
+
+   Add `functions/my-function/handler.json`:
+   ```json
+   {
+     "name": "my-function",
+     "version": "1.0.0",
+     "type": "node-graphql",
+     "description": "What this function does",
+     "dependencies": {}
+   }
+   ```
+
+   Add `functions/my-function/handler.ts` with your function logic.
+
+2. **Generate the workspace package:**
+
+   ```bash
+   pnpm generate
+   pnpm install
+   ```
+
+   This creates `generated/my-function/` with the full package, Dockerfile, and k8s manifests (including `k8s/local-deployment.yaml`).
+
+3. **Register in Skaffold** — edit `skaffold.yaml`, add to the `local-simple` profile:
+
+   ```yaml
+   rawYaml:
+     - generated/simple-email/k8s/local-deployment.yaml
+     - generated/send-email-link/k8s/local-deployment.yaml
+     - generated/my-function/k8s/local-deployment.yaml  # <- add this
+   ```
+
+   And add a port-forward entry:
+   ```yaml
+   portForward:
+     - resourceType: service
+       resourceName: my-function
+       namespace: constructive-functions
+       port: 80
+       localPort: 8083  # pick an unused port
+   ```
+
+4. **Register in job-service** — edit `k8s/overlays/local-simple/job-service.yaml`, add to `JOBS_SUPPORTED` and `INTERNAL_GATEWAY_DEVELOPMENT_MAP`.
+
+5. **Test:**
+
+   ```bash
+   make skaffold-dev        # deploy
+   pnpm test:e2e            # run e2e tests
+   ```
+
+## E2E Tests
+
+E2E tests run against the live k8s stack. They insert jobs into the database via SQL and verify the job-service dispatches them to functions.
+
+### Running locally
+
+Requires Skaffold running or manual port-forwards active:
+
+```bash
+pnpm test:e2e
+```
+
+With explicit env vars:
+
+```bash
+PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD='postgres123!' PGDATABASE=constructive pnpm test:e2e
+```
+
+### What's tested
+
+- **job-queue**: SQL schema verification, `app_jobs.add_job`, job retrieval
+- **job-processing**: Full pipeline — insert job → job-service dispatches → function processes → job completes
+
+### CI
+
+E2E tests run automatically in the `CI Test K8s` workflow (`.github/workflows/test-k8s-deployment.yaml`) on PRs and pushes that modify `k8s/`, `tests/e2e/`, or `functions/`.
+
 ## Troubleshooting
+
+**Pods show `ImagePullBackOff`**
+
+GHCR pull secret is missing or expired. See [GHCR Authentication](#ghcr-authentication) above.
 
 **db-setup fails or graphql-server won't start**
 
@@ -265,12 +390,6 @@ Check if the GHCR image is accessible:
 
 ```bash
 docker pull ghcr.io/constructive-io/constructive:latest
-```
-
-If authentication is required, log in first:
-
-```bash
-echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 ```
 
 **Port already in use**

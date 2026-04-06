@@ -49,6 +49,28 @@ PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD='postgres123!' PGDATABAS
 
 E2E tests insert jobs into `app_jobs.jobs` via SQL and verify the job service picks them up and the functions process them.
 
+## GHCR Authentication
+
+Private images on `ghcr.io/constructive-io/` require a GitHub PAT with `read:packages` scope.
+
+**Docker login:**
+```bash
+echo $GH_PAT_TOKEN | docker login ghcr.io -u YOUR_USERNAME --password-stdin
+```
+
+**K8s pull secret** (required for Skaffold dev):
+```bash
+kubectl create namespace constructive-functions --dry-run=client -o yaml | kubectl apply -f -
+kubectl create secret docker-registry ghcr-pull \
+  --docker-server=ghcr.io \
+  --docker-username=YOUR_USERNAME \
+  --docker-password=YOUR_GH_PAT_TOKEN \
+  --docker-email=your@email.com \
+  -n constructive-functions
+kubectl patch serviceaccount default -n constructive-functions \
+  -p '{"imagePullSecrets": [{"name": "ghcr-pull"}]}'
+```
+
 ## Local K8s Development (Skaffold)
 
 ### Start the stack
