@@ -1,8 +1,8 @@
 {
   "name": "@constructive-io/knative-job-server",
-  "version": "1.1.0",
+  "version": "2.4.4",
   "description": "Callback server that receives job completion/failure from Knative functions",
-  "author": "Constructive",
+  "author": "Constructive <developers@constructive.io>",
   "private": true,
   "main": "dist/index.js",
   "bin": {
@@ -15,20 +15,18 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
-    "@constructive-io/job-pg": "^1.1.0",
-    "@constructive-io/job-utils": "^1.1.0",
-    "@pgpmjs/logger": "^2.1.0",
-    "body-parser": "1.19.0",
+    "@constructive-io/job-pg": "^2.4.4",
+    "@constructive-io/job-utils": "^2.4.4",
+    "@pgpmjs/logger": "^2.4.3",
     "express": "5.2.1",
-    "pg": "8.17.1"
+    "pg": "8.20.0"
   },
   "devDependencies": {
-    "@types/body-parser": "^1.19.5",
     "@types/express": "^5.0.0",
     "@types/express-serve-static-core": "^5.0.0",
     "@types/node": "^22.10.4",
     "@types/pg": "^8.11.0",
-    "makage": "^0.1.10",
+    "makage": "^0.1.12",
     "typescript": "^5.1.6"
   }
 }

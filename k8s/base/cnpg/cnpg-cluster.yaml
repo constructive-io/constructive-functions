@@ -11,7 +11,7 @@ metadata:
 spec:
   instances: 1
   #imageName: ghcr.io/cloudnative-pg/postgresql:16.4
-  imageName: ghcr.io/launchql/pgvector-postgis:16.10
+  imageName: ghcr.io/constructive-io/docker/postgres-plus:18
   imagePullPolicy: Always
   #imageName: pyramation/pgvector:13.3-alpine
   enablePDB: false

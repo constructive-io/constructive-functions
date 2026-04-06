@@ -7,7 +7,7 @@ data:
   # Base uses placeholder values; dev/staging/local overlays override.
   NEXT_PUBLIC_SCHEMA_BUILDER_GRAPHQL_ENDPOINT: "https://api.example.test/graphql"
   NEXT_PUBLIC_DATABASE_SETUP_BASE_DOMAIN: "example.test"
-  NEXT_PUBLIC_DATABASE_SETUP_DBNAME: "launchql"
+  NEXT_PUBLIC_DATABASE_SETUP_DBNAME: "constructive"
   NEXT_PUBLIC_DATABASE_SETUP_ROLE_NAME: "authenticated"
   NEXT_PUBLIC_DATABASE_SETUP_ANON_ROLE: "anonymous"
   NEXT_PUBLIC_DATABASE_SETUP_IS_PUBLIC: "true"
