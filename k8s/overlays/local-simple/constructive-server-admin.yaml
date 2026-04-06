@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: constructive-server-admin
+  labels:
+    app: constructive-server-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: constructive-server-admin
+  template:
+    metadata:
+      labels:
+        app: constructive-server-admin
+    spec:
+      containers:
+        - name: server
+          image: ghcr.io/constructive-io/constructive:e0b55cc
+          imagePullPolicy: IfNotPresent
+          command: ["cnc"]
+          args: ["server", "--port", "3000", "--origin", "*", "--strictAuth", "false"]
+          envFrom:
+            - configMapRef:
+                name: constructive
+            - secretRef:
+                name: pg-credentials
+          env:
+            - name: API_IS_PUBLIC
+              value: "false"
+            - name: LOG_LEVEL
+              value: debug
+          ports:
+            - containerPort: 3000
+              name: server-http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: server-http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: server-http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "300m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: constructive-server-admin
+spec:
+  type: ClusterIP
+  selector:
+    app: constructive-server-admin
+  ports:
+    - name: http
+      port: 3000
+      targetPort: server-http

@@ -32,21 +32,21 @@ spec:
             - name: INTERNAL_JOBS_CALLBACK_PORT
               value: "8080"
             - name: INTERNAL_JOBS_CALLBACK_URL
-              value: "http://knative-job-service.default.svc.cluster.local:8080"
+              value: "http://knative-job-service.constructive-functions.svc.cluster.local:8080"
             - name: JOBS_SUPPORT_ANY
               value: "false"
             - name: JOBS_SUPPORTED
               value: "simple-email,send-email-link"
             - name: JOBS_CALLBACK_HOST
-              value: "knative-job-service.default.svc.cluster.local"
+              value: "knative-job-service.constructive-functions.svc.cluster.local"
             - name: JOBS_CALLBACK_BASE_URL
-              value: "http://knative-job-service.default.svc.cluster.local:8080/callback"
+              value: "http://knative-job-service.constructive-functions.svc.cluster.local:8080/callback"
             - name: KNATIVE_SERVICE_URL
-              value: "default.svc.cluster.local"
+              value: "constructive-functions.svc.cluster.local"
             - name: INTERNAL_GATEWAY_URL
-              value: "http://simple-email.default.svc.cluster.local"
+              value: "http://simple-email.constructive-functions.svc.cluster.local"
             - name: INTERNAL_GATEWAY_DEVELOPMENT_MAP
-              value: '{"simple-email":"http://simple-email.default.svc.cluster.local","send-email-link":"http://send-email-link.default.svc.cluster.local"}'
+              value: '{"simple-email":"http://simple-email.constructive-functions.svc.cluster.local","send-email-link":"http://send-email-link.constructive-functions.svc.cluster.local"}'
             - name: HOSTNAME
               valueFrom:
                 fieldRef:
