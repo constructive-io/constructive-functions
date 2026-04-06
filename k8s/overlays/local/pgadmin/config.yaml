@@ -9,7 +9,7 @@ data:
         "1": {
           "Name": "CNPG RW",
           "Group": "Constructive",
-          "Host": "postgres.default.svc.cluster.local",
+          "Host": "postgres.constructive-functions.svc.cluster.local",
           "Port": 5432,
           "MaintenanceDB": "constructive",
           "Username": "postgres",
