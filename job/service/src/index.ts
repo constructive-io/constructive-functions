@@ -117,17 +117,17 @@ const startFunction = async (
   await new Promise<void>((resolve, reject) => {
     const server = app.listen(port, () => {
       log.info(`function:${service.name} listening on ${port}`);
-      functionServers.set(service.name, server);
       resolve();
     }) as HttpServer & { on?: (event: string, cb: (err: Error) => void) => void };
 
     if (server?.on) {
       server.on('error', (err) => {
         log.error(`function:${service.name} failed to start`, err);
-        functionServers.delete(service.name);
         reject(err);
       });
     }
+
+    functionServers.set(service.name, server);
   });
 
   return { name: service.name, port };
@@ -156,7 +156,7 @@ type JobRunner = {
 };
 
 const listenApp = async (
-  app: { listen: (...args: any[]) => HttpServer },
+  app: { listen: (port: number, host?: string) => HttpServer },
   port: number,
   host?: string
 ): Promise<HttpServer> =>
