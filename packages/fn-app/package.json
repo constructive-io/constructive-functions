@@ -1,8 +1,8 @@
 {
   "name": "@constructive-io/knative-job-fn",
-  "version": "1.1.0",
+  "version": "1.4.3",
   "description": "Express app factory for Knative job functions with callback handling",
-  "author": "Constructive",
+  "author": "Constructive <developers@constructive.io>",
   "private": true,
   "main": "dist/index.js",
   "scripts": {
@@ -12,15 +12,13 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
-    "@pgpmjs/logger": "^2.1.0",
-    "body-parser": "1.19.0",
+    "@pgpmjs/logger": "^2.4.3",
     "express": "5.2.1"
   },
   "devDependencies": {
-    "@types/body-parser": "^1.19.5",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.4",
-    "makage": "^0.1.10",
+    "makage": "^0.1.12",
     "typescript": "^5.1.6"
   }
 }

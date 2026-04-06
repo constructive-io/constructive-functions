@@ -3,7 +3,6 @@ import https from 'node:https';
 import { URL } from 'node:url';
 
 import { createLogger } from '@pgpmjs/logger';
-import bodyParser from 'body-parser';
 import express from 'express';
 import type { Server as HttpServer } from 'http';
 
@@ -132,7 +131,7 @@ const logger = createLogger('knative-job-fn');
 const createJobApp = () => {
   const app: any = express();
 
-  app.use(bodyParser.json());
+  app.use(express.json());
 
   // Basic request logging for all incoming job invocations.
   app.use((req: any, res: any, next: any) => {

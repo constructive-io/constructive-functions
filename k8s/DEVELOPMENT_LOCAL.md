@@ -1,6 +1,6 @@
 # Local Kubernetes Setup (No Ingress, With Knative)
 
-This document describes a local Kubernetes setup for the Constructive / LaunchQL stack that:
+This document describes a local Kubernetes setup for the Constructive stack that:
 
 - Runs on a local cluster (kind, minikube, k3d, etc.).
 - Uses a single Postgres Deployment (no CNPG operator).
@@ -128,4 +128,4 @@ kubectl -n interweb port-forward svc/pgadmin 3001:80
 ```
 
 With these steps, you have a fully functional local Kubernetes environment for
-the Constructive / LaunchQL stack using the `overlays/local` manifests.
+the Constructive stack using the `overlays/local` manifests.

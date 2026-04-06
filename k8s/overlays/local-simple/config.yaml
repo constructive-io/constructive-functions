@@ -11,7 +11,7 @@ data:
 
   PGHOST: "postgres.default.svc.cluster.local"
   PGPORT: "5432"
-  PGDATABASE: "launchql"
+  PGDATABASE: "constructive"
 
   API_ENABLE_META: "true"
   API_EXPOSED_SCHEMAS: "collections_public,meta_public"
