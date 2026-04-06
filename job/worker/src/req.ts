@@ -30,7 +30,7 @@ const getFunctionUrl = (fn: string): string => {
 
 interface RequestOptions {
   body: unknown;
-  databaseId?: string;
+  databaseId: string;
   workerId: string;
   jobId: string | number;
 }
