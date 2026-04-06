@@ -1,4 +1,4 @@
-.PHONY: install build clean lint generate dev dev-fn dev-down dev-logs docker-build
+.PHONY: install build clean lint generate dev dev-fn dev-down dev-logs docker-build skaffold-dev skaffold-dev-knative
 
 install:
 	node --experimental-strip-types scripts/generate.ts
@@ -43,6 +43,10 @@ setup-check:
 # Plain k8s (Deployments + Services, no Knative operators needed)
 skaffold-dev:
 	skaffold dev -p local-simple
+
+# Single function: make skaffold-dev-simple-email
+skaffold-dev-%:
+	skaffold dev -p $*
 
 # Full Knative setup (requires: cd k8s && make operators-knative-only)
 skaffold-dev-knative:
