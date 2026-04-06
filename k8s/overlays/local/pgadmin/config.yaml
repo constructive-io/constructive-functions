@@ -11,7 +11,7 @@ data:
           "Group": "Constructive",
           "Host": "postgres.default.svc.cluster.local",
           "Port": 5432,
-          "MaintenanceDB": "launchql",
+          "MaintenanceDB": "constructive",
           "Username": "postgres",
           "Password": "postgres123!",
           "SSLMode": "prefer"
