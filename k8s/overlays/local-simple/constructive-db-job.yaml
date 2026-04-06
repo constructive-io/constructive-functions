@@ -30,20 +30,13 @@ spec:
               pgpm admin-users bootstrap --yes
               pgpm admin-users add --test --yes
 
-              echo "Deploying Services"
-              pgpm deploy --yes --database "$PGDATABASE" --package app-svc-prod
+              echo "Deploying constructive-local (services + database record)"
+              pgpm deploy --yes --database "$PGDATABASE" --package constructive-local
 
-              export CONSTRUCTIVE_DOMAIN="${CONSTRUCTIVE_DOMAIN:-localhost}"
-              echo "Rename domains to ${CONSTRUCTIVE_DOMAIN}"
-              psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 \
-                -c "BEGIN;
-                    UPDATE services_public.domains
-                      SET domain = '${CONSTRUCTIVE_DOMAIN}'
-                    WHERE domain = ANY(ARRAY['lql.io', 'constructive.io', 'dbe.la', 'localhost']);
-                    COMMIT;"
-
-              echo "Continue with db-meta and pgpm-database-jobs"
+              echo "Deploying metaschema"
               pgpm deploy --yes --database "$PGDATABASE" --package metaschema
+
+              echo "Deploying pgpm-database-jobs"
               pgpm deploy --yes --database "$PGDATABASE" --package pgpm-database-jobs
 
               echo "Done"
