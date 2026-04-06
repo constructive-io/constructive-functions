@@ -52,9 +52,11 @@ spec:
         - name: MAILGUN_REPLY
           value: "support@mg.constructive.io"
         - name: GRAPHQL_URL
-          value: "http://constructive-server.interweb.svc.cluster.local:3000/graphql"
+          value: "http://constructive-server-admin.interweb.svc.cluster.local:3000/graphql"
         - name: META_GRAPHQL_URL
           value: "http://constructive-server-admin.interweb.svc.cluster.local:3000/graphql"
+        - name: GRAPHQL_API_NAME
+          value: "private"
 
         resources:
           requests:

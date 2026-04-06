@@ -34,13 +34,13 @@ spec:
             - name: LOG_LEVEL
               value: "info"
             - name: GRAPHQL_URL
-              value: "http://constructive-server.default.svc.cluster.local:3000/graphql"
+              value: "http://constructive-server-admin.default.svc.cluster.local:3000/graphql"
             - name: META_GRAPHQL_URL
-              value: "http://constructive-server.default.svc.cluster.local:3000/graphql"
+              value: "http://constructive-server-admin.default.svc.cluster.local:3000/graphql"
             - name: GRAPHQL_API_NAME
               value: "private"
             - name: DEFAULT_DATABASE_ID
-              value: "dbe"
+              value: "constructive"
             - name: MAILGUN_FROM
               value: "no-reply@mg.constructive.io"
             - name: MAILGUN_REPLY
