@@ -1,6 +1,6 @@
 {
   "name": "@constructive-io/knative-job-fn",
-  "version": "1.4.3",
+  "version": "1.5.2",
   "description": "Express app factory for Knative job functions with callback handling",
   "author": "Constructive <developers@constructive.io>",
   "private": true,
