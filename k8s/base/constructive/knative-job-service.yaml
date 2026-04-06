@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: knative-job-service
-          image: ghcr.io/constructive-io/constructive:latest
+          image: ghcr.io/constructive-io/constructive:7bcede2
           imagePullPolicy: Always
 
           # Run the knative job service entrypoint from the root image
