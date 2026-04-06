@@ -20,6 +20,7 @@ interface FunctionManifest {
   version: string;
   description?: string;
   type?: string;
+  port?: number;
   dependencies?: Record<string, string>;
 }
 
@@ -233,6 +234,39 @@ function main(): void {
         if (linked) console.log(`    - ${file} -> functions/${fnName}/${file}`);
       }
     }
+  }
+
+  // --- Write functions manifest ---
+  const allManifests: FunctionManifest[] = [];
+  for (const fnName of functions) {
+    const fnDir = path.join(FUNCTIONS_DIR, fnName);
+    allManifests.push(readManifest(fnDir));
+  }
+
+  // Auto-assign ports for functions that don't have one
+  const usedPorts = new Set(allManifests.filter((m) => m.port).map((m) => m.port!));
+  let nextPort = usedPorts.size > 0 ? Math.max(...usedPorts) + 1 : 8081;
+  for (const m of allManifests) {
+    if (!m.port) {
+      while (usedPorts.has(nextPort)) nextPort++;
+      m.port = nextPort;
+      usedPorts.add(nextPort);
+      nextPort++;
+    }
+  }
+
+  const manifestData = {
+    functions: allManifests.map((m) => ({
+      name: m.name,
+      dir: functions[allManifests.indexOf(m)],
+      port: m.port,
+    })),
+  };
+
+  const manifestPath = path.join(GENERATED_DIR, 'functions-manifest.json');
+  const manifestContent = JSON.stringify(manifestData, null, 2) + '\n';
+  if (writeIfChanged(manifestPath, manifestContent)) {
+    console.log('  Updated generated/functions-manifest.json');
   }
 
   console.log('Done.');
