@@ -1,6 +1,6 @@
 {
   "name": "@constructive-io/knative-job-worker",
-  "version": "2.5.5",
+  "version": "2.7.8",
   "description": "Job worker that polls PostgreSQL and dispatches to Knative functions",
   "author": "Constructive <developers@constructive.io>",
   "private": true,
@@ -16,8 +16,8 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
-    "@constructive-io/job-pg": "^2.4.4",
-    "@constructive-io/job-utils": "^2.4.4",
+    "@constructive-io/job-pg": "^2.5.4",
+    "@constructive-io/job-utils": "^2.5.4",
     "@pgpmjs/logger": "^2.4.3",
     "pg": "8.20.0"
   },

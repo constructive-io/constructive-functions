@@ -26,7 +26,7 @@ spec:
 
       containers:
       - name: function
-        image: ghcr.io/constructive-io/constructive:7bcede2
+        image: ghcr.io/constructive-io/constructive:e0b55cc
         imagePullPolicy: Always
 
         command: ["node"]

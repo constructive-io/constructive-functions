@@ -138,10 +138,10 @@ importers:
   job/server:
     dependencies:
       '@constructive-io/job-pg':
-        specifier: ^2.4.4
+        specifier: ^2.5.4
         version: 2.5.4
       '@constructive-io/job-utils':
-        specifier: ^2.4.4
+        specifier: ^2.5.4
         version: 2.5.4
       '@pgpmjs/logger':
         specifier: ^2.4.3
@@ -175,13 +175,13 @@ importers:
   job/service:
     dependencies:
       '@constructive-io/job-pg':
-        specifier: ^2.4.4
+        specifier: ^2.5.4
         version: 2.5.4
       '@constructive-io/job-scheduler':
-        specifier: ^2.4.4
+        specifier: ^2.5.4
         version: 2.5.4
       '@constructive-io/job-utils':
-        specifier: ^2.4.4
+        specifier: ^2.5.4
         version: 2.5.4
       '@constructive-io/knative-job-fn':
         specifier: workspace:^
@@ -193,10 +193,10 @@ importers:
         specifier: workspace:^
         version: link:../worker
       '@constructive-io/send-email-link-fn':
-        specifier: ^2.5.1
+        specifier: ^2.6.4
         version: 2.6.4(@babel/core@7.28.5)(graphql@16.12.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       '@constructive-io/simple-email-fn':
-        specifier: ^1.5.3
+        specifier: ^1.6.4
         version: 1.6.4
       '@pgpmjs/env':
         specifier: ^2.15.3
@@ -230,10 +230,10 @@ importers:
   job/worker:
     dependencies:
       '@constructive-io/job-pg':
-        specifier: ^2.4.4
+        specifier: ^2.5.4
         version: 2.5.4
       '@constructive-io/job-utils':
-        specifier: ^2.4.4
+        specifier: ^2.5.4
         version: 2.5.4
       '@pgpmjs/logger':
         specifier: ^2.4.3

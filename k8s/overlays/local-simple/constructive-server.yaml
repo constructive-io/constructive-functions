@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: ghcr.io/constructive-io/constructive:7bcede2
+          image: ghcr.io/constructive-io/constructive:e0b55cc
           imagePullPolicy: IfNotPresent
           command: ["cnc"]
           args: ["server", "--port", "3000", "--origin", "*", "--strictAuth", "false"]
@@ -59,7 +59,7 @@ spec:
               cpu: "300m"
               memory: "512Mi"
         - name: explorer
-          image: ghcr.io/constructive-io/constructive:7bcede2
+          image: ghcr.io/constructive-io/constructive:e0b55cc
           imagePullPolicy: IfNotPresent
           command: ["cnc"]
           args: ["explorer", "--port", "3001", "--origin", "*"]

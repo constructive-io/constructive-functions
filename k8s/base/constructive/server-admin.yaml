@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: ghcr.io/constructive-io/constructive:7bcede2
+          image: ghcr.io/constructive-io/constructive:e0b55cc
           imagePullPolicy: Always
           command: ["cnc"]
           args: ["server", "--port", "3000", "--origin", "*", "--strictAuth", "false"]
