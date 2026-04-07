@@ -19,8 +19,8 @@ COPY job/service/package.json job/service/
 # Copy function handler.json manifests
 COPY functions/ functions/
 
-# Generate workspace packages + install deps
-RUN node --experimental-strip-types scripts/generate.ts && pnpm install --frozen-lockfile
+# Generate workspace packages only (skips skaffold/k8s config) + install deps
+RUN node --experimental-strip-types scripts/generate.ts --packages-only && pnpm install --frozen-lockfile
 
 # Copy source and build
 COPY . .
