@@ -8,6 +8,8 @@ type FunctionContext = {
   };
   client: { request: (...args: any[]) => Promise<any> };
   meta: { request: (...args: any[]) => Promise<any> };
+  getQueryBuilder: () => Promise<any>;
+  getMetaQueryBuilder: () => Promise<any>;
   log: {
     info: (...args: any[]) => void;
     error: (...args: any[]) => void;
@@ -37,6 +39,8 @@ export const createMockContext = (
   meta: {
     request: jest.fn().mockResolvedValue(options.metaResponse ?? {})
   } as any,
+  getQueryBuilder: jest.fn().mockRejectedValue(new Error('QueryBuilder not available in tests')),
+  getMetaQueryBuilder: jest.fn().mockRejectedValue(new Error('MetaQueryBuilder not available in tests')),
   log: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
   env: options.env ?? {}
 });

@@ -13,6 +13,7 @@
   "dependencies": {
     "@constructive-io/knative-job-fn": "workspace:^",
     "@pgpmjs/logger": "^2.4.3",
+    "@constructive-io/graphql-query": "^3.12.17",
     "graphql-request": "^7.1.2"
   },
   "devDependencies": {
