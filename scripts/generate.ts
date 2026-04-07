@@ -28,6 +28,7 @@ interface FunctionManifest {
 
 const onlyArg = process.argv.find((a: string) => a.startsWith('--only='));
 const onlyName: string | undefined = onlyArg?.split('=')[1];
+const packagesOnly: boolean = process.argv.includes('--packages-only');
 
 // --- Discovery ---
 
@@ -513,6 +514,13 @@ function main(): void {
         if (linked) console.log(`    - ${file} -> functions/${fnName}/${file}`);
       }
     }
+  }
+
+  // --packages-only: stop here, only workspace packages were needed
+  // (used by Dockerfile.dev for the early pnpm install cache layer)
+  if (packagesOnly) {
+    console.log('Done (--packages-only).');
+    return;
   }
 
   // --- Write functions manifest ---
