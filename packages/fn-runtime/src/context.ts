@@ -1,5 +1,6 @@
 import { createLogger } from '@pgpmjs/logger';
 import { createClients } from './graphql';
+import { getQueryBuilder } from './query-builder';
 import type { FunctionContext } from './types';
 
 type RequestHeaders = {
@@ -44,10 +45,15 @@ export const buildContext = (
     meta = stub;
   }
 
+  const graphqlUrl = env.GRAPHQL_URL || '';
+  const metaGraphqlUrl = env.META_GRAPHQL_URL || graphqlUrl;
+
   return {
     job: { jobId, workerId, databaseId },
     client,
     meta,
+    getQueryBuilder: () => getQueryBuilder(client, `client:${graphqlUrl}`),
+    getMetaQueryBuilder: () => getQueryBuilder(meta, `meta:${metaGraphqlUrl}`),
     log,
     env
   };

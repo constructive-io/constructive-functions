@@ -1,4 +1,5 @@
 import type { GraphQLClient } from 'graphql-request';
+import type { QueryBuilder } from '@constructive-io/graphql-query';
 
 export type FunctionHandler<P = unknown, R = unknown> = (
   params: P,
@@ -13,6 +14,8 @@ export type FunctionContext = {
   };
   client: GraphQLClient;
   meta: GraphQLClient;
+  getQueryBuilder: () => Promise<QueryBuilder>;
+  getMetaQueryBuilder: () => Promise<QueryBuilder>;
   log: { info: (...args: any[]) => void; error: (...args: any[]) => void; warn: (...args: any[]) => void };
   env: Record<string, string | undefined>;
 };

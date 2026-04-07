@@ -1,49 +1,52 @@
 import type { FunctionHandler } from '@constructive-io/fn-runtime';
 import type { GraphQLClient } from 'graphql-request';
-import gql from 'graphql-tag';
+import type { QueryBuilder } from '@constructive-io/graphql-query';
 import { generate } from '@launchql/mjml';
 import { send as sendPostmaster } from '@constructive-io/postmaster';
 import { send as sendSmtp } from 'simple-smtp-server';
 import { parseEnvBoolean } from '@pgpmjs/env';
 
-const GetUser = gql`
-  query GetUser($userId: UUID!) {
-    user(id: $userId) {
-      username
-      displayName
-      profilePicture
-    }
-  }
-`;
-
-const GetDatabaseInfo = gql`
-  query GetDatabaseInfo($databaseId: UUID!) {
-    database(id: $databaseId) {
-      sites {
-        nodes {
-          domains {
-            nodes {
-              subdomain
-              domain
+function buildGetDatabaseInfoQuery(qb: QueryBuilder) {
+  return qb.query('Database').getOne({
+    select: {
+      sites: {
+        select: {
+          logo: true,
+          title: true,
+          domains: {
+            select: {
+              subdomain: true,
+              domain: true
             }
-          }
-          logo
-          title
-          siteThemes {
-            nodes {
-              theme
+          },
+          siteThemes: {
+            select: {
+              theme: true
             }
-          }
-          siteModules(condition: { name: "legal_terms_module" }) {
-            nodes {
-              data
+          },
+          siteModules: {
+            select: {
+              data: true
+            },
+            variables: {
+              condition: { name: 'legal_terms_module' }
             }
           }
         }
       }
     }
-  }
-`;
+  }).print();
+}
+
+function buildGetUserQuery(qb: QueryBuilder) {
+  return qb.query('User').getOne({
+    select: {
+      username: true,
+      displayName: true,
+      profilePicture: true
+    }
+  }).print();
+}
 
 type SendEmailParams = {
   email_type: 'invite_email' | 'forgot_password' | 'email_verification';
@@ -60,6 +63,8 @@ type SendEmailParams = {
 type SendEmailContext = {
   client: GraphQLClient;
   meta: GraphQLClient;
+  getQueryBuilder: () => Promise<QueryBuilder>;
+  getMetaQueryBuilder: () => Promise<QueryBuilder>;
   databaseId: string;
   env: Record<string, string | undefined>;
   log: { info: (...args: any[]) => void };
@@ -69,7 +74,7 @@ const sendEmailLink = async (
   params: SendEmailParams,
   context: SendEmailContext
 ) => {
-  const { client, meta, databaseId, env, log } = context;
+  const { client, meta, getQueryBuilder, getMetaQueryBuilder, databaseId, env, log } = context;
   const isDryRun = parseEnvBoolean(env.SEND_EMAIL_LINK_DRY_RUN) ?? false;
   const useSmtp = parseEnvBoolean(env.EMAIL_SEND_USE_SMTP) ?? false;
 
@@ -107,8 +112,10 @@ const sendEmailLink = async (
     return typeValidation;
   }
 
-  const databaseInfo = await meta.request<any>(GetDatabaseInfo, {
-    databaseId
+  const metaQb = await getMetaQueryBuilder();
+  const dbQuery = buildGetDatabaseInfoQuery(metaQb);
+  const databaseInfo = await meta.request<any>(dbQuery._ast, {
+    id: databaseId
   });
 
   const site = databaseInfo?.database?.sites?.nodes?.[0];
@@ -174,8 +181,10 @@ const sendEmailLink = async (
       const scope = Number(params.invite_type) === 2 ? 'org' : 'app';
       url.searchParams.append('type', scope);
 
-      const inviter = await client.request<any>(GetUser, {
-        userId: params.sender_id
+      const clientQb = await getQueryBuilder();
+      const userQuery = buildGetUserQuery(clientQb);
+      const inviter = await client.request<any>(userQuery._ast, {
+        id: params.sender_id
       });
       inviterName = inviter?.user?.displayName;
 
@@ -270,7 +279,7 @@ const sendEmailLink = async (
 };
 
 const handler: FunctionHandler<SendEmailParams> = async (params, context) => {
-  const { client, meta, job, log, env } = context;
+  const { client, meta, getQueryBuilder, getMetaQueryBuilder, job, log, env } = context;
 
   const databaseId = job.databaseId;
   if (!databaseId) {
@@ -285,6 +294,8 @@ const handler: FunctionHandler<SendEmailParams> = async (params, context) => {
   const result = await sendEmailLink(params, {
     client,
     meta,
+    getQueryBuilder,
+    getMetaQueryBuilder,
     databaseId,
     env,
     log
