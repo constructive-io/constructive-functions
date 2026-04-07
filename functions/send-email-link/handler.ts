@@ -13,25 +13,12 @@ function buildGetDatabaseInfoQuery(qb: QueryBuilder) {
         select: {
           logo: true,
           title: true,
-          domains: {
-            select: {
-              subdomain: true,
-              domain: true
-            }
-          },
-          siteThemes: {
-            select: {
-              theme: true
-            }
-          },
-          siteModules: {
-            select: {
-              data: true
-            },
-            variables: {
-              condition: { name: 'legal_terms_module' }
-            }
-          }
+          domains: true,
+          siteThemes: true,
+          siteModules: true
+        },
+        variables: {
+          condition: { name: 'legal_terms_module' }
         }
       }
     }
