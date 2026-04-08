@@ -104,6 +104,34 @@ importers:
         specifier: ^5.1.6
         version: 5.9.3
 
+  generated/rag-embedding-sql:
+    dependencies:
+      '@agentic-kit/ollama':
+        specifier: ^1.0.3
+        version: 1.0.3
+      '@constructive-io/knative-job-fn':
+        specifier: workspace:^
+        version: link:../../packages/fn-app
+      '@pgpmjs/logger':
+        specifier: ^1.0.0
+        version: 1.5.0
+      pg:
+        specifier: ^8.11.0
+        version: 8.20.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.16.0
+      makage:
+        specifier: ^0.1.10
+        version: 0.1.12
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+
   generated/send-email-link:
     dependencies:
       '@constructive-io/fn-runtime':
@@ -1205,6 +1233,9 @@ packages:
 
   '@pgpmjs/env@2.17.0':
     resolution: {integrity: sha512-3WPwJ4prFWGGIRzyR52/JG84hM+Qe6lVtQ+bcCpGnGuhukFowALpaegRZxi3LT/pO6D8wW1Y3nW9LugfJLO6KQ==}
+
+  '@pgpmjs/logger@1.5.0':
+    resolution: {integrity: sha512-R27o5MiOsezI5rAWdJyuOkWUK6zxr8Mg61hPs7uCu//sECoprR4/7CVeFIHwn7+gyrjUk0wBz0dQcJhjYzVDpw==}
 
   '@pgpmjs/logger@2.5.2':
     resolution: {integrity: sha512-e9Z2Woju+fcsC0nm9KwEgOXZqm8UcrrxVEPbunXo6kpROpIQkBRg3RVU9xCxSHQ6xiko4r9YFXs370EW6kIUsQ==}
@@ -4034,9 +4065,6 @@ packages:
     peerDependencies:
       pg: '>=8.0'
 
-  pg-protocol@1.11.0:
-    resolution: {integrity: sha512-pfsxk2M9M3BuGgDOfuy37VNRRX3jmKgMjcvAcWqNDpZSf4cUmv8HSOl5ViRQFsfARFn0KuUQTgLxVMbNq5NW3g==}
-
   pg-protocol@1.13.0:
     resolution: {integrity: sha512-zzdvXfS6v89r6v7OcFCHfHlyG/wvry1ALxZo4LqgUoy7W9xhBDMaqOuMiF3qEV45VqsN6rdlcehHrfDtlCPc8w==}
 
@@ -6258,6 +6286,10 @@ snapshots:
       '@pgpmjs/types': 2.21.0
       deepmerge: 4.3.1
 
+  '@pgpmjs/logger@1.5.0':
+    dependencies:
+      yanse: 0.2.1
+
   '@pgpmjs/logger@2.5.2':
     dependencies:
       yanse: 0.2.1
@@ -7054,7 +7086,7 @@ snapshots:
   '@types/pg@8.16.0':
     dependencies:
       '@types/node': 22.19.3
-      pg-protocol: 1.11.0
+      pg-protocol: 1.13.0
       pg-types: 2.2.0
 
   '@types/pluralize@0.0.33': {}
@@ -9692,8 +9724,6 @@ snapshots:
   pg-pool@3.13.0(pg@8.20.0):
     dependencies:
       pg: 8.20.0
-
-  pg-protocol@1.11.0: {}
 
   pg-protocol@1.13.0: {}
 

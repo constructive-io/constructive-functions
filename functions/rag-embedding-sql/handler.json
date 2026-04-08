@@ -1,0 +1,9 @@
+{
+  "name": "rag-embedding-sql",
+  "version": "1.0.0",
+  "type": "node-sql",
+  "description": "RAG embedding function using direct SQL - demonstrates node-sql template with user context",
+  "dependencies": {
+    "@agentic-kit/ollama": "^1.0.3"
+  }
+}
