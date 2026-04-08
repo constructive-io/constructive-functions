@@ -128,7 +128,7 @@ function chunkByParagraph(text: string, chunkSize: number, chunkOverlap: number)
 }
 
 const handler: FunctionHandler<GenerateChunksParams> = async (params, context) => {
-  const { job, log, env } = context;
+  const { job, log, env, client } = context;
 
   const databaseId = job.databaseId;
   if (!databaseId) {
@@ -177,7 +177,7 @@ const handler: FunctionHandler<GenerateChunksParams> = async (params, context) =
 
   // Fetch schema introspection to get table metadata
   log.info('[rag-embedding] Fetching schema introspection');
-  const introspectionResult = await context.request<IntrospectionQueryResponse>(SCHEMA_INTROSPECTION_QUERY, undefined, schemaHeaders);
+  const introspectionResult = await client.request<IntrospectionQueryResponse>(SCHEMA_INTROSPECTION_QUERY, undefined, schemaHeaders);
   const tables = inferTablesFromIntrospection(introspectionResult);
 
   // Find tables by query field name (plural camelCase, e.g., "articles")
@@ -220,7 +220,7 @@ const handler: FunctionHandler<GenerateChunksParams> = async (params, context) =
     fieldSelection: { select: ['id', 'content'] }
   });
 
-  const contentResult = await context.request<{
+  const contentResult = await client.request<{
     [key: string]: { nodes: Array<{ id: string; content: string }> } | null
   }>(getContentQuery.toString(), { where: { id: { equalTo: id } } }, schemaHeaders);
 
@@ -243,7 +243,7 @@ const handler: FunctionHandler<GenerateChunksParams> = async (params, context) =
       where: {},
       fieldSelection: { select: ['id'] }
     });
-    const chunksResult = await context.request<{
+    const chunksResult = await client.request<{
       [key: string]: { nodes: Array<{ id: string }> } | null
     }>(getChunksQuery.toString(), { where: { [parentFkFieldName]: { equalTo: id } } }, schemaHeaders);
 
@@ -252,7 +252,7 @@ const handler: FunctionHandler<GenerateChunksParams> = async (params, context) =
     // Delete each chunk by ID using buildPostGraphileDelete
     const deleteMutation = buildPostGraphileDelete(chunksTable, tables);
     for (const chunk of existingChunks) {
-      await context.request(deleteMutation.toString(), { input: { id: chunk.id } }, schemaHeaders);
+      await client.request(deleteMutation.toString(), { input: { id: chunk.id } }, schemaHeaders);
     }
 
     if (existingChunks.length > 0) {
@@ -288,7 +288,7 @@ const handler: FunctionHandler<GenerateChunksParams> = async (params, context) =
     }
 
     try {
-      const result = await context.request<{
+      const result = await client.request<{
         [key: string]: { [key: string]: { id: string } }
       }>(insertMutation.toString(), {
         input: {

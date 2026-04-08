@@ -48,12 +48,6 @@ export const buildContext = (
     job: { jobId, workerId, databaseId },
     client,
     meta,
-    request: async (document, variables, headers) => {
-      return client.request(document, variables, headers);
-    },
-    metaRequest: async (document, variables, headers) => {
-      return meta.request(document, variables, headers);
-    },
     log,
     env
   };
