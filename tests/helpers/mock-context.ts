@@ -8,6 +8,8 @@ type FunctionContext = {
   };
   client: { request: (...args: any[]) => Promise<any> };
   meta: { request: (...args: any[]) => Promise<any> };
+  request: (...args: any[]) => Promise<any>;
+  metaRequest: (...args: any[]) => Promise<any>;
   log: {
     info: (...args: any[]) => void;
     error: (...args: any[]) => void;
@@ -25,18 +27,21 @@ type MockContextOptions = {
 
 export const createMockContext = (
   options: MockContextOptions = {}
-): FunctionContext => ({
-  job: {
-    jobId: 'test-job',
-    workerId: 'test-worker',
-    databaseId: 'databaseId' in options ? options.databaseId : 'test-db'
-  },
-  client: {
-    request: jest.fn().mockResolvedValue(options.clientResponse ?? {})
-  } as any,
-  meta: {
-    request: jest.fn().mockResolvedValue(options.metaResponse ?? {})
-  } as any,
-  log: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
-  env: options.env ?? {}
-});
+): FunctionContext => {
+  const clientRequest = jest.fn().mockResolvedValue(options.clientResponse ?? {});
+  const metaRequest = jest.fn().mockResolvedValue(options.metaResponse ?? {});
+
+  return {
+    job: {
+      jobId: 'test-job',
+      workerId: 'test-worker',
+      databaseId: 'databaseId' in options ? options.databaseId : 'test-db'
+    },
+    client: { request: clientRequest } as any,
+    meta: { request: metaRequest } as any,
+    request: clientRequest,
+    metaRequest: metaRequest,
+    log: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
+    env: options.env ?? {}
+  };
+};

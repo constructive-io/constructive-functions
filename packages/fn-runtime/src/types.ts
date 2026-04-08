@@ -20,7 +20,7 @@ export type FunctionContext = {
   request: <T = unknown>(
     document: RequestDocument,
     variables?: Variables,
-    headers?: Record<string, string>
+    headers?: HeadersInit
   ) => Promise<T>;
   /**
    * Make a GraphQL request to the meta endpoint with optional custom headers.
@@ -29,7 +29,7 @@ export type FunctionContext = {
   metaRequest: <T = unknown>(
     document: RequestDocument,
     variables?: Variables,
-    headers?: Record<string, string>
+    headers?: HeadersInit
   ) => Promise<T>;
   log: { info: (...args: any[]) => void; error: (...args: any[]) => void; warn: (...args: any[]) => void };
   env: Record<string, string | undefined>;
