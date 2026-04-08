@@ -16,6 +16,8 @@ profiles:
             manual:
               - src: 'functions/**/*.ts'
                 dest: /usr/src/app
+              - src: 'generated/**/*.ts'
+                dest: /usr/src/app
       local:
         push: false
     manifests:
@@ -33,6 +35,7 @@ profiles:
       rawYaml:
         - generated/simple-email/k8s/local-deployment.yaml
         - generated/send-email-link/k8s/local-deployment.yaml
+        - generated/rag-embedding/k8s/local-deployment.yaml
     deploy:
       kubectl:
         defaultNamespace: constructive-functions
@@ -47,6 +50,10 @@ profiles:
         namespace: constructive-functions
         port: 80
         localPort: 8082
+      - resourceType: service
+        resourceName: rag-embedding
+        port: 80
+        localPort: 8083
       - resourceType: service
         resourceName: knative-job-service
         port: 8080

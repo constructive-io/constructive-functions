@@ -1,31 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{name}}
+  name: rag-embedding
   labels:
-    app: {{name}}
+    app: rag-embedding
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{name}}
+      app: rag-embedding
   template:
     metadata:
       labels:
-        app: {{name}}
+        app: rag-embedding
     spec:
       containers:
-        - name: {{name}}
+        - name: rag-embedding
           image: constructive-functions:local
           command: ["npx"]
-          args: ["tsx", "--watch", "generated/{{name}}/index.ts"]
+          args: ["tsx", "--watch", "generated/rag-embedding/index.ts"]
           ports:
             - containerPort: 8080
           envFrom:
             - secretRef:
                 name: pg-credentials
-            - secretRef:
-                name: mailgun-credentials
           env:
             - name: PORT
               value: "8080"
@@ -34,23 +32,18 @@ spec:
             - name: LOG_LEVEL
               value: "info"
             - name: GRAPHQL_URL
-              value: "http://constructive-server-admin.constructive-functions.svc.cluster.local:3000/graphql"
+              value: "http://constructive-server-admin.default.svc.cluster.local:3000/graphql"
             - name: META_GRAPHQL_URL
-              value: "http://constructive-server-admin.constructive-functions.svc.cluster.local:3000/graphql"
+              value: "http://constructive-server-admin.default.svc.cluster.local:3000/graphql"
+            # Header-based routing for internal services
             - name: GRAPHQL_API_NAME
               value: "private"
-            - name: DEFAULT_DATABASE_ID
-              value: "constructive"
-            - name: MAILGUN_FROM
-              value: "no-reply@mg.constructive.io"
-            - name: MAILGUN_REPLY
-              value: "support@mg.constructive.io"
-            - name: SIMPLE_EMAIL_DRY_RUN
-              value: "true"
-            - name: SEND_EMAIL_LINK_DRY_RUN
-              value: "true"
+            # DATABASE_ID comes from X-Database-Id header in each job request
+            # Ollama running on host machine (macOS)
             - name: OLLAMA_URL
               value: "http://host.docker.internal:11434"
+            - name: EMBEDDING_MODEL
+              value: "nomic-embed-text:latest"
           resources:
             requests:
               memory: "128Mi"
@@ -62,10 +55,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{name}}
+  name: rag-embedding
 spec:
   selector:
-    app: {{name}}
+    app: rag-embedding
   ports:
     - port: 80
       targetPort: 8080

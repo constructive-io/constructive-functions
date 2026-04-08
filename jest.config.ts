@@ -23,7 +23,8 @@ const config: Config = {
       '<rootDir>/tests/__mocks__/@constructive-io/postmaster',
     '^simple-smtp-server$': '<rootDir>/tests/__mocks__/simple-smtp-server',
     '^@launchql/mjml$': '<rootDir>/tests/__mocks__/@launchql/mjml',
-    '^graphql-tag$': '<rootDir>/tests/__mocks__/graphql-tag'
+    '^graphql-tag$': '<rootDir>/tests/__mocks__/graphql-tag',
+    '^graphql-request$': '<rootDir>/tests/__mocks__/graphql-request'
   },
   testTimeout: 30000
 };
