@@ -24,6 +24,8 @@ RUN node --experimental-strip-types scripts/generate.ts && pnpm install --frozen
 
 # Copy source and build
 COPY . .
-RUN pnpm generate && pnpm build
+
+# Re-run install to fix symlinks after COPY, then generate and build
+RUN pnpm install --frozen-lockfile && pnpm generate && pnpm build
 
 ENV NODE_ENV=development

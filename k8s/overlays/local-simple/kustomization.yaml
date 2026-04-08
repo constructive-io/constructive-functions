@@ -4,6 +4,8 @@ kind: Kustomization
 namespace: constructive-functions
 
 resources:
+  # Namespace
+  - ./namespace.yaml
   # Infrastructure
   - ./postgres-local.yaml
   - ./minio-local.yaml
