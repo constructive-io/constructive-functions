@@ -36,7 +36,7 @@ spec:
             - name: JOBS_SUPPORT_ANY
               value: "false"
             - name: JOBS_SUPPORTED
-              value: "simple-email,send-email-link,rag-embedding"
+              value: "simple-email,send-email-link,rag-embedding,rag-embedding-sql"
             - name: JOBS_CALLBACK_HOST
               value: "knative-job-service.constructive-functions.svc.cluster.local"
             - name: JOBS_CALLBACK_BASE_URL
@@ -46,7 +46,7 @@ spec:
             - name: INTERNAL_GATEWAY_URL
               value: "http://simple-email.constructive-functions.svc.cluster.local"
             - name: INTERNAL_GATEWAY_DEVELOPMENT_MAP
-              value: '{"simple-email":"http://simple-email.constructive-functions.svc.cluster.local","send-email-link":"http://send-email-link.constructive-functions.svc.cluster.local","rag-embedding":"http://rag-embedding.constructive-functions.svc.cluster.local"}'
+              value: '{"simple-email":"http://simple-email.constructive-functions.svc.cluster.local","send-email-link":"http://send-email-link.constructive-functions.svc.cluster.local","rag-embedding":"http://rag-embedding.constructive-functions.svc.cluster.local","rag-embedding-sql":"http://rag-embedding-sql.constructive-functions.svc.cluster.local"}'
             - name: HOSTNAME
               valueFrom:
                 fieldRef:

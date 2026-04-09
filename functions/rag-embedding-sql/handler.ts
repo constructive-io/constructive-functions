@@ -11,7 +11,7 @@ type Params = {
   chunk_size?: string;
   chunk_overlap?: string;
   chunk_strategy?: 'fixed' | 'sentence' | 'paragraph';
-  user_id?: string; // Optional: for user context
+  actor_id?: string; // Optional: user ID for RLS context (from jwt_public.current_user_id())
 };
 
 type Result = {
@@ -20,10 +20,10 @@ type Result = {
   chunk_ids?: string[];
 };
 
-// Helper: execute with user context (RLS)
+// Helper: execute with actor context (RLS)
 async function withUserContext<T>(
   pool: import('pg').Pool,
-  userId: string | undefined,
+  actorId: string | undefined,
   databaseId: string | undefined,
   fn: (client: PoolClient) => Promise<T>
 ): Promise<T> {
@@ -31,12 +31,12 @@ async function withUserContext<T>(
   try {
     await client.query('BEGIN');
 
-    // Set user context for RLS policies
+    // Set actor context for RLS policies
     if (databaseId) {
       await client.query(`SELECT set_config('jwt.claims.database_id', $1, true)`, [databaseId]);
     }
-    if (userId) {
-      await client.query(`SELECT set_config('jwt.claims.user_id', $1, true)`, [userId]);
+    if (actorId) {
+      await client.query(`SELECT set_config('jwt.claims.user_id', $1, true)`, [actorId]);
       await client.query('SET LOCAL ROLE authenticated');
     }
 
@@ -155,7 +155,7 @@ const handler: FunctionHandler<Params, Result> = async (params, context) => {
     chunk_size,
     chunk_overlap,
     chunk_strategy,
-    user_id,
+    actor_id,
   } = params;
 
   if (!table || !schema || !id || !chunks_table) {
@@ -167,7 +167,7 @@ const handler: FunctionHandler<Params, Result> = async (params, context) => {
   const strategy = chunk_strategy || 'fixed';
 
   log.info('[rag-embedding-sql] Processing', {
-    table, schema, id, chunks_table, chunkSize, chunkOverlap, strategy, user_id
+    table, schema, id, chunks_table, chunkSize, chunkOverlap, strategy, actor_id
   });
 
   // Initialize Ollama client
@@ -175,14 +175,14 @@ const handler: FunctionHandler<Params, Result> = async (params, context) => {
   const embeddingModel = env.EMBEDDING_MODEL || 'nomic-embed-text:latest';
   const ollama = new OllamaClient(ollamaUrl);
 
-  // Execute with user context (RLS enforced)
-  const result = await withUserContext(pool, user_id, databaseId, async (client) => {
-    // Set search_path to the target schema
-    await client.query(`SET LOCAL search_path TO ${schema}, public`);
+  // Execute with actor context (RLS enforced)
+  const result = await withUserContext(pool, actor_id, databaseId, async (client) => {
+    // Set search_path to the target schema (quoted for names with special chars)
+    await client.query(`SET LOCAL search_path TO "${schema}", public`);
 
     // 1. Fetch content from parent table
     const contentResult = await client.query(
-      `SELECT content FROM ${table} WHERE id = $1`,
+      `SELECT content FROM "${table}" WHERE id = $1`,
       [id]
     );
 
@@ -199,7 +199,7 @@ const handler: FunctionHandler<Params, Result> = async (params, context) => {
     // 2. Delete existing chunks
     const parentFkColumn = `${table.replace(/_/g, '')}_id`; // e.g., articles -> articles_id
     await client.query(
-      `DELETE FROM ${chunks_table} WHERE ${parentFkColumn} = $1`,
+      `DELETE FROM "${chunks_table}" WHERE "${parentFkColumn}" = $1`,
       [id]
     );
     log.info('[rag-embedding-sql] Deleted existing chunks', { id });
@@ -229,7 +229,7 @@ const handler: FunctionHandler<Params, Result> = async (params, context) => {
 
       // Insert chunk with pgvector embedding
       const insertResult = await client.query(
-        `INSERT INTO ${chunks_table} (${parentFkColumn}, content, chunk_index, embedding, metadata)
+        `INSERT INTO "${chunks_table}" ("${parentFkColumn}", content, chunk_index, embedding, metadata)
          VALUES ($1, $2, $3, $4::vector, $5)
          RETURNING id`,
         [

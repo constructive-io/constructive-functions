@@ -36,6 +36,7 @@ profiles:
         - generated/simple-email/k8s/local-deployment.yaml
         - generated/send-email-link/k8s/local-deployment.yaml
         - generated/rag-embedding/k8s/local-deployment.yaml
+        - generated/rag-embedding-sql/k8s/local-deployment.yaml
     deploy:
       kubectl:
         defaultNamespace: constructive-functions
@@ -54,6 +55,10 @@ profiles:
         resourceName: rag-embedding
         port: 80
         localPort: 8083
+      - resourceType: service
+        resourceName: rag-embedding-sql
+        port: 80
+        localPort: 8084
       - resourceType: service
         resourceName: knative-job-service
         port: 8080
