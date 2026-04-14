@@ -1,0 +1,17 @@
+{
+  "name": "@constructive-io/text-chunker",
+  "version": "1.0.0",
+  "description": "Text chunking utilities for RAG applications",
+  "author": "Constructive <developers@constructive.io>",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.4",
+    "typescript": "^5.1.6"
+  }
+}
