@@ -49,6 +49,8 @@ spec:
               value: "true"
             - name: SEND_EMAIL_LINK_DRY_RUN
               value: "true"
+            - name: OLLAMA_URL
+              value: "http://host.docker.internal:11434"
           resources:
             requests:
               memory: "128Mi"

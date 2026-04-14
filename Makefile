@@ -42,10 +42,12 @@ setup-check:
 # --- Skaffold k8s development ---
 # Plain k8s (Deployments + Services, no Knative operators needed)
 skaffold-dev:
+	kubectl create namespace constructive-functions --dry-run=client -o yaml | kubectl apply -f -
 	skaffold dev -p local-simple
 
 # Full Knative setup (requires: cd k8s && make operators-knative-only)
 skaffold-dev-knative:
+	kubectl create namespace constructive-functions --dry-run=client -o yaml | kubectl apply -f -
 	skaffold dev -p local
 
 # --- Docker image builds ---

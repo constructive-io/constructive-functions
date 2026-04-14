@@ -73,6 +73,40 @@ importers:
         specifier: ^5.1.6
         version: 5.9.3
 
+  generated/rag-embedding:
+    dependencies:
+      '@agentic-kit/ollama':
+        specifier: ^1.0.3
+        version: 1.0.3
+      '@constructive-io/knative-job-fn':
+        specifier: workspace:^
+        version: link:../../packages/fn-app
+      '@constructive-io/text-chunker':
+        specifier: workspace:^
+        version: link:../../packages/text-chunker
+      '@pgpmjs/logger':
+        specifier: ^1.0.0
+        version: 1.5.0
+      '@pgsql/quotes':
+        specifier: ^17.1.0
+        version: 17.1.0
+      pg:
+        specifier: ^8.11.0
+        version: 8.20.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.16.0
+      makage:
+        specifier: ^0.1.10
+        version: 0.1.12
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+
   generated/send-email-link:
     dependencies:
       '@constructive-io/fn-runtime':
@@ -95,10 +129,10 @@ importers:
         version: 2.5.2
       graphql-request:
         specifier: ^7.1.2
-        version: 7.4.0(graphql@16.12.0)
+        version: 7.4.0(graphql@16.13.0)
       graphql-tag:
         specifier: ^2.12.6
-        version: 2.12.6(graphql@16.12.0)
+        version: 2.12.6(graphql@16.13.0)
       simple-smtp-server:
         specifier: ^0.7.3
         version: 0.7.3
@@ -200,7 +234,7 @@ importers:
         version: link:../worker
       '@constructive-io/send-email-link-fn':
         specifier: ^2.6.4
-        version: 2.6.4(@babel/core@7.28.5)(graphql@16.12.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
+        version: 2.6.4(@babel/core@7.28.5)(graphql@16.13.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       '@constructive-io/simple-email-fn':
         specifier: ^1.6.4
         version: 1.6.4
@@ -293,7 +327,16 @@ importers:
         version: 2.5.2
       graphql-request:
         specifier: ^7.1.2
-        version: 7.4.0(graphql@16.12.0)
+        version: 7.4.0(graphql@16.13.0)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+
+  packages/text-chunker:
     devDependencies:
       '@types/node':
         specifier: ^22.10.4
@@ -306,6 +349,9 @@ packages:
 
   12factor-env@1.6.2:
     resolution: {integrity: sha512-U4EO6sy9Cc6h1ST3hhLD2rc2s4LERxProove3XZ52rMq2rTo5uTKWNKwD2OYDUwqNij+p5SgjmpPO6L/Gqtizw==}
+
+  '@agentic-kit/ollama@1.0.3':
+    resolution: {integrity: sha512-bvDMjofjgSTI8oLvFI/8ORQvO+wrwmdYETYCB1yAOSy622zB6DWYqk+ldK7mKjZ22iWrjkoWFEdSY7T9rYE1FA==}
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -884,11 +930,17 @@ packages:
   '@pgpmjs/env@2.17.0':
     resolution: {integrity: sha512-3WPwJ4prFWGGIRzyR52/JG84hM+Qe6lVtQ+bcCpGnGuhukFowALpaegRZxi3LT/pO6D8wW1Y3nW9LugfJLO6KQ==}
 
+  '@pgpmjs/logger@1.5.0':
+    resolution: {integrity: sha512-R27o5MiOsezI5rAWdJyuOkWUK6zxr8Mg61hPs7uCu//sECoprR4/7CVeFIHwn7+gyrjUk0wBz0dQcJhjYzVDpw==}
+
   '@pgpmjs/logger@2.5.2':
     resolution: {integrity: sha512-e9Z2Woju+fcsC0nm9KwEgOXZqm8UcrrxVEPbunXo6kpROpIQkBRg3RVU9xCxSHQ6xiko4r9YFXs370EW6kIUsQ==}
 
   '@pgpmjs/types@2.21.0':
     resolution: {integrity: sha512-aeMRRzBr2jsxodU7R6ltvWmsHViftVLt/D+5Z+nuyM4KPECCvM5l+Jp6niB0LMjpDW8/GG+C/45co00zAHAZGQ==}
+
+  '@pgsql/quotes@17.1.0':
+    resolution: {integrity: sha512-J/H+LcrENBpYgL45WW6aTjb5Yk4tX4+AmB2/k8KZa+Zh3wiCtqmNIag+HZz5HmWaF6EZK9ZGC95NBD1fs+rUvg==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -1470,6 +1522,9 @@ packages:
     resolution: {integrity: sha512-p0SaNjrHOnQeR8/VnfGbmg9te2kfyYSQ7Sc/j/6DtPL3JQvKxmjO9TSjNFpujqV3vEYYBvNNvXSxzyksBWAx1Q==}
     engines: {node: '>=12.0.0'}
 
+  cross-fetch@4.1.0:
+    resolution: {integrity: sha512-uKm5PU+MHTootlWEY+mZ4vvXoCn4fLQxT9dSc1sXVMSFkINTJVN8cAQROpwcKm8bJ/c7rgZVIBWzH5T78sNZZw==}
+
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
@@ -1922,8 +1977,8 @@ packages:
     peerDependencies:
       graphql: ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
 
-  graphql@16.12.0:
-    resolution: {integrity: sha512-DKKrynuQRne0PNpEbzuEdHlYOMksHSUI8Zc9Unei5gTsMNA2/vMpoMz/yKba50pejK56qj98qM0SjYxAKi13gQ==}
+  graphql@16.13.0:
+    resolution: {integrity: sha512-uSisMYERbaB9bkA9M4/4dnqyktaEkf1kMHNKq/7DHyxVeWqHQ2mBmVqm5u6/FVHwF3iCNalKcg82Zfl+tffWoA==}
     engines: {node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0}
 
   handlebars@4.7.8:
@@ -2690,9 +2745,6 @@ packages:
     peerDependencies:
       pg: '>=8.0'
 
-  pg-protocol@1.11.0:
-    resolution: {integrity: sha512-pfsxk2M9M3BuGgDOfuy37VNRRX3jmKgMjcvAcWqNDpZSf4cUmv8HSOl5ViRQFsfARFn0KuUQTgLxVMbNq5NW3g==}
-
   pg-protocol@1.13.0:
     resolution: {integrity: sha512-zzdvXfS6v89r6v7OcFCHfHlyG/wvry1ALxZo4LqgUoy7W9xhBDMaqOuMiF3qEV45VqsN6rdlcehHrfDtlCPc8w==}
 
@@ -3272,6 +3324,12 @@ snapshots:
     dependencies:
       envalid: 8.1.1
 
+  '@agentic-kit/ollama@1.0.3':
+    dependencies:
+      cross-fetch: 4.1.0
+    transitivePeerDependencies:
+      - encoding
+
   '@babel/code-frame@7.27.1':
     dependencies:
       '@babel/helper-validator-identifier': 7.28.5
@@ -3511,7 +3569,7 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@constructive-io/send-email-link-fn@2.6.4(@babel/core@7.28.5)(graphql@16.12.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)':
+  '@constructive-io/send-email-link-fn@2.6.4(@babel/core@7.28.5)(graphql@16.13.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)':
     dependencies:
       '@constructive-io/knative-job-fn': 1.5.2
       '@constructive-io/postmaster': 1.6.2
@@ -3519,8 +3577,8 @@ snapshots:
       '@launchql/styled-email': 0.1.0(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       '@pgpmjs/env': 2.17.0
       '@pgpmjs/logger': 2.5.2
-      graphql-request: 7.4.0(graphql@16.12.0)
-      graphql-tag: 2.12.6(graphql@16.12.0)
+      graphql-request: 7.4.0(graphql@16.13.0)
+      graphql-tag: 2.12.6(graphql@16.13.0)
       simple-smtp-server: 0.8.4
     transitivePeerDependencies:
       - '@babel/core'
@@ -3693,9 +3751,9 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@graphql-typed-document-node/core@3.2.0(graphql@16.12.0)':
+  '@graphql-typed-document-node/core@3.2.0(graphql@16.13.0)':
     dependencies:
-      graphql: 16.12.0
+      graphql: 16.13.0
 
   '@humanfs/core@0.19.1': {}
 
@@ -4001,6 +4059,10 @@ snapshots:
       '@pgpmjs/types': 2.21.0
       deepmerge: 4.3.1
 
+  '@pgpmjs/logger@1.5.0':
+    dependencies:
+      yanse: 0.2.1
+
   '@pgpmjs/logger@2.5.2':
     dependencies:
       yanse: 0.2.1
@@ -4008,6 +4070,8 @@ snapshots:
   '@pgpmjs/types@2.21.0':
     dependencies:
       pg-env: 1.8.2
+
+  '@pgsql/quotes@17.1.0': {}
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -4155,7 +4219,7 @@ snapshots:
   '@types/pg@8.16.0':
     dependencies:
       '@types/node': 22.19.3
-      pg-protocol: 1.11.0
+      pg-protocol: 1.13.0
       pg-types: 2.2.0
 
   '@types/qs@6.14.0': {}
@@ -4675,6 +4739,12 @@ snapshots:
     dependencies:
       luxon: 3.7.2
 
+  cross-fetch@4.1.0:
+    dependencies:
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
+
   cross-spawn@7.0.6:
     dependencies:
       path-key: 3.1.1
@@ -5183,17 +5253,17 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  graphql-request@7.4.0(graphql@16.12.0):
+  graphql-request@7.4.0(graphql@16.13.0):
     dependencies:
-      '@graphql-typed-document-node/core': 3.2.0(graphql@16.12.0)
-      graphql: 16.12.0
+      '@graphql-typed-document-node/core': 3.2.0(graphql@16.13.0)
+      graphql: 16.13.0
 
-  graphql-tag@2.12.6(graphql@16.12.0):
+  graphql-tag@2.12.6(graphql@16.13.0):
     dependencies:
-      graphql: 16.12.0
+      graphql: 16.13.0
       tslib: 2.8.1
 
-  graphql@16.12.0: {}
+  graphql@16.13.0: {}
 
   handlebars@4.7.8:
     dependencies:
@@ -6302,8 +6372,6 @@ snapshots:
   pg-pool@3.13.0(pg@8.20.0):
     dependencies:
       pg: 8.20.0
-
-  pg-protocol@1.11.0: {}
 
   pg-protocol@1.13.0: {}
 

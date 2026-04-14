@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-embedding
+  labels:
+    app: rag-embedding
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rag-embedding
+  template:
+    metadata:
+      labels:
+        app: rag-embedding
+    spec:
+      containers:
+        - name: rag-embedding
+          image: constructive-functions:local
+          command: ["npx"]
+          args: ["tsx", "--watch", "generated/rag-embedding/index.ts"]
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: pg-credentials
+          env:
+            - name: PORT
+              value: "8080"
+            - name: NODE_ENV
+              value: "development"
+            - name: LOG_LEVEL
+              value: "info"
+            # Ollama running on host machine (macOS)
+            - name: OLLAMA_URL
+              value: "http://host.docker.internal:11434"
+            - name: EMBEDDING_MODEL
+              value: "nomic-embed-text:latest"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rag-embedding
+spec:
+  selector:
+    app: rag-embedding
+  ports:
+    - port: 80
+      targetPort: 8080

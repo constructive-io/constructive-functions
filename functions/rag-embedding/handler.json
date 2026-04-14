@@ -1,0 +1,11 @@
+{
+  "name": "rag-embedding",
+  "version": "1.0.0",
+  "type": "node-sql",
+  "description": "RAG embedding function - chunks text and generates embeddings",
+  "dependencies": {
+    "@agentic-kit/ollama": "^1.0.3",
+    "@constructive-io/text-chunker": "workspace:^",
+    "@pgsql/quotes": "^17.1.0"
+  }
+}

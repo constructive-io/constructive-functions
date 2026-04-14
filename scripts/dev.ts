@@ -38,6 +38,9 @@ const sharedEnv: Record<string, string> = {
   SMTP_PORT: '1025',
   LOCAL_APP_PORT: '3000',
   SEND_EMAIL_LINK_DRY_RUN: 'true',
+  // Ollama (for rag-embedding)
+  OLLAMA_URL: 'http://localhost:11434',
+  EMBEDDING_MODEL: 'nomic-embed-text:latest',
 };
 
 // --- Process definitions ---
@@ -64,6 +67,11 @@ const allProcesses: ProcessDef[] = [
     script: path.resolve(ROOT, 'generated/send-email-link/dist/index.js'),
     port: 8082,
   },
+  {
+    name: 'rag-embedding',
+    script: path.resolve(ROOT, 'generated/rag-embedding/dist/index.js'),
+    port: 8083,
+  },
 ];
 
 // --- CLI args ---
@@ -87,6 +95,7 @@ function getJobServiceEnv(): Record<string, string> {
     INTERNAL_GATEWAY_DEVELOPMENT_MAP: JSON.stringify({
       'send-email-link': 'http://localhost:8082',
       'simple-email': 'http://localhost:8081',
+      'rag-embedding': 'http://localhost:8083',
     }),
   };
 }
