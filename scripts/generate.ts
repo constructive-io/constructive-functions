@@ -170,6 +170,27 @@ function ensureSymlink(target: string, linkPath: string): boolean {
   return true;
 }
 
+// Copy file if content differs (used for handler.ts to fix module resolution in Docker)
+function copyIfChanged(source: string, dest: string): boolean {
+  const content = fs.readFileSync(source, 'utf-8');
+
+  // Check if dest is a symlink first - always replace symlinks with actual files
+  try {
+    const stat = fs.lstatSync(dest);
+    if (stat.isSymbolicLink()) {
+      fs.unlinkSync(dest);
+    } else if (stat.isFile()) {
+      const existing = fs.readFileSync(dest, 'utf-8');
+      if (existing === content) return false;
+    }
+  } catch {
+    // dest doesn't exist - proceed with write
+  }
+
+  fs.writeFileSync(dest, content, 'utf-8');
+  return true;
+}
+
 // --- Main ---
 
 function main(): void {
@@ -217,11 +238,11 @@ function main(): void {
       if (changed) console.log(`    - ${relPath}`);
     }
 
-    // Symlink handler.ts
+    // Copy handler.ts (not symlink) to ensure module resolution works from generated/ dir
     const handlerTarget = path.join(fnDir, 'handler.ts');
     if (fs.existsSync(handlerTarget)) {
-      const linked = ensureSymlink(handlerTarget, path.join(genDir, 'handler.ts'));
-      if (linked) console.log(`    - handler.ts -> functions/${fnName}/handler.ts`);
+      const copied = copyIfChanged(handlerTarget, path.join(genDir, 'handler.ts'));
+      if (copied) console.log(`    - handler.ts (copied from functions/${fnName}/handler.ts)`);
     }
 
     // Symlink any .d.ts files
