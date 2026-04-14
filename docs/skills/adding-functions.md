@@ -10,6 +10,8 @@ description: Step-by-step guide for adding a new serverless function to the cons
 - Node.js 22+, pnpm 10+
 - Understanding of the `FunctionHandler` type from `@constructive-io/fn-runtime`
 
+**Reference implementations:** See `functions/simple-email/` (env vars, external packages, dry-run mode) and `functions/send-email-link/` (GraphQL queries, context usage) as working examples.
+
 ## Step 1: Create handler.json
 
 Create `functions/<name>/handler.json`:
@@ -38,6 +40,8 @@ Create `functions/<name>/handler.json`:
 | `description` | No | Human-readable description |
 | `dependencies` | No | NPM dependencies merged into the generated package.json |
 
+**Naming convention:** The `name` field is the canonical identifier — it's used for job queue task names, k8s service/deployment names, and the generated package name (`@constructive-io/<name>-fn`). The directory name under `functions/` is just for local organization. They don't have to match (e.g., `functions/example/` has `"name": "knative-job-example"`), but keeping them consistent avoids confusion.
+
 **Port convention:** Check existing `functions/*/handler.json` files for used ports. Pick the next available (8081, 8082, 8083, ...). Port 8080 is reserved for job-service.
 
 ## Step 2: Create handler.ts
@@ -52,13 +56,12 @@ interface MyPayload {
 }
 
 const handler: FunctionHandler<MyPayload> = async (params, context) => {
-  const { client, meta, job, log, env } = context;
-
-  // client — GraphQL client for the database's API
-  // meta — GraphQL client for metadata API
-  // job — { jobId, workerId, databaseId }
-  // log — structured logger (info, error, warn, debug)
-  // env — process.env
+  // context provides: { client, meta, job, log, env }
+  //   client — GraphQL client for the database's API
+  //   meta — GraphQL client for metadata API
+  //   job — { jobId, workerId, databaseId }
+  //   log — structured logger (info, error, warn, debug)
+  //   env — process.env
 
   // Your implementation here
 
@@ -79,7 +82,26 @@ If your function imports modules that need TypeScript type stubs, add a `types.d
 declare module '@some-untyped-package';
 ```
 
-## Step 3: Run generate
+## Step 3: Register with the job service
+
+Update `job/service/src/types.ts` — add the function name to the `FunctionName` union:
+
+```typescript
+export type FunctionName = 'simple-email' | 'send-email-link' | '<name>';
+```
+
+Update `job/service/src/index.ts` — add an entry to `functionRegistry`:
+
+```typescript
+'<name>': {
+  moduleName: '@constructive-io/<name>-fn',
+  defaultPort: <port>
+},
+```
+
+The `moduleName` is the generated workspace package name (`@constructive-io/<name>-fn`). The `defaultPort` must match the port in `handler.json`.
+
+## Step 4: Run generate
 
 ```bash
 pnpm generate
@@ -101,40 +123,52 @@ It also updates:
 - `k8s/overlays/local-simple/job-service.yaml` — adds function to JOBS_SUPPORTED and gateway map
 - `generated/functions-manifest.json` — function registry used by dev.ts
 
-## Step 4: Install and build
+## Step 5: Install and build
 
 ```bash
 pnpm install   # picks up the new workspace package
 pnpm build     # builds all packages including the new function
 ```
 
-## Step 5: Add unit tests
+## Step 6: Add unit tests
 
 Create `functions/<name>/__tests__/handler.test.ts`:
 
 ```typescript
-import handler from '../handler';
 import { createMockContext } from '../../../tests/helpers/mock-context';
 
+const loadHandler = () => {
+  const mod = require('../handler');
+  return mod.default ?? mod;
+};
+
 describe('<name> handler', () => {
+  beforeEach(() => {
+    jest.resetModules();
+  });
+
   it('should process valid payload', async () => {
-    const ctx = createMockContext();
-    const result = await handler({ /* test payload */ }, ctx);
+    const handler = loadHandler();
+    const result = await handler({ /* test payload */ }, createMockContext());
     expect(result).toEqual({ complete: true });
   });
 
   it('should reject invalid payload', async () => {
-    const ctx = createMockContext();
-    await expect(handler({}, ctx)).rejects.toThrow();
+    const handler = loadHandler();
+    await expect(
+      handler({}, createMockContext())
+    ).rejects.toThrow();
   });
 });
 ```
+
+**Why `require()` + `resetModules()`:** Handlers often read env vars at module scope (e.g., `parseEnvBoolean(process.env.SOME_FLAG)`). Using `require()` with `jest.resetModules()` ensures each test gets a fresh module evaluation, so env var changes in `beforeEach` take effect.
 
 Use `tests/helpers/mock-context.ts` to create test contexts. If your function uses external packages, add mocks in `tests/__mocks__/` and register them in `jest.config.ts` under `moduleNameMapper`.
 
 Run: `pnpm test:unit`
 
-## Step 6: Add e2e test
+## Step 7: Add e2e test
 
 Create `tests/e2e/__tests__/<name>.e2e.test.ts`:
 
@@ -178,7 +212,7 @@ describe('E2E: <name>', () => {
 
 **Important:** The e2e test filename must match the function name (`<name>.e2e.test.ts`) for the CI matrix to pick it up automatically.
 
-## Step 7: Test locally
+## Step 8: Test locally
 
 ### Option A: Docker Compose + local Node (fastest iteration)
 
@@ -193,7 +227,7 @@ pnpm dev:fn --only=<name>   # run just your function
 make skaffold-dev-<name>    # deploys infra + just your function
 ```
 
-## Step 8: Verify CI will work
+## Step 9: Verify CI will work
 
 The following CI workflows auto-discover functions — no manual edits needed:
 
@@ -206,10 +240,12 @@ The following CI workflows auto-discover functions — no manual edits needed:
 
 - [ ] `functions/<name>/handler.json` created with name, version, port
 - [ ] `functions/<name>/handler.ts` created with `FunctionHandler` export
+- [ ] `job/service/src/types.ts` — function name added to `FunctionName` union
+- [ ] `job/service/src/index.ts` — entry added to `functionRegistry`
 - [ ] `pnpm generate` ran successfully
 - [ ] `pnpm install && pnpm build` succeeds
 - [ ] Unit tests in `functions/<name>/__tests__/handler.test.ts`
 - [ ] E2e test in `tests/e2e/__tests__/<name>.e2e.test.ts`
 - [ ] `pnpm test:unit` passes
 - [ ] Local dev works (`make dev && pnpm dev:fn --only=<name>`)
-- [ ] No manual edits needed to skaffold.yaml, dev.ts, or job-service config
+- [ ] No manual edits needed to skaffold.yaml, dev.ts, or job-service k8s config (all auto-generated)
