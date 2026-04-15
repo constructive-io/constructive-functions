@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@constructive-io/knative-job-fn": "workspace:^",
-    "@pgpmjs/logger": "^1.0.0",
+    "@pgpmjs/logger": "^2.4.3",
     "pg": "^8.11.0"
   },
   "devDependencies": {
