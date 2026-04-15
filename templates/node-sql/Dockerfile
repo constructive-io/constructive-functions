@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Copy monorepo root files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY tsconfig.base.json ./
+COPY tsconfig.json ./
 
 # Copy packages
 COPY packages ./packages
