@@ -47,6 +47,7 @@ COPY --from=deploy /app/packages/fn-runtime/dist ./node_modules/@constructive-io
 
 ENV NODE_ENV=production
 ENV PORT=8080
+EXPOSE 8080
 
 USER node
 
