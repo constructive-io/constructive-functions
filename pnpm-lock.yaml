@@ -85,8 +85,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/text-chunker
       '@pgpmjs/logger':
-        specifier: ^1.0.0
-        version: 1.5.0
+        specifier: ^2.4.3
+        version: 2.5.2
       '@pgsql/quotes':
         specifier: ^17.1.0
         version: 17.1.0
@@ -929,9 +929,6 @@ packages:
 
   '@pgpmjs/env@2.17.0':
     resolution: {integrity: sha512-3WPwJ4prFWGGIRzyR52/JG84hM+Qe6lVtQ+bcCpGnGuhukFowALpaegRZxi3LT/pO6D8wW1Y3nW9LugfJLO6KQ==}
-
-  '@pgpmjs/logger@1.5.0':
-    resolution: {integrity: sha512-R27o5MiOsezI5rAWdJyuOkWUK6zxr8Mg61hPs7uCu//sECoprR4/7CVeFIHwn7+gyrjUk0wBz0dQcJhjYzVDpw==}
 
   '@pgpmjs/logger@2.5.2':
     resolution: {integrity: sha512-e9Z2Woju+fcsC0nm9KwEgOXZqm8UcrrxVEPbunXo6kpROpIQkBRg3RVU9xCxSHQ6xiko4r9YFXs370EW6kIUsQ==}
@@ -4058,10 +4055,6 @@ snapshots:
     dependencies:
       '@pgpmjs/types': 2.21.0
       deepmerge: 4.3.1
-
-  '@pgpmjs/logger@1.5.0':
-    dependencies:
-      yanse: 0.2.1
 
   '@pgpmjs/logger@2.5.2':
     dependencies:
