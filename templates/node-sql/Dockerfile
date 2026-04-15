@@ -19,8 +19,9 @@ RUN npm install -g pnpm@10 && \
 # Generate only this function
 RUN node --experimental-strip-types scripts/generate.ts --only={{name}}
 
-# Build
-RUN pnpm --filter @constructive-io/fn-runtime build && \
+# Build dependencies and function
+RUN pnpm --filter @constructive-io/knative-job-fn build && \
+    pnpm --filter @constructive-io/fn-runtime build && \
     pnpm --filter @constructive-io/{{name}}-fn build
 
 # Deploy stage - create minimal production bundle
