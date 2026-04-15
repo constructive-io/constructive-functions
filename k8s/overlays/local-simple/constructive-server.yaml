@@ -38,8 +38,6 @@ spec:
               value: debug
             - name: MINIO_ENDPOINT
               value: "http://minio:9000"
-            - name: API_IS_PUBLIC
-              value: "true"
           ports:
             - containerPort: 3000
               name: server-http
