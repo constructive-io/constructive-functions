@@ -410,7 +410,7 @@ function generateJobServiceYaml(fns: FunctionInfo[]): void {
     '            - name: KNATIVE_SERVICE_URL',
     `              value: "${K8S_NAMESPACE}.svc.cluster.local"`,
     '            - name: INTERNAL_GATEWAY_URL',
-    `              value: "http://${fns[0]?.name || 'unknown'}.${K8S_NAMESPACE}.svc.cluster.local"`,
+    `              value: "http://${fns.map((fn) => fn.name).sort()[0] || 'unknown'}.${K8S_NAMESPACE}.svc.cluster.local"`,
     '            - name: INTERNAL_GATEWAY_DEVELOPMENT_MAP',
     `              value: '${JSON.stringify(gatewayMap)}'`,
     '            - name: HOSTNAME',
