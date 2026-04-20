@@ -21,3 +21,6 @@ data:
   API_DEFAULT_DATABASE_ID: "constructive"
 
   LOG_TIMESTAMP: "true"
+
+  SIMPLE_EMAIL_DRY_RUN: "true"
+  SEND_EMAIL_LINK_DRY_RUN: "true"

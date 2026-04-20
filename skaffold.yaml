@@ -23,9 +23,10 @@ profiles:
     manifests:
       kustomize:
         paths:
-          - generated/example/k8s/skaffold-overlay
+          - k8s/overlays/local-simple
       rawYaml:
         - generated/example/k8s/local-deployment.yaml
+        - generated/example/k8s/functions-configmap.yaml
     deploy:
       kubectl:
         defaultNamespace: constructive-functions
@@ -66,9 +67,10 @@ profiles:
     manifests:
       kustomize:
         paths:
-          - generated/send-email-link/k8s/skaffold-overlay
+          - k8s/overlays/local-simple
       rawYaml:
         - generated/send-email-link/k8s/local-deployment.yaml
+        - generated/send-email-link/k8s/functions-configmap.yaml
     deploy:
       kubectl:
         defaultNamespace: constructive-functions
@@ -109,9 +111,10 @@ profiles:
     manifests:
       kustomize:
         paths:
-          - generated/simple-email/k8s/skaffold-overlay
+          - k8s/overlays/local-simple
       rawYaml:
         - generated/simple-email/k8s/local-deployment.yaml
+        - generated/simple-email/k8s/functions-configmap.yaml
     deploy:
       kubectl:
         defaultNamespace: constructive-functions
@@ -159,6 +162,7 @@ profiles:
         - generated/example/k8s/local-deployment.yaml
         - generated/send-email-link/k8s/local-deployment.yaml
         - generated/simple-email/k8s/local-deployment.yaml
+        - generated/functions-configmap.yaml
     deploy:
       kubectl:
         defaultNamespace: constructive-functions
