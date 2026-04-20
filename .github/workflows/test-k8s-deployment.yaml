@@ -126,7 +126,10 @@ jobs:
       - name: Wait for pods to stabilize
         run: |
           echo "Waiting for deployments..."
-          kubectl rollout status deploy --all -n constructive-functions --timeout=180s || true
+          for deploy in $(kubectl get deploy -n constructive-functions -o jsonpath='{.items[*].metadata.name}'); do
+            echo "  Waiting for $deploy..."
+            kubectl rollout status deploy/"$deploy" -n constructive-functions --timeout=180s || true
+          done
           echo "Pod status:"
           kubectl get pods -n constructive-functions -o wide
 
