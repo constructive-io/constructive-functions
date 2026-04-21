@@ -1,0 +1,44 @@
+  - name: {{name}}
+    build:
+      artifacts:
+        - image: constructive-functions
+          context: .
+          docker:
+            dockerfile: Dockerfile.dev
+          sync:
+            manual:
+              - src: 'functions/**/*.ts'
+                dest: /usr/src/app
+      local:
+        push: false
+    manifests:
+      kustomize:
+        paths:
+          - k8s/overlays/local-simple
+      rawYaml:
+        - generated/{{dir}}/k8s/local-deployment.yaml
+        - generated/{{dir}}/k8s/functions-configmap.yaml
+    deploy:
+      kubectl:
+        defaultNamespace: {{namespace}}
+    portForward:
+      - resourceType: service
+        resourceName: {{name}}
+        namespace: {{namespace}}
+        port: 80
+        localPort: {{port}}
+      - resourceType: service
+        resourceName: knative-job-service
+        namespace: {{namespace}}
+        port: 8080
+        localPort: 8080
+      - resourceType: service
+        resourceName: postgres
+        namespace: {{namespace}}
+        port: 5432
+        localPort: 5432
+      - resourceType: service
+        resourceName: constructive-server
+        namespace: {{namespace}}
+        port: 3000
+        localPort: 3002

@@ -2,6 +2,7 @@
   "name": "simple-email",
   "version": "1.6.4",
   "type": "node-graphql",
+  "port": 8081,
   "description": "Simple Knative email function that sends emails directly from job payload",
   "dependencies": {
     "@constructive-io/postmaster": "^1.5.2",

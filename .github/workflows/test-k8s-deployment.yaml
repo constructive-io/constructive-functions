@@ -26,9 +26,42 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  k8s-ci-test:
+  discover:
+    name: Discover functions
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    outputs:
+      matrix: ${{ steps.find.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Find functions with e2e tests
+        id: find
+        run: |
+          entries=$(
+            for f in functions/*/handler.json; do
+              [ -f "$f" ] || continue
+              name=$(jq -r .name "$f")
+              dir=$(basename "$(dirname "$f")")
+              # Only include functions that have a matching e2e test file
+              if [ -f "tests/e2e/__tests__/${name}.e2e.test.ts" ]; then
+                echo "{\"name\":\"$name\",\"dir\":\"$dir\"}"
+              fi
+            done | jq -s -c '.'
+          )
+          echo "matrix={\"include\":$entries}" >> "$GITHUB_OUTPUT"
+          echo "Discovered functions with e2e tests: $entries"
+
+  e2e:
+    name: E2E ${{ matrix.name }}
+    needs: discover
+    runs-on: ubuntu-latest
+    if: ${{ needs.discover.outputs.matrix != '{"include":[]}' }}
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
 
     steps:
       - name: Checkout
@@ -51,7 +84,7 @@ jobs:
       - name: Setup kind cluster
         uses: helm/kind-action@v1
         with:
-          cluster_name: ci
+          cluster_name: ci-${{ matrix.name }}
           wait: 120s
 
       - name: Verify cluster
@@ -87,13 +120,16 @@ jobs:
             echo "GHCR_USERNAME/GHCR_TOKEN not set; assuming images are public."
           fi
 
-      - name: Deploy with Skaffold (local-simple)
-        run: skaffold run -p local-simple
+      - name: Deploy with Skaffold (per-function profile)
+        run: skaffold run -p ${{ matrix.name }}
 
       - name: Wait for pods to stabilize
         run: |
           echo "Waiting for deployments..."
-          kubectl rollout status deploy --all -n constructive-functions --timeout=180s || true
+          for deploy in $(kubectl get deploy -n constructive-functions -o jsonpath='{.items[*].metadata.name}'); do
+            echo "  Waiting for $deploy..."
+            kubectl rollout status deploy/"$deploy" -n constructive-functions --timeout=180s || true
+          done
           echo "Pod status:"
           kubectl get pods -n constructive-functions -o wide
 
@@ -112,7 +148,7 @@ jobs:
         run: |
           kubectl port-forward -n constructive-functions svc/postgres 5432:5432 &
           sleep 3
-          pnpm test:e2e
+          pnpm jest tests/e2e/__tests__/job-queue.test.ts tests/e2e/__tests__/${{ matrix.name }}.e2e.test.ts
 
       - name: Dump diagnostics on failure
         if: failure()
