@@ -22,6 +22,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: constructive
+            - configMapRef:
+                name: functions-registry
             - secretRef:
                 name: pg-credentials
           env:
@@ -35,18 +37,12 @@ spec:
               value: "http://knative-job-service.constructive-functions.svc.cluster.local:8080"
             - name: JOBS_SUPPORT_ANY
               value: "false"
-            - name: JOBS_SUPPORTED
-              value: "simple-email,send-email-link"
             - name: JOBS_CALLBACK_HOST
               value: "knative-job-service.constructive-functions.svc.cluster.local"
             - name: JOBS_CALLBACK_BASE_URL
               value: "http://knative-job-service.constructive-functions.svc.cluster.local:8080/callback"
             - name: KNATIVE_SERVICE_URL
               value: "constructive-functions.svc.cluster.local"
-            - name: INTERNAL_GATEWAY_URL
-              value: "http://simple-email.constructive-functions.svc.cluster.local"
-            - name: INTERNAL_GATEWAY_DEVELOPMENT_MAP
-              value: '{"simple-email":"http://simple-email.constructive-functions.svc.cluster.local","send-email-link":"http://send-email-link.constructive-functions.svc.cluster.local"}'
             - name: HOSTNAME
               valueFrom:
                 fieldRef:

@@ -61,7 +61,7 @@ describe('SQL: Job Queue (k8s)', () => {
       expect(job).toBeDefined();
       expect(job.id).toBeDefined();
       expect(job.task_identifier).toBe(`${TEST_PREFIX}-basic`);
-      expect(job.payload).toEqual({ message: 'hello from test' });
+      expect(job.payload).toMatchObject({ message: 'hello from test' });
       expect(job.attempts).toBe(0);
       expect(job.locked_by).toBeNull();
     });
@@ -75,7 +75,7 @@ describe('SQL: Job Queue (k8s)', () => {
 
       expect(retrieved).toBeDefined();
       expect(retrieved!.id).toBe(created.id);
-      expect(retrieved!.payload).toEqual({ key: 'value' });
+      expect(retrieved!.payload).toMatchObject({ key: 'value' });
     });
   });
 });

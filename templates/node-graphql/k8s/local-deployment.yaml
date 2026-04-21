@@ -22,6 +22,8 @@ spec:
           ports:
             - containerPort: 8080
           envFrom:
+            - configMapRef:
+                name: constructive
             - secretRef:
                 name: pg-credentials
             - secretRef:
@@ -45,10 +47,6 @@ spec:
               value: "no-reply@mg.constructive.io"
             - name: MAILGUN_REPLY
               value: "support@mg.constructive.io"
-            - name: SIMPLE_EMAIL_DRY_RUN
-              value: "true"
-            - name: SEND_EMAIL_LINK_DRY_RUN
-              value: "true"
           resources:
             requests:
               memory: "128Mi"

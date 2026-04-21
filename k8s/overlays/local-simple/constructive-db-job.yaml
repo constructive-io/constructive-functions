@@ -22,7 +22,16 @@ spec:
           command: ["bash", "-c"]
           args:
             - |
+              set -eo pipefail
               cd /app
+
+              echo "Waiting for postgres to accept connections..."
+              until pg_isready -h "$PGHOST" -U "$PGUSER" -d postgres -q; do
+                echo "  postgres not ready, retrying in 2s..."
+                sleep 2
+              done
+              echo "Postgres is ready"
+
               echo "Creating database $PGDATABASE"
               createdb -h "$PGHOST" -U "$PGUSER" "$PGDATABASE" || true
 

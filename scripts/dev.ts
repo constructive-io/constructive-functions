@@ -5,11 +5,34 @@
 //   node --experimental-strip-types scripts/dev.ts
 //   node --experimental-strip-types scripts/dev.ts --only=send-email-link
 
+const fs = require('fs') as typeof import('fs');
 const path = require('path') as typeof import('path');
 const { spawn } = require('child_process') as typeof import('child_process');
-const { ChildProcess } = require('child_process') as typeof import('child_process');
 
 const ROOT: string = process.cwd();
+
+// --- Load function manifest (produced by pnpm generate) ---
+
+interface FunctionEntry {
+  name: string;
+  dir: string;
+  port: number;
+}
+
+interface FunctionsManifest {
+  functions: FunctionEntry[];
+}
+
+function loadManifest(): FunctionsManifest {
+  const manifestPath = path.resolve(ROOT, 'generated/functions-manifest.json');
+  if (!fs.existsSync(manifestPath)) {
+    console.error('generated/functions-manifest.json not found. Run `pnpm generate` first.');
+    process.exit(1);
+  }
+  return JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+}
+
+const manifest = loadManifest();
 
 // --- Shared env vars for all processes ---
 
@@ -40,7 +63,7 @@ const sharedEnv: Record<string, string> = {
   SEND_EMAIL_LINK_DRY_RUN: 'true',
 };
 
-// --- Process definitions ---
+// --- Process definitions (built from manifest) ---
 
 interface ProcessDef {
   name: string;
@@ -54,16 +77,11 @@ const allProcesses: ProcessDef[] = [
     script: path.resolve(ROOT, 'job/service/dist/run.js'),
     port: 8080,
   },
-  {
-    name: 'simple-email',
-    script: path.resolve(ROOT, 'generated/simple-email/dist/index.js'),
-    port: 8081,
-  },
-  {
-    name: 'send-email-link',
-    script: path.resolve(ROOT, 'generated/send-email-link/dist/index.js'),
-    port: 8082,
-  },
+  ...manifest.functions.map((fn) => ({
+    name: fn.name,
+    script: path.resolve(ROOT, `generated/${fn.dir}/dist/index.js`),
+    port: fn.port,
+  })),
 ];
 
 // --- CLI args ---
@@ -72,22 +90,24 @@ const args = process.argv.slice(2);
 const onlyArg = args.find((a: string) => a.startsWith('--only='));
 const onlyName: string | undefined = onlyArg?.split('=')[1];
 
-// --- Job-service specific env ---
+// --- Job-service specific env (built from manifest) ---
 
 function getJobServiceEnv(): Record<string, string> {
+  const gatewayMap: Record<string, string> = {};
+  for (const fn of manifest.functions) {
+    gatewayMap[fn.name] = `http://localhost:${fn.port}`;
+  }
+
   return {
     JOBS_SCHEMA: 'app_jobs',
     JOBS_SUPPORT_ANY: 'false',
-    JOBS_SUPPORTED: 'send-email-link',
+    JOBS_SUPPORTED: manifest.functions.map((fn) => fn.name).join(','),
     HOSTNAME: 'knative-job-service-local',
     INTERNAL_JOBS_CALLBACK_PORT: '8080',
     INTERNAL_JOBS_CALLBACK_URL: 'http://localhost:8080/callback',
     JOBS_CALLBACK_HOST: 'localhost',
-    INTERNAL_GATEWAY_URL: 'http://localhost:8082',
-    INTERNAL_GATEWAY_DEVELOPMENT_MAP: JSON.stringify({
-      'send-email-link': 'http://localhost:8082',
-      'simple-email': 'http://localhost:8081',
-    }),
+    INTERNAL_GATEWAY_URL: `http://localhost:${manifest.functions[0]?.port || 8081}`,
+    INTERNAL_GATEWAY_DEVELOPMENT_MAP: JSON.stringify(gatewayMap),
   };
 }
 

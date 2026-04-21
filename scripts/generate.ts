@@ -12,6 +12,7 @@ const ROOT: string = process.cwd();
 const FUNCTIONS_DIR: string = path.resolve(ROOT, 'functions');
 const GENERATED_DIR: string = path.resolve(ROOT, 'generated');
 const TEMPLATES_DIR: string = path.resolve(ROOT, 'templates');
+const SHARED_TEMPLATES_DIR: string = path.resolve(TEMPLATES_DIR, 'shared');
 
 const DEFAULT_TEMPLATE = 'node-graphql';
 
@@ -20,6 +21,7 @@ interface FunctionManifest {
   version: string;
   description?: string;
   type?: string;
+  port?: number;
   dependencies?: Record<string, string>;
 }
 
@@ -27,6 +29,7 @@ interface FunctionManifest {
 
 const onlyArg = process.argv.find((a: string) => a.startsWith('--only='));
 const onlyName: string | undefined = onlyArg?.split('=')[1];
+const packagesOnly: boolean = process.argv.includes('--packages-only');
 
 // --- Discovery ---
 
@@ -170,6 +173,93 @@ function ensureSymlink(target: string, linkPath: string): boolean {
   return true;
 }
 
+// --- Skaffold & ConfigMap generation ---
+
+const K8S_NAMESPACE = 'constructive-functions';
+
+interface FunctionInfo {
+  name: string;
+  dir: string;
+  port: number;
+}
+
+const K8S_TEMPLATES_DIR: string = path.resolve(TEMPLATES_DIR, 'k8s');
+
+function readTemplate(name: string): string {
+  return fs.readFileSync(path.join(K8S_TEMPLATES_DIR, name), 'utf-8');
+}
+
+function renderTemplate(template: string, vars: Record<string, string>): string {
+  let result = template;
+  for (const [key, value] of Object.entries(vars)) {
+    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
+  }
+  return result;
+}
+
+function generateFunctionsConfigMap(fns: FunctionInfo[], perFunction?: FunctionInfo): void {
+  const targetFns = perFunction ? [perFunction] : fns;
+  const gatewayMap: Record<string, string> = {};
+  for (const fn of targetFns) {
+    gatewayMap[fn.name] = `http://${fn.name}.${K8S_NAMESPACE}.svc.cluster.local`;
+  }
+
+  const template = readTemplate('functions-configmap.yaml');
+  const yaml = renderTemplate(template, {
+    jobs_supported: targetFns.map((fn) => fn.name).join(','),
+    gateway_map: JSON.stringify(gatewayMap),
+  });
+
+  if (perFunction) {
+    const dir = path.join(GENERATED_DIR, perFunction.dir, 'k8s');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    writeIfChanged(path.join(dir, 'functions-configmap.yaml'), yaml);
+  } else {
+    writeIfChanged(path.join(GENERATED_DIR, 'functions-configmap.yaml'), yaml);
+  }
+}
+
+function generateSkaffoldYaml(fns: FunctionInfo[]): void {
+  const profileTemplate = readTemplate('skaffold-profile.yaml');
+  const skaffoldTemplate = readTemplate('skaffold.yaml');
+
+  // Render per-function profiles from template
+  const perFnProfiles = fns.map((fn) =>
+    renderTemplate(profileTemplate, {
+      name: fn.name,
+      dir: fn.dir,
+      port: String(fn.port),
+      namespace: K8S_NAMESPACE,
+    }).trimEnd()
+  ).join('\n');
+
+  // Build dynamic lists for aggregate profiles
+  const allRawYaml = fns
+    .map((fn) => `        - generated/${fn.dir}/k8s/local-deployment.yaml`)
+    .join('\n');
+  const allPortForwards = fns
+    .map((fn) => [
+      '      - resourceType: service',
+      `        resourceName: ${fn.name}`,
+      `        namespace: ${K8S_NAMESPACE}`,
+      '        port: 80',
+      `        localPort: ${fn.port}`,
+    ].join('\n'))
+    .join('\n');
+
+  const skaffold = renderTemplate(skaffoldTemplate, {
+    per_function_profiles: perFnProfiles,
+    all_raw_yaml: allRawYaml,
+    all_port_forwards: allPortForwards,
+    namespace: K8S_NAMESPACE,
+  });
+
+  const skaffoldPath = path.join(ROOT, 'skaffold.yaml');
+  if (writeIfChanged(skaffoldPath, skaffold)) {
+    console.log('  Updated skaffold.yaml');
+  }
+}
+
 // --- Main ---
 
 function main(): void {
@@ -217,6 +307,26 @@ function main(): void {
       if (changed) console.log(`    - ${relPath}`);
     }
 
+    // Process shared templates (files that don't vary by template type)
+    if (fs.existsSync(SHARED_TEMPLATES_DIR)) {
+      const sharedFiles = walkTemplateFiles(SHARED_TEMPLATES_DIR);
+      for (const relPath of sharedFiles) {
+        const templateFile = path.join(SHARED_TEMPLATES_DIR, relPath);
+        const outputFile = path.join(genDir, relPath);
+
+        const outputDir = path.dirname(outputFile);
+        if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true });
+        }
+
+        const templateContent = fs.readFileSync(templateFile, 'utf-8');
+        const baseName = path.basename(relPath);
+        const processed = processTemplateFile(baseName, templateContent, manifest, fnDir);
+        const changed = writeIfChanged(outputFile, processed);
+        if (changed) console.log(`    - ${relPath} (shared)`);
+      }
+    }
+
     // Symlink handler.ts
     const handlerTarget = path.join(fnDir, 'handler.ts');
     if (fs.existsSync(handlerTarget)) {
@@ -233,6 +343,74 @@ function main(): void {
         if (linked) console.log(`    - ${file} -> functions/${fnName}/${file}`);
       }
     }
+  }
+
+  // --packages-only: stop here, only workspace packages were needed
+  // (used by Dockerfile.dev for the early pnpm install cache layer)
+  if (packagesOnly) {
+    console.log('Done (--packages-only).');
+    return;
+  }
+
+  // --- Write functions manifest ---
+  const allManifests: FunctionManifest[] = [];
+  for (const fnName of functions) {
+    const fnDir = path.join(FUNCTIONS_DIR, fnName);
+    allManifests.push(readManifest(fnDir));
+  }
+
+  // Auto-assign ports for functions that don't have one
+  const usedPorts = new Set(allManifests.filter((m) => m.port).map((m) => m.port!));
+  let nextPort = usedPorts.size > 0 ? Math.max(...usedPorts) + 1 : 8081;
+  for (const m of allManifests) {
+    if (!m.port) {
+      while (usedPorts.has(nextPort)) nextPort++;
+      m.port = nextPort;
+      usedPorts.add(nextPort);
+      nextPort++;
+    }
+  }
+
+  // Validate no duplicate ports
+  const portToFunction = new Map<number, string>();
+  for (const m of allManifests) {
+    if (m.port === 8080) {
+      throw new Error(`Function "${m.name}" uses port 8080 which is reserved for job-service.`);
+    }
+    if (portToFunction.has(m.port!)) {
+      throw new Error(`Port ${m.port} conflict: "${m.name}" and "${portToFunction.get(m.port!)}".`);
+    }
+    portToFunction.set(m.port!, m.name);
+  }
+
+  const manifestData = {
+    functions: functions.map((dir, i) => ({
+      name: allManifests[i].name,
+      dir,
+      port: allManifests[i].port,
+    })),
+  };
+
+  const manifestPath = path.join(GENERATED_DIR, 'functions-manifest.json');
+  const manifestContent = JSON.stringify(manifestData, null, 2) + '\n';
+  if (writeIfChanged(manifestPath, manifestContent)) {
+    console.log('  Updated generated/functions-manifest.json');
+  }
+
+  // --- Generate skaffold and functions-registry configmaps ---
+  // Only when generating all functions (not --only mode)
+  if (!onlyName) {
+    const fnInfos: FunctionInfo[] = manifestData.functions as FunctionInfo[];
+
+    // Generate per-function configmaps (for single-function Skaffold profiles)
+    for (const fn of fnInfos) {
+      generateFunctionsConfigMap(fnInfos, fn);
+    }
+    // Generate aggregate configmap (for local-simple profile)
+    generateFunctionsConfigMap(fnInfos);
+    console.log('  Generated functions-registry configmaps');
+
+    generateSkaffoldYaml(fnInfos);
   }
 
   console.log('Done.');
