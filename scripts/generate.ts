@@ -181,6 +181,7 @@ interface FunctionInfo {
   name: string;
   dir: string;
   port: number;
+  type: string;
 }
 
 const K8S_TEMPLATES_DIR: string = path.resolve(TEMPLATES_DIR, 'k8s');
@@ -220,18 +221,20 @@ function generateFunctionsConfigMap(fns: FunctionInfo[], perFunction?: FunctionI
 }
 
 function generateSkaffoldYaml(fns: FunctionInfo[]): void {
-  const profileTemplate = readTemplate('skaffold-profile.yaml');
+  const nodeProfileTemplate = readTemplate('skaffold-profile.yaml');
+  const pythonProfileTemplate = readTemplate('skaffold-profile-python.yaml');
   const skaffoldTemplate = readTemplate('skaffold.yaml');
 
-  // Render per-function profiles from template
-  const perFnProfiles = fns.map((fn) =>
-    renderTemplate(profileTemplate, {
+  // Render per-function profiles from template (select based on type)
+  const perFnProfiles = fns.map((fn) => {
+    const template = fn.type === 'python' ? pythonProfileTemplate : nodeProfileTemplate;
+    return renderTemplate(template, {
       name: fn.name,
       dir: fn.dir,
       port: String(fn.port),
       namespace: K8S_NAMESPACE,
-    }).trimEnd()
-  ).join('\n');
+    }).trimEnd();
+  }).join('\n');
 
   // Build dynamic lists for aggregate profiles
   const allRawYaml = fns
@@ -247,10 +250,24 @@ function generateSkaffoldYaml(fns: FunctionInfo[]): void {
     ].join('\n'))
     .join('\n');
 
+  // Add Python artifacts if there are Python functions
+  const hasPython = fns.some((fn) => fn.type === 'python');
+  const pythonArtifacts = hasPython ? `        - image: constructive-functions-python
+          context: .
+          docker:
+            dockerfile: Dockerfile.python.dev
+          sync:
+            manual:
+              - src: 'functions/**/*.py'
+                dest: /usr/src/app
+              - src: 'generated/**/*.py'
+                dest: /usr/src/app` : '';
+
   const skaffold = renderTemplate(skaffoldTemplate, {
     per_function_profiles: perFnProfiles,
     all_raw_yaml: allRawYaml,
     all_port_forwards: allPortForwards,
+    python_artifacts: pythonArtifacts,
     namespace: K8S_NAMESPACE,
   });
 
@@ -327,17 +344,21 @@ function main(): void {
       }
     }
 
-    // Symlink handler.ts
-    const handlerTarget = path.join(fnDir, 'handler.ts');
-    if (fs.existsSync(handlerTarget)) {
-      const linked = ensureSymlink(handlerTarget, path.join(genDir, 'handler.ts'));
+    // Symlink handler.ts or handler.py
+    const handlerTsTarget = path.join(fnDir, 'handler.ts');
+    const handlerPyTarget = path.join(fnDir, 'handler.py');
+    if (fs.existsSync(handlerTsTarget)) {
+      const linked = ensureSymlink(handlerTsTarget, path.join(genDir, 'handler.ts'));
       if (linked) console.log(`    - handler.ts -> functions/${fnName}/handler.ts`);
+    } else if (fs.existsSync(handlerPyTarget)) {
+      const linked = ensureSymlink(handlerPyTarget, path.join(genDir, 'handler.py'));
+      if (linked) console.log(`    - handler.py -> functions/${fnName}/handler.py`);
     }
 
-    // Symlink any .d.ts files
+    // Symlink any .d.ts or .py files (excluding handler.py which is handled above)
     const files = fs.readdirSync(fnDir) as string[];
     for (const file of files) {
-      if (file.endsWith('.d.ts')) {
+      if (file.endsWith('.d.ts') || (file.endsWith('.py') && file !== 'handler.py')) {
         const target = path.join(fnDir, file);
         const linked = ensureSymlink(target, path.join(genDir, file));
         if (linked) console.log(`    - ${file} -> functions/${fnName}/${file}`);
@@ -388,6 +409,7 @@ function main(): void {
       name: allManifests[i].name,
       dir,
       port: allManifests[i].port,
+      type: allManifests[i].type || DEFAULT_TEMPLATE,
     })),
   };
 
