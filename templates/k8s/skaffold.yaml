@@ -21,6 +21,7 @@ profiles:
             manual:
               - src: 'functions/**/*.ts'
                 dest: /usr/src/app
+{{python_artifacts}}
       local:
         push: false
     manifests:
