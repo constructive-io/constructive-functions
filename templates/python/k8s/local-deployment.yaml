@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{name}}
+  labels:
+    app: {{name}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{name}}
+  template:
+    metadata:
+      labels:
+        app: {{name}}
+    spec:
+      containers:
+        - name: {{name}}
+          image: constructive-functions-python:local
+          command: ["watchmedo"]
+          args: ["auto-restart", "--directory=generated/{{name}}", "--pattern=*.py", "--recursive", "--", "python", "generated/{{name}}/main.py"]
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{name}}
+spec:
+  selector:
+    app: {{name}}
+  ports:
+    - port: 80
+      targetPort: 8080

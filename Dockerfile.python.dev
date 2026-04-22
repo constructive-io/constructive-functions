@@ -1,0 +1,19 @@
+FROM python:3.11-slim
+
+WORKDIR /usr/src/app
+
+# Install watchdog for hot reload
+RUN pip install --no-cache-dir watchdog[watchmedo]
+
+# Copy all generated python functions and their requirements
+COPY generated/ generated/
+COPY functions/ functions/
+
+# Install dependencies for all python functions
+RUN for req in generated/*/requirements.txt; do \
+      if [ -f "$req" ]; then \
+        pip install --no-cache-dir -r "$req"; \
+      fi \
+    done
+
+ENV PYTHONUNBUFFERED=1
