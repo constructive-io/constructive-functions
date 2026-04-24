@@ -39,6 +39,10 @@ const functionRegistry: Record<FunctionName, FunctionRegistryEntry> = {
   'send-email-link': {
     moduleName: '@constructive-io/send-email-link-fn',
     defaultPort: 8082
+  },
+  'sql-example': {
+    moduleName: '@constructive-io/sql-example-fn',
+    defaultPort: 8085
   }
 };
 

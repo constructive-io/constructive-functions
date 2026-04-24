@@ -1,4 +1,4 @@
-export type FunctionName = 'simple-email' | 'send-email-link';
+export type FunctionName = 'simple-email' | 'send-email-link' | 'sql-example';
 
 export type FunctionServiceConfig = {
   name: FunctionName;
