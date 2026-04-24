@@ -193,6 +193,50 @@ profiles:
         namespace: constructive-functions
         port: 3000
         localPort: 3002
+  - name: sql-example
+    build:
+      artifacts:
+        - image: constructive-functions
+          context: .
+          docker:
+            dockerfile: Dockerfile.dev
+          sync:
+            manual:
+              - src: 'functions/**/*.ts'
+                dest: /usr/src/app
+      local:
+        push: false
+    manifests:
+      kustomize:
+        paths:
+          - k8s/overlays/local-simple
+      rawYaml:
+        - generated/sql-example/k8s/local-deployment.yaml
+        - generated/sql-example/k8s/functions-configmap.yaml
+    deploy:
+      kubectl:
+        defaultNamespace: constructive-functions
+    portForward:
+      - resourceType: service
+        resourceName: sql-example
+        namespace: constructive-functions
+        port: 80
+        localPort: 8085
+      - resourceType: service
+        resourceName: knative-job-service
+        namespace: constructive-functions
+        port: 8080
+        localPort: 8080
+      - resourceType: service
+        resourceName: postgres
+        namespace: constructive-functions
+        port: 5432
+        localPort: 5432
+      - resourceType: service
+        resourceName: constructive-server
+        namespace: constructive-functions
+        port: 3000
+        localPort: 3002
 
   # All functions together.
   - name: local-simple
@@ -227,6 +271,7 @@ profiles:
         - generated/python-example/k8s/local-deployment.yaml
         - generated/send-email-link/k8s/local-deployment.yaml
         - generated/simple-email/k8s/local-deployment.yaml
+        - generated/sql-example/k8s/local-deployment.yaml
         - generated/functions-configmap.yaml
     deploy:
       kubectl:
@@ -252,6 +297,11 @@ profiles:
         namespace: constructive-functions
         port: 80
         localPort: 8081
+      - resourceType: service
+        resourceName: sql-example
+        namespace: constructive-functions
+        port: 80
+        localPort: 8085
       - resourceType: service
         resourceName: knative-job-service
         namespace: constructive-functions
@@ -307,6 +357,11 @@ profiles:
         namespace: constructive-functions
         port: 80
         localPort: 8081
+      - resourceType: service
+        resourceName: sql-example
+        namespace: constructive-functions
+        port: 80
+        localPort: 8085
       - resourceType: service
         resourceName: knative-job-service
         namespace: constructive-functions

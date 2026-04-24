@@ -141,6 +141,50 @@ importers:
         specifier: ^5.1.6
         version: 5.9.3
 
+  generated/sql-example:
+    dependencies:
+      '@constructive-io/knative-job-fn':
+        specifier: workspace:^
+        version: link:../../packages/fn-app
+      '@pgpmjs/logger':
+        specifier: ^1.0.0
+        version: 1.5.0
+      pg:
+        specifier: ^8.11.0
+        version: 8.20.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.16.0
+      makage:
+        specifier: ^0.1.10
+        version: 0.1.12
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+
+  generated/text-embedding:
+    dependencies:
+      '@agentic-kit/ollama':
+        specifier: ^1.0.3
+        version: 1.0.3
+      '@constructive-io/fn-runtime':
+        specifier: workspace:^
+        version: link:../../packages/fn-runtime
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      makage:
+        specifier: ^0.1.10
+        version: 0.1.12
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+
   job/server:
     dependencies:
       '@constructive-io/job-pg':
@@ -306,6 +350,9 @@ packages:
 
   12factor-env@1.6.2:
     resolution: {integrity: sha512-U4EO6sy9Cc6h1ST3hhLD2rc2s4LERxProove3XZ52rMq2rTo5uTKWNKwD2OYDUwqNij+p5SgjmpPO6L/Gqtizw==}
+
+  '@agentic-kit/ollama@1.0.3':
+    resolution: {integrity: sha512-bvDMjofjgSTI8oLvFI/8ORQvO+wrwmdYETYCB1yAOSy622zB6DWYqk+ldK7mKjZ22iWrjkoWFEdSY7T9rYE1FA==}
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -883,6 +930,9 @@ packages:
 
   '@pgpmjs/env@2.17.0':
     resolution: {integrity: sha512-3WPwJ4prFWGGIRzyR52/JG84hM+Qe6lVtQ+bcCpGnGuhukFowALpaegRZxi3LT/pO6D8wW1Y3nW9LugfJLO6KQ==}
+
+  '@pgpmjs/logger@1.5.0':
+    resolution: {integrity: sha512-R27o5MiOsezI5rAWdJyuOkWUK6zxr8Mg61hPs7uCu//sECoprR4/7CVeFIHwn7+gyrjUk0wBz0dQcJhjYzVDpw==}
 
   '@pgpmjs/logger@2.5.2':
     resolution: {integrity: sha512-e9Z2Woju+fcsC0nm9KwEgOXZqm8UcrrxVEPbunXo6kpROpIQkBRg3RVU9xCxSHQ6xiko4r9YFXs370EW6kIUsQ==}
@@ -1469,6 +1519,9 @@ packages:
   cron-parser@4.9.0:
     resolution: {integrity: sha512-p0SaNjrHOnQeR8/VnfGbmg9te2kfyYSQ7Sc/j/6DtPL3JQvKxmjO9TSjNFpujqV3vEYYBvNNvXSxzyksBWAx1Q==}
     engines: {node: '>=12.0.0'}
+
+  cross-fetch@4.1.0:
+    resolution: {integrity: sha512-uKm5PU+MHTootlWEY+mZ4vvXoCn4fLQxT9dSc1sXVMSFkINTJVN8cAQROpwcKm8bJ/c7rgZVIBWzH5T78sNZZw==}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -2690,9 +2743,6 @@ packages:
     peerDependencies:
       pg: '>=8.0'
 
-  pg-protocol@1.11.0:
-    resolution: {integrity: sha512-pfsxk2M9M3BuGgDOfuy37VNRRX3jmKgMjcvAcWqNDpZSf4cUmv8HSOl5ViRQFsfARFn0KuUQTgLxVMbNq5NW3g==}
-
   pg-protocol@1.13.0:
     resolution: {integrity: sha512-zzdvXfS6v89r6v7OcFCHfHlyG/wvry1ALxZo4LqgUoy7W9xhBDMaqOuMiF3qEV45VqsN6rdlcehHrfDtlCPc8w==}
 
@@ -3271,6 +3321,12 @@ snapshots:
   12factor-env@1.6.2:
     dependencies:
       envalid: 8.1.1
+
+  '@agentic-kit/ollama@1.0.3':
+    dependencies:
+      cross-fetch: 4.1.0
+    transitivePeerDependencies:
+      - encoding
 
   '@babel/code-frame@7.27.1':
     dependencies:
@@ -4001,6 +4057,10 @@ snapshots:
       '@pgpmjs/types': 2.21.0
       deepmerge: 4.3.1
 
+  '@pgpmjs/logger@1.5.0':
+    dependencies:
+      yanse: 0.2.1
+
   '@pgpmjs/logger@2.5.2':
     dependencies:
       yanse: 0.2.1
@@ -4155,7 +4215,7 @@ snapshots:
   '@types/pg@8.16.0':
     dependencies:
       '@types/node': 22.19.3
-      pg-protocol: 1.11.0
+      pg-protocol: 1.13.0
       pg-types: 2.2.0
 
   '@types/qs@6.14.0': {}
@@ -4674,6 +4734,12 @@ snapshots:
   cron-parser@4.9.0:
     dependencies:
       luxon: 3.7.2
+
+  cross-fetch@4.1.0:
+    dependencies:
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
 
   cross-spawn@7.0.6:
     dependencies:
@@ -6302,8 +6368,6 @@ snapshots:
   pg-pool@3.13.0(pg@8.20.0):
     dependencies:
       pg: 8.20.0
-
-  pg-protocol@1.11.0: {}
 
   pg-protocol@1.13.0: {}
 
