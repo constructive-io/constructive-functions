@@ -157,12 +157,11 @@ Useful queries:
 -- Check pending jobs
 SELECT id, task_identifier, attempts, locked_by, last_error FROM app_jobs.jobs ORDER BY id;
 
--- Check database record (needed for job insertion)
-SELECT id, name FROM metaschema_public.database;
+-- Set JWT claims for job context (database_id is read internally by add_job)
+SELECT set_config('jwt.claims.database_id', (SELECT id::text FROM metaschema_public.database LIMIT 1), true);
 
 -- Manually insert a test job
 SELECT * FROM app_jobs.add_job(
-  (SELECT id FROM metaschema_public.database LIMIT 1),
   'simple-email'::text,
   '{"to":"test@example.com","subject":"test","html":"<p>hello</p>"}'::json
 );
