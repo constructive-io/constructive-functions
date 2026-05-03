@@ -68,7 +68,7 @@ const handler: FunctionHandler = async (params, context) => {
   // client/meta: GraphQL clients (tenant-scoped, created per-request)
   // log: structured logger
   // env: process.env
-  // job: { jobId, workerId, databaseId }
+  // job: { jobId, workerId, databaseId, actorId }
   return { complete: true };
 };
 
