@@ -11,6 +11,7 @@ export interface JobRow {
   task_identifier: string;
   payload?: unknown;
   database_id?: string;
+  actor_id?: string;
 }
 
 const log = new Logger('jobs:worker');
@@ -117,6 +118,7 @@ export default class Worker {
     await req(task_identifier, {
       body: payload,
       databaseId: job.database_id,
+      actorId: job.actor_id,
       workerId: this.workerId,
       jobId: job.id
     });
