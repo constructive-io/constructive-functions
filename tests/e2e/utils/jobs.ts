@@ -24,13 +24,12 @@ export async function addJob(
   taskIdentifier: string,
   payload: Record<string, any>
 ): Promise<Job> {
-  await pg.none(
-    `SELECT set_config('jwt.claims.database_id', $1, true)`,
-    [databaseId]
-  );
   const job = await pg.oneOrNone<Job>(
-    `SELECT * FROM app_jobs.add_job($1::text, $2::json)`,
-    [taskIdentifier, JSON.stringify(payload)]
+    `WITH _cfg AS (
+      SELECT set_config('jwt.claims.database_id', $1, true)
+    )
+    SELECT j.* FROM _cfg, app_jobs.add_job($2::text, $3::json) AS j`,
+    [databaseId, taskIdentifier, JSON.stringify(payload)]
   );
   if (!job) {
     throw new Error(`Failed to add job: ${taskIdentifier}`);
