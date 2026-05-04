@@ -61,11 +61,14 @@ export const createClients = (
     ...(schemata && { schemata })
   });
 
+  // Meta client targets platform-level data (databases, sites, domains, themes
+  // in metaschema_public). It must NOT use tenant API routing — sending
+  // X-Api-Name causes the server to load every schema registered for that API
+  // (both *_public and *_private variants), which collides on duplicate codec
+  // names like identityProviders. Use X-Meta-Schema instead.
   const meta = createGraphQLClient(metaGraphqlUrl, env, {
     hostHeaderEnvVar: 'META_GRAPHQL_HOST_HEADER',
-    databaseId,
-    ...(apiName && { apiName }),
-    ...(schemata && { schemata })
+    useMetaSchema: true,
   });
 
   return { client, meta };
