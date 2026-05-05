@@ -5,6 +5,12 @@ export type FunctionHandler<P = unknown, R = unknown> = (
   context: FunctionContext
 ) => Promise<R> | R;
 
+export type FunctionLogger = {
+  info: (...args: any[]) => void;
+  error: (...args: any[]) => void;
+  warn: (...args: any[]) => void;
+};
+
 export type FunctionContext = {
   job: {
     jobId?: string;
@@ -13,7 +19,7 @@ export type FunctionContext = {
   };
   client: GraphQLClient;
   meta: GraphQLClient;
-  log: { info: (...args: any[]) => void; error: (...args: any[]) => void; warn: (...args: any[]) => void };
+  log: FunctionLogger;
   env: Record<string, string | undefined>;
 };
 

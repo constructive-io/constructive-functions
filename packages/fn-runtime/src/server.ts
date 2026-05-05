@@ -1,6 +1,6 @@
 import { createJobApp } from '@constructive-io/knative-job-fn';
+import type { FunctionHandler, ServerOptions } from '@constructive-io/fn-types';
 import { buildContext } from './context';
-import type { FunctionHandler, ServerOptions } from './types';
 
 export const createFunctionServer = (
   handler: FunctionHandler<any, any>,

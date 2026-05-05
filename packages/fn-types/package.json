@@ -1,7 +1,7 @@
 {
-  "name": "@constructive-io/knative-job-fn",
-  "version": "1.6.0",
-  "description": "Express app factory for Knative job functions with callback handling.",
+  "name": "@constructive-io/fn-types",
+  "version": "0.1.0",
+  "description": "Source-of-truth TypeScript types for the Constructive Functions toolkit: handler manifests, FnConfig, runtime context, registry.",
   "author": "Constructive <developers@constructive.io>",
   "license": "SEE LICENSE IN LICENSE",
   "main": "dist/index.js",
@@ -14,19 +14,16 @@
     "access": "public"
   },
   "scripts": {
-    "build": "makage build",
-    "build:dev": "makage build --dev",
-    "clean": "makage clean",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist",
     "lint": "eslint . --fix"
   },
   "dependencies": {
-    "@pgpmjs/logger": "^2.4.3",
-    "express": "5.2.1"
+    "graphql-request": "^7.1.2"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0",
     "@types/node": "^22.10.4",
-    "makage": "^0.1.12",
+    "rimraf": "^5.0.5",
     "typescript": "^5.1.6"
   }
 }
