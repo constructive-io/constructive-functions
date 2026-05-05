@@ -139,6 +139,11 @@ jobs:
           kubectl wait --for=condition=complete job/constructive-db \
             -n constructive-functions --timeout=180s
 
+      - name: Restart job service after DB ready
+        run: |
+          kubectl rollout restart deploy/knative-job-service -n constructive-functions
+          kubectl rollout status deploy/knative-job-service -n constructive-functions --timeout=120s
+
       - name: Port-forward postgres and run e2e tests
         env:
           PGHOST: localhost

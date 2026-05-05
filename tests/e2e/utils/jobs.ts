@@ -2,7 +2,8 @@ import { TestClient } from './db';
 
 export interface Job {
   id: string;
-  database_id: string;
+  database_id: string | null;
+  actor_id: string | null;
   queue_name: string | null;
   task_identifier: string;
   payload: Record<string, any>;
@@ -10,6 +11,7 @@ export interface Job {
   run_at: Date;
   attempts: number;
   max_attempts: number;
+  is_available: boolean;
   key: string | null;
   last_error: string | null;
   locked_at: Date | null;
@@ -23,7 +25,10 @@ export async function addJob(
   payload: Record<string, any>
 ): Promise<Job> {
   const job = await pg.oneOrNone<Job>(
-    `SELECT * FROM app_jobs.add_job($1::uuid, $2::text, $3::json)`,
+    `WITH _cfg AS (
+      SELECT set_config('jwt.claims.database_id', $1, true)
+    )
+    SELECT j.* FROM _cfg, app_jobs.add_job($2::text, $3::json) AS j`,
     [databaseId, taskIdentifier, JSON.stringify(payload)]
   );
   if (!job) {

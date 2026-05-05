@@ -16,6 +16,7 @@ export type FunctionContext = {
     jobId?: string;
     workerId?: string;
     databaseId?: string;
+    actorId?: string;
   };
   client: GraphQLClient;
   meta: GraphQLClient;

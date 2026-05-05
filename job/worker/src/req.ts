@@ -1,6 +1,7 @@
 import http from 'node:http';
 import https from 'node:https';
 import { URL } from 'node:url';
+
 import {
   getCallbackBaseUrl,
   getJobGatewayConfig,
@@ -30,14 +31,15 @@ const getFunctionUrl = (fn: string): string => {
 
 interface RequestOptions {
   body: unknown;
-  databaseId: string;
+  databaseId?: string;
+  actorId?: string;
   workerId: string;
   jobId: string | number;
 }
 
 const request = (
   fn: string,
-  { body, databaseId, workerId, jobId }: RequestOptions
+  { body, databaseId, actorId, workerId, jobId }: RequestOptions
 ) => {
   const url = getFunctionUrl(fn);
   log.info(`dispatching job`, {
@@ -73,7 +75,8 @@ const request = (
           // these are used by job-worker/job-fn
           'X-Worker-Id': workerId,
           'X-Job-Id': String(jobId),
-          'X-Database-Id': databaseId,
+          ...(databaseId ? { 'X-Database-Id': databaseId } : {}),
+          ...(actorId ? { 'X-Actor-Id': actorId } : {}),
 
           // async HTTP completion callback
           'X-Callback-Url': completeUrl

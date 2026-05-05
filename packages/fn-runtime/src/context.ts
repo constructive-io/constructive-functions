@@ -4,6 +4,7 @@ import { createClients } from './graphql';
 
 type RequestHeaders = {
   databaseId?: string;
+  actorId?: string;
   workerId?: string;
   jobId?: string;
 };
@@ -15,7 +16,7 @@ export const buildContext = (
   const env = process.env as Record<string, string | undefined>;
   const log = createLogger(options.name || 'fn-runtime');
 
-  const { databaseId, workerId, jobId } = headers;
+  const { databaseId, actorId, workerId, jobId } = headers;
 
   // Create GraphQL clients if databaseId is available and GRAPHQL_URL is set
   let client: FunctionContext['client'];
@@ -45,7 +46,7 @@ export const buildContext = (
   }
 
   return {
-    job: { jobId, workerId, databaseId },
+    job: { jobId, workerId, databaseId, actorId },
     client,
     meta,
     log,

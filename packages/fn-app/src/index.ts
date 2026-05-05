@@ -13,6 +13,7 @@ type JobContext = {
   workerId: string | undefined;
   jobId: string | undefined;
   databaseId: string | undefined;
+  actorId: string | undefined;
 };
 
 function getHeaders(req: any) {
@@ -20,6 +21,7 @@ function getHeaders(req: any) {
     'x-worker-id': req.get('X-Worker-Id'),
     'x-job-id': req.get('X-Job-Id'),
     'x-database-id': req.get('X-Database-Id'),
+    'x-actor-id': req.get('X-Actor-Id'),
     'x-callback-url': req.get('X-Callback-Url')
   };
 }
@@ -99,6 +101,10 @@ const sendJobCallback = async (
     headers['X-Database-Id'] = databaseId;
   }
 
+  if (ctx.actorId) {
+    headers['X-Actor-Id'] = ctx.actorId;
+  }
+
   const body: Record<string, unknown> = {
     status
   };
@@ -168,6 +174,7 @@ const createJobApp = () => {
       'Content-Type': 'application/json',
       'X-Worker-Id': req.get('X-Worker-Id'),
       'X-Database-Id': req.get('X-Database-Id'),
+      'X-Actor-Id': req.get('X-Actor-Id'),
       'X-Job-Id': req.get('X-Job-Id')
     });
     next();
@@ -179,7 +186,8 @@ const createJobApp = () => {
       callbackUrl: req.get('X-Callback-Url'),
       workerId: req.get('X-Worker-Id'),
       jobId: req.get('X-Job-Id'),
-      databaseId: req.get('X-Database-Id')
+      databaseId: req.get('X-Database-Id'),
+      actorId: req.get('X-Actor-Id')
     };
 
     // Store on res.locals so the error middleware can also mark callbacks as sent.
