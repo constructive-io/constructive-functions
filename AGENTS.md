@@ -129,7 +129,7 @@ pnpm build        # Recompile
 
 ## Key Details
 
-- Functions run on `PORT=8080` (Knative default)
+- Each function declares its port in `handler.json` (`simple-email` 8081, `send-email-link` 8082, `knative-job-example` 8083, `python-example` 8084); the job service uses 8080
 - Email functions support dry-run via `SIMPLE_EMAIL_DRY_RUN` / `SEND_EMAIL_LINK_DRY_RUN`
 - `loadFunctionApp()` in job/service resolves modules by name (e.g. `@constructive-io/simple-email-fn`)
 - GraphQL clients require `GRAPHQL_URL` env var and `X-Database-Id` header
