@@ -1,0 +1,73 @@
+name: Publish toolkit packages
+
+on:
+  push:
+    tags:
+      - 'fn-v*'   # toolkit release tag, e.g. fn-v0.1.0
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run pnpm publish --dry-run only'
+        type: boolean
+        default: true
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish @constructive-io/fn-* to npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # required for npm provenance
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+
+      - name: Generate function packages
+        run: node --experimental-strip-types scripts/generate.ts
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build toolkit packages
+        run: |
+          pnpm --filter @constructive-io/fn-types build
+          pnpm --filter @constructive-io/knative-job-fn build
+          pnpm --filter @constructive-io/fn-runtime build
+          pnpm --filter @constructive-io/fn-generator build
+          pnpm --filter @constructive-io/fn-client build
+          pnpm --filter @constructive-io/fn-cli build
+
+      - name: Verify generator snapshot
+        run: pnpm --filter @constructive-io/fn-generator test
+
+      - name: Publish (dry run for workflow_dispatch when requested)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true'
+        run: |
+          for pkg in fn-types fn-app fn-runtime fn-generator fn-client fn-cli; do
+            (cd "packages/$pkg" && pnpm publish --dry-run --no-git-checks --access public)
+          done
+
+      - name: Publish to npm with provenance
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != 'true')
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
+        run: |
+          # Order matters: deps first, dependents last.
+          for pkg in fn-types fn-app fn-runtime fn-generator fn-client fn-cli; do
+            (cd "packages/$pkg" && pnpm publish --no-git-checks --access public)
+          done
