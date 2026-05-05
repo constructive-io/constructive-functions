@@ -6,15 +6,18 @@ import { send as sendPostmaster } from '@constructive-io/postmaster';
 import { send as sendSmtp } from 'simple-smtp-server';
 import { parseEnvBoolean } from '@pgpmjs/env';
 
-// Use plural connections with `condition` filter rather than singular-by-PK
-// (`user(id:)`, `database(id:)`). The constructive server's preset extends
-// NoUniqueLookupPreset, which deliberately disables singular root-field
-// lookups by unique constraint (including primary key) to keep the API
-// surface small. The plural+condition form is the supported way to fetch
-// a row by id.
+// Use plural connections with the `where` filter (graphile-connection-filter)
+// rather than `condition:` or singular-by-PK. The constructive server's
+// ConstructivePreset:
+//   1. Extends NoUniqueLookupPreset — disables singular root-field lookups
+//      by unique constraint, including primary key (`database(id:)`,
+//      `user(id:)`).
+//   2. Disables `PgConditionArgumentPlugin` — removes the built-in
+//      `condition:` argument on connections.
+// The supported pattern is `where: { field: { equalTo: var } }`.
 const GetUser = gql`
   query GetUser($userId: UUID!) {
-    users(condition: { id: $userId }, first: 1) {
+    users(where: { id: { equalTo: $userId } }, first: 1) {
       nodes {
         username
         displayName
@@ -26,7 +29,7 @@ const GetUser = gql`
 
 const GetDatabaseInfo = gql`
   query GetDatabaseInfo($databaseId: UUID!) {
-    databases(condition: { id: $databaseId }, first: 1) {
+    databases(where: { id: { equalTo: $databaseId } }, first: 1) {
       nodes {
         sites {
           nodes {
@@ -43,7 +46,7 @@ const GetDatabaseInfo = gql`
                 theme
               }
             }
-            siteModules(condition: { name: "legal_terms_module" }) {
+            siteModules(where: { name: { equalTo: "legal_terms_module" } }) {
               nodes {
                 data
               }
