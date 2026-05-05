@@ -6,37 +6,50 @@ import { send as sendPostmaster } from '@constructive-io/postmaster';
 import { send as sendSmtp } from 'simple-smtp-server';
 import { parseEnvBoolean } from '@pgpmjs/env';
 
+// Use plural connections with the `where` filter (graphile-connection-filter)
+// rather than `condition:` or singular-by-PK. The constructive server's
+// ConstructivePreset:
+//   1. Extends NoUniqueLookupPreset — disables singular root-field lookups
+//      by unique constraint, including primary key (`database(id:)`,
+//      `user(id:)`).
+//   2. Disables `PgConditionArgumentPlugin` — removes the built-in
+//      `condition:` argument on connections.
+// The supported pattern is `where: { field: { equalTo: var } }`.
 const GetUser = gql`
   query GetUser($userId: UUID!) {
-    user(id: $userId) {
-      username
-      displayName
-      profilePicture
+    users(where: { id: { equalTo: $userId } }, first: 1) {
+      nodes {
+        username
+        displayName
+        profilePicture
+      }
     }
   }
 `;
 
 const GetDatabaseInfo = gql`
   query GetDatabaseInfo($databaseId: UUID!) {
-    database(id: $databaseId) {
-      sites {
-        nodes {
-          domains {
-            nodes {
-              subdomain
-              domain
+    databases(where: { id: { equalTo: $databaseId } }, first: 1) {
+      nodes {
+        sites {
+          nodes {
+            domains {
+              nodes {
+                subdomain
+                domain
+              }
             }
-          }
-          logo
-          title
-          siteThemes {
-            nodes {
-              theme
+            logo
+            title
+            siteThemes {
+              nodes {
+                theme
+              }
             }
-          }
-          siteModules(condition: { name: "legal_terms_module" }) {
-            nodes {
-              data
+            siteModules(where: { name: { equalTo: "legal_terms_module" } }) {
+              nodes {
+                data
+              }
             }
           }
         }
@@ -111,7 +124,7 @@ const sendEmailLink = async (
     databaseId
   });
 
-  const site = databaseInfo?.database?.sites?.nodes?.[0];
+  const site = databaseInfo?.databases?.nodes?.[0]?.sites?.nodes?.[0];
   if (!site) {
     throw new Error('Site not found for database');
   }
@@ -177,7 +190,7 @@ const sendEmailLink = async (
       const inviter = await client.request<any>(GetUser, {
         userId: params.sender_id
       });
-      inviterName = inviter?.user?.displayName;
+      inviterName = inviter?.users?.nodes?.[0]?.displayName;
 
       if (inviterName) {
         subject = `${inviterName} invited you to ${nick}!`;
