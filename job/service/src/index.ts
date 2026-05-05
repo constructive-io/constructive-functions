@@ -25,22 +25,12 @@ import {
   KnativeJobsSvcResult,
   StartedFunction
 } from './types';
+import {
+  FunctionRegistryEntry,
+  loadFunctionRegistry
+} from './registry';
 
-type FunctionRegistryEntry = {
-  moduleName: string;
-  defaultPort: number;
-};
-
-const functionRegistry: Record<FunctionName, FunctionRegistryEntry> = {
-  'simple-email': {
-    moduleName: '@constructive-io/simple-email-fn',
-    defaultPort: 8081
-  },
-  'send-email-link': {
-    moduleName: '@constructive-io/send-email-link-fn',
-    defaultPort: 8082
-  }
-};
+const functionRegistry = loadFunctionRegistry();
 
 const log = new Logger('knative-job-service');
 const requireFn = createRequire(__filename);
