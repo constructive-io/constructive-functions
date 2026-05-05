@@ -6,37 +6,47 @@ import { send as sendPostmaster } from '@constructive-io/postmaster';
 import { send as sendSmtp } from 'simple-smtp-server';
 import { parseEnvBoolean } from '@pgpmjs/env';
 
+// Use plural connections with `condition` filter rather than singular-by-PK
+// (`user(id:)`, `database(id:)`). The constructive server's preset extends
+// NoUniqueLookupPreset, which deliberately disables singular root-field
+// lookups by unique constraint (including primary key) to keep the API
+// surface small. The plural+condition form is the supported way to fetch
+// a row by id.
 const GetUser = gql`
   query GetUser($userId: UUID!) {
-    user(id: $userId) {
-      username
-      displayName
-      profilePicture
+    users(condition: { id: $userId }, first: 1) {
+      nodes {
+        username
+        displayName
+        profilePicture
+      }
     }
   }
 `;
 
 const GetDatabaseInfo = gql`
   query GetDatabaseInfo($databaseId: UUID!) {
-    database(id: $databaseId) {
-      sites {
-        nodes {
-          domains {
-            nodes {
-              subdomain
-              domain
+    databases(condition: { id: $databaseId }, first: 1) {
+      nodes {
+        sites {
+          nodes {
+            domains {
+              nodes {
+                subdomain
+                domain
+              }
             }
-          }
-          logo
-          title
-          siteThemes {
-            nodes {
-              theme
+            logo
+            title
+            siteThemes {
+              nodes {
+                theme
+              }
             }
-          }
-          siteModules(condition: { name: "legal_terms_module" }) {
-            nodes {
-              data
+            siteModules(condition: { name: "legal_terms_module" }) {
+              nodes {
+                data
+              }
             }
           }
         }
@@ -111,7 +121,7 @@ const sendEmailLink = async (
     databaseId
   });
 
-  const site = databaseInfo?.database?.sites?.nodes?.[0];
+  const site = databaseInfo?.databases?.nodes?.[0]?.sites?.nodes?.[0];
   if (!site) {
     throw new Error('Site not found for database');
   }
@@ -177,7 +187,7 @@ const sendEmailLink = async (
       const inviter = await client.request<any>(GetUser, {
         userId: params.sender_id
       });
-      inviterName = inviter?.user?.displayName;
+      inviterName = inviter?.users?.nodes?.[0]?.displayName;
 
       if (inviterName) {
         subject = `${inviterName} invited you to ${nick}!`;
