@@ -1,4 +1,7 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { FnClient } from '@constructive-io/fn-client';
+import { Templatizer } from 'genomic';
 import type { ParsedArgs } from 'minimist';
 
 export type CommandFn = (args: ParsedArgs) => number | Promise<number>;
@@ -8,6 +11,23 @@ const buildClient = (args: ParsedArgs): FnClient =>
     rootDir: typeof args.root === 'string' ? args.root : undefined,
     config: typeof args.config === 'string' ? args.config : undefined,
   });
+
+/** Bundled handler templates ship next to the compiled commands. */
+const TEMPLATES_ROOT = path.resolve(__dirname, '..', 'templates', 'handler');
+
+const KNOWN_HANDLER_TYPES = ['node-graphql', 'python'] as const;
+type HandlerType = (typeof KNOWN_HANDLER_TYPES)[number];
+
+const isHandlerType = (s: string): s is HandlerType =>
+  (KNOWN_HANDLER_TYPES as readonly string[]).includes(s);
+
+const detectNoTty = (args: ParsedArgs): boolean =>
+  Boolean(
+    args['no-tty'] ||
+      args.noTty ||
+      args.tty === false ||
+      process.env.CI === 'true'
+  );
 
 const cmdGenerate: CommandFn = (args) => {
   const client = buildClient(args);
@@ -74,7 +94,72 @@ const cmdVerify: CommandFn = (args) => {
   return 2;
 };
 
+const cmdInit: CommandFn = async (args) => {
+  // Positional name first, then --name flag.
+  const positional = typeof args._[1] === 'string' ? args._[1] : undefined;
+  const name = positional ?? (typeof args.name === 'string' ? args.name : '');
+  if (!name) {
+    process.stderr.write(
+      'fn init: function name is required (positional or --name=<name>)\n'
+    );
+    return 1;
+  }
+
+  const type = typeof args.type === 'string' ? args.type : 'node-graphql';
+  if (!isHandlerType(type)) {
+    process.stderr.write(
+      `Unknown type "${type}". Available: ${KNOWN_HANDLER_TYPES.join(', ')}\n`
+    );
+    return 1;
+  }
+
+  const templateDir = path.join(TEMPLATES_ROOT, type);
+  if (!fs.existsSync(templateDir)) {
+    process.stderr.write(
+      `Bundled template missing at ${templateDir}. Reinstall @constructive-io/fn-cli.\n`
+    );
+    return 1;
+  }
+
+  const client = buildClient(args);
+  const functionsDir = client.config.functionsDir
+    ? path.resolve(client.rootDir, client.config.functionsDir)
+    : path.resolve(client.rootDir, 'functions');
+  const outDir = path.join(functionsDir, name);
+
+  if (fs.existsSync(outDir) && !args.force) {
+    process.stderr.write(
+      `${path.relative(client.rootDir, outDir) || outDir} already exists. Pass --force to overwrite.\n`
+    );
+    return 1;
+  }
+
+  // Genomic strips the ____ wrapping when matching argv keys, so plain
+  // names ('name', 'description', …) are the right shape. version defaults
+  // to 0.1.0 from the .boilerplate.json; users can edit handler.json after.
+  const argv: Record<string, string> = {
+    name,
+    version: '0.1.0',
+    description: typeof args.description === 'string' ? args.description : '',
+  };
+
+  const templatizer = new Templatizer();
+  await templatizer.process(templateDir, outDir, {
+    argv,
+    noTty: detectNoTty(args),
+  });
+
+  const written = fs
+    .readdirSync(outDir)
+    .map((f) => path.join(path.relative(client.rootDir, outDir) || outDir, f));
+  process.stdout.write(`Created ${name} (${type}):\n`);
+  for (const f of written) process.stdout.write(`  + ${f}\n`);
+  process.stdout.write('Next: run `fn generate` to stamp out workspace packages.\n');
+  return 0;
+};
+
 export const commands: Record<string, CommandFn> = {
+  init: cmdInit,
   generate: cmdGenerate,
   build: cmdBuild,
   dev: cmdDev,

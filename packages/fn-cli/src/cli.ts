@@ -4,6 +4,9 @@ import { commands, type CommandFn } from './commands';
 const HELP = `Usage: fn <command> [options]
 
 Commands:
+  init <name>  Scaffold a new function under functions/<name>/
+               Flags: --type=node-graphql|python (default: node-graphql)
+                      --description=<d>  --force  --no-tty
   generate     Generate workspace packages, k8s YAML, configmaps, skaffold.yaml
                Flags: --only=<name>  --packages-only
   build        Run \`pnpm -r build\` (optionally filtered)
@@ -21,8 +24,8 @@ Common flags:
 
 export const run = async (argv: string[] = process.argv.slice(2)): Promise<number> => {
   const parsed = minimist(argv, {
-    string: ['only', 'config', 'root'],
-    boolean: ['packages-only', 'help', 'version'],
+    string: ['only', 'config', 'root', 'type', 'name', 'description'],
+    boolean: ['packages-only', 'help', 'version', 'no-tty', 'force'],
     alias: { h: 'help', v: 'version' },
   });
 
