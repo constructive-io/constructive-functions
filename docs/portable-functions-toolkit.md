@@ -19,9 +19,29 @@ knative-job-fn (fn-app)         (low-level Express middleware)
 | `@constructive-io/knative-job-fn` | Low-level Express middleware for Knative job request/response shape. fn-runtime depends on it. |
 | `@constructive-io/fn-generator` | Programmatic builders that emit Dockerfiles, k8s YAML, configmaps, skaffold profiles, manifest registry. Pure functions; idempotent file I/O at the boundary. |
 | `@constructive-io/fn-client` | Importable `FnClient` API — config loading, manifest reading, `pnpm build`, child-process orchestration for `dev`. |
-| `@constructive-io/fn-cli` | The `fn` executable. Subcommands: `generate`, `build`, `dev`, `manifest`, `verify`. |
+| `@constructive-io/fn-cli` | The `fn` executable. Subcommands: `init`, `generate`, `build`, `dev`, `manifest`, `verify`. |
 
-## Customer repo experience
+## Quick start
+
+```bash
+# In a fresh project
+pnpm add -D @constructive-io/fn-cli
+pnpm add @constructive-io/fn-runtime
+
+# Scaffold a function
+pnpm fn init send-welcome --no-tty --description "Welcome email sender"
+# → functions/send-welcome/{handler.json, handler.ts}
+
+# Stamp out the workspace package, build, run
+pnpm fn generate
+pnpm install                           # link the just-created generated/* workspaces
+pnpm fn build
+pnpm fn dev                            # functions run as local Node processes
+```
+
+`fn init` uses [`genomic`](https://www.npmjs.com/package/genomic) under the hood — the same template engine `pgpm init` uses — so the prompt conventions and `--no-tty` flag-mapping match the rest of the Constructive ecosystem. Two handler types ship today: `--type=node-graphql` (default) and `--type=python`.
+
+## Repo layout the toolkit expects
 
 ```
 my-app/
@@ -29,20 +49,23 @@ my-app/
 │   └── send-welcome/
 │       ├── handler.json   # {"name":"send-welcome","version":"0.1.0","type":"node-graphql"}
 │       └── handler.ts     # default-exported FunctionHandler
-├── fn.config.json         # FnConfig (typed via fn-types)
+├── fn.config.json         # FnConfig (typed via fn-types) — optional
 └── package.json
 ```
 
-```bash
-pnpm add -D @constructive-io/fn-cli
-pnpm add @constructive-io/fn-runtime
+## CLI surface
 
-pnpm fn generate                       # write generated/<name>/ + manifest + skaffold
-pnpm fn build                          # pnpm -r build
-pnpm fn manifest                       # cat generated/functions-manifest.json
-pnpm fn verify                         # check manifest matches functions/
-pnpm fn dev                            # spawn each function as a Node child
+```bash
+fn init <name> [--type=node-graphql|python] [--description=<d>] [--force] [--no-tty]
+fn generate [--only=<name>] [--packages-only]
+fn build [--only=<name>]
+fn dev [--only=<name>]
+fn manifest                            # print on-disk functions-manifest.json
+fn verify                              # check manifest matches functions/
+fn --version                           # print fn-cli version
 ```
+
+Common flags: `--root=<dir>`, `--config=<file>`.
 
 ## Job-service registry (when running the `jobs-bundle` preset)
 
