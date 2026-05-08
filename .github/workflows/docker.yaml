@@ -56,14 +56,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      # No pnpm/action-setup here: this workflow only runs
-      # `node --experimental-strip-types scripts/generate.ts` on the
-      # runner (zero deps); the actual builds happen inside Docker.
-      # Including pnpm makes setup-node@v5 auto-detect it via
-      # packageManager + PNPM_HOME and try to save a cache for an
-      # empty store, which fails with "Path Validation Error".
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      # Pinned to v4: setup-node@v5 auto-detects pnpm via the
+      # packageManager field in package.json and tries to cache the
+      # store, which fails here because this workflow doesn't run
+      # `pnpm install` on the runner — the store path doesn't exist
+      # and v5 promotes the "missing path" warning to an error.
+      # Sticking to v4 until v5's auto-cache can be opted out cleanly.
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
 
