@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/lerna/schemas/lerna-schema.json",
+  "version": "independent",
+  "npmClient": "pnpm",
+  "npmClientArgs": [
+    "--frozen-lockfile"
+  ],
+  "packages": [
+    "packages/fn-types",
+    "packages/fn-app",
+    "packages/fn-runtime",
+    "packages/fn-generator",
+    "packages/fn-client",
+    "packages/fn-cli"
+  ],
+  "registry": "https://registry.npmjs.org",
+  "command": {
+    "publish": {
+      "allowBranch": "main",
+      "message": "chore(release): publish",
+      "conventionalCommits": true
+    }
+  }
+}

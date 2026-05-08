@@ -3,20 +3,19 @@
   "version": "0.1.0",
   "description": "Programmatic client for the Constructive Functions toolkit. Wraps fn-generator with config loading, manifest readers, and child-process orchestration for local dev.",
   "author": "Constructive <developers@constructive.io>",
-  "license": "SEE LICENSE IN LICENSE",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "license": "MIT",
+  "main": "index.js",
+  "types": "index.d.ts",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "directory": "dist"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && pnpm run copy",
+    "copy": "copyfiles -f ../../LICENSE README.md package.json dist",
     "clean": "rimraf dist",
-    "test": "jest"
+    "test": "jest",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@constructive-io/fn-generator": "workspace:^",
@@ -25,6 +24,7 @@
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.4",
+    "copyfiles": "^2.4.1",
     "jest": "^29.7.0",
     "rimraf": "^5.0.5",
     "ts-jest": "^29.2.5",

@@ -12,8 +12,20 @@ const buildClient = (args: ParsedArgs): FnClient =>
     config: typeof args.config === 'string' ? args.config : undefined,
   });
 
-/** Bundled handler templates ship next to the compiled commands. */
-const TEMPLATES_ROOT = path.resolve(__dirname, '..', 'templates', 'handler');
+/**
+ * Bundled handler templates. Two candidate paths cover both layouts:
+ *   - `..` matches when running from source (ts-jest, dist/) where templates/
+ *     lives at the package root, sibling to dist/ and src/.
+ *   - `.` matches the published package shape, where publishConfig.directory
+ *     is "dist" so the package root *is* dist/ and templates/ has been copied
+ *     in during build.
+ */
+const TEMPLATE_CANDIDATES = [
+  path.resolve(__dirname, '..', 'templates', 'handler'),
+  path.resolve(__dirname, 'templates', 'handler'),
+];
+const TEMPLATES_ROOT =
+  TEMPLATE_CANDIDATES.find((p) => fs.existsSync(p)) ?? TEMPLATE_CANDIDATES[0];
 
 const KNOWN_HANDLER_TYPES = ['node-graphql', 'python'] as const;
 type HandlerType = (typeof KNOWN_HANDLER_TYPES)[number];

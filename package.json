@@ -28,7 +28,9 @@
     "test": "jest",
     "test:unit": "jest --testPathPatterns='functions/[^/]+/__tests__'",
     "test:integration": "jest --testPathPatterns='tests/integration'",
-    "test:e2e": "jest --testPathPatterns='tests/e2e'"
+    "test:e2e": "jest --testPathPatterns='tests/e2e'",
+    "release": "lerna publish",
+    "release:from-package": "lerna publish from-package --yes"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
@@ -42,6 +44,7 @@
     "eslint-plugin-unused-imports": "^4.0.0",
     "globals": "^16.5.0",
     "jest": "^30.2.0",
+    "lerna": "^8.2.4",
     "prettier": "^3.7.4",
     "ts-jest": "^29.4.0",
     "tsx": "^4.19.0",

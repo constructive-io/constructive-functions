@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Run pnpm publish --dry-run only'
+        description: 'Skip the actual publish — only dry-run pack each package'
         type: boolean
         default: true
 
@@ -42,7 +42,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build toolkit packages
+      - name: Build toolkit packages (also runs prepublishOnly check)
         run: |
           pnpm --filter @constructive-io/fn-types build
           pnpm --filter @constructive-io/knative-job-fn build
@@ -54,20 +54,18 @@ jobs:
       - name: Verify generator snapshot
         run: pnpm --filter @constructive-io/fn-generator test
 
-      - name: Publish (dry run for workflow_dispatch when requested)
+      - name: Lerna dry-run (workflow_dispatch with dry_run=true)
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true'
         run: |
+          # Iterate packages and dry-run pack each. Lerna's `from-package`
+          # mode would try to publish; we want only the pack diagnostics.
           for pkg in fn-types fn-app fn-runtime fn-generator fn-client fn-cli; do
             (cd "packages/$pkg" && pnpm publish --dry-run --no-git-checks --access public)
           done
 
-      - name: Publish to npm with provenance
+      - name: Lerna publish (tag push, or workflow_dispatch with dry_run=false)
         if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != 'true')
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
-        run: |
-          # Order matters: deps first, dependents last.
-          for pkg in fn-types fn-app fn-runtime fn-generator fn-client fn-cli; do
-            (cd "packages/$pkg" && pnpm publish --no-git-checks --access public)
-          done
+        run: npx lerna publish from-package --yes --no-private

@@ -3,26 +3,26 @@
   "version": "0.1.0",
   "description": "Source-of-truth TypeScript types for the Constructive Functions toolkit: handler manifests, FnConfig, runtime context, registry.",
   "author": "Constructive <developers@constructive.io>",
-  "license": "SEE LICENSE IN LICENSE",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "license": "MIT",
+  "main": "index.js",
+  "types": "index.d.ts",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "directory": "dist"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && pnpm run copy",
+    "copy": "copyfiles -f ../../LICENSE README.md package.json dist",
     "clean": "rimraf dist",
-    "lint": "eslint . --fix"
+    "lint": "eslint . --fix",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "graphql-request": "^7.1.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.4",
+    "copyfiles": "^2.4.1",
     "rimraf": "^5.0.5",
     "typescript": "^5.1.6"
   }

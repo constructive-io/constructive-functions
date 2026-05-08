@@ -3,19 +3,18 @@
   "version": "1.2.0",
   "description": "Runtime for Constructive functions — wraps a handler in an Express app with GraphQL client, logging, and job callback support.",
   "author": "Constructive <developers@constructive.io>",
-  "license": "SEE LICENSE IN LICENSE",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "license": "MIT",
+  "main": "index.js",
+  "types": "index.d.ts",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "directory": "dist"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "clean": "rimraf dist"
+    "build": "tsc -p tsconfig.json && pnpm run copy",
+    "copy": "copyfiles -f ../../LICENSE README.md package.json dist",
+    "clean": "rimraf dist",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@constructive-io/fn-types": "workspace:^",
@@ -25,6 +24,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.4",
+    "copyfiles": "^2.4.1",
+    "rimraf": "^5.0.5",
     "typescript": "^5.1.6"
   }
 }
