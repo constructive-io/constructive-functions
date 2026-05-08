@@ -1,4 +1,9 @@
-export type FunctionName = 'simple-email' | 'send-email-link';
+/**
+ * Function names are dynamic — looked up at runtime from the registry loaded
+ * from generated/functions-manifest.json (or the FUNCTIONS_MANIFEST_PATH /
+ * FUNCTIONS_REGISTRY env vars). Kept as an alias for narrowing intent.
+ */
+export type FunctionName = string;
 
 export type FunctionServiceConfig = {
   name: FunctionName;

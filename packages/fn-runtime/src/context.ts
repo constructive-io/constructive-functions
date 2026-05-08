@@ -1,6 +1,6 @@
 import { createLogger } from '@pgpmjs/logger';
+import type { FunctionContext } from '@constructive-io/fn-types';
 import { createClients } from './graphql';
-import type { FunctionContext } from './types';
 
 type RequestHeaders = {
   databaseId?: string;
