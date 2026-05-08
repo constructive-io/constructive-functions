@@ -56,9 +56,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-
+      # No pnpm/action-setup here: this workflow only runs
+      # `node --experimental-strip-types scripts/generate.ts` on the
+      # runner (zero deps); the actual builds happen inside Docker.
+      # Including pnpm makes setup-node@v5 auto-detect it via
+      # packageManager + PNPM_HOME and try to save a cache for an
+      # empty store, which fails with "Path Validation Error".
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
