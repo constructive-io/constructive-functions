@@ -1,0 +1,39 @@
+{
+  "name": "@constructive-io/fn-cli",
+  "version": "0.1.0",
+  "description": "Thin command-line wrapper for the Constructive Functions toolkit. Exposes the `fn` executable.",
+  "author": "Constructive <developers@constructive.io>",
+  "license": "SEE LICENSE IN LICENSE",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "fn": "dist/bin/fn.js"
+  },
+  "files": [
+    "dist",
+    "templates",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/bin/fn.js",
+    "clean": "rimraf dist",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@constructive-io/fn-client": "workspace:^",
+    "genomic": "^5.3.11",
+    "minimist": "^1.2.8"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/minimist": "^1.2.5",
+    "@types/node": "^22.10.4",
+    "jest": "^29.7.0",
+    "rimraf": "^5.0.5",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.1.6"
+  }
+}

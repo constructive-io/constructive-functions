@@ -40,3 +40,52 @@ jobs:
       - run: pnpm install
       - run: pnpm build
       - run: pnpm test:integration
+
+  toolkit:
+    name: Toolkit package tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - run: node --experimental-strip-types scripts/generate.ts
+      - run: pnpm install
+      - name: Build toolkit packages
+        run: |
+          pnpm --filter @constructive-io/fn-types build
+          pnpm --filter @constructive-io/knative-job-fn build
+          pnpm --filter @constructive-io/fn-runtime build
+          pnpm --filter @constructive-io/fn-generator build
+          pnpm --filter @constructive-io/fn-client build
+          pnpm --filter @constructive-io/fn-cli build
+      - name: Run toolkit unit tests
+        run: |
+          pnpm --filter @constructive-io/fn-generator test
+          pnpm --filter @constructive-io/fn-client test
+          pnpm --filter @constructive-io/fn-cli test
+
+  fn-init-e2e:
+    name: fn init end-to-end
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - run: node --experimental-strip-types scripts/generate.ts
+      - run: pnpm install
+      - name: Build fn-cli (transitive)
+        run: |
+          pnpm --filter @constructive-io/fn-types build
+          pnpm --filter @constructive-io/knative-job-fn build
+          pnpm --filter @constructive-io/fn-runtime build
+          pnpm --filter @constructive-io/fn-generator build
+          pnpm --filter @constructive-io/fn-client build
+          pnpm --filter @constructive-io/fn-cli build
+      - name: Binary integration test
+        run: pnpm exec jest tests/integration/fn-init.test.ts

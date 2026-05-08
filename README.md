@@ -2,7 +2,22 @@
 
 Functions playground for Constructive — isolated workspace for building, testing, and deploying Knative-style HTTP functions.
 
-## Quick Start
+This repo is also the source of the **Portable Functions Toolkit**: a set of `@constructive-io/fn-*` npm packages that any external repo can `pnpm add` to get the same code-gen + Docker + k8s pipeline against its own `functions/` directory. See [docs/portable-functions-toolkit.md](docs/portable-functions-toolkit.md) for the full toolkit guide.
+
+## Quick start (in another repo)
+
+```bash
+pnpm add -D @constructive-io/fn-cli
+pnpm add @constructive-io/fn-runtime
+
+pnpm fn init send-welcome --no-tty           # scaffold functions/send-welcome/
+pnpm fn generate                             # stamp out generated/<name>/ packages
+pnpm install                                 # link the new workspaces
+pnpm fn build                                # compile
+pnpm fn dev                                  # run functions as local Node processes
+```
+
+## Quick start (this repo, dogfood)
 
 ```bash
 # Install dependencies
