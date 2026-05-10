@@ -1,6 +1,8 @@
 # constructive-functions
 
-Functions playground for Constructive — isolated workspace for building, testing, and deploying Knative-style HTTP functions.
+Functions playground for Constructive — a workspace for building, testing, and deploying serverless HTTP functions backed by a Postgres-backed job queue.
+
+Functions are authored in `functions/<name>/` (a `handler.ts` plus a `handler.json` manifest), generated into runnable workspace packages by `pnpm generate`, and dispatched by the job service in `job/service/`. Templates live in `templates/` (`node-graphql` and `python` are supported today).
 
 This repo is also the source of the **Portable Functions Toolkit**: a set of `@constructive-io/fn-*` npm packages that any external repo can `pnpm add` to get the same code-gen + Docker + k8s pipeline against its own `functions/` directory. See [docs/portable-functions-toolkit.md](docs/portable-functions-toolkit.md) for the full toolkit guide.
 
@@ -20,121 +22,103 @@ pnpm fn dev                                  # run functions as local Node proce
 ## Quick start (this repo, dogfood)
 
 ```bash
-# Install dependencies
-pnpm install
+pnpm generate     # generate workspace packages from handler.json manifests
+pnpm install      # install dependencies (including generated packages)
+pnpm build        # build all packages and functions
 
-# Build all functions
-pnpm build
-
-# Build Docker images locally
-make docker-build
-
-# Build individual function images
-make docker-build-simple-email
+make docker-build                        # build all function Docker images
+make docker-build-simple-email           # build a single function image
 make docker-build-send-email-link
 ```
 
 ## Functions
 
-### `@constructive-io/simple-email-fn`
+| Function | Port | Type | Image |
+|----------|------|------|-------|
+| `simple-email` | 8081 | node-graphql | `ghcr.io/constructive-io/constructive-functions/simple-email:latest` |
+| `send-email-link` | 8082 | node-graphql | `ghcr.io/constructive-io/constructive-functions/send-email-link:latest` |
+| `knative-job-example` | 8083 | node-graphql | `ghcr.io/constructive-io/constructive-functions/knative-job-example:latest` |
+| `python-example` | 8084 | python | `ghcr.io/constructive-io/constructive-functions/python-example:latest` |
 
-Simple email function that sends emails directly from job payload.
+Port `8080` is reserved for the job service.
 
-- **Port**: `8080`
-- **Docker image**: `ghcr.io/constructive-io/constructive-functions/simple-email:latest`
-- **Environment**:
-  - `SIMPLE_EMAIL_DRY_RUN` — If `true`, logs email payload without sending
-  - `MAILGUN_API_KEY`, `MAILGUN_KEY` — Mailgun credentials
-  - `MAILGUN_DOMAIN`, `MAILGUN_FROM`, `MAILGUN_REPLY` — Mailgun email config
+### `simple-email`
 
-### `@constructive-io/send-email-link-fn`
+Sends emails directly from a job payload.
 
-Email link function for invite, password reset, and verification emails.
+- `SIMPLE_EMAIL_DRY_RUN` — if `true`, logs the payload instead of sending
+- `MAILGUN_API_KEY`, `MAILGUN_KEY`, `MAILGUN_DOMAIN`, `MAILGUN_FROM`, `MAILGUN_REPLY` — Mailgun config
 
-- **Port**: `8080`
-- **Docker image**: `ghcr.io/constructive-io/constructive-functions/send-email-link:latest`
-- **Environment**:
-  - `SEND_EMAIL_LINK_DRY_RUN` — If `true`, logs email payload without sending
-  - `DEFAULT_DATABASE_ID` — Default database UUID
-  - `GRAPHQL_URL` — GraphQL API endpoint
-  - `META_GRAPHQL_URL` — Meta GraphQL API endpoint (optional)
-  - `GRAPHQL_AUTH_TOKEN` — Optional Bearer token for GraphQL requests
-  - `LOCAL_APP_PORT` — Local port for dashboard links (e.g., `3000`)
-  - `MAILGUN_*` — Same Mailgun config as `simple-email`
+### `send-email-link`
+
+Sends invite, password reset, and verification emails (rendered via MJML).
+
+- `SEND_EMAIL_LINK_DRY_RUN` — if `true`, logs the payload instead of sending
+- `DEFAULT_DATABASE_ID` — default database UUID
+- `GRAPHQL_URL`, `META_GRAPHQL_URL` — GraphQL API endpoints
+- `GRAPHQL_AUTH_TOKEN` — optional Bearer token for GraphQL requests
+- `LOCAL_APP_PORT` — local port for dashboard links (e.g. `3000`)
+- `MAILGUN_*` — same Mailgun config as `simple-email`
+
+### `knative-job-example` / `python-example`
+
+Reference implementations for the `node-graphql` and `python` templates.
 
 ## Development
 
-This repo includes full Kubernetes manifests for deploying functions to any cluster.
+The full local-dev guide lives in [DEVELOPMENT.md](./DEVELOPMENT.md). Two paths:
 
-### Local Kubernetes (kind/minikube)
+- **Docker Compose + local Node** (fastest iteration) — `make dev` for infrastructure, `make dev-fn` to run functions as local Node processes.
+- **Skaffold on local k8s** (production-like, with hot reload) — `make skaffold-dev` deploys the full stack to the `constructive-functions` namespace and watches handler files.
 
-```bash
-cd k8s
-
-# Install Knative Serving + Kourier only (no CNPG)
-make operators-knative-only
-
-# Apply local overlay (single Postgres, single MinIO, functions)
-make kustomize-local
-
-# Port-forward to local services
-make proxy-server   # GraphQL API -> localhost:8080
-make proxy-explorer # GraphQL explorer UI -> localhost:8081
-make proxy-web      # Dashboard UI -> localhost:3000
-```
-
-See `k8s/DEVELOPMENT_LOCAL.md` for detailed local setup.
+For the Knative variant of the k8s setup, see `k8s/DEVELOPMENT_LOCAL.md`.
 
 ### CI/CD
 
-The `CI Test K8s` workflow (`.github/workflows/test-k8s-deployment.yaml`) runs on every PR/push to `main` that touches `k8s/**`. It:
-
-1. Spins up a `kind` cluster
-2. Installs Knative via `make operators-knative-only`
-3. Applies the `k8s/overlays/ci` overlay
-4. Waits for workloads to be ready
+The `CI Test K8s` workflow (`.github/workflows/test-k8s-deployment.yaml`) runs on PRs and pushes to `main` that touch `k8s/`, `tests/e2e/`, or `functions/`. It spins up a `kind` cluster, applies the `k8s/overlays/ci` overlay, and runs the per-function e2e tests.
 
 ## Project Structure
 
 ```
 .
-├── functions/
-│   ├── send-email-link/
-│   │   ├── src/
-│   │   ├── package.json
-│   │   ├── Dockerfile
-│   │   └── tsconfig.json
-│   └── simple-email/
-│       └── (same structure)
+├── functions/             # User-authored handler.ts + handler.json (git tracked)
+├── templates/             # Template definitions (node-graphql, python, shared, k8s)
+├── generated/             # Generated workspace packages (gitignored)
+├── packages/
+│   ├── fn-runtime/        # createFunctionServer, GraphQL clients, FunctionContext
+│   └── fn-app/            # Express app factory with job callbacks
+├── job/
+│   ├── service/           # Orchestrator (loads functions + worker + scheduler)
+│   ├── server/            # Callback receiver
+│   └── worker/            # Job dispatcher
 ├── k8s/
-│   ├── base/
-│   ├── overlays/
-│   ├── scripts/
-│   └── Makefile
-├── types/
-│   └── (custom type definitions for external packages)
+│   ├── base/              # Shared manifests
+│   └── overlays/          # local-simple, local, ci, dev, staging
+├── tests/                 # integration + e2e suites
+├── scripts/               # generate.ts, dev.ts, docker-build.ts
+├── skaffold.yaml
 ├── package.json
-├── pnpm-workspace.yaml
 └── Makefile
 ```
 
 ## Notes
 
-- Functions use `@constructive-io/knative-job-fn` for the Express/Knative HTTP wrapper
-- Email providers use `@constructive-io/postmaster` (Mailgun) and `@launchql/mjml` (styled-email templates via MJML)
-- No `docker-compose` — this repo is Kubernetes-focused for functions deployment
-- Root workspace manages shared linting/formatting configs; each function has its own build config
+- Functions use `@constructive-io/fn-runtime` (runtime + GraphQL clients) and `@constructive-io/fn-app` (Express wrapper).
+- Email providers are wired through `@constructive-io/postmaster` (Mailgun) and `@launchql/mjml` / `@launchql/styled-email` for templating.
+- Both Node (`node-graphql`) and Python (`python`) templates are supported — pick via the `type` field in `handler.json`.
+- The `generated/` directory is entirely gitignored; rerun `pnpm generate` after changing any `handler.json`.
+- Root workspace manages shared linting/formatting; each generated function ships its own build config and Dockerfile.
 
 ## Pushing Images
 
-To push to GitHub Container Registry:
+Images are tagged with the GHCR prefix automatically:
 
 ```bash
 docker push ghcr.io/constructive-io/constructive-functions/simple-email:latest
 docker push ghcr.io/constructive-io/constructive-functions/send-email-link:latest
+docker push ghcr.io/constructive-io/constructive-functions/knative-job-example:latest
+docker push ghcr.io/constructive-io/constructive-functions/python-example:latest
 ```
 
-Images are built with the correct registry prefix via the Makefile:
-- `make docker-build` — Builds all functions with `ghcr.io/constructive-io/constructive-functions/<name>:latest`
-- `make docker-build-simple-email` — Builds `ghcr.io/constructive-io/constructive-functions/simple-email:latest`
-- `make docker-build-send-email-link` — Builds `ghcr.io/constructive-io/constructive-functions/send-email-link:latest`
+- `make docker-build` — builds all function images
+- `make docker-build-<name>` — builds a single function image

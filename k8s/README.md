@@ -1,83 +1,59 @@
-# Interweb / Constructive Kubernetes Setup
+# Constructive Functions — Kubernetes Manifests
 
-This folder contains the Kubernetes manifests and Kustomize overlays for running
-the Constructive stack (Postgres, CNPG, API, dashboard, jobs + functions) across
-dev, staging, and local clusters.
+Kustomize bases and overlays for deploying the Constructive Functions stack (Postgres, GraphQL server, job service, function workloads) to local clusters and remote environments.
 
-## Makefile entry points
+For end-to-end local development instructions, see the root [`DEVELOPMENT.md`](../DEVELOPMENT.md). For the Knative-based local variant, see [`DEVELOPMENT_LOCAL.md`](./DEVELOPMENT_LOCAL.md). For an architectural overview, see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
-From repo root:
+## Layout
 
-```sh
-cd interweb/k8s
+```
+k8s/
+├── base/                # Shared manifests (CNPG cluster, Constructive server, pgAdmin, job service)
+├── overlays/
+│   ├── local-simple/    # Plain k8s — no Knative, no CNPG. Used by `make skaffold-dev`.
+│   ├── local/           # Knative variant — Knative Services for functions, plain Postgres + MinIO.
+│   ├── ci/              # Built on top of `local`, scaled down for kind clusters.
+│   ├── dev/             # Dev cluster — CNPG, ingress, launchql.dev domains.
+│   └── staging/         # Staging cluster — CNPG with backups; ingress TBD.
+└── scripts/             # Operator install/teardown helpers.
 ```
 
-- Install operators (CloudNativePG, Knative, etc.)
+| Overlay | Namespace | Postgres | Functions | Ingress | Notes |
+|---------|-----------|----------|-----------|---------|-------|
+| `local-simple` | `constructive-functions` | Plain Deployment | Plain Deployments (rawYaml from `generated/`) | None | Default for `make skaffold-dev`. |
+| `local` | `constructive-functions` | Plain Deployment | Knative Services | None | Requires Knative + Kourier (`make operators-knative-only`). |
+| `ci` | `constructive-functions` | Plain Deployment | Knative Services (scaled down) | None | Used by `CI Test K8s` workflow. |
+| `dev` | `interweb` | CloudNativePG cluster | Knative Services | `launchql.dev` (nginx + cert-manager DNS01) | |
+| `staging` | `interweb` | CloudNativePG cluster + backups | Knative Services | TBD | |
 
-  ```sh
-  make setup
-  ```
+The active path for laptop development is `local-simple` via Skaffold from the repo root:
 
-- Install / remove the CNPG cluster + PgBouncer
+```bash
+make skaffold-dev          # plain k8s
+make skaffold-dev-knative  # Knative variant (requires operators)
+```
 
-  ```sh
-  make install-pg
-  make uninstall-pg
-  ```
+## GHCR pull secret
 
-- Apply app stack via Kustomize overlays
+The `constructive-functions` namespace needs a `ghcr-pull` secret to pull private images from `ghcr.io/constructive-io/`:
 
-  ```sh
-  # Dev cluster (namespace: interweb, launchql.dev ingress)
-  kubectl config use-context your-dev-context
-  make kustomize-dev
+```bash
+kubectl create namespace constructive-functions --dry-run=client -o yaml | kubectl apply -f -
 
-  # Staging cluster (namespace: interweb-staging, CNPG backups, ingress TBD)
-  kubectl config use-context your-staging-context
-  make kustomize-staging
+kubectl create secret docker-registry ghcr-pull \
+  --docker-server=ghcr.io \
+  --docker-username=YOUR_USERNAME \
+  --docker-password=YOUR_GH_PAT_TOKEN \
+  --docker-email=your@email.com \
+  -n constructive-functions
 
-  # Local cluster (namespace: interweb, single Postgres + MinIO deployments, no ingress)
-  kubectl config use-context your-local-context
-  make kustomize-local
-  ```
+kubectl patch serviceaccount default -n constructive-functions \
+  -p '{"imagePullSecrets": [{"name": "ghcr-pull"}]}'
+```
 
-- Create GHCR image pull secret in dev namespace
-
-  ```sh
-  GH_USERNAME=... GH_PAT_TOKEN=... GH_EMAIL=... make k8s-pull-secret
-  ```
-
-## Kustomize layout
-
-- `base/` – shared pieces:
-  - `base/cnpg/*` – CNPG cluster, secret, and `postgres-db` namespace.
-  - `base/constructive/*` – Constructive config, secrets, API, admin, dashboard,
-    pgAdmin, knative job service, db job, etc.
-  - `base/functions/*` – Knative functions (`simple-email`, `send-email-link`).
-- `overlays/dev/` – dev environment:
-  - `namespace: interweb`.
-  - Adds `interweb` namespace, Route53 issuer, and `launchql.dev` ingress for
-    API, dashboard, and pgAdmin.
-  - Patches dashboard config to point at `https://api.launchql.dev/graphql`.
-- `overlays/staging/` – staging environment:
-  - `namespace: interweb-staging`.
-  - Reuses base stack and adds CNPG `Backup` and `ScheduledBackup` resources
-    pointing directly at an S3 bucket (via `postgres-backup-credentials`).
-  - Staging ingress/domain still to be defined.
-- `overlays/local/` – local environment:
-  - `namespace: interweb`.
-  - Uses a single `postgres` Deployment + Service instead of CNPG.
-  - Adds a single `minio` Deployment + Service for S3-compatible storage.
-  - Reuses Constructive + functions manifests from `base/constructive` and
-    `base/functions`.
-  - No ingress; use `kubectl port-forward` for access.
+If pods show `ImagePullBackOff`, this secret is missing or the PAT has expired.
 
 ## Notes
 
-- `make setup` delegates to `packages/client/scripts/setup-operators.ts`, which
-  installs operators via manifests/Helm.
-- Secrets in manifests (`postgres*`, `pg-credentials`, mailgun, etc.) are
-  development defaults; replace them or manage them via your secret manager
-  before production use.
-
-For a deeper architectural overview, see `ARCHITECTURE.md` in this directory.
+- Function deployments are not in the `local-simple` overlay — Skaffold consumes the per-function manifests generated under `generated/<name>/k8s/` directly. Run `pnpm generate` after editing any `handler.json`.
+- Secrets in `base/` (Postgres, Mailgun, server bucket) are development defaults; replace them via your secret manager before any non-local use.
