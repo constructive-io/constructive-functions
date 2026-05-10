@@ -4,7 +4,7 @@ Local development setup for running functions against real infrastructure (Postg
 
 ## Prerequisites
 
-- Node.js >= 18.17.0
+- Node.js >= 22.0.0
 - pnpm >= 10
 - Docker Desktop
 
@@ -60,7 +60,8 @@ After this you should have built artifacts in:
 |---------|--------|
 | `generated/send-email-link/dist/` | Send-email-link function server |
 | `generated/simple-email/dist/` | Simple-email function server |
-| `generated/example/dist/` | Example function server |
+| `generated/example/dist/` | knative-job-example function server |
+| `generated/python-example/dist/` | Python example function server |
 | `job/service/dist/` | Knative job service (worker + scheduler) |
 | `packages/fn-runtime/dist/` | Function runtime library |
 | `packages/fn-app/dist/` | Function app framework |
@@ -113,6 +114,8 @@ This runs `scripts/dev.ts` which spawns local Node processes with env vars point
 | **job-service** | 8080 | `job/service/dist/run.js` |
 | **simple-email** | 8081 | `generated/simple-email/dist/index.js` |
 | **send-email-link** | 8082 | `generated/send-email-link/dist/index.js` |
+| **knative-job-example** | 8083 | `generated/example/dist/index.js` |
+| **python-example** | 8084 | `generated/python-example/...` (python entrypoint) |
 
 To start a single function:
 
@@ -175,6 +178,8 @@ make dev-down          # Stop Docker infrastructure
 | Job Service | 8080 |
 | simple-email | 8081 |
 | send-email-link | 8082 |
+| knative-job-example | 8083 |
+| python-example | 8084 |
 
 ## Architecture
 
@@ -280,6 +285,8 @@ Changes to runtime packages (`packages/fn-runtime`, `packages/fn-app`) or `packa
 |---------|------------|
 | simple-email | 8081 |
 | send-email-link | 8082 |
+| knative-job-example | 8083 |
+| python-example | 8084 |
 | Job Service | 8080 |
 | PostgreSQL | 5432 |
 | Constructive Server | 3002 |
@@ -295,61 +302,15 @@ Changes to runtime packages (`packages/fn-runtime`, `packages/fn-app`) or `packa
 
 ## Adding a New Function
 
-1. **Create the function source:**
+The canonical, end-to-end workflow lives in [docs/skills/adding-functions.md](./docs/skills/adding-functions.md). Quick summary:
 
-   ```bash
-   mkdir functions/my-function
-   ```
+1. Create `functions/<name>/handler.json` and `functions/<name>/handler.ts`.
+2. Register the function with the job service in `job/service/src/types.ts` (`FunctionName` union) and `job/service/src/index.ts` (`functionRegistry` entry).
+3. Run `pnpm generate && pnpm install && pnpm build`.
 
-   Add `functions/my-function/handler.json`:
-   ```json
-   {
-     "name": "my-function",
-     "version": "1.0.0",
-     "type": "node-graphql",
-     "description": "What this function does",
-     "dependencies": {}
-   }
-   ```
+`pnpm generate` automatically updates `skaffold.yaml` (per-function profile + port-forwards), `k8s/overlays/local-simple/job-service.yaml` (`JOBS_SUPPORTED` and `INTERNAL_GATEWAY_DEVELOPMENT_MAP`), and `generated/functions-manifest.json`. No manual edits to those files are needed.
 
-   Add `functions/my-function/handler.ts` with your function logic.
-
-2. **Generate the workspace package:**
-
-   ```bash
-   pnpm generate
-   pnpm install
-   ```
-
-   This creates `generated/my-function/` with the full package, Dockerfile, and k8s manifests (including `k8s/local-deployment.yaml`).
-
-3. **Register in Skaffold** — edit `skaffold.yaml`, add to the `local-simple` profile:
-
-   ```yaml
-   rawYaml:
-     - generated/simple-email/k8s/local-deployment.yaml
-     - generated/send-email-link/k8s/local-deployment.yaml
-     - generated/my-function/k8s/local-deployment.yaml  # <- add this
-   ```
-
-   And add a port-forward entry:
-   ```yaml
-   portForward:
-     - resourceType: service
-       resourceName: my-function
-       namespace: constructive-functions
-       port: 80
-       localPort: 8083  # pick an unused port
-   ```
-
-4. **Register in job-service** — edit `k8s/overlays/local-simple/job-service.yaml`, add to `JOBS_SUPPORTED` and `INTERNAL_GATEWAY_DEVELOPMENT_MAP`.
-
-5. **Test:**
-
-   ```bash
-   make skaffold-dev        # deploy
-   pnpm test:e2e            # run e2e tests
-   ```
+Then test with `make skaffold-dev` and `pnpm test:e2e`. See the skill doc for the unit-test, e2e-test, and CI checklist.
 
 ## E2E Tests
 

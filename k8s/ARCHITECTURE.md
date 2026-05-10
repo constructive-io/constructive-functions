@@ -1,28 +1,40 @@
-# Interweb / Constructive Kubernetes Architecture
+# Constructive Functions — Kubernetes Architecture
 
-This document summarizes the current Kubernetes layout under `interweb/k8s`, highlights strengths and shortcomings, and sketches directions for improvement and local‑development variants.
+This document summarizes the Kubernetes layout under `k8s/`, highlights strengths and shortcomings, and sketches directions for improvement and local‑development variants.
 
 ## High‑Level Overview
 
-- **Cluster operators**
-  - CloudNativePG (CNPG) operator for Postgres.
+- **Cluster operators** (only required for `dev`, `staging`, and the Knative `local` overlay)
+  - CloudNativePG (CNPG) operator for Postgres (dev/staging only).
   - Knative Serving + Kourier for internal HTTP functions.
-  - cert-manager + ingress-nginx for TLS and HTTP ingress.
+  - cert-manager + ingress-nginx for TLS and HTTP ingress (dev only).
 - **Namespaces**
-  - `postgres-db`: CloudNativePG `Cluster` + PgBouncer `Pooler`.
+  - `postgres-db`: CloudNativePG `Cluster` + PgBouncer `Pooler` (dev/staging).
   - App namespaces are overlay‑specific:
-    - `interweb` (dev and local).
-    - `interweb-staging` (staging).
-
+    - `constructive-functions` (`local-simple`, `local`, `ci`).
+    - `interweb` (`dev`).
+    - `interweb` (`staging`).
 - **Workloads**
-  - `postgres-cluster` (CNPG) with PgBouncer `postgres-pooler`.
+  - `postgres-cluster` (CNPG) with PgBouncer `postgres-pooler` — dev/staging only.
   - `constructive-server` (API + Explorer sidecar).
-  - `dashboard` (Next.js UI).
-  - `pgadmin` (DB admin UI).
-  - `knative-job-service` (internal job orchestration for functions).
-  - Knative Services `simple-email` and `send-email-link` (email functions).
+  - `dashboard` (Next.js UI) — dev/staging.
+  - `pgadmin` (DB admin UI) — dev/staging/local.
+  - `knative-job-service` (job orchestration for functions).
+  - Function workloads (`simple-email`, `send-email-link`, `knative-job-example`, `python-example`) — Knative Services in `local`/`dev`/`staging`, plain Deployments in `local-simple`.
 
-The `Makefile` in `interweb/k8s` wires this together via `install-pg` / `uninstall-pg`, `kustomize-dev`, `kustomize-staging`, and `kustomize-local`, plus helper targets.
+The repo-root `Makefile` wires this together via `make skaffold-dev` / `make skaffold-dev-knative` (local), and `k8s/scripts/setup` plus the kustomize overlays for remote environments.
+
+## Local-development overlay (`local-simple`)
+
+The `local-simple` overlay is the primary path for laptop development. It deliberately strips out operators:
+
+- Plain `postgres` Deployment + Service (no CNPG operator, no PgBouncer).
+- `minio` Deployment for S3-compatible storage.
+- Plain function Deployments (no Knative). Function manifests are not part of the kustomize tree — Skaffold consumes the per-function `generated/<name>/k8s/local-deployment.yaml` files directly via `manifests.rawYaml`, and `pnpm generate` keeps them in sync with each `handler.json`.
+- No ingress; access via `kubectl port-forward` (handled automatically by Skaffold).
+- Namespace: `constructive-functions`.
+
+This is what `make skaffold-dev` deploys.
 
 ## Data Plane (Postgres)
 
@@ -31,8 +43,8 @@ The `Makefile` in `interweb/k8s` wires this together via `install-pg` / `uninsta
   - Custom image `ghcr.io/constructive-io/docker/postgres-plus:18`.
   - PgBouncer `Pooler postgres-pooler` for read‑write connections.
 - Access pattern:
-  - Applications connect via `postgres-cluster-rw.postgres-db.svc.cluster.local:5432` (dev/staging) or `postgres` (local overlay).
-  - Credentials are provided via `base/cnpg/secret.yaml` and `base/constructive/pg-secret.yaml`.
+  - Applications connect via `postgres-cluster-rw.postgres-db.svc.cluster.local:5432` (dev/staging) or `postgres` (local / local-simple overlays).
+  - Credentials are provided via `base/cnpg/secret.yaml` and `base/constructive/pg-secret.yaml` (or per-overlay `pg-secret.yaml` for local).
 
 ### Observations
 
@@ -100,13 +112,14 @@ The `Makefile` in `interweb/k8s` wires this together via `install-pg` / `uninsta
 
 ## Knative Jobs and Functions
 
-### simple-email function
+### Function workloads
 
-- `functions/simple-email.yaml`:
-  - Knative Service `simple-email` in namespace `interweb`.
-  - Runs `node functions/simple-email/dist/index.js` from the Constructive image.
+- `base/functions/simple-email.yaml`, `base/functions/send-email-link.yaml`:
+  - Knative Service in the overlay's app namespace (`constructive-functions` for `local`, `interweb` for `dev`/`staging`).
+  - Runs `node generated/<name>/dist/index.js` from the constructive-functions image.
   - Uses Mailgun credentials from `mailgun-credentials` secret.
   - Autoscaling constrained via Knative annotations.
+- For `local-simple`, function workloads are not part of the kustomize tree — Skaffold consumes the per-function manifests under `generated/<name>/k8s/local-deployment.yaml`, regenerated by `pnpm generate`.
 
 ### knative-job-service
 
@@ -118,7 +131,7 @@ The `Makefile` in `interweb/k8s` wires this together via `install-pg` / `uninsta
       - `JOBS_SUPPORT_ANY=false`.
       - `JOBS_SUPPORTED=simple-email`.
     - Internal callback URL:
-      - `INTERNAL_JOBS_CALLBACK_URL=http://knative-job-service.interweb.svc.cluster.local:8080`.
+      - `INTERNAL_JOBS_CALLBACK_URL=http://knative-job-service.<namespace>.svc.cluster.local:8080` (namespace varies by overlay).
     - Knative gateway targets:
       - `INTERNAL_GATEWAY_URL` and `INTERNAL_GATEWAY_DEVELOPMENT_MAP` for resolving functions.
   - `Service knative-job-service` (ClusterIP) on port 8080.
@@ -151,6 +164,8 @@ The `Makefile` in `interweb/k8s` wires this together via `install-pg` / `uninsta
     - `make kustomize-local`
   - Local developer shortcuts: port‑forward targets for server, explorer, and dashboard.
 
+For `local-simple` (the recommended laptop path), use `make skaffold-dev` from the repo root instead — Skaffold handles deploy, port-forwarding, and hot reload.
+
 ## Strengths
 
 - Clear separation of responsibilities (operators vs data vs app vs functions).
@@ -176,11 +191,13 @@ The `Makefile` in `interweb/k8s` wires this together via `install-pg` / `uninsta
 
 ## Ideas for Future Improvements
 
-1. **Use env overlays (dev / staging / local / prod)**
+1. **Use env overlays (dev / staging / local / local-simple / ci / prod)**
    - Current layout already uses Kustomize overlays:
      - `overlays/dev` – dev cluster with `interweb` namespace and `launchql.dev` ingress.
-     - `overlays/staging` – staging cluster with `interweb-staging` namespace and CNPG backups; ingress still to be defined.
-     - `overlays/local` – local cluster using the `interweb` namespace, a single Postgres `Deployment`, a single MinIO `Deployment`, and no ingress.
+     - `overlays/staging` – staging cluster with `interweb` namespace and CNPG backups; ingress still to be defined.
+     - `overlays/local` – local cluster using the `constructive-functions` namespace, a single Postgres `Deployment`, a single MinIO `Deployment`, Knative Services for functions, and no ingress.
+     - `overlays/local-simple` – same namespace as `local`, but no Knative (plain function Deployments via Skaffold rawYaml) and no CNPG. Default for `make skaffold-dev`.
+     - `overlays/ci` – built on top of `local`, scaled down for kind clusters in CI.
    - A future `overlays/prod` can follow the same pattern with hardened settings.
    - Continue to push per‑env differences into overlays:
      - Domains.
@@ -202,10 +219,7 @@ The `Makefile` in `interweb/k8s` wires this together via `install-pg` / `uninsta
    - Split ingress configuration into API/Explorer, Dashboard, and pgAdmin components.
    - Move AWS keys and other external credentials into cluster secrets or external secret managers.
 
-5. **Local‑development variants**
-   - Provide an alternative “local” profile that:
-     - Replaces CNPG operator + cluster with a single Postgres Deployment + Service.
-     - Optionally disables Knative and runs functions as simple Deployments/Services or Docker‑compose services.
-     - Uses smaller resource requests to run comfortably on a laptop.
-
-The next step is to complement this document with concrete manifests for a local‑development topology (either via docker‑compose or a lightweight local Kubernetes setup) that share the same core Constructive image and config but run without CNPG/Knative operators.
+5. **Local‑development variants** *(now in place — see `overlays/local-simple` and `overlays/local`)*
+   - `local-simple` — plain Postgres Deployment + plain function Deployments, no operators required. Used by `make skaffold-dev`.
+   - `local` — plain Postgres + Knative Services for functions; production parity for the function runtime.
+   - A Docker Compose path also exists for the fastest iteration loop (`make dev` + `make dev-fn`); see the root [`DEVELOPMENT.md`](../DEVELOPMENT.md).

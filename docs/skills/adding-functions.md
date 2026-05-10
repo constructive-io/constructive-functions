@@ -59,7 +59,7 @@ const handler: FunctionHandler<MyPayload> = async (params, context) => {
   // context provides: { client, meta, job, log, env }
   //   client — GraphQL client for the database's API
   //   meta — GraphQL client for metadata API
-  //   job — { jobId, workerId, databaseId }
+  //   job — { jobId, workerId, databaseId, actorId }
   //   log — structured logger (info, error, warn, debug)
   //   env — process.env
 
