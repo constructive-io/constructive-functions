@@ -73,7 +73,35 @@ importers:
         specifier: ^5.1.6
         version: 5.9.3
 
-  generated/send-email-link:
+  generated/send-email:
+    dependencies:
+      '@constructive-io/fn-runtime':
+        specifier: workspace:^
+        version: link:../../packages/fn-runtime
+      '@constructive-io/postmaster':
+        specifier: ^1.5.2
+        version: 1.6.2
+      '@pgpmjs/env':
+        specifier: ^2.15.3
+        version: 2.17.0
+      '@pgpmjs/logger':
+        specifier: ^2.4.3
+        version: 2.5.2
+      simple-smtp-server:
+        specifier: ^0.7.3
+        version: 0.7.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      makage:
+        specifier: ^0.1.10
+        version: 0.1.12
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+
+  generated/send-verification-link:
     dependencies:
       '@constructive-io/fn-runtime':
         specifier: workspace:^
@@ -99,34 +127,6 @@ importers:
       graphql-tag:
         specifier: ^2.12.6
         version: 2.12.6(graphql@16.12.0)
-      simple-smtp-server:
-        specifier: ^0.7.3
-        version: 0.7.3
-    devDependencies:
-      '@types/node':
-        specifier: ^22.10.4
-        version: 22.19.3
-      makage:
-        specifier: ^0.1.10
-        version: 0.1.12
-      typescript:
-        specifier: ^5.1.6
-        version: 5.9.3
-
-  generated/simple-email:
-    dependencies:
-      '@constructive-io/fn-runtime':
-        specifier: workspace:^
-        version: link:../../packages/fn-runtime
-      '@constructive-io/postmaster':
-        specifier: ^1.5.2
-        version: 1.6.2
-      '@pgpmjs/env':
-        specifier: ^2.15.3
-        version: 2.17.0
-      '@pgpmjs/logger':
-        specifier: ^2.4.3
-        version: 2.5.2
       simple-smtp-server:
         specifier: ^0.7.3
         version: 0.7.3
@@ -198,12 +198,12 @@ importers:
       '@constructive-io/knative-job-worker':
         specifier: workspace:^
         version: link:../worker
-      '@constructive-io/send-email-link-fn':
-        specifier: ^2.6.4
-        version: 2.6.4(@babel/core@7.28.5)(graphql@16.12.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
-      '@constructive-io/simple-email-fn':
-        specifier: ^1.6.4
-        version: 1.6.4
+      '@constructive-io/send-email-fn':
+        specifier: workspace:^
+        version: link:../../generated/send-email
+      '@constructive-io/send-verification-link-fn':
+        specifier: workspace:^
+        version: link:../../generated/send-verification-link
       '@pgpmjs/env':
         specifier: ^2.15.3
         version: 2.17.0
@@ -599,17 +599,8 @@ packages:
   '@constructive-io/job-utils@2.5.4':
     resolution: {integrity: sha512-QyLMb1TS+PDlrelO223x8GOqYXtuGdAHYsL+pXq6e0vIH45xNkUcBcl/yQhz4Ey1shBbTVsV2Dc21wmkxY1RIg==}
 
-  '@constructive-io/knative-job-fn@1.5.2':
-    resolution: {integrity: sha512-aS/5+F48njTBGdiv3RBDvnGK/aK7pidKgywkWd0Cpwl35SORZ+cDhARPdioFWABxQcq/Kc/o9mF6zBriIUUEGA==}
-
   '@constructive-io/postmaster@1.6.2':
     resolution: {integrity: sha512-trZQHFxPRdgaHUCKMIVhMFi59XTTQxuZ31AE1/BaE1onJsm24rmh1ewzNfe45IeAKWRjSSu7JvzCX6gVlR+8bA==}
-
-  '@constructive-io/send-email-link-fn@2.6.4':
-    resolution: {integrity: sha512-NuQ2AXY33bs9CNgZ2nsfZ4FMtsYyorJOiENLk3dUg/oVdTKFNQflkVeImzGPbHGI/6mfDYwavTeLKwS8ZS/CLg==}
-
-  '@constructive-io/simple-email-fn@1.6.4':
-    resolution: {integrity: sha512-vRRqgmGkVmwVarbrfC9nZfMLGKCUYqY5dxpDY4uafK4eoBW7MwvWHeBBjIJ9ELUojKpzdSs0bTC7anVbTx0Hyw==}
 
   '@emnapi/core@1.8.1':
     resolution: {integrity: sha512-AvT9QFpxK0Zd8J0jopedNm+w/2fIzvtPKPjqyw9jwvBaReTTqPBk9Hixaz7KbjimP+QNz605/XnjFcDAL2pqBg==}
@@ -1275,6 +1266,7 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+    deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
   '@unrs/resolver-binding-android-arm-eabi@1.11.1':
     resolution: {integrity: sha512-ppLRUgHVaGRWUx0R0Ut06Mjo9gBaBkg3v/8AxusGLhsIotbBLuRk51rAzqLC8gq6NyyAojEXglNjzf6R948DNw==}
@@ -3330,9 +3322,6 @@ packages:
   simple-smtp-server@0.7.3:
     resolution: {integrity: sha512-Bd+pIE/NJzz1+ZdMoWz4B1Z2kyatxwi3p3UVKdkL1n5+TPlJGMbnnuqtKnV3+JLPv9gh0xeskHiHo7WYQMAYzg==}
 
-  simple-smtp-server@0.8.4:
-    resolution: {integrity: sha512-5g3MKQAGqO4+YqEtt6wD0KFSCdilZXysoB0dgS0tKYk6c19giQlmuwzS3lNu9FgZI7ZeKv7smT+FlJQIq/M7gQ==}
-
   sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
 
@@ -3777,22 +3766,22 @@ snapshots:
   '@babel/plugin-syntax-async-generators@7.8.4(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-bigint@7.8.3(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-class-properties@7.12.13(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-class-static-block@7.14.5(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-import-attributes@7.28.6(@babel/core@7.28.5)':
     dependencies:
@@ -3802,57 +3791,57 @@ snapshots:
   '@babel/plugin-syntax-import-meta@7.10.4(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-json-strings@7.8.3(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-jsx@7.27.1(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-logical-assignment-operators@7.10.4(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-nullish-coalescing-operator@7.8.3(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-numeric-separator@7.10.4(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-object-rest-spread@7.8.3(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-optional-catch-binding@7.8.3(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-optional-chaining@7.8.3(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-private-property-in-object@7.14.5(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-top-level-await@7.14.5(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
-      '@babel/helper-plugin-utils': 7.27.1
+      '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-typescript@7.28.6(@babel/core@7.28.5)':
     dependencies:
@@ -3913,13 +3902,6 @@ snapshots:
     transitivePeerDependencies:
       - pg-native
 
-  '@constructive-io/knative-job-fn@1.5.2':
-    dependencies:
-      '@pgpmjs/logger': 2.5.2
-      express: 5.2.1
-    transitivePeerDependencies:
-      - supports-color
-
   '@constructive-io/postmaster@1.6.2':
     dependencies:
       12factor-env: 1.6.2
@@ -3927,38 +3909,6 @@ snapshots:
       mailgun.js: 10.4.0
     transitivePeerDependencies:
       - debug
-
-  '@constructive-io/send-email-link-fn@2.6.4(@babel/core@7.28.5)(graphql@16.12.0)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)':
-    dependencies:
-      '@constructive-io/knative-job-fn': 1.5.2
-      '@constructive-io/postmaster': 1.6.2
-      '@launchql/mjml': 0.1.1(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
-      '@launchql/styled-email': 0.1.0(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
-      '@pgpmjs/env': 2.17.0
-      '@pgpmjs/logger': 2.5.2
-      graphql-request: 7.4.0(graphql@16.12.0)
-      graphql-tag: 2.12.6(graphql@16.12.0)
-      simple-smtp-server: 0.8.4
-    transitivePeerDependencies:
-      - '@babel/core'
-      - debug
-      - encoding
-      - graphql
-      - react
-      - react-dom
-      - react-is
-      - supports-color
-
-  '@constructive-io/simple-email-fn@1.6.4':
-    dependencies:
-      '@constructive-io/knative-job-fn': 1.5.2
-      '@constructive-io/postmaster': 1.6.2
-      '@pgpmjs/env': 2.17.0
-      '@pgpmjs/logger': 2.5.2
-      simple-smtp-server: 0.8.4
-    transitivePeerDependencies:
-      - debug
-      - supports-color
 
   '@emnapi/core@1.8.1':
     dependencies:
@@ -4526,20 +4476,6 @@ snapshots:
       - encoding
       - react-is
 
-  '@launchql/mjml@0.1.1(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)':
-    dependencies:
-      '@babel/runtime': 7.28.4
-      mjml: 4.7.1
-      mjml-react: 1.0.59(mjml@4.7.1)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
-      react: 16.14.0
-      react-dom: 16.14.0(react@16.14.0)
-      styled-components: 5.3.11(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
-      styled-system: 5.1.5
-    transitivePeerDependencies:
-      - '@babel/core'
-      - encoding
-      - react-is
-
   '@launchql/styled-email@0.1.0(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react-is@18.3.1)(react@16.14.0)':
     dependencies:
       '@babel/runtime': 7.28.4
@@ -4547,19 +4483,6 @@ snapshots:
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
       styled-components: 5.3.11(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react-is@18.3.1)(react@16.14.0)
-      styled-system: 5.1.5
-    transitivePeerDependencies:
-      - '@babel/core'
-      - encoding
-      - react-is
-
-  '@launchql/styled-email@0.1.0(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)':
-    dependencies:
-      '@babel/runtime': 7.28.4
-      juice: 7.0.0
-      react: 16.14.0
-      react-dom: 16.14.0(react@16.14.0)
-      styled-components: 5.3.11(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
       styled-system: 5.1.5
     transitivePeerDependencies:
       - '@babel/core'
@@ -5059,18 +4982,6 @@ snapshots:
       lodash: 4.17.21
       picomatch: 2.3.1
       styled-components: 5.3.11(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react-is@18.3.1)(react@16.14.0)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - supports-color
-
-  babel-plugin-styled-components@2.1.4(@babel/core@7.28.5)(styled-components@5.3.11(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(supports-color@5.5.0):
-    dependencies:
-      '@babel/helper-annotate-as-pure': 7.27.3
-      '@babel/helper-module-imports': 7.27.1(supports-color@5.5.0)
-      '@babel/plugin-syntax-jsx': 7.27.1(@babel/core@7.28.5)
-      lodash: 4.17.21
-      picomatch: 2.3.1
-      styled-components: 5.3.11(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
     transitivePeerDependencies:
       - '@babel/core'
       - supports-color
@@ -7580,12 +7491,6 @@ snapshots:
       '@pgpmjs/types': 2.21.0
       nodemailer: 6.10.1
 
-  simple-smtp-server@0.8.4:
-    dependencies:
-      '@pgpmjs/env': 2.17.0
-      '@pgpmjs/types': 2.21.0
-      nodemailer: 6.10.1
-
   sisteransi@1.0.5: {}
 
   slash@3.0.0: {}
@@ -7659,23 +7564,6 @@ snapshots:
       react: 16.14.0
       react-dom: 16.14.0(react@16.14.0)
       react-is: 18.3.1
-      shallowequal: 1.1.0
-      supports-color: 5.5.0
-    transitivePeerDependencies:
-      - '@babel/core'
-
-  styled-components@5.3.11(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react@16.14.0):
-    dependencies:
-      '@babel/helper-module-imports': 7.27.1(supports-color@5.5.0)
-      '@babel/traverse': 7.28.5(supports-color@5.5.0)
-      '@emotion/is-prop-valid': 1.4.0
-      '@emotion/stylis': 0.8.5
-      '@emotion/unitless': 0.7.5
-      babel-plugin-styled-components: 2.1.4(@babel/core@7.28.5)(styled-components@5.3.11(@babel/core@7.28.5)(react-dom@16.14.0(react@16.14.0))(react@16.14.0))(supports-color@5.5.0)
-      css-to-react-native: 3.2.0
-      hoist-non-react-statics: 3.3.2
-      react: 16.14.0
-      react-dom: 16.14.0(react@16.14.0)
       shallowequal: 1.1.0
       supports-color: 5.5.0
     transitivePeerDependencies:
