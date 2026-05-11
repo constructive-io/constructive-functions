@@ -56,4 +56,5 @@ If pods show `ImagePullBackOff`, this secret is missing or the PAT has expired.
 ## Notes
 
 - Function deployments are not in the `local-simple` overlay — Skaffold consumes the per-function manifests generated under `generated/<name>/k8s/` directly. Run `pnpm generate` after editing any `handler.json`.
-- Secrets in `base/` (Postgres, Mailgun, server bucket) are development defaults; replace them via your secret manager before any non-local use.
+- Rendered manifests in `k8s/manifests/*.yaml` are gitignored because Kustomize output can include Kubernetes `Secret` objects. Regenerate them locally with `make render-*` when needed.
+- Tracked Secret manifests use explicit placeholder values only (e.g. `REPLACE_WITH_POSTGRES_PASSWORD`). Create real secrets through your secret manager, ExternalSecrets, SOPS, or `kubectl create secret`; do not commit rendered or environment-specific secret values.

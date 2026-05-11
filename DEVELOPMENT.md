@@ -327,7 +327,7 @@ pnpm test:e2e
 With explicit env vars:
 
 ```bash
-PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD='***REMOVED***' PGDATABASE=constructive pnpm test:e2e
+PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD="$POSTGRES_PASSWORD" PGDATABASE=constructive pnpm test:e2e
 ```
 
 ### What's tested

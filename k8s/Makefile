@@ -59,7 +59,8 @@ kustomize-staging:
 	$(KUBECTL) apply -n $(CONSTRUCTIVE_NS) -k $(K8S_DIR)/overlays/staging
 
 # Render overlays to single YAML files (no apply).
-# Rendered manifests go under k8s/manifests to keep the k8s root clean.
+# Rendered manifests go under k8s/manifests, which is gitignored because
+# rendered output may contain Secret objects.
 MANIFESTS_DIR ?= $(K8S_DIR)/manifests
 
 render-dev:
@@ -146,9 +147,9 @@ proxy-stop:
 
 ######## Helper commands ########
 
-ZONE_ID=Z00381072B5MMXZMWY1JN  # launchql.dev
-LB_IP=34.55.147.174  # Server Load Balancer IP of GCP
-AWS_PROFILE=webinc
+ZONE_ID ?= REPLACE_WITH_ROUTE53_ZONE_ID
+LB_IP ?= REPLACE_WITH_LOAD_BALANCER_IP
+AWS_PROFILE ?= default
 
 aws-route53:
 	aws route53 change-resource-record-sets \

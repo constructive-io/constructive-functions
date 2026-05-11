@@ -44,7 +44,8 @@ This is what `make skaffold-dev` deploys.
   - PgBouncer `Pooler postgres-pooler` for read‑write connections.
 - Access pattern:
   - Applications connect via `postgres-cluster-rw.postgres-db.svc.cluster.local:5432` (dev/staging) or `postgres` (local / local-simple overlays).
-  - Credentials are provided via `base/cnpg/secret.yaml` and `base/constructive/pg-secret.yaml` (or per-overlay `pg-secret.yaml` for local).
+  - Credentials are referenced by Secret name and must be created out-of-band
+    with a secret manager, ExternalSecrets, SOPS, or `kubectl create secret`.
 
 ### Observations
 

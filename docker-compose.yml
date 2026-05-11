@@ -14,7 +14,7 @@ services:
     environment:
       POSTGRES_DB: constructive
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}
     ports:
       - "5432:5432"
     volumes:
@@ -34,7 +34,7 @@ services:
       PGHOST: postgres
       PGPORT: "5432"
       PGUSER: postgres
-      PGPASSWORD: password
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}
       PGDATABASE: constructive
     entrypoint: ["bash", "-c"]
     command:
@@ -75,7 +75,7 @@ services:
       PGHOST: postgres
       PGPORT: "5432"
       PGUSER: postgres
-      PGPASSWORD: password
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}
       PGDATABASE: constructive
       # API configuration — header-based routing (X-Api-Name, X-Database-Id)
       API_ENABLE_SERVICES: "true"

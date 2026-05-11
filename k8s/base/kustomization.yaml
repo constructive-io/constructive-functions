@@ -6,7 +6,6 @@ kind: Kustomization
 resources:
   # PostgreSQL (CloudNativePG) and storage
   - ./cnpg/namespace.yaml
-  - ./cnpg/secret.yaml
   - ./cnpg/cnpg-cluster.yaml
 
   # Core Constructive stack
@@ -14,7 +13,6 @@ resources:
   - ./constructive/dashboard-config.yaml
   - ./pgadmin/config.yaml
   - ./pgadmin/deployment.yaml
-  - ./pgadmin/secret.yaml
   - ./constructive/constructive-db-job.yaml
   - ./constructive/server.yaml
   - ./constructive/server-admin.yaml
@@ -25,3 +23,8 @@ resources:
   # Function workloads
   - ./functions/simple-email.yaml
   - ./functions/send-email-link.yaml
+
+# Required Secrets are intentionally not committed in the shared base. Create
+# pg-credentials, postgres-superuser, pgadmin-credentials, mailgun-credentials,
+# constructive-uploads, and any environment-specific cloud credentials with a
+# secret manager, ExternalSecrets, SOPS, or kubectl before applying dev/staging.

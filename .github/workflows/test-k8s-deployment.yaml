@@ -121,6 +121,18 @@ jobs:
             echo "GHCR_USERNAME/GHCR_TOKEN not set; assuming images are public."
           fi
 
+      - name: Generate per-run postgres password
+        # k8s overlay secrets use REPLACE_WITH_POSTGRES_PASSWORD placeholders; substitute
+        # a fresh per-run value before Skaffold applies them so deploys + e2e share it.
+        run: |
+          PG_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-24)
+          echo "PG_PASSWORD=$PG_PASSWORD" >> "$GITHUB_ENV"
+          echo "::add-mask::$PG_PASSWORD"
+          # Substitute into all kustomize secret files for the local-simple overlay.
+          find k8s/overlays/local-simple -type f \( -name '*.yaml' -o -name '*.yml' \) \
+            -exec sed -i.bak "s|REPLACE_WITH_POSTGRES_PASSWORD|${PG_PASSWORD}|g" {} \;
+          find k8s/overlays/local-simple -name '*.bak' -delete
+
       - name: Deploy with Skaffold (per-function profile)
         run: skaffold run -p ${{ matrix.name }}
 
@@ -149,7 +161,7 @@ jobs:
           PGHOST: localhost
           PGPORT: "5432"
           PGUSER: postgres
-          PGPASSWORD: "***REMOVED***"
+          PGPASSWORD: ${{ env.PG_PASSWORD }}
           PGDATABASE: constructive
         run: |
           kubectl port-forward -n constructive-functions svc/postgres 5432:5432 &

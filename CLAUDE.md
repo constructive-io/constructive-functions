@@ -40,11 +40,11 @@ pnpm test:integration  # tests/integration/ — isolated component tests
 Requires Skaffold running (`make skaffold-dev`) or equivalent with port-forwards active.
 
 ```bash
-# With default credentials (postgres/***REMOVED*** on localhost:5432)
+# With default credentials (postgres/$POSTGRES_PASSWORD on localhost:5432)
 pnpm test:e2e
 
 # With explicit env vars
-PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD='***REMOVED***' PGDATABASE=constructive pnpm test:e2e
+PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD='$POSTGRES_PASSWORD' PGDATABASE=constructive pnpm test:e2e
 ```
 
 E2E tests insert jobs into `app_jobs.jobs` via SQL and verify the job service picks them up and the functions process them.

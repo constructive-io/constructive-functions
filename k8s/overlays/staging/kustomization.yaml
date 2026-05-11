@@ -5,7 +5,8 @@ resources:
   - ../../base
   - ./namespace.yaml
   - ./cnpg-backup.yaml
-  - ./postgres-backup-secret.yaml
+  # Create postgres-backup-credentials out-of-band with a secret manager,
+  # ExternalSecrets, SOPS, or kubectl before enabling CNPG backups.
   # TODO: add staging-specific ingress/issuer and dashboard config patches.
 
 patches:

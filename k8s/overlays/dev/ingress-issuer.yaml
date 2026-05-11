@@ -12,9 +12,8 @@ spec:
       - dns01:
           route53:
             region: us-east-1
-            hostedZoneID: Z00381072B5MMXZMWY1JN   # launchql.dev
-            accessKeyID: ***REMOVED***
+            hostedZoneID: REPLACE_WITH_ROUTE53_ZONE_ID
+            accessKeyID: REPLACE_WITH_ROUTE53_ACCESS_KEY_ID
             secretAccessKeySecretRef:
               name: certmgr-route53-launchql
               key: AWS_SECRET_ACCESS_KEY
-

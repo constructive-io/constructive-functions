@@ -215,7 +215,7 @@ To reproduce the CI e2e matrix locally:
 make skaffold-dev
 
 # 2. In another terminal, run a specific function's e2e test
-PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD='***REMOVED***' PGDATABASE=constructive \
+PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD="$POSTGRES_PASSWORD" PGDATABASE=constructive \
   pnpm jest tests/e2e/__tests__/simple-email.e2e.test.ts tests/e2e/__tests__/job-queue.test.ts
 
 # Or run all e2e tests

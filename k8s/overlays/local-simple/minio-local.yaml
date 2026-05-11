@@ -22,9 +22,15 @@ spec:
             - /data
           env:
             - name: MINIO_ACCESS_KEY
-              value: minioadmin
+              valueFrom:
+                secretKeyRef:
+                  name: constructive-uploads
+                  key: AWS_ACCESS_KEY_ID
             - name: MINIO_SECRET_KEY
-              value: minioadmin
+              valueFrom:
+                secretKeyRef:
+                  name: constructive-uploads
+                  key: AWS_SECRET_ACCESS_KEY
           ports:
             - containerPort: 9000
               name: http

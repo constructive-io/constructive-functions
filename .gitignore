@@ -140,3 +140,7 @@ vite.config.ts.timestamp-*
 
 # Generated function workspace packages (created by scripts/generate.ts)
 generated/
+
+# Rendered Kubernetes manifests may include Secret objects. Regenerate locally
+# with k8s/Makefile targets instead of committing them.
+k8s/manifests/*.yaml
