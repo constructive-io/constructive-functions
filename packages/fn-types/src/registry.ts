@@ -1,5 +1,5 @@
 export interface FnRegistryEntry {
-  /** Function name from handler.json (e.g., 'simple-email', 'knative-job-example'). */
+  /** Function name from handler.json (e.g., 'send-email', 'knative-job-example'). */
   name: string;
   /** Directory under functions/ containing the source. May differ from `name`. */
   dir: string;

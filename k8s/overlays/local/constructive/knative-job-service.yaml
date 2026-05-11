@@ -19,9 +19,9 @@ spec:
             - name: JOBS_CALLBACK_BASE_URL
               value: "http://knative-job-service.constructive-functions.svc.cluster.local:8080/callback"
             - name: INTERNAL_GATEWAY_URL
-              value: "http://simple-email.constructive-functions.svc.cluster.local"
+              value: "http://send-email.constructive-functions.svc.cluster.local"
             - name: INTERNAL_GATEWAY_DEVELOPMENT_MAP
-              value: '{"simple-email":"http://simple-email.constructive-functions.svc.cluster.local","send-email-link":"http://send-email-link.constructive-functions.svc.cluster.local"}'
+              value: '{"send-email":"http://send-email.constructive-functions.svc.cluster.local","send-verification-link":"http://send-verification-link.constructive-functions.svc.cluster.local"}'
           resources:
             requests:
               cpu: "50m"

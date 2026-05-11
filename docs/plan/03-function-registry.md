@@ -13,12 +13,12 @@ The function registry in `job/service/src/index.ts` is hardcoded:
 ```typescript
 // job/service/src/index.ts lines 29-43
 const functionRegistry: Record<FunctionName, FunctionRegistryEntry> = {
-  'simple-email': {
-    moduleName: '@constructive-io/simple-email-fn',
+  'send-email': {
+    moduleName: '@constructive-io/send-email-fn',
     defaultPort: 8081
   },
-  'send-email-link': {
-    moduleName: '@constructive-io/send-email-link-fn',
+  'send-verification-link': {
+    moduleName: '@constructive-io/send-verification-link-fn',
     defaultPort: 8082
   }
 };
@@ -27,7 +27,7 @@ const functionRegistry: Record<FunctionName, FunctionRegistryEntry> = {
 And the `FunctionName` type is a hardcoded union:
 ```typescript
 // job/service/src/types.ts line 1
-export type FunctionName = 'simple-email' | 'send-email-link';
+export type FunctionName = 'send-email' | 'send-verification-link';
 ```
 
 Functions are loaded in-process via `createRequire` (`index.ts:56-71`). Adding a new function requires editing 3 files. The current architecture tightly couples the service to specific function packages.
@@ -43,7 +43,7 @@ Replace the hardcoded registry with HTTP-based dynamic discovery: each function 
                                 |
                   +-------------+-------------+
                   |             |             |
-            job-service    simple-email  send-email-link
+            job-service    send-email  send-verification-link
                   |             |             |
             1. Start HTTP   2. Listen     2. Listen
                server          on :8080      on :8080
@@ -56,12 +56,12 @@ Replace the hardcoded registry with HTTP-based dynamic discovery: each function 
                   +<------------+<------------+
                   |
             Registry stores:
-            simple-email -> http://simple-email:8080
-            send-email-link -> http://send-email-link:8080
+            send-email -> http://send-email:8080
+            send-verification-link -> http://send-verification-link:8080
                   |
-            Worker picks job (task_identifier="simple-email")
-            -> registry.resolve("simple-email")
-            -> HTTP POST http://simple-email:8080
+            Worker picks job (task_identifier="send-email")
+            -> registry.resolve("send-email")
+            -> HTTP POST http://send-email:8080
 ```
 
 ## Phased Implementation
@@ -342,7 +342,7 @@ When imported as a module (e.g., tests), only the app is created. When run stand
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `FUNCTION_REGISTRY_URL` | Registration endpoint on job-service | `http://job-service:8080/functions/register` |
-| `FUNCTION_SELF_URL` | This function's externally-reachable URL | `http://simple-email:8080` |
+| `FUNCTION_SELF_URL` | This function's externally-reachable URL | `http://send-email:8080` |
 
 #### Phase 3 files
 
@@ -395,8 +395,8 @@ Remove: `FunctionServiceConfig`, `FunctionsOptions`, `StartedFunction`
 
 Remove individual function deps (service no longer loads them):
 ```
-"@constructive-io/send-email-link-fn": "workspace:^"
-"@constructive-io/simple-email-fn": "workspace:^"
+"@constructive-io/send-verification-link-fn": "workspace:^"
+"@constructive-io/send-email-fn": "workspace:^"
 ```
 
 #### 4d. Update `docker-compose.yml`
@@ -424,29 +424,29 @@ services:
     ports:
       - "8080:8080"
 
-  simple-email:
+  send-email:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    command: node generated/simple-email/dist/index.js
+    command: node generated/send-email/dist/index.js
     environment:
       PORT: "8080"
       FUNCTION_REGISTRY_URL: "http://job-service:8080/functions/register"
-      FUNCTION_SELF_URL: "http://simple-email:8080"
+      FUNCTION_SELF_URL: "http://send-email:8080"
     depends_on:
       - job-service
     ports:
       - "8081:8080"
 
-  send-email-link:
+  send-verification-link:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    command: node generated/send-email-link/dist/index.js
+    command: node generated/send-verification-link/dist/index.js
     environment:
       PORT: "8080"
       FUNCTION_REGISTRY_URL: "http://job-service:8080/functions/register"
-      FUNCTION_SELF_URL: "http://send-email-link:8080"
+      FUNCTION_SELF_URL: "http://send-verification-link:8080"
       GRAPHQL_URL: "http://api:5000/graphql"
     depends_on:
       - job-service
@@ -483,7 +483,7 @@ docker-compose up --build
 
 # Verify registration:
 curl http://localhost:8080/functions
-# → [{ "name": "simple-email", ... }, { "name": "send-email-link", ... }]
+# → [{ "name": "send-email", ... }, { "name": "send-verification-link", ... }]
 
 # Verify registration API:
 curl -X POST http://localhost:8080/functions/register \

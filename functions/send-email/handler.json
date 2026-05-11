@@ -1,5 +1,5 @@
 {
-  "name": "simple-email",
+  "name": "send-email",
   "version": "1.6.4",
   "type": "node-graphql",
   "port": 8081,

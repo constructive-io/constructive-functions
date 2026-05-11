@@ -27,38 +27,38 @@ pnpm install      # install dependencies (including generated packages)
 pnpm build        # build all packages and functions
 
 make docker-build                        # build all function Docker images
-make docker-build-simple-email           # build a single function image
-make docker-build-send-email-link
+make docker-build-send-email           # build a single function image
+make docker-build-send-verification-link
 ```
 
 ## Functions
 
 | Function | Port | Type | Image |
 |----------|------|------|-------|
-| `simple-email` | 8081 | node-graphql | `ghcr.io/constructive-io/constructive-functions/simple-email:latest` |
-| `send-email-link` | 8082 | node-graphql | `ghcr.io/constructive-io/constructive-functions/send-email-link:latest` |
+| `send-email` | 8081 | node-graphql | `ghcr.io/constructive-io/constructive-functions/send-email:latest` |
+| `send-verification-link` | 8082 | node-graphql | `ghcr.io/constructive-io/constructive-functions/send-verification-link:latest` |
 | `knative-job-example` | 8083 | node-graphql | `ghcr.io/constructive-io/constructive-functions/knative-job-example:latest` |
 | `python-example` | 8084 | python | `ghcr.io/constructive-io/constructive-functions/python-example:latest` |
 
 Port `8080` is reserved for the job service.
 
-### `simple-email`
+### `send-email`
 
 Sends emails directly from a job payload.
 
-- `SIMPLE_EMAIL_DRY_RUN` — if `true`, logs the payload instead of sending
+- `SEND_EMAIL_DRY_RUN` — if `true`, logs the payload instead of sending
 - `MAILGUN_API_KEY`, `MAILGUN_KEY`, `MAILGUN_DOMAIN`, `MAILGUN_FROM`, `MAILGUN_REPLY` — Mailgun config
 
-### `send-email-link`
+### `send-verification-link`
 
 Sends invite, password reset, and verification emails (rendered via MJML).
 
-- `SEND_EMAIL_LINK_DRY_RUN` — if `true`, logs the payload instead of sending
+- `SEND_VERIFICATION_LINK_DRY_RUN` — if `true`, logs the payload instead of sending
 - `DEFAULT_DATABASE_ID` — default database UUID
 - `GRAPHQL_URL`, `META_GRAPHQL_URL` — GraphQL API endpoints
 - `GRAPHQL_AUTH_TOKEN` — optional Bearer token for GraphQL requests
 - `LOCAL_APP_PORT` — local port for dashboard links (e.g. `3000`)
-- `MAILGUN_*` — same Mailgun config as `simple-email`
+- `MAILGUN_*` — same Mailgun config as `send-email`
 
 ### `knative-job-example` / `python-example`
 
@@ -114,8 +114,8 @@ The `CI Test K8s` workflow (`.github/workflows/test-k8s-deployment.yaml`) runs o
 Images are tagged with the GHCR prefix automatically:
 
 ```bash
-docker push ghcr.io/constructive-io/constructive-functions/simple-email:latest
-docker push ghcr.io/constructive-io/constructive-functions/send-email-link:latest
+docker push ghcr.io/constructive-io/constructive-functions/send-email:latest
+docker push ghcr.io/constructive-io/constructive-functions/send-verification-link:latest
 docker push ghcr.io/constructive-io/constructive-functions/knative-job-example:latest
 docker push ghcr.io/constructive-io/constructive-functions/python-example:latest
 ```

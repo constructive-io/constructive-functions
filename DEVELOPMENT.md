@@ -58,8 +58,8 @@ After this you should have built artifacts in:
 
 | Package | Output |
 |---------|--------|
-| `generated/send-email-link/dist/` | Send-email-link function server |
-| `generated/simple-email/dist/` | Simple-email function server |
+| `generated/send-verification-link/dist/` | Send-email-link function server |
+| `generated/send-email/dist/` | Simple-email function server |
 | `generated/example/dist/` | knative-job-example function server |
 | `generated/python-example/dist/` | Python example function server |
 | `job/service/dist/` | Knative job service (worker + scheduler) |
@@ -112,20 +112,20 @@ This runs `scripts/dev.ts` which spawns local Node processes with env vars point
 | Process | Port | Script |
 |---------|------|--------|
 | **job-service** | 8080 | `job/service/dist/run.js` |
-| **simple-email** | 8081 | `generated/simple-email/dist/index.js` |
-| **send-email-link** | 8082 | `generated/send-email-link/dist/index.js` |
+| **send-email** | 8081 | `generated/send-email/dist/index.js` |
+| **send-verification-link** | 8082 | `generated/send-verification-link/dist/index.js` |
 | **knative-job-example** | 8083 | `generated/example/dist/index.js` |
 | **python-example** | 8084 | `generated/python-example/...` (python entrypoint) |
 
 To start a single function:
 
 ```bash
-pnpm dev:fn -- --only=send-email-link
+pnpm dev:fn -- --only=send-verification-link
 ```
 
 ### 4. Test a Function
 
-Send a request to `send-email-link`:
+Send a request to `send-verification-link`:
 
 ```bash
 curl -X POST http://localhost:8082 \
@@ -176,8 +176,8 @@ make dev-down          # Stop Docker infrastructure
 | Mailpit SMTP | 1025 |
 | Mailpit UI | 8025 |
 | Job Service | 8080 |
-| simple-email | 8081 |
-| send-email-link | 8082 |
+| send-email | 8081 |
+| send-verification-link | 8082 |
 | knative-job-example | 8083 |
 | python-example | 8084 |
 
@@ -190,8 +190,8 @@ Docker Compose (infrastructure):
 
 Local Node processes (functions):
   job/service/dist/run.js                        (port 8080)
-  generated/simple-email/dist/index.js           (port 8081)
-  generated/send-email-link/dist/index.js        (port 8082)
+  generated/send-email/dist/index.js           (port 8081)
+  generated/send-verification-link/dist/index.js        (port 8082)
 ```
 
 Infrastructure runs in Docker. Functions run as local Node processes from `generated/` — no Docker rebuild needed when function code changes. Edit `functions/*/handler.ts`, rebuild (`pnpm build`), restart `make dev-fn`.
@@ -252,7 +252,7 @@ make skaffold-dev
 This runs `skaffold dev -p local-simple` which:
 1. Builds the `constructive-functions` Docker image from `Dockerfile.dev`
 2. Deploys infrastructure (postgres, minio, constructive-server, constructive-server-admin, db-setup, job-service) via kustomize
-3. Deploys functions (simple-email, send-email-link) via generated rawYaml manifests
+3. Deploys functions (send-email, send-verification-link) via generated rawYaml manifests
 4. Sets up port-forwarding automatically
 5. Watches `functions/**/*.ts` — edits are synced into running containers
 6. `tsx --watch` inside each function container detects changes and restarts
@@ -283,8 +283,8 @@ Changes to runtime packages (`packages/fn-runtime`, `packages/fn-app`) or `packa
 
 | Service | Local Port |
 |---------|------------|
-| simple-email | 8081 |
-| send-email-link | 8082 |
+| send-email | 8081 |
+| send-verification-link | 8082 |
 | knative-job-example | 8083 |
 | python-example | 8084 |
 | Job Service | 8080 |

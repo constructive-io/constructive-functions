@@ -105,7 +105,7 @@ profiles:
         namespace: constructive-functions
         port: 3000
         localPort: 3002
-  - name: send-email-link
+  - name: send-verification-link
     build:
       artifacts:
         - image: constructive-functions
@@ -123,14 +123,14 @@ profiles:
         paths:
           - k8s/overlays/local-simple
       rawYaml:
-        - generated/send-email-link/k8s/local-deployment.yaml
-        - generated/send-email-link/k8s/functions-configmap.yaml
+        - generated/send-verification-link/k8s/local-deployment.yaml
+        - generated/send-verification-link/k8s/functions-configmap.yaml
     deploy:
       kubectl:
         defaultNamespace: constructive-functions
     portForward:
       - resourceType: service
-        resourceName: send-email-link
+        resourceName: send-verification-link
         namespace: constructive-functions
         port: 80
         localPort: 8082
@@ -149,7 +149,7 @@ profiles:
         namespace: constructive-functions
         port: 3000
         localPort: 3002
-  - name: simple-email
+  - name: send-email
     build:
       artifacts:
         - image: constructive-functions
@@ -167,14 +167,14 @@ profiles:
         paths:
           - k8s/overlays/local-simple
       rawYaml:
-        - generated/simple-email/k8s/local-deployment.yaml
-        - generated/simple-email/k8s/functions-configmap.yaml
+        - generated/send-email/k8s/local-deployment.yaml
+        - generated/send-email/k8s/functions-configmap.yaml
     deploy:
       kubectl:
         defaultNamespace: constructive-functions
     portForward:
       - resourceType: service
-        resourceName: simple-email
+        resourceName: send-email
         namespace: constructive-functions
         port: 80
         localPort: 8081
@@ -225,8 +225,8 @@ profiles:
       rawYaml:
         - generated/example/k8s/local-deployment.yaml
         - generated/python-example/k8s/local-deployment.yaml
-        - generated/send-email-link/k8s/local-deployment.yaml
-        - generated/simple-email/k8s/local-deployment.yaml
+        - generated/send-verification-link/k8s/local-deployment.yaml
+        - generated/send-email/k8s/local-deployment.yaml
         - generated/functions-configmap.yaml
     deploy:
       kubectl:
@@ -243,12 +243,12 @@ profiles:
         port: 80
         localPort: 8084
       - resourceType: service
-        resourceName: send-email-link
+        resourceName: send-verification-link
         namespace: constructive-functions
         port: 80
         localPort: 8082
       - resourceType: service
-        resourceName: simple-email
+        resourceName: send-email
         namespace: constructive-functions
         port: 80
         localPort: 8081
@@ -298,12 +298,12 @@ profiles:
         port: 80
         localPort: 8084
       - resourceType: service
-        resourceName: send-email-link
+        resourceName: send-verification-link
         namespace: constructive-functions
         port: 80
         localPort: 8082
       - resourceType: service
-        resourceName: simple-email
+        resourceName: send-email
         namespace: constructive-functions
         port: 80
         localPort: 8081

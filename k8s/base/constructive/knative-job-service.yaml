@@ -48,7 +48,7 @@ spec:
             - name: JOBS_SUPPORT_ANY
               value: "false"
             - name: JOBS_SUPPORTED
-              value: "simple-email,send-email-link"
+              value: "send-email,send-verification-link"
             - name: JOBS_CALLBACK_HOST
               value: "knative-job-service.interweb.svc.cluster.local"
             - name: JOBS_CALLBACK_BASE_URL
@@ -58,13 +58,13 @@ spec:
             - name: KNATIVE_SERVICE_URL
               value: "interweb.svc.cluster.local"
             - name: INTERNAL_GATEWAY_URL
-              value: "http://simple-email.interweb.svc.cluster.local"
+              value: "http://send-email.interweb.svc.cluster.local"
             
             - name: NODE_ENV
               value: "development"
 
             - name: INTERNAL_GATEWAY_DEVELOPMENT_MAP
-              value: '{"simple-email":"http://simple-email.interweb.svc.cluster.local","send-email-link":"http://send-email-link.interweb.svc.cluster.local"}'
+              value: '{"send-email":"http://send-email.interweb.svc.cluster.local","send-verification-link":"http://send-verification-link.interweb.svc.cluster.local"}'
 
             # Optional: stable hostname for logging/coordination
             - name: HOSTNAME

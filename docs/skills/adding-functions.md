@@ -10,7 +10,7 @@ description: Step-by-step guide for adding a new serverless function to the cons
 - Node.js 22+, pnpm 10+
 - Understanding of the `FunctionHandler` type from `@constructive-io/fn-runtime`
 
-**Reference implementations:** See `functions/simple-email/` (env vars, external packages, dry-run mode) and `functions/send-email-link/` (GraphQL queries, context usage) as working examples.
+**Reference implementations:** See `functions/send-email/` (env vars, external packages, dry-run mode) and `functions/send-verification-link/` (GraphQL queries, context usage) as working examples.
 
 ## Step 1: Create handler.json
 
@@ -87,7 +87,7 @@ declare module '@some-untyped-package';
 Update `job/service/src/types.ts` — add the function name to the `FunctionName` union:
 
 ```typescript
-export type FunctionName = 'simple-email' | 'send-email-link' | '<name>';
+export type FunctionName = 'send-email' | 'send-verification-link' | '<name>';
 ```
 
 Update `job/service/src/index.ts` — add an entry to `functionRegistry`:

@@ -24,8 +24,8 @@ resources:
   - ../../base/constructive/dashboard.yaml
   - ../../base/constructive/knative-job-service.yaml
   # Functions
-  - ../../base/functions/simple-email.yaml
-  - ../../base/functions/send-email-link.yaml
+  - ../../base/functions/send-email.yaml
+  - ../../base/functions/send-verification-link.yaml
 
 patches:
   # Skaffold image replacement: only rewrite function images, not server/dashboard/db-job
@@ -37,7 +37,7 @@ patches:
       group: serving.knative.dev
       version: v1
       kind: Service
-      name: simple-email
+      name: send-email
   - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
@@ -46,7 +46,7 @@ patches:
       group: serving.knative.dev
       version: v1
       kind: Service
-      name: send-email-link
+      name: send-verification-link
   - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
@@ -68,21 +68,21 @@ patches:
       - op: add
         path: /spec/template/spec/containers/0/env/-
         value:
-          name: SIMPLE_EMAIL_DRY_RUN
+          name: SEND_EMAIL_DRY_RUN
           value: "true"
     target:
       group: serving.knative.dev
       version: v1
       kind: Service
-      name: simple-email
+      name: send-email
   - patch: |-
       - op: add
         path: /spec/template/spec/containers/0/env/-
         value:
-          name: SEND_EMAIL_LINK_DRY_RUN
+          name: SEND_VERIFICATION_LINK_DRY_RUN
           value: "true"
     target:
       group: serving.knative.dev
       version: v1
       kind: Service
-      name: send-email-link
+      name: send-verification-link

@@ -101,10 +101,10 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/component: function
-    app.kubernetes.io/name: send-email-link
+    app.kubernetes.io/name: send-verification-link
     app.kubernetes.io/part-of: constructive-jobs
     networking.knative.dev/visibility: cluster-local
-  name: send-email-link
+  name: send-verification-link
   namespace: default
 spec:
   template:
@@ -117,7 +117,7 @@ spec:
         serving.knative.dev/timeout: 300s
       labels:
         app.kubernetes.io/component: function
-        app.kubernetes.io/name: send-email-link
+        app.kubernetes.io/name: send-verification-link
         app.kubernetes.io/part-of: constructive-jobs
     spec:
       containerConcurrency: 10
@@ -129,7 +129,7 @@ spec:
           value: debug
         - name: LOCAL_APP_PORT
           value: "3000"
-        - name: SEND_EMAIL_LINK_DRY_RUN
+        - name: SEND_VERIFICATION_LINK_DRY_RUN
           value: "true"
         - name: MAILGUN_FROM
           value: no-reply@mailgun.example.com
@@ -149,10 +149,10 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/component: function
-    app.kubernetes.io/name: simple-email
+    app.kubernetes.io/name: send-email
     app.kubernetes.io/part-of: constructive-jobs
     networking.knative.dev/visibility: cluster-local
-  name: simple-email
+  name: send-email
   namespace: default
 spec:
   template:
@@ -165,7 +165,7 @@ spec:
         serving.knative.dev/timeout: 300s
       labels:
         app.kubernetes.io/component: function
-        app.kubernetes.io/name: simple-email
+        app.kubernetes.io/name: send-email
         app.kubernetes.io/part-of: constructive-jobs
     spec:
       containerConcurrency: 10
@@ -175,7 +175,7 @@ spec:
           value: development
         - name: LOG_LEVEL
           value: debug
-        - name: SIMPLE_EMAIL_DRY_RUN
+        - name: SEND_EMAIL_DRY_RUN
           value: "true"
         - name: MAILGUN_FROM
           value: no-reply@mailgun.example.com
@@ -564,15 +564,15 @@ spec:
         - name: JOBS_CALLBACK_BASE_URL
           value: http://knative-job-service.default.svc.cluster.local:8080/callback
         - name: INTERNAL_GATEWAY_URL
-          value: http://simple-email.default.svc.cluster.local
+          value: http://send-email.default.svc.cluster.local
         - name: INTERNAL_GATEWAY_DEVELOPMENT_MAP
-          value: '{"simple-email":"http://simple-email.default.svc.cluster.local","send-email-link":"http://send-email-link.default.svc.cluster.local"}'
+          value: '{"send-email":"http://send-email.default.svc.cluster.local","send-verification-link":"http://send-verification-link.default.svc.cluster.local"}'
         - name: INTERNAL_JOBS_CALLBACK_PORT
           value: "8080"
         - name: JOBS_SUPPORT_ANY
           value: "false"
         - name: JOBS_SUPPORTED
-          value: simple-email,send-email-link
+          value: send-email,send-verification-link
         - name: HOSTNAME
           valueFrom:
             fieldRef:

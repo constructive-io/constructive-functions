@@ -23,5 +23,5 @@ resources:
   - ./constructive/knative-job-service.yaml
 
   # Function workloads
-  - ./functions/simple-email.yaml
-  - ./functions/send-email-link.yaml
+  - ./functions/send-email.yaml
+  - ./functions/send-verification-link.yaml

@@ -1,6 +1,6 @@
 # Constructive Functions
 
-Serverless function workloads (simple-email, send-email-link) with a job queue system deployed via Kubernetes.
+Serverless function workloads (send-email, send-verification-link) with a job queue system deployed via Kubernetes.
 
 ## Project Structure
 
@@ -91,8 +91,8 @@ Edit `functions/<name>/handler.ts` → Skaffold syncs the file into the containe
 |---------|------------|
 | PostgreSQL | 5432 |
 | Job Service | 8080 |
-| simple-email | 8081 |
-| send-email-link | 8082 |
+| send-email | 8081 |
+| send-verification-link | 8082 |
 
 ## Debugging K8s Pods
 
@@ -111,8 +111,8 @@ All pods should show `Running` (except `constructive-db` which should be `Comple
 kubectl logs -n constructive-functions -l app=knative-job-service -f
 
 # Function logs
-kubectl logs -n constructive-functions -l app=simple-email -f
-kubectl logs -n constructive-functions -l app=send-email-link -f
+kubectl logs -n constructive-functions -l app=send-email -f
+kubectl logs -n constructive-functions -l app=send-verification-link -f
 
 # Constructive server logs
 kubectl logs -n constructive-functions -l app=constructive-server -f
@@ -133,15 +133,15 @@ kubectl describe pod <pod-name> -n constructive-functions
 ```bash
 kubectl port-forward -n constructive-functions svc/postgres 5432:5432
 kubectl port-forward -n constructive-functions svc/knative-job-service 8080:8080
-kubectl port-forward -n constructive-functions svc/simple-email 8081:80
-kubectl port-forward -n constructive-functions svc/send-email-link 8082:80
+kubectl port-forward -n constructive-functions svc/send-email 8081:80
+kubectl port-forward -n constructive-functions svc/send-verification-link 8082:80
 kubectl port-forward -n constructive-functions svc/constructive-server 3002:3000
 ```
 
 ### Exec into a pod
 
 ```bash
-kubectl exec -it -n constructive-functions deploy/simple-email -- sh
+kubectl exec -it -n constructive-functions deploy/send-email -- sh
 kubectl exec -it -n constructive-functions deploy/knative-job-service -- sh
 ```
 
@@ -162,7 +162,7 @@ SELECT set_config('jwt.claims.database_id', (SELECT id::text FROM metaschema_pub
 
 -- Manually insert a test job
 SELECT * FROM app_jobs.add_job(
-  'simple-email'::text,
+  'send-email'::text,
   '{"to":"test@example.com","subject":"test","html":"<p>hello</p>"}'::json
 );
 ```
@@ -171,7 +171,7 @@ SELECT * FROM app_jobs.add_job(
 
 ```bash
 kubectl rollout restart -n constructive-functions deploy/knative-job-service
-kubectl rollout restart -n constructive-functions deploy/simple-email
+kubectl rollout restart -n constructive-functions deploy/send-email
 ```
 
 ### GHCR pull secret

@@ -20,7 +20,7 @@ This document summarizes the Kubernetes layout under `k8s/`, highlights strength
   - `dashboard` (Next.js UI) — dev/staging.
   - `pgadmin` (DB admin UI) — dev/staging/local.
   - `knative-job-service` (job orchestration for functions).
-  - Function workloads (`simple-email`, `send-email-link`, `knative-job-example`, `python-example`) — Knative Services in `local`/`dev`/`staging`, plain Deployments in `local-simple`.
+  - Function workloads (`send-email`, `send-verification-link`, `knative-job-example`, `python-example`) — Knative Services in `local`/`dev`/`staging`, plain Deployments in `local-simple`.
 
 The repo-root `Makefile` wires this together via `make skaffold-dev` / `make skaffold-dev-knative` (local), and `k8s/scripts/setup` plus the kustomize overlays for remote environments.
 
@@ -114,7 +114,7 @@ This is what `make skaffold-dev` deploys.
 
 ### Function workloads
 
-- `base/functions/simple-email.yaml`, `base/functions/send-email-link.yaml`:
+- `base/functions/send-email.yaml`, `base/functions/send-verification-link.yaml`:
   - Knative Service in the overlay's app namespace (`constructive-functions` for `local`, `interweb` for `dev`/`staging`).
   - Runs `node generated/<name>/dist/index.js` from the constructive-functions image.
   - Uses Mailgun credentials from `mailgun-credentials` secret.
@@ -129,7 +129,7 @@ This is what `make skaffold-dev` deploys.
     - DB config from `constructive` ConfigMap and `pg-credentials` secret.
     - Job configuration:
       - `JOBS_SUPPORT_ANY=false`.
-      - `JOBS_SUPPORTED=simple-email`.
+      - `JOBS_SUPPORTED=send-email`.
     - Internal callback URL:
       - `INTERNAL_JOBS_CALLBACK_URL=http://knative-job-service.<namespace>.svc.cluster.local:8080` (namespace varies by overlay).
     - Knative gateway targets:
@@ -212,7 +212,7 @@ For `local-simple` (the recommended laptop path), use `make skaffold-dev` from t
      - Enable CNPG backup resources for object‑storage snapshots.
 
 3. **Refine Knative job routing**
-   - Standardize on calling `kourier-internal.kourier-system.svc.cluster.local` and distributing requests using the `Host` header set to the Knative Service URL (e.g. `simple-email.interweb.svc.cluster.local`).
+   - Standardize on calling `kourier-internal.kourier-system.svc.cluster.local` and distributing requests using the `Host` header set to the Knative Service URL (e.g. `send-email.interweb.svc.cluster.local`).
    - Avoid hard‑coding revision names in env vars.
 
 4. **Ingress & secrets hygiene**

@@ -1,12 +1,12 @@
 /**
- * E2E: send-email-link function
+ * E2E: send-email function
  *
- * Assumes skaffold is running with send-email-link deployed:
- *   skaffold dev -p send-email-link   (single function)
- *   make skaffold-dev                 (all functions)
+ * Assumes skaffold is running with send-email deployed:
+ *   skaffold dev -p send-email   (single function)
+ *   make skaffold-dev              (all functions)
  *
  * Inserts a job into the queue and verifies the job service dispatches it
- * to the send-email-link function which processes it.
+ * to the send-email function which processes it.
  */
 import {
   getTestConnections,
@@ -16,9 +16,9 @@ import {
 } from '../utils/db';
 import { addJob, waitForJobComplete, deleteTestJobs } from '../utils/jobs';
 
-const TEST_PREFIX = 'k8s-e2e-send-email-link';
+const TEST_PREFIX = 'k8s-e2e-send-email';
 
-describe('E2E: send-email-link', () => {
+describe('E2E: send-email', () => {
   let pg: TestClient;
   let databaseId: string;
 
@@ -33,26 +33,27 @@ describe('E2E: send-email-link', () => {
     await closeConnections();
   });
 
-  it('should process a send-email-link job from the queue', async () => {
-    const job = await addJob(pg, databaseId, 'send-email-link', {
-      email_type: 'forgot_password',
-      email: `${TEST_PREFIX}@example.com`,
-      reset_token: 'test-token-123',
-      user_id: '00000000-0000-0000-0000-000000000001',
+  it('should process a send-email job from the queue', async () => {
+    const job = await addJob(pg, databaseId, 'send-email', {
+      to: 'test@example.com',
+      subject: `${TEST_PREFIX} test email`,
+      html: '<p>Hello from k8s test</p>',
     });
 
     expect(job.id).toBeDefined();
-    console.log(`Added send-email-link job: ${job.id}`);
+    console.log(`Added send-email job: ${job.id}`);
 
     const result = await waitForJobComplete(pg, job.id, { timeout: 30000 });
 
     console.log(`Job result: ${result.status}`, result.error || '');
 
+    // In dry-run mode, the function should still complete the job
+    // (it skips actual email sending but returns success)
     expect(['completed', 'failed']).toContain(result.status);
 
     if (result.status === 'failed') {
       console.log('Job failed with:', result.error);
-      console.log('This may be expected in dry-run mode or if GraphQL is not fully configured');
+      console.log('This may be expected if the function cannot reach the GraphQL server');
     }
   });
 });

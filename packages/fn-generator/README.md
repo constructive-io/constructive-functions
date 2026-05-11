@@ -25,7 +25,7 @@ const generator = new FnGenerator({
 
 // One-shot
 generator.generate();                           // all functions
-generator.generate({ only: 'simple-email' });   // single
+generator.generate({ only: 'send-email' });   // single
 generator.generate({ packagesOnly: true });     // skip k8s/skaffold
 
 // Or assemble manifests yourself

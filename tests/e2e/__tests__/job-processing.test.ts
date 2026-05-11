@@ -2,7 +2,7 @@
  * Job Queue Inspection (end-to-end via k8s)
  *
  * Shared utility test for inspecting queue state. Individual function e2e tests
- * are in per-function files: simple-email.e2e.test.ts, send-email-link.e2e.test.ts
+ * are in per-function files: send-email.e2e.test.ts, send-verification-link.e2e.test.ts
  */
 import {
   getTestConnections,

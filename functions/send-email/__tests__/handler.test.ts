@@ -5,15 +5,15 @@ const loadHandler = () => {
   return mod.default ?? mod;
 };
 
-describe('simple-email handler', () => {
+describe('send-email handler', () => {
   beforeEach(() => {
     jest.resetModules();
-    process.env.SIMPLE_EMAIL_DRY_RUN = 'false';
+    process.env.SEND_EMAIL_DRY_RUN = 'false';
     process.env.EMAIL_SEND_USE_SMTP = 'false';
   });
 
   afterEach(() => {
-    delete process.env.SIMPLE_EMAIL_DRY_RUN;
+    delete process.env.SEND_EMAIL_DRY_RUN;
     delete process.env.EMAIL_SEND_USE_SMTP;
     delete process.env.MAILGUN_FROM;
     delete process.env.SMTP_FROM;
@@ -118,7 +118,7 @@ describe('simple-email handler', () => {
 
   describe('dry-run mode', () => {
     beforeEach(() => {
-      process.env.SIMPLE_EMAIL_DRY_RUN = 'true';
+      process.env.SEND_EMAIL_DRY_RUN = 'true';
     });
 
     it('returns { complete: true } without sending', async () => {

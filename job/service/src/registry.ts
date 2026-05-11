@@ -4,7 +4,7 @@
  * Sources, in priority order:
  *   1. FUNCTIONS_REGISTRY env var
  *      Format: "name:moduleName:port,..." (port optional)
- *      Example: "simple-email:@org/simple-email-fn:8081,foo:@org/foo-fn"
+ *      Example: "send-email:@org/send-email-fn:8081,foo:@org/foo-fn"
  *   2. FUNCTIONS_MANIFEST_PATH env var pointing to a JSON file with shape
  *        { functions: [{ name, dir, port, type, moduleName? }] }
  *   3. Default file: <cwd>/generated/functions-manifest.json

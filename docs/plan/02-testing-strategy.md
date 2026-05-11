@@ -18,12 +18,12 @@ Each function has:
 
 ### Handler testing challenges
 
-**simple-email** (`functions/simple-email/handler.ts`):
+**send-email** (`functions/send-email/handler.ts`):
 - Lines 30-31: `isDryRun` and `useSmtp` read from `process.env` at **module load time** (top-level `const`)
 - Tests must set env vars BEFORE importing the handler, or use `vi.stubEnv()` + dynamic `import()`
 - Mocks needed: `sendPostmaster`, `sendSmtp` from imported modules
 
-**send-email-link** (`functions/send-email-link/handler.ts`):
+**send-verification-link** (`functions/send-verification-link/handler.ts`):
 - Lines 73-74: `isDryRun` and `useSmtp` read from `context.env` (not process.env) — per-request, easier to test
 - Makes GraphQL calls: `meta.request(GetDatabaseInfo)` and `client.request(GetUser)`
 - Tests mock GraphQL client responses to control site/user data
@@ -157,7 +157,7 @@ describe('example handler', () => {
 });
 ```
 
-#### `functions/simple-email/__tests__/handler.test.ts`
+#### `functions/send-email/__tests__/handler.test.ts`
 
 Key challenge: `isDryRun` and `useSmtp` are module-level constants (lines 30-31). Use `vi.stubEnv()` and dynamic import with `vi.resetModules()`.
 
@@ -173,12 +173,12 @@ vi.mock('@constructive-io/postmaster', () => ({
   send: vi.fn().mockResolvedValue(undefined)
 }));
 
-describe('simple-email handler', () => {
+describe('send-email handler', () => {
   let handler: any;
 
   beforeEach(async () => {
     vi.resetModules();
-    vi.stubEnv('SIMPLE_EMAIL_DRY_RUN', 'false');
+    vi.stubEnv('SEND_EMAIL_DRY_RUN', 'false');
     vi.stubEnv('EMAIL_SEND_USE_SMTP', 'false');
     const mod = await import('../handler');
     handler = mod.default;
@@ -230,7 +230,7 @@ describe('simple-email handler', () => {
   describe('dry-run mode', () => {
     beforeEach(async () => {
       vi.resetModules();
-      vi.stubEnv('SIMPLE_EMAIL_DRY_RUN', 'true');
+      vi.stubEnv('SEND_EMAIL_DRY_RUN', 'true');
       const mod = await import('../handler');
       handler = mod.default;
     });
@@ -248,7 +248,7 @@ describe('simple-email handler', () => {
 });
 ```
 
-#### `functions/send-email-link/__tests__/handler.test.ts`
+#### `functions/send-verification-link/__tests__/handler.test.ts`
 
 ```typescript
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -285,7 +285,7 @@ const mockSiteData = {
   }
 };
 
-describe('send-email-link handler', () => {
+describe('send-verification-link handler', () => {
   let handler: any;
 
   beforeEach(async () => {
@@ -377,7 +377,7 @@ describe('send-email-link handler', () => {
     it('logs but does not send when DRY_RUN is true', async () => {
       const ctx = createMockContext({
         metaResponse: mockSiteData,
-        env: { SEND_EMAIL_LINK_DRY_RUN: 'true' }
+        env: { SEND_VERIFICATION_LINK_DRY_RUN: 'true' }
       });
       const result = await handler({
         email_type: 'forgot_password',
@@ -574,8 +574,8 @@ This layer requires both Docker images (WS1) and Knative services to be working.
 | Create | `.github/workflows/test.yaml` |
 | Create | `tests/unit/helpers/mock-context.ts` |
 | Create | `functions/example/__tests__/handler.test.ts` |
-| Create | `functions/simple-email/__tests__/handler.test.ts` |
-| Create | `functions/send-email-link/__tests__/handler.test.ts` |
+| Create | `functions/send-email/__tests__/handler.test.ts` |
+| Create | `functions/send-verification-link/__tests__/handler.test.ts` |
 | Create | `tests/integration/helpers/start-function.ts` |
 | Create | `tests/integration/runtime.test.ts` |
 | Modify | `package.json` — add vitest devDep + test scripts |

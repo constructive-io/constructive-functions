@@ -101,10 +101,10 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/component: function
-    app.kubernetes.io/name: send-email-link
+    app.kubernetes.io/name: send-verification-link
     app.kubernetes.io/part-of: constructive-jobs
     networking.knative.dev/visibility: cluster-local
-  name: send-email-link
+  name: send-verification-link
 spec:
   template:
     metadata:
@@ -116,13 +116,13 @@ spec:
         serving.knative.dev/timeout: 300s
       labels:
         app.kubernetes.io/component: function
-        app.kubernetes.io/name: send-email-link
+        app.kubernetes.io/name: send-verification-link
         app.kubernetes.io/part-of: constructive-jobs
     spec:
       containerConcurrency: 10
       containers:
       - args:
-        - functions/send-email-link/dist/index.js
+        - functions/send-verification-link/dist/index.js
         command:
         - node
         env:
@@ -172,10 +172,10 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/component: function
-    app.kubernetes.io/name: simple-email
+    app.kubernetes.io/name: send-email
     app.kubernetes.io/part-of: constructive-jobs
     networking.knative.dev/visibility: cluster-local
-  name: simple-email
+  name: send-email
 spec:
   template:
     metadata:
@@ -187,13 +187,13 @@ spec:
         serving.knative.dev/timeout: 300s
       labels:
         app.kubernetes.io/component: function
-        app.kubernetes.io/name: simple-email
+        app.kubernetes.io/name: send-email
         app.kubernetes.io/part-of: constructive-jobs
     spec:
       containerConcurrency: 10
       containers:
       - args:
-        - functions/simple-email/dist/index.js
+        - functions/send-email/dist/index.js
         command:
         - node
         env:
@@ -563,7 +563,7 @@ spec:
         - name: JOBS_SUPPORT_ANY
           value: "false"
         - name: JOBS_SUPPORTED
-          value: simple-email,send-email-link
+          value: send-email,send-verification-link
         - name: JOBS_CALLBACK_HOST
           value: knative-job-service.interweb.svc.cluster.local
         - name: JOBS_CALLBACK_BASE_URL
@@ -571,11 +571,11 @@ spec:
         - name: KNATIVE_SERVICE_URL
           value: interweb.svc.cluster.local
         - name: INTERNAL_GATEWAY_URL
-          value: http://simple-email.interweb.svc.cluster.local
+          value: http://send-email.interweb.svc.cluster.local
         - name: NODE_ENV
           value: development
         - name: INTERNAL_GATEWAY_DEVELOPMENT_MAP
-          value: '{"simple-email":"http://simple-email.interweb.svc.cluster.local","send-email-link":"http://send-email-link.interweb.svc.cluster.local"}'
+          value: '{"send-email":"http://send-email.interweb.svc.cluster.local","send-verification-link":"http://send-verification-link.interweb.svc.cluster.local"}'
         - name: HOSTNAME
           valueFrom:
             fieldRef:

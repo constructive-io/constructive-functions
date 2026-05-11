@@ -109,7 +109,7 @@ You can also run the workflow with `workflow_dispatch` (default `dry_run: true`)
 - [ ] **Job-registry tests**: `pnpm exec jest tests/integration/job-registry.test.ts` — six cases pass.
 - [ ] **Brasilia E2E**: with the live k8s stack running (`make skaffold-dev`), `pnpm test:e2e` still picks up jobs end-to-end.
 - [ ] **Scratch repo**: in a fresh `/tmp/test-fn-app` repo, `pnpm add -D @constructive-io/fn-cli && pnpm add @constructive-io/fn-runtime`, add `functions/hello/handler.{json,ts}`, run `fn generate && fn build && fn manifest`. Confirm output is sensible and `docker build -f generated/hello/Dockerfile .` succeeds.
-- [ ] **Hub integration**: in `constructive-hub/istanbul`, `pnpm bootstrap && pnpm start` still launches `send-email-link` and processes a job (the hub does not yet consume the new toolkit; this confirms Wave 1-3 didn't regress the existing submodule path).
+- [ ] **Hub integration**: in `constructive-hub/istanbul`, `pnpm bootstrap && pnpm start` still launches `send-verification-link` and processes a job (the hub does not yet consume the new toolkit; this confirms Wave 1-3 didn't regress the existing submodule path).
 
 ## Deferred follow-ups (not in this branch)
 

@@ -27,9 +27,9 @@ const getRequiredField = (
   return value;
 };
 
-const isDryRun = parseEnvBoolean(process.env.SIMPLE_EMAIL_DRY_RUN) ?? false;
+const isDryRun = parseEnvBoolean(process.env.SEND_EMAIL_DRY_RUN) ?? false;
 const useSmtp = parseEnvBoolean(process.env.EMAIL_SEND_USE_SMTP) ?? false;
-const logger = createLogger('simple-email');
+const logger = createLogger('send-email');
 
 const handler: FunctionHandler<SimpleEmailPayload> = async (params) => {
   const to = getRequiredField(params, 'to');

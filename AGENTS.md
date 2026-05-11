@@ -79,7 +79,7 @@ export default handler;
 
 ```json
 {
-  "name": "send-email-link",
+  "name": "send-verification-link",
   "version": "1.1.0",
   "description": "Sends invite, password reset, and verification emails",
   "type": "node-graphql",
@@ -111,7 +111,7 @@ export default handler;
 **Build Docker images:**
 ```bash
 make docker-build                    # build all function images
-make docker-build-send-email-link    # build single function image
+make docker-build-send-verification-link    # build single function image
 ```
 
 **Local development with Docker:**
@@ -129,9 +129,9 @@ pnpm build        # Recompile
 
 ## Key Details
 
-- Each function declares its port in `handler.json` (`simple-email` 8081, `send-email-link` 8082, `knative-job-example` 8083, `python-example` 8084); the job service uses 8080
-- Email functions support dry-run via `SIMPLE_EMAIL_DRY_RUN` / `SEND_EMAIL_LINK_DRY_RUN`
-- `loadFunctionApp()` in job/service resolves modules by name (e.g. `@constructive-io/simple-email-fn`)
+- Each function declares its port in `handler.json` (`send-email` 8081, `send-verification-link` 8082, `knative-job-example` 8083, `python-example` 8084); the job service uses 8080
+- Email functions support dry-run via `SEND_EMAIL_DRY_RUN` / `SEND_VERIFICATION_LINK_DRY_RUN`
+- `loadFunctionApp()` in job/service resolves modules by name (e.g. `@constructive-io/send-email-fn`)
 - GraphQL clients require `GRAPHQL_URL` env var and `X-Database-Id` header
 - The `generated/` directory is entirely gitignored
 - Templates use `{{name}}`, `{{version}}`, `{{description}}` placeholders

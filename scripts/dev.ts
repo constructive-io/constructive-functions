@@ -3,7 +3,7 @@
 //
 // Usage:
 //   node --experimental-strip-types scripts/dev.ts
-//   node --experimental-strip-types scripts/dev.ts --only=send-email-link
+//   node --experimental-strip-types scripts/dev.ts --only=send-verification-link
 
 const fs = require('fs') as typeof import('fs');
 const path = require('path') as typeof import('path');
@@ -60,7 +60,7 @@ const sharedEnv: Record<string, string> = {
   SMTP_HOST: 'localhost',
   SMTP_PORT: '1025',
   LOCAL_APP_PORT: '3000',
-  SEND_EMAIL_LINK_DRY_RUN: 'true',
+  SEND_VERIFICATION_LINK_DRY_RUN: 'true',
 };
 
 // --- Process definitions (built from manifest) ---
