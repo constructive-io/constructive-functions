@@ -22,8 +22,8 @@ describe('FnClient', () => {
     const client = new FnClient({ rootDir: tmpRoot });
     const fns = client.discover();
     const names = fns.map((f) => f.name);
-    expect(names).toContain('simple-email');
-    expect(names).toContain('send-email-link');
+    expect(names).toContain('send-email');
+    expect(names).toContain('send-verification-link');
     expect(fns.every((f) => f.port > 0 && f.port !== 8080)).toBe(true);
   });
 

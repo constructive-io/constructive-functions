@@ -1,8 +1,9 @@
 {
-  "name": "send-email-link",
+  "name": "send-verification-link",
   "version": "2.6.4",
   "type": "node-graphql",
   "port": 8082,
+  "taskIdentifier": "email:send_verification_link",
   "description": "Sends invite, password reset, and verification emails",
   "dependencies": {
     "@constructive-io/postmaster": "^1.5.2",

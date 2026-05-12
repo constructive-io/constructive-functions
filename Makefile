@@ -44,7 +44,7 @@ setup-check:
 skaffold-dev:
 	skaffold dev -p local-simple
 
-# Single function: make skaffold-dev-simple-email
+# Single function: make skaffold-dev-send-email
 skaffold-dev-%:
 	skaffold dev -p $*
 
@@ -57,6 +57,6 @@ skaffold-dev-knative:
 docker-build:
 	pnpm run docker:build
 
-# Build a single function image: make docker-build-send-email-link
+# Build a single function image: make docker-build-send-verification-link
 docker-build-%:
 	node --experimental-strip-types scripts/docker-build.ts --only=$*

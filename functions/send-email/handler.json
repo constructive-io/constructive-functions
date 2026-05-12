@@ -1,9 +1,10 @@
 {
-  "name": "simple-email",
+  "name": "send-email",
   "version": "1.6.4",
   "type": "node-graphql",
   "port": 8081,
-  "description": "Simple Knative email function that sends emails directly from job payload",
+  "taskIdentifier": "email:send_email",
+  "description": "Knative email function that sends emails directly from job payload",
   "dependencies": {
     "@constructive-io/postmaster": "^1.5.2",
     "@pgpmjs/env": "^2.15.3",

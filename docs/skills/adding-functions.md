@@ -10,7 +10,7 @@ description: Step-by-step guide for adding a new serverless function to the cons
 - Node.js 22+, pnpm 10+
 - Understanding of the `FunctionHandler` type from `@constructive-io/fn-runtime`
 
-**Reference implementations:** See `functions/simple-email/` (env vars, external packages, dry-run mode) and `functions/send-email-link/` (GraphQL queries, context usage) as working examples.
+**Reference implementations:** See `functions/send-email/` (env vars, external packages, dry-run mode) and `functions/send-verification-link/` (GraphQL queries, context usage) as working examples.
 
 ## Step 1: Create handler.json
 
@@ -82,26 +82,7 @@ If your function imports modules that need TypeScript type stubs, add a `types.d
 declare module '@some-untyped-package';
 ```
 
-## Step 3: Register with the job service
-
-Update `job/service/src/types.ts` — add the function name to the `FunctionName` union:
-
-```typescript
-export type FunctionName = 'simple-email' | 'send-email-link' | '<name>';
-```
-
-Update `job/service/src/index.ts` — add an entry to `functionRegistry`:
-
-```typescript
-'<name>': {
-  moduleName: '@constructive-io/<name>-fn',
-  defaultPort: <port>
-},
-```
-
-The `moduleName` is the generated workspace package name (`@constructive-io/<name>-fn`). The `defaultPort` must match the port in `handler.json`.
-
-## Step 4: Run generate
+## Step 3: Run generate
 
 ```bash
 pnpm generate
@@ -123,14 +104,14 @@ It also updates:
 - `k8s/overlays/local-simple/job-service.yaml` — adds function to JOBS_SUPPORTED and gateway map
 - `generated/functions-manifest.json` — function registry used by dev.ts
 
-## Step 5: Install and build
+## Step 4: Install and build
 
 ```bash
 pnpm install   # picks up the new workspace package
 pnpm build     # builds all packages including the new function
 ```
 
-## Step 6: Add unit tests
+## Step 5: Add unit tests
 
 Create `functions/<name>/__tests__/handler.test.ts`:
 
@@ -168,7 +149,7 @@ Use `tests/helpers/mock-context.ts` to create test contexts. If your function us
 
 Run: `pnpm test:unit`
 
-## Step 7: Add e2e test
+## Step 6: Add e2e test
 
 Create `tests/e2e/__tests__/<name>.e2e.test.ts`:
 
@@ -212,7 +193,7 @@ describe('E2E: <name>', () => {
 
 **Important:** The e2e test filename must match the function name (`<name>.e2e.test.ts`) for the CI matrix to pick it up automatically.
 
-## Step 8: Test locally
+## Step 7: Test locally
 
 ### Option A: Docker Compose + local Node (fastest iteration)
 
@@ -227,7 +208,7 @@ pnpm dev:fn --only=<name>   # run just your function
 make skaffold-dev-<name>    # deploys infra + just your function
 ```
 
-## Step 9: Verify CI will work
+## Step 8: Verify CI will work
 
 The following CI workflows auto-discover functions — no manual edits needed:
 

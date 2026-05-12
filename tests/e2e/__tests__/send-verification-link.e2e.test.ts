@@ -1,12 +1,12 @@
 /**
- * E2E: send-email-link function
+ * E2E: send-verification-link function
  *
- * Assumes skaffold is running with send-email-link deployed:
- *   skaffold dev -p send-email-link   (single function)
- *   make skaffold-dev                 (all functions)
+ * Assumes skaffold is running with send-verification-link deployed:
+ *   skaffold dev -p send-verification-link   (single function)
+ *   make skaffold-dev                        (all functions)
  *
  * Inserts a job into the queue and verifies the job service dispatches it
- * to the send-email-link function which processes it.
+ * to the send-verification-link function which processes it.
  */
 import {
   getTestConnections,
@@ -16,9 +16,9 @@ import {
 } from '../utils/db';
 import { addJob, waitForJobComplete, deleteTestJobs } from '../utils/jobs';
 
-const TEST_PREFIX = 'k8s-e2e-send-email-link';
+const TEST_PREFIX = 'k8s-e2e-send-verification-link';
 
-describe('E2E: send-email-link', () => {
+describe('E2E: send-verification-link', () => {
   let pg: TestClient;
   let databaseId: string;
 
@@ -33,8 +33,8 @@ describe('E2E: send-email-link', () => {
     await closeConnections();
   });
 
-  it('should process a send-email-link job from the queue', async () => {
-    const job = await addJob(pg, databaseId, 'send-email-link', {
+  it('should process an email:send_verification_link job from the queue', async () => {
+    const job = await addJob(pg, databaseId, 'email:send_verification_link', {
       email_type: 'forgot_password',
       email: `${TEST_PREFIX}@example.com`,
       reset_token: 'test-token-123',
@@ -42,7 +42,7 @@ describe('E2E: send-email-link', () => {
     });
 
     expect(job.id).toBeDefined();
-    console.log(`Added send-email-link job: ${job.id}`);
+    console.log(`Added email:send_verification_link job: ${job.id}`);
 
     const result = await waitForJobComplete(pg, job.id, { timeout: 30000 });
 

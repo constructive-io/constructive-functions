@@ -5,8 +5,8 @@
 //
 // Usage:
 //   node --experimental-strip-types scripts/docker-build.ts --all
-//   node --experimental-strip-types scripts/docker-build.ts --only=send-email-link
-//   node --experimental-strip-types scripts/docker-build.ts --only=simple-email --tag=abc1234
+//   node --experimental-strip-types scripts/docker-build.ts --only=send-verification-link
+//   node --experimental-strip-types scripts/docker-build.ts --only=send-email --tag=abc1234
 
 const fs = require('fs') as typeof import('fs');
 const path = require('path') as typeof import('path');

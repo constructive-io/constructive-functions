@@ -30,4 +30,4 @@ patches:
       version: v1
       kind: Deployment
       name: minio
-  # constructive-server-admin and simple-email are kept running for e2e tests
+  # constructive-server-admin and send-email are kept running for e2e tests

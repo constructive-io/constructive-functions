@@ -10,12 +10,16 @@ export const buildManifestJson = (
   outputDir: string
 ): Manifest => {
   const data = {
-    functions: fns.map((fn) => ({
-      name: fn.name,
-      dir: fn.dir,
-      port: fn.port,
-      type: fn.type,
-    })),
+    functions: fns.map((fn) => {
+      const taskIdentifier = fn.manifest.taskIdentifier as string | undefined;
+      return {
+        name: fn.name,
+        dir: fn.dir,
+        port: fn.port,
+        type: fn.type,
+        ...(taskIdentifier ? { taskIdentifier } : {}),
+      };
+    }),
   };
   return {
     kind: 'file',

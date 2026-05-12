@@ -86,7 +86,7 @@ Generated packages symlink `handler.ts` and `*.d.ts` back to `functions/<name>/`
 - [x] fn-runtime package (server, context, GraphQL clients, types)
 - [x] fn-app package (Express factory with error middleware)
 - [x] job/service (KnativeJobsSvc with function loading and job orchestration)
-- [x] 3 functions: example, simple-email, send-email-link
+- [x] 3 functions: example, send-email, send-verification-link
 - [x] Docker compose dev setup
 - [x] K8s base manifests and overlays
 

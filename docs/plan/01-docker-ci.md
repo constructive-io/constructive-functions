@@ -143,7 +143,7 @@ jobs:
 
 **Dynamic matrix via discovery job**: The `discover` job reads `functions/*/handler.json` and outputs a JSON matrix. This means adding a new function only requires creating `functions/<name>/handler.json` — no workflow changes needed.
 
-**`matrix.dir` vs `matrix.name`**: The directory name (e.g., `simple-email`) may differ from the handler.json `name` field (e.g., `knative-job-example` vs dir `example`). We pass both:
+**`matrix.dir` vs `matrix.name`**: The directory name (e.g., `send-email`) may differ from the handler.json `name` field (e.g., `knative-job-example` vs dir `example`). We pass both:
 - `matrix.dir` — used for `--only=` flag and Dockerfile path (generate.ts filters by directory name)
 - `matrix.name` — used for image naming (from handler.json `name` field)
 
@@ -161,8 +161,8 @@ jobs:
    - Each builds successfully but does NOT push (PR event)
 
 2. **Push test**: Merge to main. Verify:
-   - Images appear at `ghcr.io/<owner>/simple-email-fn:latest`
-   - Images appear at `ghcr.io/<owner>/send-email-link-fn:latest`
+   - Images appear at `ghcr.io/<owner>/send-email-fn:latest`
+   - Images appear at `ghcr.io/<owner>/send-verification-link-fn:latest`
    - Short SHA tags are applied
 
 3. **New function test**: Add a new `functions/test-fn/handler.json` and verify it appears as a 4th matrix job automatically.

@@ -1,6 +1,6 @@
 import { createMockContext } from '../../../tests/helpers/mock-context';
 
-describe('send-email-link handler (validation)', () => {
+describe('send-verification-link handler (validation)', () => {
   let handler: any;
 
   beforeEach(() => {

@@ -1,9 +1,9 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: send-email-link
+  name: send-email
   labels:
-    app.kubernetes.io/name: send-email-link
+    app.kubernetes.io/name: send-email
     app.kubernetes.io/component: function
     app.kubernetes.io/part-of: constructive-jobs
     networking.knative.dev/visibility: cluster-local
@@ -11,7 +11,7 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: send-email-link
+        app.kubernetes.io/name: send-email
         app.kubernetes.io/component: function
         app.kubernetes.io/part-of: constructive-jobs
       annotations:
@@ -30,7 +30,7 @@ spec:
         imagePullPolicy: Always
 
         command: ["node"]
-        args: ["functions/send-email-link/dist/index.js"]
+        args: ["functions/send-email/dist/index.js"]
 
         ports:
         - containerPort: 8080
@@ -51,12 +51,6 @@ spec:
           value: "no-reply@mg.constructive.io"
         - name: MAILGUN_REPLY
           value: "support@mg.constructive.io"
-        - name: GRAPHQL_URL
-          value: "http://constructive-server-admin.interweb.svc.cluster.local:3000/graphql"
-        - name: META_GRAPHQL_URL
-          value: "http://constructive-server-admin.interweb.svc.cluster.local:3000/graphql"
-        - name: GRAPHQL_API_NAME
-          value: "private"
 
         resources:
           requests:

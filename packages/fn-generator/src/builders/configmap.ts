@@ -18,9 +18,11 @@ export const buildConfigMap = (args: {
   namespace: string;
 }): Manifest => {
   const targetFns = args.target ? [args.target] : args.fns;
+  const taskId = (fn: FunctionInfo): string =>
+    (fn.manifest.taskIdentifier as string | undefined) ?? fn.name;
   const gatewayMap: Record<string, string> = {};
   for (const fn of targetFns) {
-    gatewayMap[fn.name] = `http://${fn.name}.${args.namespace}.svc.cluster.local`;
+    gatewayMap[taskId(fn)] = `http://${fn.name}.${args.namespace}.svc.cluster.local`;
   }
 
   const template = fs.readFileSync(
@@ -28,7 +30,7 @@ export const buildConfigMap = (args: {
     'utf-8'
   );
   const yaml = renderTemplate(template, {
-    jobs_supported: targetFns.map((fn) => fn.name).join(','),
+    jobs_supported: targetFns.map(taskId).join(','),
     gateway_map: JSON.stringify(gatewayMap),
   });
 

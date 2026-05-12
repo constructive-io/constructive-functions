@@ -1,5 +1,5 @@
 /**
- * GraphQL integration tests for send-email-link handler.
+ * GraphQL integration tests for send-verification-link handler.
  *
  * These tests use @constructive-io/graphql-test to run against
  * a real PostGraphile + Postgres instance. They require:
@@ -12,7 +12,7 @@
  *   pnpm add -D @constructive-io/graphql-test pgsql-test
  */
 
-describe('send-email-link handler (GraphQL integration)', () => {
+describe('send-verification-link handler (GraphQL integration)', () => {
   it.todo('invite_email fetches inviter and sends email with correct URL');
   it.todo('forgot_password constructs correct reset URL with tokens');
   it.todo('email_verification constructs correct verify URL');
