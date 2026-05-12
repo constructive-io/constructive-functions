@@ -8,9 +8,6 @@
     "url": "https://github.com/constructive-io/constructive-functions"
   },
   "license": "MIT",
-  "publishConfig": {
-    "access": "restricted"
-  },
   "engines": {
     "node": ">=22.0.0"
   },

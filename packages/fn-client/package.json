@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Programmatic client for the Constructive Functions toolkit. Wraps fn-generator with config loading, manifest readers, and child-process orchestration for local dev.",
   "author": "Constructive <developers@constructive.io>",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

@@ -1,8 +1,8 @@
-ZONE_ID=Z00381072B5MMXZMWY1JN       # launchql.dev
+ZONE_ID=REPLACE_WITH_ROUTE53_ZONE_ID
 ISSUER_NAMESPACE=interweb
 ISSUER_NAME=launchql-issuer
-IAM_USER=certmgr-route53-launchql
-AWS_PROFILE=webinc
+IAM_USER=certmgr-route53
+AWS_PROFILE=default
 
 # Create the IAM user
 aws iam create-user --user-name "$IAM_USER" --profile ${AWS_PROFILE}
@@ -49,9 +49,9 @@ echo "SecretAccessKey: $AWS_SECRET_ACCESS_KEY"   # store securely!
 set -euo pipefail
 
 # Config (override via env vars when calling the script)
-: "${ZONE_ID:=Z00381072B5MMXZMWY1JN}"   # Hosted Zone ID for your domain
-: "${IAM_USER:=certmgr-route53-launchql}"
-: "${AWS_PROFILE:=webinc}"
+: "${ZONE_ID:?Set ZONE_ID to your Route53 hosted zone ID, e.g. Z0000000000000000000}"
+: "${IAM_USER:=certmgr-route53}"
+: "${AWS_PROFILE:=default}"
 : "${AWS_REGION:=us-east-1}"
 POLICY_NAME="route53-dns01-${ZONE_ID}"
 

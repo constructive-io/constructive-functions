@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Source-of-truth TypeScript types for the Constructive Functions toolkit: handler manifests, FnConfig, runtime context, registry.",
   "author": "Constructive <developers@constructive.io>",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

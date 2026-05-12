@@ -3,7 +3,7 @@
   "version": "1.2.0",
   "description": "Runtime for Constructive functions — wraps a handler in an Express app with GraphQL client, logging, and job callback support.",
   "author": "Constructive <developers@constructive.io>",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

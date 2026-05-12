@@ -150,18 +150,23 @@ proxy-stop:
 ZONE_ID ?= REPLACE_WITH_ROUTE53_ZONE_ID
 LB_IP ?= REPLACE_WITH_LOAD_BALANCER_IP
 AWS_PROFILE ?= default
+DNS_RECORD_NAME ?= REPLACE_WITH_DNS_RECORD_NAME
+ROUTE53_SECRET_NAME ?= certmgr-route53
+UPLOADS_BUCKET ?= REPLACE_WITH_S3_BUCKET_NAME
+UPLOADS_IAM_USER ?= REPLACE_WITH_S3_IAM_USER
+AWS_REGION ?= us-east-1
 
 aws-route53:
 	aws route53 change-resource-record-sets \
 		--profile ${AWS_PROFILE} \
 		--hosted-zone-id ${ZONE_ID} \
-		--change-batch "{ \"Changes\": [ {\"Action\":\"UPSERT\",\"ResourceRecordSet\":{\"Name\":\"*.launchql.dev\",\"Type\":\"A\",\"TTL\":60,\"ResourceRecords\":[{\"Value\":\"${LB_IP}\"}]}} ] }"
+		--change-batch "{ \"Changes\": [ {\"Action\":\"UPSERT\",\"ResourceRecordSet\":{\"Name\":\"${DNS_RECORD_NAME}\",\"Type\":\"A\",\"TTL\":60,\"ResourceRecords\":[{\"Value\":\"${LB_IP}\"}]}} ] }"
 
 k8s-iam-user-secret:
-	$(KUBECTL) -n $(CONSTRUCTIVE_NS) create secret generic certmgr-route53-launchql \
+	$(KUBECTL) -n $(CONSTRUCTIVE_NS) create secret generic $(ROUTE53_SECRET_NAME) \
 		--from-literal=AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) \
 		--from-literal=AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY)
 
 ### aws s3 bucket used for uploads
 create-bucket-user:
-	./scripts/create-uploads-bucket-user-policy.sh constructive-uploads constructive-upload-iam-user us-east-1 webinc
+	./scripts/create-uploads-bucket-user-policy.sh $(UPLOADS_BUCKET) $(UPLOADS_IAM_USER) $(AWS_REGION) $(AWS_PROFILE)

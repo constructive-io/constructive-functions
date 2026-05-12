@@ -4,7 +4,7 @@ metadata:
   name: constructive-issuer
 spec:
   acme:
-    email: devops@cosmoslogy.zone   # (check typo if meant "cosmology")
+    email: REPLACE_WITH_ACME_CONTACT_EMAIL
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: constructive-issuer
@@ -15,5 +15,5 @@ spec:
             hostedZoneID: REPLACE_WITH_ROUTE53_ZONE_ID
             accessKeyID: REPLACE_WITH_ROUTE53_ACCESS_KEY_ID
             secretAccessKeySecretRef:
-              name: certmgr-route53-launchql
+              name: certmgr-route53
               key: AWS_SECRET_ACCESS_KEY

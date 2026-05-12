@@ -3,7 +3,7 @@
   "version": "1.6.0",
   "description": "Express app factory for Knative job functions with callback handling.",
   "author": "Constructive <developers@constructive.io>",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Thin command-line wrapper for the Constructive Functions toolkit. Exposes the `fn` executable.",
   "author": "Constructive <developers@constructive.io>",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Programmatic generator for Constructive Functions: walks handler.json manifests and stamps out Dockerfiles, k8s YAML, configmaps, and Skaffold profiles. Pure functions; file I/O at the boundary.",
   "author": "Constructive <developers@constructive.io>",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
