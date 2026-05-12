@@ -12,6 +12,10 @@ COPY templates/ templates/
 # Copy all package/job manifests for caching
 COPY packages/fn-app/package.json packages/fn-app/
 COPY packages/fn-runtime/package.json packages/fn-runtime/
+COPY packages/fn-types/package.json packages/fn-types/
+COPY packages/fn-generator/package.json packages/fn-generator/
+COPY packages/fn-client/package.json packages/fn-client/
+COPY packages/fn-cli/package.json packages/fn-cli/
 COPY job/server/package.json job/server/
 COPY job/worker/package.json job/worker/
 COPY job/service/package.json job/service/
