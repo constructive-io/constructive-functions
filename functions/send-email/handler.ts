@@ -1,10 +1,10 @@
 import type { FunctionHandler } from '@constructive-io/fn-runtime';
-import { send as sendSmtp } from 'simple-smtp-server';
 import { send as sendPostmaster } from '@constructive-io/postmaster';
 import { parseEnvBoolean } from '@pgpmjs/env';
 import { createLogger } from '@pgpmjs/logger';
+import { send as sendSmtp } from 'simple-smtp-server';
 
-type SimpleEmailPayload = {
+type SendEmailPayload = {
   to: string;
   subject: string;
   html?: string;
@@ -17,8 +17,8 @@ const isNonEmptyString = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0;
 
 const getRequiredField = (
-  payload: SimpleEmailPayload,
-  field: keyof SimpleEmailPayload
+  payload: SendEmailPayload,
+  field: keyof SendEmailPayload
 ) => {
   const value = payload[field];
   if (!isNonEmptyString(value)) {
@@ -27,11 +27,14 @@ const getRequiredField = (
   return value;
 };
 
-const isDryRun = parseEnvBoolean(process.env.SIMPLE_EMAIL_DRY_RUN) ?? false;
+const isDryRun =
+  parseEnvBoolean(process.env.SEND_EMAIL_DRY_RUN) ??
+  parseEnvBoolean(process.env.SIMPLE_EMAIL_DRY_RUN) ??
+  false;
 const useSmtp = parseEnvBoolean(process.env.EMAIL_SEND_USE_SMTP) ?? false;
-const logger = createLogger('simple-email');
+const logger = createLogger('send-email');
 
-const handler: FunctionHandler<SimpleEmailPayload> = async (params) => {
+const handler: FunctionHandler<SendEmailPayload> = async (params) => {
   const to = getRequiredField(params, 'to');
   const subject = getRequiredField(params, 'subject');
 

@@ -9,7 +9,7 @@ All of the following must be running and accessible:
 - **PostgreSQL** — port-forwarded to `localhost:5432`
 - **constructive-server** — the GraphQL API server
 - **knative-job-service** — the job worker that picks up and dispatches jobs
-- **simple-email** / **send-email-link** — the function deployments
+- **send-email** / **send-verification-link** — the function deployments
 - **Database seeded** — `constructive-db` job must have completed (schemas + pgpm packages deployed)
 
 The simplest way to get everything running:

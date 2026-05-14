@@ -22,6 +22,9 @@ interface FunctionManifest {
   description?: string;
   type?: string;
   port?: number;
+  // Optional task identifier used by the job worker to dispatch this function
+  // (e.g. "email:send_verification_link"). Defaults to `name` when omitted.
+  taskIdentifier?: string;
   dependencies?: Record<string, string>;
 }
 
@@ -182,6 +185,7 @@ interface FunctionInfo {
   dir: string;
   port: number;
   type: string;
+  taskIdentifier?: string;
 }
 
 const K8S_TEMPLATES_DIR: string = path.resolve(TEMPLATES_DIR, 'k8s');
@@ -200,14 +204,15 @@ function renderTemplate(template: string, vars: Record<string, string>): string 
 
 function generateFunctionsConfigMap(fns: FunctionInfo[], perFunction?: FunctionInfo): void {
   const targetFns = perFunction ? [perFunction] : fns;
+  const taskId = (fn: FunctionInfo) => fn.taskIdentifier ?? fn.name;
   const gatewayMap: Record<string, string> = {};
   for (const fn of targetFns) {
-    gatewayMap[fn.name] = `http://${fn.name}.${K8S_NAMESPACE}.svc.cluster.local`;
+    gatewayMap[taskId(fn)] = `http://${fn.name}.${K8S_NAMESPACE}.svc.cluster.local`;
   }
 
   const template = readTemplate('functions-configmap.yaml');
   const yaml = renderTemplate(template, {
-    jobs_supported: targetFns.map((fn) => fn.name).join(','),
+    jobs_supported: targetFns.map(taskId).join(','),
     gateway_map: JSON.stringify(gatewayMap),
   });
 
@@ -410,6 +415,9 @@ function main(): void {
       dir,
       port: allManifests[i].port,
       type: allManifests[i].type || DEFAULT_TEMPLATE,
+      ...(allManifests[i].taskIdentifier
+        ? { taskIdentifier: allManifests[i].taskIdentifier }
+        : {}),
     })),
   };
 

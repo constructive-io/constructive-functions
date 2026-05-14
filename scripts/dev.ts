@@ -3,7 +3,7 @@
 //
 // Usage:
 //   node --experimental-strip-types scripts/dev.ts
-//   node --experimental-strip-types scripts/dev.ts --only=send-email-link
+//   node --experimental-strip-types scripts/dev.ts --only=send-verification-link
 
 const fs = require('fs') as typeof import('fs');
 const path = require('path') as typeof import('path');
@@ -17,6 +17,7 @@ interface FunctionEntry {
   name: string;
   dir: string;
   port: number;
+  taskIdentifier?: string;
 }
 
 interface FunctionsManifest {
@@ -60,7 +61,8 @@ const sharedEnv: Record<string, string> = {
   SMTP_HOST: 'localhost',
   SMTP_PORT: '1025',
   LOCAL_APP_PORT: '3000',
-  SEND_EMAIL_LINK_DRY_RUN: 'true',
+  SEND_VERIFICATION_LINK_DRY_RUN: 'true',
+  SEND_EMAIL_DRY_RUN: 'true',
 };
 
 // --- Process definitions (built from manifest) ---
@@ -93,15 +95,16 @@ const onlyName: string | undefined = onlyArg?.split('=')[1];
 // --- Job-service specific env (built from manifest) ---
 
 function getJobServiceEnv(): Record<string, string> {
+  const taskId = (fn: FunctionEntry): string => fn.taskIdentifier ?? fn.name;
   const gatewayMap: Record<string, string> = {};
   for (const fn of manifest.functions) {
-    gatewayMap[fn.name] = `http://localhost:${fn.port}`;
+    gatewayMap[taskId(fn)] = `http://localhost:${fn.port}`;
   }
 
   return {
     JOBS_SCHEMA: 'app_jobs',
     JOBS_SUPPORT_ANY: 'false',
-    JOBS_SUPPORTED: manifest.functions.map((fn) => fn.name).join(','),
+    JOBS_SUPPORTED: manifest.functions.map(taskId).join(','),
     HOSTNAME: 'knative-job-service-local',
     INTERNAL_JOBS_CALLBACK_PORT: '8080',
     INTERNAL_JOBS_CALLBACK_URL: 'http://localhost:8080/callback',

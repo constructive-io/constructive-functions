@@ -14,10 +14,10 @@ constructive-functions/
     example/
       handler.ts                # Business logic
       handler.json              # Metadata + dependencies + template type
-    simple-email/
+    send-email/
       handler.ts
       handler.json
-    send-email-link/
+    send-verification-link/
       handler.ts
       handler.json
       types.d.ts                # Optional type declarations
@@ -38,11 +38,11 @@ constructive-functions/
       index.ts                  # Copied from template with {{name}} replaced
       handler.ts                # Symlink -> ../../functions/example/handler.ts
       dist/                     # tsc output
-    simple-email/
+    send-email/
       ...same structure...
-    send-email-link/
+    send-verification-link/
       ...same structure...
-      types.d.ts                # Symlink -> ../../functions/send-email-link/types.d.ts
+      types.d.ts                # Symlink -> ../../functions/send-verification-link/types.d.ts
 
   packages/
     fn-app/                     # Express app factory with job callback handling
@@ -82,7 +82,7 @@ Manifest with name, version, template type, and extra npm dependencies:
 
 ```json
 {
-  "name": "send-email-link",
+  "name": "send-verification-link",
   "version": "1.1.0",
   "description": "Sends invite, password reset, and verification emails",
   "type": "node-graphql",
@@ -212,10 +212,10 @@ The template Dockerfile (`templates/node-graphql/Dockerfile`) uses three stages:
 pnpm docker:build
 
 # Build a single function
-make docker-build-send-email-link
+make docker-build-send-verification-link
 
 # Build with custom tag
-node --experimental-strip-types scripts/docker-build.ts --only=send-email-link --tag=abc1234
+node --experimental-strip-types scripts/docker-build.ts --only=send-verification-link --tag=abc1234
 ```
 
 Image naming: `ghcr.io/constructive-io/<name>-fn:<tag>`
@@ -248,7 +248,7 @@ make dev-down     # docker compose down
 
 ```bash
 make docker-build                    # build all
-make docker-build-send-email-link    # build one
+make docker-build-send-verification-link    # build one
 ```
 
 ## Data Flow
@@ -297,17 +297,17 @@ PostgreSQL job status updated
 
 | Variable | Function | Description |
 |---|---|---|
-| `SEND_EMAIL_LINK_DRY_RUN` | send-email-link | Skip actual email sending |
-| `SIMPLE_EMAIL_DRY_RUN` | simple-email | Skip actual email sending |
+| `SEND_VERIFICATION_LINK_DRY_RUN` | send-verification-link | Skip actual email sending (legacy `SEND_EMAIL_LINK_DRY_RUN` still honored) |
+| `SEND_EMAIL_DRY_RUN` | send-email | Skip actual email sending (legacy `SIMPLE_EMAIL_DRY_RUN` still honored) |
 | `EMAIL_SEND_USE_SMTP` | both | Use SMTP instead of Mailgun |
-| `DEFAULT_DATABASE_ID` | send-email-link | Fallback when X-Database-Id header is missing |
-| `LOCAL_APP_PORT` | send-email-link | Port for localhost URLs in dry-run mode |
+| `DEFAULT_DATABASE_ID` | send-verification-link | Fallback when X-Database-Id header is missing |
+| `LOCAL_APP_PORT` | send-verification-link | Port for localhost URLs in dry-run mode |
 
 ## Compatibility
 
 The generated packages maintain full backward compatibility with:
 
 - **job/service `loadFunctionApp()`**: Expects module to export an app with `.listen()`. The generated `index.ts` exports exactly this via `createFunctionServer()` which wraps `createJobApp()`.
-- **Package names**: `@constructive-io/simple-email-fn`, `@constructive-io/send-email-link-fn` remain unchanged.
+- **Package names**: published as `@constructive-io/send-email-fn` and `@constructive-io/send-verification-link-fn` (matches upstream `constructive`).
 - **K8s manifests**: `node generated/<name>/dist/index.js` works as container CMD.
 - **Callback protocol**: fn-runtime delegates to fn-app which handles all callback logic.

@@ -22,5 +22,5 @@ data:
 
   LOG_TIMESTAMP: "true"
 
-  SIMPLE_EMAIL_DRY_RUN: "true"
-  SEND_EMAIL_LINK_DRY_RUN: "true"
+  SEND_EMAIL_DRY_RUN: "true"
+  SEND_VERIFICATION_LINK_DRY_RUN: "true"

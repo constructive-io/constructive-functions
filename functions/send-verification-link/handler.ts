@@ -1,10 +1,10 @@
 import type { FunctionHandler } from '@constructive-io/fn-runtime';
+import { send as sendPostmaster } from '@constructive-io/postmaster';
+import { generate } from '@launchql/mjml';
+import { parseEnvBoolean } from '@pgpmjs/env';
 import type { GraphQLClient } from 'graphql-request';
 import gql from 'graphql-tag';
-import { generate } from '@launchql/mjml';
-import { send as sendPostmaster } from '@constructive-io/postmaster';
 import { send as sendSmtp } from 'simple-smtp-server';
-import { parseEnvBoolean } from '@pgpmjs/env';
 
 // Use plural connections with the `where` filter (graphile-connection-filter)
 // rather than `condition:` or singular-by-PK. The constructive server's
@@ -83,7 +83,10 @@ const sendEmailLink = async (
   context: SendEmailContext
 ) => {
   const { client, meta, databaseId, env, log } = context;
-  const isDryRun = parseEnvBoolean(env.SEND_EMAIL_LINK_DRY_RUN) ?? false;
+  const isDryRun =
+    parseEnvBoolean(env.SEND_VERIFICATION_LINK_DRY_RUN) ??
+    parseEnvBoolean(env.SEND_EMAIL_LINK_DRY_RUN) ??
+    false;
   const useSmtp = parseEnvBoolean(env.EMAIL_SEND_USE_SMTP) ?? false;
 
   const validateForType = (): { missing?: string } | null => {
@@ -290,7 +293,7 @@ const handler: FunctionHandler<SendEmailParams> = async (params, context) => {
     return { error: 'Missing X-Database-Id header or DEFAULT_DATABASE_ID' };
   }
 
-  log.info('[send-email-link] Processing request', {
+  log.info('[send-verification-link] Processing request', {
     email_type: params.email_type,
     databaseId
   });

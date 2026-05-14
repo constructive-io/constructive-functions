@@ -27,18 +27,18 @@ describe('loadFunctionRegistry', () => {
       path.join(dir, 'functions-manifest.json'),
       JSON.stringify({
         functions: [
-          { name: 'simple-email', dir: 'simple-email', port: 8081, type: 'node-graphql' },
-          { name: 'send-email-link', dir: 'send-email-link', port: 8082, type: 'node-graphql' },
+          { name: 'send-email', dir: 'send-email', port: 8081, type: 'node-graphql' },
+          { name: 'send-verification-link', dir: 'send-verification-link', port: 8082, type: 'node-graphql' },
         ],
       })
     );
     const reg = loadFunctionRegistry({}, tmpDir);
-    expect(reg['simple-email']).toEqual({
-      moduleName: '@constructive-io/simple-email-fn',
+    expect(reg['send-email']).toEqual({
+      moduleName: '@constructive-io/send-email-fn',
       defaultPort: 8081,
     });
-    expect(reg['send-email-link']).toEqual({
-      moduleName: '@constructive-io/send-email-link-fn',
+    expect(reg['send-verification-link']).toEqual({
+      moduleName: '@constructive-io/send-verification-link-fn',
       defaultPort: 8082,
     });
   });

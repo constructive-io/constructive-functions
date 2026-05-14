@@ -91,7 +91,7 @@ The **secret values never enter the meta tables**; only references + metadata do
 
 ### 3. Jobs / Functions (e.g. Knative)
 
-Jobs and functions (like `simple-email`) use secrets **just‑in‑time**:
+Jobs and functions (like `send-email`) use secrets **just‑in‑time**:
 
 - For email functions:
   1. The job runner (e.g. `knative-job-service`) looks up the app’s `mailgun` secret metadata via API/DB.

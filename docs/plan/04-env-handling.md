@@ -10,16 +10,22 @@
 
 Functions read `process.env` directly and use `parseEnvBoolean()` from `@pgpmjs/env`:
 
-**simple-email** (`functions/simple-email/handler.ts` lines 30-31):
+**send-email** (`functions/send-email/handler.ts`):
 ```typescript
-const isDryRun = parseEnvBoolean(process.env.SIMPLE_EMAIL_DRY_RUN) ?? false;
+const isDryRun =
+  parseEnvBoolean(process.env.SEND_EMAIL_DRY_RUN) ??
+  parseEnvBoolean(process.env.SIMPLE_EMAIL_DRY_RUN) ?? // legacy fallback
+  false;
 const useSmtp = parseEnvBoolean(process.env.EMAIL_SEND_USE_SMTP) ?? false;
 ```
-Also reads: `process.env.SMTP_FROM`, `process.env.MAILGUN_FROM` (lines 45-50).
+Also reads: `process.env.SMTP_FROM`, `process.env.MAILGUN_FROM`.
 
-**send-email-link** (`functions/send-email-link/handler.ts` lines 73-74):
+**send-verification-link** (`functions/send-verification-link/handler.ts`):
 ```typescript
-const isDryRun = parseEnvBoolean(env.SEND_EMAIL_LINK_DRY_RUN) ?? false;
+const isDryRun =
+  parseEnvBoolean(env.SEND_VERIFICATION_LINK_DRY_RUN) ??
+  parseEnvBoolean(env.SEND_EMAIL_LINK_DRY_RUN) ?? // legacy fallback
+  false;
 const useSmtp = parseEnvBoolean(env.EMAIL_SEND_USE_SMTP) ?? false;
 ```
 Also reads: `env.GRAPHQL_URL` (via fn-runtime), `env.LOCAL_APP_PORT` (line 152).
@@ -52,7 +58,7 @@ K8s manifests inject env vars via:
 2. `secretRef` — secrets (pg-credentials, mailgun-credentials)
 3. Explicit `env` entries — function-specific overrides
 
-Example from `k8s/base/functions/simple-email.yaml`:
+Example from `k8s/base/functions/send-email.yaml`:
 ```yaml
 envFrom:
   - secretRef:
@@ -107,11 +113,11 @@ interface FunctionManifest {
 
 ### 2. Update handler.json files
 
-#### `functions/simple-email/handler.json`
+#### `functions/send-email/handler.json`
 
 ```json
 {
-  "name": "simple-email",
+  "name": "send-email",
   "version": "1.1.0",
   "type": "node-graphql",
   "description": "Simple Knative email function that sends emails directly from job payload",
@@ -122,7 +128,7 @@ interface FunctionManifest {
     "simple-smtp-server": "^0.3.0"
   },
   "env": {
-    "SIMPLE_EMAIL_DRY_RUN": {
+    "SEND_EMAIL_DRY_RUN": {
       "type": "boolean",
       "default": "false",
       "description": "Skip actual email sending (log only)"
@@ -164,11 +170,11 @@ interface FunctionManifest {
 }
 ```
 
-#### `functions/send-email-link/handler.json`
+#### `functions/send-verification-link/handler.json`
 
 ```json
 {
-  "name": "send-email-link",
+  "name": "send-verification-link",
   "version": "1.1.0",
   "type": "node-graphql",
   "description": "Sends invite, password reset, and verification emails",
@@ -183,7 +189,7 @@ interface FunctionManifest {
     "simple-smtp-server": "^0.3.0"
   },
   "env": {
-    "SEND_EMAIL_LINK_DRY_RUN": {
+    "SEND_VERIFICATION_LINK_DRY_RUN": {
       "type": "boolean",
       "default": "false",
       "description": "Skip actual email sending (log only)"
@@ -336,14 +342,14 @@ In `main()`, after the template file processing loop, add:
 
 ### Generated output example
 
-For `simple-email`, `generated/simple-email/.env.example`:
+For `send-email`, `generated/send-email/.env.example`:
 
 ```
-# Environment variables for simple-email
+# Environment variables for send-email
 # Generated from handler.json — do not edit directly
 
 # Skip actual email sending (log only)
-SIMPLE_EMAIL_DRY_RUN=false
+SEND_EMAIL_DRY_RUN=false
 
 # Use SMTP transport instead of Mailgun/Postmaster
 EMAIL_SEND_USE_SMTP=false
@@ -370,14 +376,14 @@ SMTP_PASS=
 MAILGUN_FROM=
 ```
 
-For `send-email-link`, the generated `index.ts` would start with:
+For `send-verification-link`, the generated `index.ts` would start with:
 
 ```typescript
 // --- Auto-generated env validation ---
 const _requiredEnv = ["GRAPHQL_URL"];
 const _missingEnv = _requiredEnv.filter(k => !process.env[k]);
 if (_missingEnv.length > 0) {
-  throw new Error('Missing required environment variables for send-email-link: ' + _missingEnv.join(', '));
+  throw new Error('Missing required environment variables for send-verification-link: ' + _missingEnv.join(', '));
 }
 // --- End env validation ---
 import { createFunctionServer } from '@constructive-io/fn-runtime';
@@ -414,11 +420,11 @@ This is NOT part of the current workstream but the schema supports it.
 | Action | File |
 |--------|------|
 | Modify | `scripts/generate.ts` — add `EnvVarDeclaration` interface, update `FunctionManifest`, add `generateEnvExample()`, add `injectEnvValidation()`, update `processTemplateFile()` for index.ts |
-| Modify | `functions/simple-email/handler.json` — add `env` field |
-| Modify | `functions/send-email-link/handler.json` — add `env` field |
+| Modify | `functions/send-email/handler.json` — add `env` field |
+| Modify | `functions/send-verification-link/handler.json` — add `env` field |
 | Modify | `functions/example/handler.json` — add `env: {}` |
-| Generated | `generated/simple-email/.env.example` |
-| Generated | `generated/send-email-link/.env.example` |
+| Generated | `generated/send-email/.env.example` |
+| Generated | `generated/send-verification-link/.env.example` |
 
 ## Verification
 
@@ -428,17 +434,17 @@ rm -rf generated/
 pnpm generate
 
 # 2. Check .env.example files
-cat generated/simple-email/.env.example
+cat generated/send-email/.env.example
 # Should list all env vars with descriptions and defaults
 
-cat generated/send-email-link/.env.example
+cat generated/send-verification-link/.env.example
 # Should include GRAPHQL_URL marked as REQUIRED
 
 # 3. Check env validation injection
-head -10 generated/send-email-link/index.ts
+head -10 generated/send-verification-link/index.ts
 # Should start with _requiredEnv validation block
 
-head -5 generated/simple-email/index.ts
+head -5 generated/send-email/index.ts
 # Should NOT have validation block (no required vars)
 
 head -5 generated/example/index.ts
@@ -450,9 +456,9 @@ pnpm build
 # All packages should compile (validation code is valid TypeScript)
 
 # 5. Test validation at runtime
-GRAPHQL_URL="" node generated/send-email-link/dist/index.js
-# Should throw: "Missing required environment variables for send-email-link: GRAPHQL_URL"
+GRAPHQL_URL="" node generated/send-verification-link/dist/index.js
+# Should throw: "Missing required environment variables for send-verification-link: GRAPHQL_URL"
 
-GRAPHQL_URL=http://localhost:3000 PORT=9999 node generated/send-email-link/dist/index.js
+GRAPHQL_URL=http://localhost:3000 PORT=9999 node generated/send-verification-link/dist/index.js
 # Should start without error (Ctrl+C to stop)
 ```

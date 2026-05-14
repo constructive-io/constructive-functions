@@ -1,12 +1,12 @@
 /**
- * E2E: simple-email function
+ * E2E: send-email function
  *
- * Assumes skaffold is running with simple-email deployed:
- *   skaffold dev -p simple-email   (single function)
- *   make skaffold-dev              (all functions)
+ * Assumes skaffold is running with send-email deployed:
+ *   skaffold dev -p send-email   (single function)
+ *   make skaffold-dev            (all functions)
  *
  * Inserts a job into the queue and verifies the job service dispatches it
- * to the simple-email function which processes it.
+ * to the send-email function which processes it.
  */
 import {
   getTestConnections,
@@ -16,9 +16,9 @@ import {
 } from '../utils/db';
 import { addJob, waitForJobComplete, deleteTestJobs } from '../utils/jobs';
 
-const TEST_PREFIX = 'k8s-e2e-simple-email';
+const TEST_PREFIX = 'k8s-e2e-send-email';
 
-describe('E2E: simple-email', () => {
+describe('E2E: send-email', () => {
   let pg: TestClient;
   let databaseId: string;
 
@@ -33,15 +33,15 @@ describe('E2E: simple-email', () => {
     await closeConnections();
   });
 
-  it('should process a simple-email job from the queue', async () => {
-    const job = await addJob(pg, databaseId, 'simple-email', {
+  it('should process an email:send_email job from the queue', async () => {
+    const job = await addJob(pg, databaseId, 'email:send_email', {
       to: 'test@example.com',
       subject: `${TEST_PREFIX} test email`,
       html: '<p>Hello from k8s test</p>',
     });
 
     expect(job.id).toBeDefined();
-    console.log(`Added simple-email job: ${job.id}`);
+    console.log(`Added email:send_email job: ${job.id}`);
 
     const result = await waitForJobComplete(pg, job.id, { timeout: 30000 });
 

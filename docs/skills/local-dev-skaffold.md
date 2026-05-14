@@ -28,7 +28,7 @@ make dev
 # Start all functions as local Node processes
 make dev-fn
 # Or start just one function
-node --experimental-strip-types scripts/dev.ts --only=simple-email
+node --experimental-strip-types scripts/dev.ts --only=send-email
 ```
 
 Functions run as local Node processes with hot-reload via `tsx --watch`. Infrastructure runs in Docker containers.
@@ -41,9 +41,9 @@ Best for: testing k8s manifests, job-service integration, e2e tests.
 
 ```bash
 # Single function (infra + just that function)
-make skaffold-dev-simple-email
+make skaffold-dev-send-email
 # or directly:
-skaffold dev -p simple-email
+skaffold dev -p send-email
 
 # All functions
 make skaffold-dev
@@ -62,8 +62,8 @@ Each function has its own Skaffold profile that deploys only the shared infrastr
 
 | Profile | What it deploys | Command |
 |---------|----------------|---------|
-| `simple-email` | infra + simple-email | `skaffold dev -p simple-email` |
-| `send-email-link` | infra + send-email-link | `skaffold dev -p send-email-link` |
+| `send-email` | infra + send-email | `skaffold dev -p send-email` |
+| `send-verification-link` | infra + send-verification-link | `skaffold dev -p send-verification-link` |
 | `local-simple` | infra + all functions | `skaffold dev -p local-simple` |
 | `local` | Knative + all functions | `skaffold dev -p local` |
 
@@ -78,8 +78,8 @@ Ports are defined in each function's `handler.json` (`port` field). Check `gener
 | Job Service | 8080 | fixed |
 | PostgreSQL | 5432 | fixed |
 | Constructive Server | 3002 | fixed |
-| simple-email | 8081 | handler.json |
-| send-email-link | 8082 | handler.json |
+| send-email | 8081 | handler.json |
+| send-verification-link | 8082 | handler.json |
 
 ## Hot Reload
 
@@ -109,7 +109,7 @@ All pods should be `Running` (except `constructive-db` which completes and shows
 kubectl logs -n constructive-functions -l app=knative-job-service -f
 
 # Specific function
-kubectl logs -n constructive-functions -l app=simple-email -f
+kubectl logs -n constructive-functions -l app=send-email -f
 
 # Constructive server
 kubectl logs -n constructive-functions -l app=constructive-server -f
@@ -148,7 +148,7 @@ SELECT id, name FROM metaschema_public.database;
 -- Manually insert a test job
 SELECT * FROM app_jobs.add_job(
   (SELECT id FROM metaschema_public.database LIMIT 1),
-  'simple-email'::text,
+  'send-email'::text,
   '{"to":"test@example.com","subject":"test","html":"<p>hello</p>"}'::json
 );
 ```
@@ -156,7 +156,7 @@ SELECT * FROM app_jobs.add_job(
 ### Exec into a pod
 
 ```bash
-kubectl exec -it -n constructive-functions deploy/simple-email -- sh
+kubectl exec -it -n constructive-functions deploy/send-email -- sh
 kubectl exec -it -n constructive-functions deploy/knative-job-service -- sh
 ```
 
@@ -164,7 +164,7 @@ kubectl exec -it -n constructive-functions deploy/knative-job-service -- sh
 
 ```bash
 kubectl rollout restart -n constructive-functions deploy/knative-job-service
-kubectl rollout restart -n constructive-functions deploy/simple-email
+kubectl rollout restart -n constructive-functions deploy/send-email
 ```
 
 ## Common Issues
@@ -216,7 +216,7 @@ make skaffold-dev
 
 # 2. In another terminal, run a specific function's e2e test
 PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD="$POSTGRES_PASSWORD" PGDATABASE=constructive \
-  pnpm jest tests/e2e/__tests__/simple-email.e2e.test.ts tests/e2e/__tests__/job-queue.test.ts
+  pnpm jest tests/e2e/__tests__/send-email.e2e.test.ts tests/e2e/__tests__/job-queue.test.ts
 
 # Or run all e2e tests
 pnpm test:e2e
@@ -225,9 +225,9 @@ pnpm test:e2e
 For single-function isolation (matches CI behavior):
 
 ```bash
-# Deploy only simple-email
-skaffold dev -p simple-email
+# Deploy only send-email
+skaffold dev -p send-email
 
 # Run only its tests
-pnpm jest tests/e2e/__tests__/simple-email.e2e.test.ts tests/e2e/__tests__/job-queue.test.ts
+pnpm jest tests/e2e/__tests__/send-email.e2e.test.ts tests/e2e/__tests__/job-queue.test.ts
 ```

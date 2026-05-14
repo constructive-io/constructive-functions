@@ -18,6 +18,10 @@ import { createRequire } from 'module';
 import { Client } from 'pg';
 
 import {
+  FunctionRegistryEntry,
+  loadFunctionRegistry
+} from './registry';
+import {
   FunctionName,
   FunctionServiceConfig,
   FunctionsOptions,
@@ -25,10 +29,6 @@ import {
   KnativeJobsSvcResult,
   StartedFunction
 } from './types';
-import {
-  FunctionRegistryEntry,
-  loadFunctionRegistry
-} from './registry';
 
 const functionRegistry = loadFunctionRegistry();
 
