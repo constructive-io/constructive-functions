@@ -1,0 +1,10 @@
+{
+  "name": "text-embedding",
+  "version": "1.0.0",
+  "type": "node-graphql",
+  "port": 8084,
+  "description": "Generate text embeddings using Ollama",
+  "dependencies": {
+    "@agentic-kit/ollama": "^1.0.3"
+  }
+}
