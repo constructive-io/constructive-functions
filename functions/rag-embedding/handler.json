@@ -1,0 +1,14 @@
+{
+  "name": "rag-embedding",
+  "version": "1.0.0",
+  "type": "node-graphql",
+  "port": 8085,
+  "description": "RAG embedding function - chunks text and generates embeddings using Ollama nomic-embed-text",
+  "dependencies": {
+    "@agentic-kit/ollama": "^1.0.3",
+    "@constructive-io/graphql-query": "^3.12.14",
+    "@pgpmjs/env": "^2.11.0",
+    "@pgpmjs/logger": "^2.1.0",
+    "graphql-request": "^7.1.2"
+  }
+}

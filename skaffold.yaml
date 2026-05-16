@@ -89,6 +89,50 @@ profiles:
         resourceName: python-example
         namespace: constructive-functions
         port: 80
+        localPort: 8086
+      - resourceType: service
+        resourceName: knative-job-service
+        namespace: constructive-functions
+        port: 8080
+        localPort: 8080
+      - resourceType: service
+        resourceName: postgres
+        namespace: constructive-functions
+        port: 5432
+        localPort: 5432
+      - resourceType: service
+        resourceName: constructive-server
+        namespace: constructive-functions
+        port: 3000
+        localPort: 3002
+  - name: rag-embedding
+    build:
+      artifacts:
+        - image: constructive-functions
+          context: .
+          docker:
+            dockerfile: Dockerfile.dev
+          sync:
+            manual:
+              - src: 'functions/**/*.ts'
+                dest: /usr/src/app
+      local:
+        push: false
+    manifests:
+      kustomize:
+        paths:
+          - k8s/overlays/local-simple
+      rawYaml:
+        - generated/rag-embedding/k8s/local-deployment.yaml
+        - generated/rag-embedding/k8s/functions-configmap.yaml
+    deploy:
+      kubectl:
+        defaultNamespace: constructive-functions
+    portForward:
+      - resourceType: service
+        resourceName: rag-embedding
+        namespace: constructive-functions
+        port: 80
         localPort: 8085
       - resourceType: service
         resourceName: knative-job-service
@@ -269,6 +313,7 @@ profiles:
       rawYaml:
         - generated/example/k8s/local-deployment.yaml
         - generated/python-example/k8s/local-deployment.yaml
+        - generated/rag-embedding/k8s/local-deployment.yaml
         - generated/send-email/k8s/local-deployment.yaml
         - generated/send-verification-link/k8s/local-deployment.yaml
         - generated/text-embedding/k8s/local-deployment.yaml
@@ -284,6 +329,11 @@ profiles:
         localPort: 8083
       - resourceType: service
         resourceName: python-example
+        namespace: constructive-functions
+        port: 80
+        localPort: 8086
+      - resourceType: service
+        resourceName: rag-embedding
         namespace: constructive-functions
         port: 80
         localPort: 8085
@@ -344,6 +394,11 @@ profiles:
         localPort: 8083
       - resourceType: service
         resourceName: python-example
+        namespace: constructive-functions
+        port: 80
+        localPort: 8086
+      - resourceType: service
+        resourceName: rag-embedding
         namespace: constructive-functions
         port: 80
         localPort: 8085
