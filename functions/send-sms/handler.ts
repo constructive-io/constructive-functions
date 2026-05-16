@@ -2,6 +2,7 @@ import type { FunctionHandler } from '@constructive-io/fn-runtime';
 import { parseEnvBoolean } from '@pgpmjs/env';
 import type { GraphQLClient } from 'graphql-request';
 import gql from 'graphql-tag';
+import twilio from 'twilio';
 
 const GetUser = gql`
   query GetUser($userId: UUID!) {
@@ -123,15 +124,22 @@ const sendSmsViaProvider = async (
 ): Promise<{ success: boolean; messageId?: string; error?: string }> => {
   switch (config.provider) {
     case 'twilio': {
-      // TODO: Implement Twilio integration
-      // const client = twilio(config.twilio.accountSid, config.twilio.authToken);
-      // const result = await client.messages.create({
-      //   body: message,
-      //   from: config.twilio.fromNumber,
-      //   to,
-      // });
-      log.info('[send-sms] Twilio provider not yet implemented', { to });
-      return { success: false, error: 'Twilio provider not yet implemented' };
+      if (!config.twilio?.accountSid || !config.twilio?.authToken || !config.twilio?.fromNumber) {
+        return { success: false, error: 'Twilio credentials not configured' };
+      }
+      try {
+        const client = twilio(config.twilio.accountSid, config.twilio.authToken);
+        const result = await client.messages.create({
+          body: message,
+          from: config.twilio.fromNumber,
+          to,
+        });
+        log.info('[send-sms] SMS sent via Twilio', { to, messageId: result.sid });
+        return { success: true, messageId: result.sid };
+      } catch (err: any) {
+        log.error('[send-sms] Twilio error', { to, error: err.message });
+        return { success: false, error: err.message || 'Twilio send failed' };
+      }
     }
 
     case 'aws_sns': {

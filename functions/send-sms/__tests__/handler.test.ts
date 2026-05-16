@@ -1,5 +1,15 @@
 import handler from '../handler';
 
+jest.mock('twilio', () => {
+  const mockCreate = jest.fn();
+  return jest.fn(() => ({
+    messages: { create: mockCreate },
+  }));
+});
+
+import twilio from 'twilio';
+const mockTwilioCreate = (twilio as jest.Mock)().messages.create;
+
 const mockLog = {
   info: jest.fn(),
   error: jest.fn(),
@@ -129,5 +139,61 @@ describe('send-sms handler', () => {
     const result = await handler(params, context as any);
 
     expect(result).toEqual({ error: 'Missing X-Database-Id header or DEFAULT_DATABASE_ID' });
+  });
+
+  it('should send SMS via Twilio when configured', async () => {
+    mockTwilioCreate.mockResolvedValue({ sid: 'SM123456789' });
+
+    const context = createContext({
+      SMS_PROVIDER: 'twilio',
+      TWILIO_ACCOUNT_SID: 'ACtest123',
+      TWILIO_AUTH_TOKEN: 'token123',
+      TWILIO_FROM_NUMBER: '+15551234567',
+    });
+    const params = {
+      sms_type: 'sign_in_sms_otp' as const,
+      phone_number: '+1234567890',
+      otp_code: '123456',
+    };
+
+    const result = await handler(params, context);
+
+    expect(result).toEqual({ complete: true });
+    expect(mockLog.info).toHaveBeenCalledWith(
+      '[send-sms] SMS sent via Twilio',
+      expect.objectContaining({ messageId: 'SM123456789' })
+    );
+  });
+
+  it('should return error when Twilio credentials are missing', async () => {
+    const context = createContext({
+      SMS_PROVIDER: 'twilio',
+      // Missing credentials
+    });
+    const params = {
+      sms_type: 'sign_in_sms_otp' as const,
+      phone_number: '+1234567890',
+      otp_code: '123456',
+    };
+
+    await expect(handler(params, context)).rejects.toThrow('Twilio credentials not configured');
+  });
+
+  it('should handle Twilio API errors gracefully', async () => {
+    mockTwilioCreate.mockRejectedValue(new Error('Invalid phone number'));
+
+    const context = createContext({
+      SMS_PROVIDER: 'twilio',
+      TWILIO_ACCOUNT_SID: 'ACtest123',
+      TWILIO_AUTH_TOKEN: 'token123',
+      TWILIO_FROM_NUMBER: '+15551234567',
+    });
+    const params = {
+      sms_type: 'sign_in_sms_otp' as const,
+      phone_number: 'invalid',
+      otp_code: '123456',
+    };
+
+    await expect(handler(params, context)).rejects.toThrow('Invalid phone number');
   });
 });

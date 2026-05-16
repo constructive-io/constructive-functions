@@ -89,7 +89,7 @@ profiles:
         resourceName: python-example
         namespace: constructive-functions
         port: 80
-        localPort: 8084
+        localPort: 8085
       - resourceType: service
         resourceName: knative-job-service
         namespace: constructive-functions
@@ -134,6 +134,50 @@ profiles:
         namespace: constructive-functions
         port: 80
         localPort: 8081
+      - resourceType: service
+        resourceName: knative-job-service
+        namespace: constructive-functions
+        port: 8080
+        localPort: 8080
+      - resourceType: service
+        resourceName: postgres
+        namespace: constructive-functions
+        port: 5432
+        localPort: 5432
+      - resourceType: service
+        resourceName: constructive-server
+        namespace: constructive-functions
+        port: 3000
+        localPort: 3002
+  - name: send-sms
+    build:
+      artifacts:
+        - image: constructive-functions
+          context: .
+          docker:
+            dockerfile: Dockerfile.dev
+          sync:
+            manual:
+              - src: 'functions/**/*.ts'
+                dest: /usr/src/app
+      local:
+        push: false
+    manifests:
+      kustomize:
+        paths:
+          - k8s/overlays/local-simple
+      rawYaml:
+        - generated/send-sms/k8s/local-deployment.yaml
+        - generated/send-sms/k8s/functions-configmap.yaml
+    deploy:
+      kubectl:
+        defaultNamespace: constructive-functions
+    portForward:
+      - resourceType: service
+        resourceName: send-sms
+        namespace: constructive-functions
+        port: 80
+        localPort: 8084
       - resourceType: service
         resourceName: knative-job-service
         namespace: constructive-functions
@@ -226,6 +270,7 @@ profiles:
         - generated/example/k8s/local-deployment.yaml
         - generated/python-example/k8s/local-deployment.yaml
         - generated/send-email/k8s/local-deployment.yaml
+        - generated/send-sms/k8s/local-deployment.yaml
         - generated/send-verification-link/k8s/local-deployment.yaml
         - generated/functions-configmap.yaml
     deploy:
@@ -241,12 +286,17 @@ profiles:
         resourceName: python-example
         namespace: constructive-functions
         port: 80
-        localPort: 8084
+        localPort: 8085
       - resourceType: service
         resourceName: send-email
         namespace: constructive-functions
         port: 80
         localPort: 8081
+      - resourceType: service
+        resourceName: send-sms
+        namespace: constructive-functions
+        port: 80
+        localPort: 8084
       - resourceType: service
         resourceName: send-verification-link
         namespace: constructive-functions
@@ -296,12 +346,17 @@ profiles:
         resourceName: python-example
         namespace: constructive-functions
         port: 80
-        localPort: 8084
+        localPort: 8085
       - resourceType: service
         resourceName: send-email
         namespace: constructive-functions
         port: 80
         localPort: 8081
+      - resourceType: service
+        resourceName: send-sms
+        namespace: constructive-functions
+        port: 80
+        localPort: 8084
       - resourceType: service
         resourceName: send-verification-link
         namespace: constructive-functions
