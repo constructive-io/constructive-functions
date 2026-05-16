@@ -35,6 +35,12 @@ importers:
       globals:
         specifier: ^16.5.0
         version: 16.5.0
+      graphql:
+        specifier: ^16.14.0
+        version: 16.14.0
+      graphql-request:
+        specifier: ^7.4.0
+        version: 7.4.0(graphql@16.14.0)
       jest:
         specifier: ^30.2.0
         version: 30.2.0(@types/node@22.19.3)
@@ -154,10 +160,10 @@ importers:
         version: 2.5.2
       graphql-request:
         specifier: ^7.1.2
-        version: 7.4.0(graphql@16.13.0)
+        version: 7.4.0(graphql@16.14.0)
       graphql-tag:
         specifier: ^2.12.6
-        version: 2.12.6(graphql@16.13.0)
+        version: 2.12.6(graphql@16.14.0)
       simple-smtp-server:
         specifier: ^0.7.3
         version: 0.7.3
@@ -185,10 +191,10 @@ importers:
         version: 2.5.2
       graphql-request:
         specifier: ^7.1.2
-        version: 7.4.0(graphql@16.13.0)
+        version: 7.4.0(graphql@16.14.0)
       graphql-tag:
         specifier: ^2.12.6
-        version: 2.12.6(graphql@16.13.0)
+        version: 2.12.6(graphql@16.14.0)
       twilio:
         specifier: ^5.5.0
         version: 5.13.1
@@ -225,10 +231,10 @@ importers:
         version: 2.5.2
       graphql-request:
         specifier: ^7.1.2
-        version: 7.4.0(graphql@16.13.0)
+        version: 7.4.0(graphql@16.14.0)
       graphql-tag:
         specifier: ^2.12.6
-        version: 2.12.6(graphql@16.13.0)
+        version: 2.12.6(graphql@16.14.0)
       simple-smtp-server:
         specifier: ^0.7.3
         version: 0.7.3
@@ -557,7 +563,7 @@ importers:
         version: 2.5.2
       graphql-request:
         specifier: ^7.1.2
-        version: 7.4.0(graphql@16.13.0)
+        version: 7.4.0(graphql@16.14.0)
     devDependencies:
       '@types/node':
         specifier: ^22.10.4
@@ -570,7 +576,7 @@ importers:
     dependencies:
       graphql-request:
         specifier: ^7.1.2
-        version: 7.4.0(graphql@16.13.0)
+        version: 7.4.0(graphql@16.14.0)
     devDependencies:
       '@types/node':
         specifier: ^22.10.4
@@ -3401,6 +3407,10 @@ packages:
     resolution: {integrity: sha512-uSisMYERbaB9bkA9M4/4dnqyktaEkf1kMHNKq/7DHyxVeWqHQ2mBmVqm5u6/FVHwF3iCNalKcg82Zfl+tffWoA==}
     engines: {node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0}
 
+  graphql@16.14.0:
+    resolution: {integrity: sha512-BBvQ/406p+4CZbTpCbVPSxfzrZrbnuWSP1ELYgyS6B+hNeKzgrdB4JczCa5VZUBQrDa9hUngm0KnexY6pJRN5Q==}
+    engines: {node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0}
+
   handlebars@4.7.8:
     resolution: {integrity: sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==}
     engines: {node: '>=0.4.7'}
@@ -6195,6 +6205,10 @@ snapshots:
     dependencies:
       graphql: 16.13.0
 
+  '@graphql-typed-document-node/core@3.2.0(graphql@16.14.0)':
+    dependencies:
+      graphql: 16.14.0
+
   '@headlessui/react@2.2.10(react-dom@16.14.0(react@16.14.0))(react@16.14.0)':
     dependencies:
       '@floating-ui/react': 0.26.28(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
@@ -8704,9 +8718,14 @@ snapshots:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.13.0)
       graphql: 16.13.0
 
-  graphql-tag@2.12.6(graphql@16.13.0):
+  graphql-request@7.4.0(graphql@16.14.0):
     dependencies:
-      graphql: 16.13.0
+      '@graphql-typed-document-node/core': 3.2.0(graphql@16.14.0)
+      graphql: 16.14.0
+
+  graphql-tag@2.12.6(graphql@16.14.0):
+    dependencies:
+      graphql: 16.14.0
       tslib: 2.8.1
 
   graphql-ws@6.0.8(graphql@16.13.0)(ws@8.20.1):
@@ -8716,6 +8735,8 @@ snapshots:
       ws: 8.20.1
 
   graphql@16.13.0: {}
+
+  graphql@16.14.0: {}
 
   handlebars@4.7.8:
     dependencies:

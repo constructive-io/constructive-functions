@@ -156,15 +156,17 @@ jobs:
           kubectl rollout restart deploy/knative-job-service -n constructive-functions
           kubectl rollout status deploy/knative-job-service -n constructive-functions --timeout=120s
 
-      - name: Port-forward postgres and run e2e tests
+      - name: Port-forward services and run e2e tests
         env:
           PGHOST: localhost
           PGPORT: "5432"
           PGUSER: postgres
           PGPASSWORD: ${{ env.PG_PASSWORD }}
           PGDATABASE: constructive
+          SERVER_PORT: "3002"
         run: |
           kubectl port-forward -n constructive-functions svc/postgres 5432:5432 &
+          kubectl port-forward -n constructive-functions svc/constructive-server 3002:3000 &
           sleep 3
           pnpm jest tests/e2e/__tests__/job-queue.test.ts tests/e2e/__tests__/${{ matrix.name }}.e2e.test.ts
 
