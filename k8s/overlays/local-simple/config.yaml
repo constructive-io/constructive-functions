@@ -25,6 +25,7 @@ data:
   SEND_EMAIL_DRY_RUN: "true"
   SEND_VERIFICATION_LINK_DRY_RUN: "true"
   TEXT_EMBEDDING_DRY_RUN: "true"
+  RAG_EMBEDDING_DRY_RUN: "true"
 
   # AI/Embedding settings
   OLLAMA_URL: "http://ollama.constructive-functions.svc.cluster.local:11434"
