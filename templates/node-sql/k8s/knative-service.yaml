@@ -1,0 +1,27 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: {{name}}
+  namespace: constructive-functions
+spec:
+  template:
+    spec:
+      containers:
+        - image: ghcr.io/constructive-io/{{name}}-fn:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: pg-credentials
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: LOG_LEVEL
+              value: "info"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

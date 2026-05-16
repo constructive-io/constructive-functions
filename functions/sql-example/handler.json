@@ -1,0 +1,6 @@
+{
+  "name": "sql-example",
+  "version": "1.0.0",
+  "type": "node-sql",
+  "description": "Example function using node-sql template for direct PostgreSQL access"
+}
