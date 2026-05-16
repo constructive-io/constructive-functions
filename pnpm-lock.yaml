@@ -240,6 +240,25 @@ importers:
         specifier: ^5.1.6
         version: 5.9.3
 
+  generated/text-embedding:
+    dependencies:
+      '@agentic-kit/ollama':
+        specifier: ^1.0.3
+        version: 1.2.0
+      '@constructive-io/fn-runtime':
+        specifier: workspace:^
+        version: link:../../packages/fn-runtime
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      makage:
+        specifier: ^0.1.10
+        version: 0.1.12
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+
   job/server:
     dependencies:
       '@constructive-io/job-pg':
@@ -511,6 +530,9 @@ packages:
 
   12factor-env@1.6.2:
     resolution: {integrity: sha512-U4EO6sy9Cc6h1ST3hhLD2rc2s4LERxProove3XZ52rMq2rTo5uTKWNKwD2OYDUwqNij+p5SgjmpPO6L/Gqtizw==}
+
+  '@agentic-kit/ollama@1.2.0':
+    resolution: {integrity: sha512-MWVawKqphgs6Dq2FdWGvILw/72Eqg1EEUQAaACxX+CvQJTF4ArtNdTbQCLfPM8kk0l3JESI2DBHSccckj6pmag==}
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -3836,6 +3858,8 @@ snapshots:
   12factor-env@1.6.2:
     dependencies:
       envalid: 8.1.1
+
+  '@agentic-kit/ollama@1.2.0': {}
 
   '@babel/code-frame@7.27.1':
     dependencies:
