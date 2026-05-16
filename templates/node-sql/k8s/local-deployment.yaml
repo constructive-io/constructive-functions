@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{name}}
+  labels:
+    app: {{name}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{name}}
+  template:
+    metadata:
+      labels:
+        app: {{name}}
+    spec:
+      containers:
+        - name: {{name}}
+          image: constructive-functions:local
+          command: ["npx"]
+          args: ["tsx", "--watch", "generated/{{name}}/index.ts"]
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: pg-credentials
+          env:
+            - name: PORT
+              value: "8080"
+            - name: NODE_ENV
+              value: "development"
+            - name: LOG_LEVEL
+              value: "info"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{name}}
+spec:
+  selector:
+    app: {{name}}
+  ports:
+    - port: 80
+      targetPort: 8080
