@@ -22,12 +22,13 @@ spec:
     spec:
       containers:
         - name: knative-job-service
-          image: ghcr.io/constructive-io/constructive:e0b55cc
+          # Pin to a short SHA at deploy time (e.g. ghcr.io/constructive-io/knative-job-service:abc1234).
+          # Built by .github/workflows/docker.yaml from job/service/Dockerfile.
+          image: ghcr.io/constructive-io/knative-job-service:latest
           imagePullPolicy: Always
 
-          # Run the knative job service entrypoint from the root image
           command: ["node"]
-          args: ["jobs/knative-job-service/dist/run.js"]
+          args: ["dist/run.js"]
 
           envFrom:
             - configMapRef:
