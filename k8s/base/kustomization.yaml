@@ -23,8 +23,10 @@ resources:
   # Function workloads
   - ./functions/send-email.yaml
   - ./functions/send-verification-link.yaml
+  - ./functions/send-sms.yaml
 
 # Required Secrets are intentionally not committed in the shared base. Create
 # pg-credentials, postgres-superuser, pgadmin-credentials, mailgun-credentials,
-# constructive-uploads, and any environment-specific cloud credentials with a
-# secret manager, ExternalSecrets, SOPS, or kubectl before applying dev/staging.
+# twilio-credentials, constructive-uploads, and any environment-specific cloud
+# credentials with a secret manager, ExternalSecrets, SOPS, or kubectl before
+# applying dev/staging.
