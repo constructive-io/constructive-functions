@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "type": "node-graphql",
   "port": 8084,
-  "description": "Generate text embeddings using Ollama",
+  "taskIdentifier": "generate_embedding",
+  "description": "Generate text embeddings using Ollama - handles generate_embedding jobs from SearchVector triggers",
   "dependencies": {
-    "@agentic-kit/ollama": "^1.0.3"
+    "@agentic-kit/ollama": "^1.0.3",
+    "@constructive-io/graphql-query": "^3.12.14",
+    "graphql-request": "^7.1.2"
   }
 }
