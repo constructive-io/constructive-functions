@@ -3,8 +3,16 @@ name: Tests
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'k8s/**'
+      - '**/*.md'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'k8s/**'
+      - '**/*.md'
   workflow_dispatch: {}
 
 concurrency:
