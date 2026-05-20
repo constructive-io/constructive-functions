@@ -218,14 +218,15 @@ const handler: FunctionHandler<GenerateChunksParams> = async (params, context) =
   const parentRelation = chunksTable.relations.belongsTo.find(r => r.referencesTable === parentTable.name);
   const parentFkFieldName = parentRelation?.fieldName ? parentRelation.fieldName + 'Id' : `${parentTable.inflection?.tableFieldName || parentTable.name.charAt(0).toLowerCase() + parentTable.name.slice(1)}Id`;
 
-  // 1. Fetch content from parent table using buildSelect
+  // 1. Fetch content from parent table
+  // Priority: extractedText (ProcessFileEmbedding extract mode) > content (ProcessChunks standalone)
   const getContentQuery = buildSelect(parentTable, tables, {
     where: {},
-    fieldSelection: { select: ['id', 'content'] }
+    fieldSelection: { select: ['id', 'extractedText', 'content'] }
   });
 
   const contentResult = await client.request<{
-    [key: string]: { nodes: Array<{ id: string; content: string }> } | null
+    [key: string]: { nodes: Array<{ id: string; extractedText?: string; content?: string }> } | null
   }>(getContentQuery.toString(), { where: { id: { equalTo: id } } }, schemaHeaders);
 
   const nodes = contentResult[parentFieldNamePlural!]?.nodes;
@@ -234,11 +235,16 @@ const handler: FunctionHandler<GenerateChunksParams> = async (params, context) =
     throw new Error(`Record not found: ${schema}.${table} id=${id}`);
   }
 
-  const content = record.content;
+  // Use extractedText if available (ProcessFileEmbedding extract mode), otherwise content
+  const content = record.extractedText || record.content;
+  const contentSource = record.extractedText ? 'extractedText' : 'content';
+
   if (!content || content.trim().length === 0) {
-    log.info('[generate-chunks] No content to chunk', { id });
+    log.info('[generate-chunks] No content to chunk', { id, contentSource });
     return { complete: true, chunks: 0 };
   }
+
+  log.info('[generate-chunks] Using content source', { contentSource, contentLength: content.length });
 
   // 2. Delete existing chunks (for re-chunking)
   try {

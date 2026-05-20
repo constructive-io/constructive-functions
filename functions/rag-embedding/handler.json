@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "node-graphql",
   "port": 8085,
+  "taskIdentifier": "generate_chunks",
   "description": "RAG embedding function - chunks text and generates embeddings using Ollama nomic-embed-text",
   "dependencies": {
     "@agentic-kit/ollama": "^1.0.3",
