@@ -5,62 +5,123 @@
  * Uses @constructive-io/node SDK to interact with constructive-server.
  */
 import { GraphQLClient } from 'graphql-request';
+import * as http from 'http';
 
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3002';
+const PUBLIC_SERVER_URL = process.env.PUBLIC_SERVER_URL || 'http://localhost:3000';
+const PRIVATE_SERVER_URL = process.env.PRIVATE_SERVER_URL || 'http://localhost:3002';
+const PUBLIC_HOST = process.env.PUBLIC_HOST || 'api.localhost:3000';
 
-function getClient(accessToken?: string): GraphQLClient {
+async function httpGraphQL<T>(
+  url: string,
+  query: string,
+  variables: Record<string, unknown>,
+  headers: Record<string, string>
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(url);
+    const data = JSON.stringify({ query, variables });
+
+    const options: http.RequestOptions = {
+      hostname: parsedUrl.hostname,
+      port: parseInt(parsedUrl.port) || 80,
+      path: parsedUrl.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data),
+        ...headers,
+      },
+    };
+
+    const req = http.request(options, (res) => {
+      let body = '';
+      res.on('data', (chunk) => (body += chunk));
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(body);
+          if (json.errors) {
+            reject(new Error(`GraphQL Error: ${JSON.stringify(json.errors)}`));
+          } else {
+            resolve(json.data as T);
+          }
+        } catch (e) {
+          reject(new Error(`Failed to parse response: ${body}`));
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
+}
+
+function getMetaClient(accessToken?: string): GraphQLClient {
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    'X-Meta-Schema': 'true',
   };
   if (accessToken) {
     headers['Authorization'] = `Bearer ${accessToken}`;
   }
-  return new GraphQLClient(`${SERVER_URL}/graphql`, { headers });
+  return new GraphQLClient(`${PRIVATE_SERVER_URL}/graphql`, { headers });
 }
 
 export async function signInOrSignUp(
   email: string,
   password: string
 ): Promise<{ accessToken: string; userId: string }> {
-  const client = getClient();
+  const url = `${PUBLIC_SERVER_URL}/graphql`;
+  const headers = { Host: PUBLIC_HOST };
 
   // Try sign in first
   try {
-    const signInResult = await client.request<{
-      authenticate: { jwtToken: string } | null;
+    const signInResult = await httpGraphQL<{
+      signIn: { result: { accessToken: string; userId: string } } | null;
     }>(
+      url,
       `mutation SignIn($email: String!, $password: String!) {
-        authenticate(input: { email: $email, password: $password }) {
-          jwtToken
+        signIn(input: { email: $email, password: $password }) {
+          result {
+            accessToken
+            userId
+          }
         }
       }`,
-      { email, password }
+      { email, password },
+      headers
     );
 
-    if (signInResult.authenticate?.jwtToken) {
-      const token = signInResult.authenticate.jwtToken;
-      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-      return { accessToken: token, userId: payload.user_id };
+    if (signInResult.signIn?.result?.accessToken) {
+      return {
+        accessToken: signInResult.signIn.result.accessToken,
+        userId: signInResult.signIn.result.userId,
+      };
     }
   } catch {
     // Sign in failed, try sign up
   }
 
   // Sign up
-  const signUpResult = await client.request<{
-    registerUser: { jwtToken: string };
+  const signUpResult = await httpGraphQL<{
+    signUp: { result: { accessToken: string; userId: string } };
   }>(
+    url,
     `mutation SignUp($email: String!, $password: String!) {
-      registerUser(input: { email: $email, password: $password }) {
-        jwtToken
+      signUp(input: { email: $email, password: $password }) {
+        result {
+          accessToken
+          userId
+        }
       }
     }`,
-    { email, password }
+    { email, password },
+    headers
   );
 
-  const token = signUpResult.registerUser.jwtToken;
-  const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-  return { accessToken: token, userId: payload.user_id };
+  return {
+    accessToken: signUpResult.signUp.result.accessToken,
+    userId: signUpResult.signUp.result.userId,
+  };
 }
 
 export async function provisionDatabase(
@@ -68,29 +129,27 @@ export async function provisionDatabase(
   userId: string,
   name: string
 ): Promise<{ databaseId: string }> {
-  const client = getClient(accessToken);
+  const client = getMetaClient(accessToken);
 
   const result = await client.request<{
-    provisionDatabase: { database: { id: string } };
+    createUserDatabase: { result: string };
   }>(
-    `mutation ProvisionDatabase($name: String!, $ownerId: UUID!) {
-      provisionDatabase(input: { database: { name: $name, ownerId: $ownerId } }) {
-        database {
-          id
-        }
+    `mutation CreateUserDatabase($name: String!, $ownerId: UUID!) {
+      createUserDatabase(input: { databaseName: $name, ownerId: $ownerId }) {
+        result
       }
     }`,
     { name, ownerId: userId }
   );
 
-  return { databaseId: result.provisionDatabase.database.id };
+  return { databaseId: result.createUserDatabase.result };
 }
 
 export async function getSchemaInfo(
   accessToken: string,
   databaseId: string
 ): Promise<{ schemaId: string; schemaName: string }> {
-  const client = getClient(accessToken);
+  const client = getMetaClient(accessToken);
 
   const result = await client.request<{
     database: {
@@ -122,7 +181,7 @@ export async function createTable(
   schemaId: string,
   tableName: string
 ): Promise<string> {
-  const client = getClient(accessToken);
+  const client = getMetaClient(accessToken);
 
   const result = await client.request<{
     createTable: { table: { id: string } };
@@ -147,7 +206,7 @@ export async function createField(
   type: string,
   options?: { isRequired?: boolean; defaultValue?: string }
 ): Promise<string> {
-  const client = getClient(accessToken);
+  const client = getMetaClient(accessToken);
 
   const result = await client.request<{
     createField: { field: { id: string } };
@@ -176,7 +235,7 @@ export async function createPrimaryKey(
   tableId: string,
   fieldIds: string[]
 ): Promise<void> {
-  const client = getClient(accessToken);
+  const client = getMetaClient(accessToken);
 
   await client.request(
     `mutation CreatePrimaryKey($tableId: UUID!, $fieldIds: [UUID!]!) {
@@ -201,7 +260,7 @@ export async function setupEmbeddingChunks(
     chunkingTaskName: string;
   }
 ): Promise<string> {
-  const client = getClient(accessToken);
+  const client = getMetaClient(accessToken);
 
   const result = await client.request<{
     setupEmbeddingChunks: { chunksTableName: string };
