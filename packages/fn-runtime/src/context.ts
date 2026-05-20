@@ -24,8 +24,8 @@ export const buildContext = (
 
   if (databaseId && env.GRAPHQL_URL) {
     const clients = createClients(databaseId, env);
-    client = clients.client;
-    meta = clients.meta;
+    client = clients.client as unknown as FunctionContext['client'];
+    meta = clients.meta as unknown as FunctionContext['meta'];
   } else {
     // Provide a stub that throws if used — functions that don't need GraphQL
     // won't call these, but we still need the shape for type safety.
