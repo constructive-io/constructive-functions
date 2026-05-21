@@ -14,6 +14,7 @@ export const createFunctionServer = (
         {
           databaseId: req.get('X-Database-Id') || req.get('x-database-id') || process.env.DEFAULT_DATABASE_ID,
           actorId: req.get('X-Actor-Id') || req.get('x-actor-id'),
+          entityId: req.get('X-Entity-Id') || req.get('x-entity-id'),
           workerId: req.get('X-Worker-Id') || req.get('x-worker-id'),
           jobId: req.get('X-Job-Id') || req.get('x-job-id')
         },
