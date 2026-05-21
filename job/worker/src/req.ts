@@ -33,13 +33,14 @@ interface RequestOptions {
   body: unknown;
   databaseId?: string;
   actorId?: string;
+  entityId?: string;
   workerId: string;
   jobId: string | number;
 }
 
 const request = (
   fn: string,
-  { body, databaseId, actorId, workerId, jobId }: RequestOptions
+  { body, databaseId, actorId, entityId, workerId, jobId }: RequestOptions
 ) => {
   const url = getFunctionUrl(fn);
   log.info(`dispatching job`, {
@@ -77,6 +78,7 @@ const request = (
           'X-Job-Id': String(jobId),
           ...(databaseId ? { 'X-Database-Id': databaseId } : {}),
           ...(actorId ? { 'X-Actor-Id': actorId } : {}),
+          ...(entityId ? { 'X-Entity-Id': entityId } : {}),
 
           // async HTTP completion callback
           'X-Callback-Url': completeUrl

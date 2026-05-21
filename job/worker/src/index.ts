@@ -12,6 +12,7 @@ export interface JobRow {
   payload?: unknown;
   database_id?: string;
   actor_id?: string;
+  entity_id?: string;
 }
 
 const log = new Logger('jobs:worker');
@@ -119,6 +120,7 @@ export default class Worker {
       body: payload,
       databaseId: job.database_id,
       actorId: job.actor_id,
+      entityId: job.entity_id,
       workerId: this.workerId,
       jobId: job.id
     });
