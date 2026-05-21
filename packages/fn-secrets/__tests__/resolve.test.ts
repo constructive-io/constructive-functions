@@ -12,37 +12,32 @@ const { GraphQLClient } = require('graphql-request');
 const createMockContext = (
   options: {
     databaseId?: string;
-    graphqlUrl?: string | null;
+    clientRequest?: jest.Mock;
   } = {}
-): FunctionContext => ({
-  job: {
-    jobId: 'test-job',
-    workerId: 'test-worker',
-    databaseId: 'databaseId' in options ? options.databaseId : 'test-db-uuid'
-  },
-  client: { request: jest.fn() } as any,
-  meta: { request: jest.fn() } as any,
-  log: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
-  env: {
-    GRAPHQL_URL: 'graphqlUrl' in options
-      ? (options.graphqlUrl ?? undefined)
-      : 'http://localhost:3002/graphql'
-  }
-});
+): FunctionContext => {
+  const mockRequest = options.clientRequest ?? jest.fn();
+  return {
+    job: {
+      jobId: 'test-job',
+      workerId: 'test-worker',
+      databaseId: 'databaseId' in options ? options.databaseId : 'test-db-uuid'
+    },
+    client: { request: mockRequest } as any,
+    meta: { request: jest.fn() } as any,
+    log: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
+    env: {
+      GRAPHQL_URL: 'http://localhost:3002/graphql'
+    }
+  };
+};
 
 describe('resolveSecrets', () => {
-  let mockRequest: jest.Mock;
-
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequest = jest.fn();
-    (GraphQLClient as jest.Mock).mockImplementation(() => ({
-      request: mockRequest
-    }));
   });
 
   it('returns secrets map with resolved values', async () => {
-    mockRequest
+    const mockRequest = jest.fn()
       .mockResolvedValueOnce({
         defaultFunctionDefinitions: {
           nodes: [{ id: 'fn-uuid-123' }]
@@ -55,7 +50,7 @@ describe('resolveSecrets', () => {
         ]
       });
 
-    const ctx = createMockContext();
+    const ctx = createMockContext({ clientRequest: mockRequest });
     const secrets = await resolveSecrets(ctx, 'send-sms');
 
     expect(secrets).toEqual({
@@ -65,7 +60,7 @@ describe('resolveSecrets', () => {
   });
 
   it('filters out null values (optional secrets)', async () => {
-    mockRequest
+    const mockRequest = jest.fn()
       .mockResolvedValueOnce({
         defaultFunctionDefinitions: {
           nodes: [{ id: 'fn-uuid-123' }]
@@ -78,7 +73,7 @@ describe('resolveSecrets', () => {
         ]
       });
 
-    const ctx = createMockContext();
+    const ctx = createMockContext({ clientRequest: mockRequest });
     const secrets = await resolveSecrets(ctx, 'send-sms');
 
     expect(secrets).toEqual({
@@ -88,7 +83,7 @@ describe('resolveSecrets', () => {
   });
 
   it('returns empty object when function has no secret requirements', async () => {
-    mockRequest
+    const mockRequest = jest.fn()
       .mockResolvedValueOnce({
         defaultFunctionDefinitions: {
           nodes: [{ id: 'fn-uuid-123' }]
@@ -98,7 +93,7 @@ describe('resolveSecrets', () => {
         resolveFunctionSecrets: []
       });
 
-    const ctx = createMockContext();
+    const ctx = createMockContext({ clientRequest: mockRequest });
     const secrets = await resolveSecrets(ctx, 'no-secrets-fn');
 
     expect(secrets).toEqual({});
@@ -112,30 +107,22 @@ describe('resolveSecrets', () => {
     );
   });
 
-  it('throws when GRAPHQL_URL is missing', async () => {
-    const ctx = createMockContext({ graphqlUrl: null });
-
-    await expect(resolveSecrets(ctx, 'send-sms')).rejects.toThrow(
-      'Cannot resolve secrets: missing GRAPHQL_URL in environment'
-    );
-  });
-
   it('throws when function not found', async () => {
-    mockRequest.mockResolvedValueOnce({
+    const mockRequest = jest.fn().mockResolvedValueOnce({
       defaultFunctionDefinitions: {
         nodes: []
       }
     });
 
-    const ctx = createMockContext();
+    const ctx = createMockContext({ clientRequest: mockRequest });
 
     await expect(resolveSecrets(ctx, 'unknown-fn')).rejects.toThrow(
       'Function "unknown-fn" not found in default_function_definitions'
     );
   });
 
-  it('creates GraphQL client with correct headers', async () => {
-    mockRequest
+  it('uses context.client with X-Schemata header override', async () => {
+    const mockRequest = jest.fn()
       .mockResolvedValueOnce({
         defaultFunctionDefinitions: { nodes: [{ id: 'fn-uuid' }] }
       })
@@ -143,17 +130,41 @@ describe('resolveSecrets', () => {
         resolveFunctionSecrets: []
       });
 
-    const ctx = createMockContext();
+    const ctx = createMockContext({ clientRequest: mockRequest });
     await resolveSecrets(ctx, 'send-sms');
 
-    expect(GraphQLClient).toHaveBeenCalledWith(
-      'http://localhost:3002/graphql',
-      {
-        headers: {
-          'X-Database-Id': 'test-db-uuid',
-          'X-Schemata': 'infra_private,infra_public'
-        }
-      }
+    expect(mockRequest).toHaveBeenCalledTimes(2);
+    expect(mockRequest).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('GetFunctionId'),
+      { name: 'send-sms' },
+      { 'X-Schemata': 'infra_private,infra_public' }
+    );
+    expect(mockRequest).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('resolveFunctionSecrets'),
+      expect.objectContaining({ functionId: 'fn-uuid', databaseId: 'test-db-uuid' }),
+      { 'X-Schemata': 'infra_private,infra_public' }
+    );
+  });
+
+  it('supports custom schemata option', async () => {
+    const mockRequest = jest.fn()
+      .mockResolvedValueOnce({
+        defaultFunctionDefinitions: { nodes: [{ id: 'fn-uuid' }] }
+      })
+      .mockResolvedValueOnce({
+        resolveFunctionSecrets: []
+      });
+
+    const ctx = createMockContext({ clientRequest: mockRequest });
+    await resolveSecrets(ctx, 'send-sms', { schemata: 'custom_private,custom_public' });
+
+    expect(mockRequest).toHaveBeenNthCalledWith(
+      1,
+      expect.any(String),
+      expect.any(Object),
+      { 'X-Schemata': 'custom_private,custom_public' }
     );
   });
 });
@@ -237,6 +248,32 @@ describe('resolveSecretsRaw', () => {
         secretsSchema: 'custom_store_private',
         secretsGetter: 'custom_secrets_get'
       })
+    );
+  });
+
+  it('creates standalone GraphQL client with correct headers', async () => {
+    mockRequest
+      .mockResolvedValueOnce({
+        defaultFunctionDefinitions: { nodes: [{ id: 'fn-uuid' }] }
+      })
+      .mockResolvedValueOnce({
+        resolveFunctionSecrets: []
+      });
+
+    await resolveSecretsRaw({
+      functionName: 'test-fn',
+      databaseId: 'db-uuid',
+      graphqlUrl: 'http://localhost:3002/graphql'
+    });
+
+    expect(GraphQLClient).toHaveBeenCalledWith(
+      'http://localhost:3002/graphql',
+      {
+        headers: {
+          'X-Database-Id': 'db-uuid',
+          'X-Schemata': 'infra_private,infra_public'
+        }
+      }
     );
   });
 });

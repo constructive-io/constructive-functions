@@ -51,11 +51,12 @@ const createSecretsClient = (
 
 async function getFunctionId(
   client: GraphQLClient,
-  functionName: string
+  functionName: string,
+  requestHeaders?: HeadersInit
 ): Promise<string> {
   const response = await client.request<{
     defaultFunctionDefinitions: { nodes: { id: string }[] };
-  }>(GET_FUNCTION_ID_QUERY, { name: functionName });
+  }>(GET_FUNCTION_ID_QUERY, { name: functionName }, requestHeaders);
 
   const nodes = response.defaultFunctionDefinitions?.nodes;
   if (!nodes?.length) {
@@ -96,10 +97,14 @@ export async function resolveSecretsRaw(
 
 export async function resolveSecrets(
   context: FunctionContext,
-  functionName: string
+  functionName: string,
+  options: {
+    secretsSchema?: string;
+    secretsGetter?: string;
+    schemata?: string;
+  } = {}
 ): Promise<SecretsMap> {
   const { databaseId } = context.job;
-  const graphqlUrl = context.env.GRAPHQL_URL;
 
   if (!databaseId) {
     throw new Error(
@@ -107,20 +112,26 @@ export async function resolveSecrets(
     );
   }
 
-  if (!graphqlUrl) {
-    throw new Error(
-      'Cannot resolve secrets: missing GRAPHQL_URL in environment'
-    );
-  }
+  const {
+    secretsSchema = DEFAULT_SECRETS_SCHEMA,
+    secretsGetter = DEFAULT_SECRETS_GETTER,
+    schemata = DEFAULT_SCHEMATA,
+  } = options;
 
-  const secrets = await resolveSecretsRaw({
-    functionName,
-    databaseId,
-    graphqlUrl,
-  });
+  const requestHeaders = { 'X-Schemata': schemata };
+
+  const functionId = await getFunctionId(context.client, functionName, requestHeaders);
+
+  const response = await context.client.request<{
+    resolveFunctionSecrets: ResolvedSecret[];
+  }>(
+    RESOLVE_SECRETS_QUERY,
+    { functionId, databaseId, secretsSchema, secretsGetter },
+    requestHeaders
+  );
 
   return Object.fromEntries(
-    secrets
+    response.resolveFunctionSecrets
       .filter((s) => s.secretValue != null)
       .map((s) => [s.secretName, s.secretValue!])
   );
