@@ -1,5 +1,6 @@
 import { resolveSecrets, resolveSecretsRaw } from '../src/resolve';
 import type { FunctionContext } from '@constructive-io/fn-types';
+import { GraphQLClient } from 'graphql-request';
 
 jest.mock('graphql-request', () => ({
   GraphQLClient: jest.fn().mockImplementation(() => ({
@@ -7,7 +8,7 @@ jest.mock('graphql-request', () => ({
   }))
 }));
 
-const { GraphQLClient } = require('graphql-request');
+const MockedGraphQLClient = GraphQLClient as jest.MockedClass<typeof GraphQLClient>;
 
 const createMockContext = (
   options: {
@@ -175,9 +176,9 @@ describe('resolveSecretsRaw', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRequest = jest.fn();
-    (GraphQLClient as jest.Mock).mockImplementation(() => ({
+    MockedGraphQLClient.mockImplementation(() => ({
       request: mockRequest
-    }));
+    }) as unknown as GraphQLClient);
   });
 
   it('returns raw array with secretSource', async () => {
@@ -266,7 +267,7 @@ describe('resolveSecretsRaw', () => {
       graphqlUrl: 'http://localhost:3002/graphql'
     });
 
-    expect(GraphQLClient).toHaveBeenCalledWith(
+    expect(MockedGraphQLClient).toHaveBeenCalledWith(
       'http://localhost:3002/graphql',
       {
         headers: {
