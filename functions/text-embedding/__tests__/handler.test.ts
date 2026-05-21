@@ -1,17 +1,54 @@
-import { createMockContext } from '../../../tests/helpers/mock-context';
+const mockRequest = jest.fn();
 
-const mockGenerateEmbedding = jest.fn();
+jest.mock('graphql-request', () => ({
+  gql: jest.fn((strings: TemplateStringsArray) => strings.join('')),
+}));
 
 jest.mock('@agentic-kit/ollama', () => {
-  return {
-    __esModule: true,
-    default: class OllamaClient {
-      constructor() {}
-      async generateEmbedding(text: string, model: string) {
-        return mockGenerateEmbedding(text, model);
-      }
+  return jest.fn().mockImplementation(() => ({
+    generateEmbedding: jest.fn().mockResolvedValue(Array(768).fill(0.1)),
+  }));
+});
+
+jest.mock('@constructive-io/graphql-query', () => ({
+  SCHEMA_INTROSPECTION_QUERY: 'query { __schema { types { name } } }',
+  inferTablesFromIntrospection: jest.fn().mockReturnValue([
+    {
+      name: 'document',
+      query: { all: 'documents', patchFieldName: 'documentPatch' },
+      inflection: { allRows: 'documents', patchField: 'documentPatch' },
+      primaryKey: 'id',
+      relations: { belongsTo: [], hasMany: [] },
     },
-  };
+  ]),
+  buildSelect: jest.fn().mockReturnValue({ toString: () => 'query { documents { nodes { id embeddingText } } }' }),
+  buildPostGraphileUpdate: jest.fn().mockReturnValue({ toString: () => 'mutation { updateDocument { document { id } } }' }),
+}));
+
+const createMockContext = () => ({
+  job: {
+    jobId: 'test-job-id',
+    workerId: 'test-worker',
+    databaseId: 'test-db',
+  },
+  client: {
+    request: mockRequest,
+  },
+  meta: {
+    request: jest.fn().mockResolvedValue({
+      schemas: { nodes: [{ schemaName: 'test-db-app-public' }] },
+    }),
+  },
+  log: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+  },
+  env: {
+    TEXT_EMBEDDING_DRY_RUN: 'true',
+    GRAPHQL_URL: 'http://localhost:3000/graphql',
+    GRAPHQL_API_NAME: 'private',
+  },
 });
 
 const loadHandler = () => {
@@ -21,87 +58,127 @@ const loadHandler = () => {
 
 describe('text-embedding handler', () => {
   beforeEach(() => {
-    mockGenerateEmbedding.mockClear();
-    mockGenerateEmbedding.mockResolvedValue([0.1, 0.2, 0.3, 0.4, 0.5]);
+    jest.clearAllMocks();
+    mockRequest.mockReset();
   });
 
-  it('should generate embedding for valid text', async () => {
-    const mockEmbedding = [0.1, 0.2, 0.3, 0.4, 0.5];
-    mockGenerateEmbedding.mockResolvedValue(mockEmbedding);
-
+  it('should generate embedding for document with embeddingText', async () => {
     const handler = loadHandler();
+    const context = createMockContext();
+
+    mockRequest
+      .mockResolvedValueOnce({ __schema: { types: [] } }) // introspection
+      .mockResolvedValueOnce({
+        documents: { nodes: [{ id: 'doc-1', embeddingText: 'Hello world test content' }] },
+      })
+      .mockResolvedValueOnce({
+        updateDocument: { document: { id: 'doc-1' } },
+      });
+
     const result = await handler(
-      { text: 'Hello world' },
-      createMockContext({ env: { OLLAMA_URL: 'http://localhost:11434' } })
+      {
+        table: 'document',
+        schema: 'test-db-app-public',
+        id: 'doc-1',
+        field: 'embedding',
+      },
+      context
     );
 
-    expect(result).toEqual({
-      embedding: mockEmbedding,
-      dimensions: 5,
-      model: 'nomic-embed-text:latest',
-    });
+    expect(result.complete).toBe(true);
+    expect(result.embedding_dims).toBe(768);
   });
 
-  it('should use custom model when provided', async () => {
-    const mockEmbedding = [0.1, 0.2, 0.3];
-    mockGenerateEmbedding.mockResolvedValue(mockEmbedding);
-
+  it('should skip when embeddingText is empty', async () => {
     const handler = loadHandler();
+    const context = createMockContext();
+
+    mockRequest
+      .mockResolvedValueOnce({ __schema: { types: [] } }) // introspection
+      .mockResolvedValueOnce({
+        documents: { nodes: [{ id: 'doc-1', embeddingText: '' }] },
+      });
+
     const result = await handler(
-      { text: 'Test', model: 'mxbai-embed-large' },
-      createMockContext()
+      {
+        table: 'document',
+        schema: 'test-db-app-public',
+        id: 'doc-1',
+        field: 'embedding',
+      },
+      context
     );
 
+    expect(result.complete).toBe(true);
+    expect(result.skipped).toBe(true);
+    expect(result.reason).toBe('no_embedding_text');
+  });
+
+  it('should throw error when databaseId is missing', async () => {
+    const handler = loadHandler();
+    const context = createMockContext();
+    context.job.databaseId = undefined;
+
+    await expect(
+      handler(
+        { table: 'document', schema: 'test-db-app-public', id: 'doc-1', field: 'embedding' },
+        context
+      )
+    ).rejects.toThrow('Missing X-Database-Id');
+  });
+
+  it('should throw error when required params are missing', async () => {
+    const handler = loadHandler();
+    const context = createMockContext();
+
+    await expect(
+      handler({ table: '', schema: 'test-db-app-public', id: 'doc-1', field: 'embedding' }, context)
+    ).rejects.toThrow('Missing required params');
+  });
+
+  it('should throw error when record is not found', async () => {
+    const handler = loadHandler();
+    const context = createMockContext();
+
+    mockRequest
+      .mockResolvedValueOnce({ __schema: { types: [] } }) // introspection
+      .mockResolvedValueOnce({
+        documents: { nodes: [] },
+      });
+
+    await expect(
+      handler(
+        { table: 'document', schema: 'test-db-app-public', id: 'nonexistent', field: 'embedding' },
+        context
+      )
+    ).rejects.toThrow('Record not found');
+  });
+
+  it('should use custom embedding model when provided', async () => {
+    const handler = loadHandler();
+    const context = createMockContext();
+
+    mockRequest
+      .mockResolvedValueOnce({ __schema: { types: [] } }) // introspection
+      .mockResolvedValueOnce({
+        documents: { nodes: [{ id: 'doc-1', embeddingText: 'Test content' }] },
+      })
+      .mockResolvedValueOnce({
+        updateDocument: { document: { id: 'doc-1' } },
+      });
+
+    const result = await handler(
+      {
+        table: 'document',
+        schema: 'test-db-app-public',
+        id: 'doc-1',
+        field: 'embedding',
+        embedding_model: 'mxbai-embed-large',
+      },
+      context
+    );
+
+    expect(result.complete).toBe(true);
     expect(result.model).toBe('mxbai-embed-large');
-    expect(mockGenerateEmbedding).toHaveBeenCalledWith('Test', 'mxbai-embed-large');
-  });
-
-  it('should use EMBEDDING_MODEL env var as default', async () => {
-    const mockEmbedding = [0.1, 0.2];
-    mockGenerateEmbedding.mockResolvedValue(mockEmbedding);
-
-    const handler = loadHandler();
-    const result = await handler(
-      { text: 'Test' },
-      createMockContext({ env: { EMBEDDING_MODEL: 'all-minilm' } })
-    );
-
-    expect(result.model).toBe('all-minilm');
-  });
-
-  it('should throw error when text is missing', async () => {
-    const handler = loadHandler();
-    await expect(
-      handler({}, createMockContext())
-    ).rejects.toThrow('Missing required param: text');
-  });
-
-  it('should throw error when text is not a string', async () => {
-    const handler = loadHandler();
-    await expect(
-      handler({ text: 123 }, createMockContext())
-    ).rejects.toThrow('Missing required param: text');
-  });
-
-  it('should throw error when text is empty', async () => {
-    const handler = loadHandler();
-    await expect(
-      handler({ text: '' }, createMockContext())
-    ).rejects.toThrow('Missing required param: text');
-  });
-
-  it('should return mock embedding in DRY_RUN mode', async () => {
-    const handler = loadHandler();
-    const result = await handler(
-      { text: 'Test' },
-      createMockContext({ env: { TEXT_EMBEDDING_DRY_RUN: 'true' } })
-    );
-
-    expect(result).toEqual({
-      embedding: Array(768).fill(0),
-      dimensions: 768,
-      model: 'dry-run',
-    });
-    expect(mockGenerateEmbedding).not.toHaveBeenCalled();
   });
 });
