@@ -58,6 +58,48 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
+ * Wait for a job to be created by trigger, fix NULL database_id if needed.
+ */
+export async function waitForJobCreated(
+  pg: TestClient,
+  taskIdentifier: string,
+  recordId: string,
+  databaseId: string,
+  options: { timeout?: number; pollInterval?: number } = {}
+): Promise<{ jobId: string } | null> {
+  const { timeout = 10000, pollInterval = 500 } = options;
+  const start = Date.now();
+
+  while (Date.now() - start < timeout) {
+    const result = await pg.query(`
+      SELECT id, database_id FROM app_jobs.jobs
+      WHERE task_identifier = $1
+        AND (payload->>'id' = $2 OR payload->>'record_id' = $2)
+      ORDER BY created_at DESC LIMIT 1
+    `, [taskIdentifier, recordId]);
+
+    if (result.rows.length > 0) {
+      const jobId = result.rows[0].id;
+
+      // Fix NULL database_id if needed (trigger bug workaround)
+      if (!result.rows[0].database_id) {
+        await pg.query(`
+          UPDATE app_jobs.jobs
+          SET database_id = $1, attempts = 0, last_error = NULL, run_at = NOW()
+          WHERE id = $2
+        `, [databaseId, jobId]);
+      }
+
+      return { jobId };
+    }
+
+    await sleep(pollInterval);
+  }
+
+  return null;
+}
+
+/**
  * Wait for a job to be picked up and completed (deleted) by the job service.
  * Returns 'completed' if the job disappears, 'failed' if it has last_error, 'timeout' otherwise.
  */
@@ -91,4 +133,65 @@ export async function waitForJobComplete(
     job: job || undefined,
     error: `Job did not complete within ${timeout}ms`,
   };
+}
+
+/**
+ * Wait for a job to be created by trigger, fix NULL database_id if needed, then wait for completion.
+ */
+export async function waitForTriggerJobComplete(
+  pg: TestClient,
+  taskIdentifier: string,
+  recordId: string,
+  databaseId: string,
+  options: { timeout?: number; pollInterval?: number } = {}
+): Promise<{ status: 'completed' | 'failed' | 'timeout' | 'not_created'; jobId?: string; error?: string }> {
+  const { timeout = 60000, pollInterval = 500 } = options;
+  const start = Date.now();
+
+  // Phase 1: Wait for job to be created
+  let jobId: string | null = null;
+  while (Date.now() - start < timeout) {
+    const result = await pg.query(`
+      SELECT id, database_id FROM app_jobs.jobs
+      WHERE task_identifier = $1
+        AND (payload->>'id' = $2 OR payload->>'record_id' = $2)
+      ORDER BY created_at DESC LIMIT 1
+    `, [taskIdentifier, recordId]);
+
+    if (result.rows.length > 0) {
+      jobId = result.rows[0].id;
+
+      // Fix NULL database_id if needed (trigger bug workaround)
+      if (!result.rows[0].database_id) {
+        await pg.query(`
+          UPDATE app_jobs.jobs
+          SET database_id = $1, attempts = 0, last_error = NULL, run_at = NOW()
+          WHERE id = $2
+        `, [databaseId, jobId]);
+      }
+      break;
+    }
+    await sleep(pollInterval);
+  }
+
+  if (!jobId) {
+    return { status: 'not_created', error: `Trigger did not create job for ${taskIdentifier}` };
+  }
+
+  // Phase 2: Wait for job to complete
+  while (Date.now() - start < timeout) {
+    const job = await getJobById(pg, jobId);
+
+    if (!job) {
+      return { status: 'completed', jobId };
+    }
+
+    if (job.last_error) {
+      return { status: 'failed', jobId, error: job.last_error };
+    }
+
+    await sleep(pollInterval);
+  }
+
+  return { status: 'timeout', jobId, error: `Job did not complete within ${timeout}ms` };
 }
