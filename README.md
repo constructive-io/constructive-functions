@@ -1,5 +1,16 @@
 # constructive-functions
 
+<p align="center" width="100%">
+  <img height="250" src="https://raw.githubusercontent.com/constructive-io/constructive/refs/heads/main/assets/outline-logo.svg" />
+</p>
+
+<p align="center" width="100%">
+  <a href="https://github.com/constructive-io/constructive-functions/actions/workflows/ci.yaml">
+    <img height="20" src="https://github.com/constructive-io/constructive-functions/actions/workflows/ci.yaml/badge.svg" />
+  </a>
+  <a href="https://github.com/constructive-io/constructive-functions/blob/main/LICENSE"><img height="20" src="https://img.shields.io/badge/license-Constructive-blue.svg"/></a>
+</p>
+
 Functions playground for Constructive — a workspace for building, testing, and deploying serverless HTTP functions backed by a Postgres-backed job queue.
 
 Functions are authored in `functions/<name>/` (a `handler.ts` plus a `handler.json` manifest), generated into runnable workspace packages by `pnpm generate`, and dispatched by the job service in `job/service/`. Templates live in `templates/` (`node-graphql` and `python` are supported today).
