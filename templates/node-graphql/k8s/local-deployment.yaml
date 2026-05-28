@@ -28,6 +28,9 @@ spec:
                 name: pg-credentials
             - secretRef:
                 name: mailgun-credentials
+            - secretRef:
+                name: constructive-uploads
+                optional: true
           env:
             - name: PORT
               value: "8080"
@@ -47,6 +50,10 @@ spec:
               value: "no-reply@mg.constructive.io"
             - name: MAILGUN_REPLY
               value: "support@mg.constructive.io"
+            - name: S3_ENDPOINT
+              value: "http://minio.constructive-functions.svc.cluster.local:9000"
+            - name: DOCLING_URL
+              value: "http://docling-serve.constructive-functions.svc.cluster.local:5001"
           resources:
             requests:
               memory: "128Mi"
