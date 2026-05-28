@@ -1,0 +1,12 @@
+{
+  "name": "generate-embedding",
+  "version": "0.1.0",
+  "type": "node-graphql",
+  "port": 8086,
+  "taskIdentifier": "embed:generate_embedding",
+  "description": "Generate vector embedding for a row's text fields",
+  "dependencies": {
+    "graphile-llm": "^0.10.0",
+    "pg": "^8.11.0"
+  }
+}
