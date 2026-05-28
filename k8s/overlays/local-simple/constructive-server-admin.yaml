@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: ghcr.io/constructive-io/constructive:e0b55cc
+          image: ghcr.io/constructive-io/constructive:latest
           imagePullPolicy: IfNotPresent
           command: ["cnc"]
           args: ["server", "--port", "3000", "--origin", "*", "--strictAuth", "false"]
@@ -47,11 +47,11 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: "100m"
-              memory: "256Mi"
-            limits:
-              cpu: "300m"
+              cpu: "200m"
               memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
 ---
 apiVersion: v1
 kind: Service
