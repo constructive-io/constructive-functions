@@ -54,6 +54,12 @@ spec:
               value: "http://minio.constructive-functions.svc.cluster.local:9000"
             - name: DOCLING_URL
               value: "http://docling-serve.constructive-functions.svc.cluster.local:5001"
+            - name: EMBEDDER_PROVIDER
+              value: "ollama"
+            - name: EMBEDDER_MODEL
+              value: "nomic-embed-text"
+            - name: EMBEDDER_BASE_URL
+              value: "http://ollama.constructive-functions.svc.cluster.local:11434"
           resources:
             requests:
               memory: "128Mi"
