@@ -66,9 +66,11 @@ export const createClients = (
   // X-Api-Name causes the server to load every schema registered for that API
   // (both *_public and *_private variants), which collides on duplicate codec
   // names like identityProviders. Use X-Meta-Schema instead.
+  // Include databaseId so the server can build the correct cache key.
   const meta = createGraphQLClient(metaGraphqlUrl, env, {
     hostHeaderEnvVar: 'META_GRAPHQL_HOST_HEADER',
     useMetaSchema: true,
+    databaseId,
   });
 
   return { client, meta };

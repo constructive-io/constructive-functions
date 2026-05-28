@@ -59,7 +59,21 @@ const GetDatabaseInfo = gql`
 `;
 
 type SendEmailParams = {
-  email_type: 'invite_email' | 'forgot_password' | 'email_verification';
+  email_type:
+    | 'invite_email'
+    | 'forgot_password'
+    | 'email_verification'
+    // New passwordless auth types (function naming)
+    | 'magic_link_sign_in'
+    | 'magic_link_sign_up'
+    | 'email_otp'
+    | 'email_mfa_setup'
+    | 'mfa_challenge'
+    // DB procedure naming (for compatibility)
+    | 'magic_link_email'
+    | 'email_otp_code'
+    | 'mfa_verification_code'
+    | 'account_deletion';
   email: string;
   invite_type?: number | string;
   invite_token?: string;
@@ -68,6 +82,11 @@ type SendEmailParams = {
   reset_token?: string;
   email_id?: string;
   verification_token?: string;
+  magic_link_token?: string;
+  token?: string; // DB uses 'token' for magic link
+  otp_code?: string;
+  code?: string; // DB uses 'code' for OTP
+  expires_in_minutes?: number;
 };
 
 type SendEmailContext = {
@@ -104,6 +123,30 @@ const sendEmailLink = async (
       case 'email_verification':
         if (!params.email_id || !params.verification_token) {
           return { missing: 'email_id_or_verification_token' };
+        }
+        return null;
+      case 'magic_link_sign_in':
+      case 'magic_link_sign_up':
+      case 'magic_link_email': // DB naming
+        // Accept both 'magic_link_token' and 'token' (DB naming)
+        if (!params.magic_link_token && !params.token) {
+          return { missing: 'magic_link_token' };
+        }
+        return null;
+      case 'email_otp':
+      case 'email_mfa_setup':
+      case 'mfa_challenge':
+      case 'email_otp_code': // DB naming
+      case 'mfa_verification_code': // DB naming
+        // Accept both 'otp_code' and 'code' (DB naming)
+        if (!params.otp_code && !params.code) {
+          return { missing: 'otp_code' };
+        }
+        return null;
+      case 'account_deletion':
+        // Account deletion email - requires user_id
+        if (!params.user_id) {
+          return { missing: 'user_id' };
         }
         return null;
       default:
@@ -227,6 +270,121 @@ const sendEmailLink = async (
       subject = `${nick} Email Verification`;
       subMessage = 'Please confirm your email address';
       linkText = 'Confirm Email';
+      break;
+    }
+    case 'magic_link_sign_in':
+    case 'magic_link_email': { // DB naming - treat as sign_in
+      const magicToken = params.magic_link_token || params.token;
+      if (!magicToken) {
+        return { missing: 'magic_link_token' };
+      }
+      url.pathname = 'auth/magic-link';
+      url.searchParams.append('token', magicToken);
+      url.searchParams.append('email', params.email);
+      subject = `Sign in to ${nick}`;
+      subMessage = 'Click the button below to sign in to your account';
+      linkText = 'Sign In';
+      break;
+    }
+    case 'magic_link_sign_up': {
+      const magicToken = params.magic_link_token || params.token;
+      if (!magicToken) {
+        return { missing: 'magic_link_token' };
+      }
+      url.pathname = 'auth/magic-link';
+      url.searchParams.append('token', magicToken);
+      url.searchParams.append('email', params.email);
+      url.searchParams.append('signup', 'true');
+      subject = `Complete your ${nick} registration`;
+      subMessage = 'Click the button below to complete your registration';
+      linkText = 'Complete Registration';
+      break;
+    }
+    case 'email_otp':
+    case 'email_mfa_setup':
+    case 'mfa_challenge':
+    case 'email_otp_code': // DB naming
+    case 'mfa_verification_code': { // DB naming
+      // Accept both 'otp_code' and 'code' (DB naming)
+      const otpCode = params.otp_code || params.code;
+      if (!otpCode) {
+        return { missing: 'otp_code' };
+      }
+      const expiresIn = params.expires_in_minutes ?? 10;
+      const otpSubjects: Record<string, string> = {
+        email_otp: `Your ${nick} verification code`,
+        email_otp_code: `Your ${nick} verification code`, // DB naming
+        email_mfa_setup: `${nick} MFA Setup Code`,
+        mfa_challenge: `Your ${nick} sign-in code`,
+        mfa_verification_code: `Your ${nick} sign-in code` // DB naming
+      };
+      const otpMessages: Record<string, string> = {
+        email_otp: 'Enter this code to verify your email',
+        email_otp_code: 'Enter this code to verify your email', // DB naming
+        email_mfa_setup: 'Enter this code to enable two-factor authentication',
+        mfa_challenge: 'Enter this code to complete your sign-in',
+        mfa_verification_code: 'Enter this code to complete your sign-in' // DB naming
+      };
+      subject = otpSubjects[params.email_type];
+      subMessage = `${otpMessages[params.email_type]}. This code expires in ${expiresIn} minutes.`;
+
+      const otpHtml = generate({
+        title: subject,
+        link: '',
+        linkText: otpCode,
+        message: subject,
+        subMessage,
+        bodyBgColor: 'white',
+        headerBgColor: 'white',
+        messageBgColor: 'white',
+        messageTextColor: '#414141',
+        messageButtonBgColor: primary,
+        messageButtonTextColor: 'white',
+        companyName: name,
+        supportEmail,
+        website,
+        logo,
+        headerImageProps: {
+          alt: 'logo',
+          align: 'center',
+          border: 'none',
+          width: '162px',
+          paddingLeft: '0px',
+          paddingRight: '0px',
+          paddingBottom: '0px',
+          paddingTop: '0'
+        }
+      });
+
+      if (isDryRun) {
+        log.info('DRY RUN email (skipping send)', {
+          email_type: params.email_type,
+          email: params.email,
+          subject,
+          otp_code: otpCode
+        });
+      } else {
+        const sendEmail = useSmtp ? sendSmtp : sendPostmaster;
+        await sendEmail({
+          to: params.email,
+          subject,
+          html: otpHtml
+        });
+      }
+
+      return {
+        complete: true,
+        ...(isDryRun ? { dryRun: true } : null)
+      };
+    }
+    case 'account_deletion': {
+      if (!params.user_id) {
+        return { missing: 'user_id' };
+      }
+      subject = `${nick} Account Deletion Confirmation`;
+      subMessage = 'Your account deletion request has been processed';
+      linkText = 'View Details';
+      url.pathname = 'account/deleted';
       break;
     }
     default:
