@@ -8,7 +8,7 @@ type ChunkPayload = {
   id: string;
   table: string;
   schema: string;
-  chunks_table: string;
+  chunks_table?: string;
   chunk_size?: number;
   chunk_overlap?: number;
   chunk_strategy?: ChunkStrategy;
@@ -19,11 +19,6 @@ type ChunkPayload = {
 type ChunkResult = {
   content: string;
   chunk_index: number;
-  metadata: {
-    start_offset: number;
-    end_offset: number;
-    strategy: ChunkStrategy;
-  };
 };
 
 const DEFAULT_CHUNK_SIZE = 1000;
@@ -40,12 +35,7 @@ function splitFixed(text: string, size: number, overlap: number): ChunkResult[] 
     const end = Math.min(start + size, text.length);
     chunks.push({
       content: text.slice(start, end),
-      chunk_index: index,
-      metadata: {
-        start_offset: start,
-        end_offset: end,
-        strategy: 'fixed'
-      }
+      chunk_index: index
     });
     start += size - overlap;
     index++;
@@ -75,44 +65,27 @@ function splitSentence(text: string, targetSize: number, overlap: number): Chunk
 
   const chunks: ChunkResult[] = [];
   let currentChunk = '';
-  let currentStart = 0;
-  let offset = 0;
   let index = 0;
 
   for (const sentence of sentences) {
     if (currentChunk.length + sentence.length > targetSize && currentChunk.length > 0) {
       chunks.push({
         content: currentChunk.trim(),
-        chunk_index: index,
-        metadata: {
-          start_offset: currentStart,
-          end_offset: offset,
-          strategy: 'sentence'
-        }
+        chunk_index: index
       });
       index++;
 
       const overlapText = currentChunk.slice(-overlap);
       currentChunk = overlapText + sentence;
-      currentStart = offset - overlapText.length;
     } else {
-      if (currentChunk.length === 0) {
-        currentStart = offset;
-      }
       currentChunk += sentence;
     }
-    offset += sentence.length;
   }
 
   if (currentChunk.trim()) {
     chunks.push({
       content: currentChunk.trim(),
-      chunk_index: index,
-      metadata: {
-        start_offset: currentStart,
-        end_offset: offset,
-        strategy: 'sentence'
-      }
+      chunk_index: index
     });
   }
 
@@ -128,8 +101,6 @@ function splitParagraph(text: string, targetSize: number, overlap: number): Chun
 
   const chunks: ChunkResult[] = [];
   let currentChunk = '';
-  let currentStart = 0;
-  let offset = 0;
   let index = 0;
 
   for (const para of paragraphs) {
@@ -138,36 +109,21 @@ function splitParagraph(text: string, targetSize: number, overlap: number): Chun
     if (currentChunk.length + paraWithSep.length > targetSize && currentChunk.length > 0) {
       chunks.push({
         content: currentChunk.trim(),
-        chunk_index: index,
-        metadata: {
-          start_offset: currentStart,
-          end_offset: offset,
-          strategy: 'paragraph'
-        }
+        chunk_index: index
       });
       index++;
 
       const overlapText = currentChunk.slice(-overlap);
       currentChunk = overlapText + paraWithSep;
-      currentStart = offset - overlapText.length;
     } else {
-      if (currentChunk.length === 0) {
-        currentStart = offset;
-      }
       currentChunk += paraWithSep;
     }
-    offset += paraWithSep.length;
   }
 
   if (currentChunk.trim()) {
     chunks.push({
       content: currentChunk.trim(),
-      chunk_index: index,
-      metadata: {
-        start_offset: currentStart,
-        end_offset: offset,
-        strategy: 'paragraph'
-      }
+      chunk_index: index
     });
   }
 
@@ -197,16 +153,19 @@ const handler: FunctionHandler<ChunkPayload> = async (params, ctx) => {
     id,
     table,
     schema,
-    chunks_table,
     chunk_size = DEFAULT_CHUNK_SIZE,
     chunk_overlap = DEFAULT_CHUNK_OVERLAP,
     chunk_strategy = DEFAULT_STRATEGY,
-    text_column = 'extracted_text',
-    parent_fk_column = 'parent_id'
+    text_column = 'extracted_text'
   } = params;
 
-  if (!id || !table || !schema || !chunks_table) {
-    throw new Error('Missing required fields: id, table, schema, chunks_table');
+  // Auto-derive chunks_table and parent_fk_column from table name
+  // e.g., "documents" -> chunks_table: "document_chunks", parent_fk_column: "document_id"
+  const chunks_table = params.chunks_table || table.replace(/s$/, '') + '_chunks';
+  const parent_fk_column = params.parent_fk_column || table.replace(/s$/, '') + '_id';
+
+  if (!id || !table || !schema) {
+    throw new Error('Missing required fields: id, table, schema');
   }
 
   ctx.log.info('Starting chunk generation', {
@@ -231,7 +190,7 @@ const handler: FunctionHandler<ChunkPayload> = async (params, ctx) => {
   await client.connect();
 
   try {
-    const selectQuery = `SELECT "${text_column}" FROM "${schema}"."${table}" WHERE id = $1::uuid`;
+    const selectQuery = `SELECT "${text_column}", owner_id FROM "${schema}"."${table}" WHERE id = $1::uuid`;
     const selectResult = await client.query(selectQuery, [id]);
 
     if (selectResult.rows.length === 0) {
@@ -239,6 +198,7 @@ const handler: FunctionHandler<ChunkPayload> = async (params, ctx) => {
     }
 
     const text = selectResult.rows[0][text_column];
+    const ownerId = selectResult.rows[0].owner_id;
     if (!text || typeof text !== 'string' || text.trim().length === 0) {
       ctx.log.warn('No text to chunk', { id });
       return { complete: true, chunks_created: 0 };
@@ -262,8 +222,8 @@ const handler: FunctionHandler<ChunkPayload> = async (params, ctx) => {
 
       const insertQuery = `
         INSERT INTO "${schema}"."${chunks_table}"
-        ("${parent_fk_column}", content, chunk_index, embedding, metadata)
-        VALUES ($1::uuid, $2, $3, $4::vector, $5::jsonb)
+        ("${parent_fk_column}", content, chunk_index, embedding, owner_id)
+        VALUES ($1::uuid, $2, $3, $4::vector, $5::uuid)
       `;
 
       for (let j = 0; j < batch.length; j++) {
@@ -276,7 +236,7 @@ const handler: FunctionHandler<ChunkPayload> = async (params, ctx) => {
           chunk.content,
           chunk.chunk_index,
           vectorStr,
-          JSON.stringify(chunk.metadata)
+          ownerId
         ]);
       }
 
