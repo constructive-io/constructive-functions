@@ -6,13 +6,17 @@ import { Readable } from 'stream';
 import pg from 'pg';
 
 type ExtractionPayload = {
-  file_id: string;
-  key: string;
-  mime_type: string;
-  bucket_id: string;
-  // Meta fields from JobTrigger (include_meta: true)
+  // Standard JobTrigger fields
+  id: string;
   table?: string;
   schema?: string;
+  // Document fields (from payload_fields)
+  file_key: string;
+  mime_type: string;
+  bucket_id: string;
+  // Legacy aliases (for backward compatibility)
+  file_id?: string;
+  key?: string;
 };
 
 type ExtractionMetadata = {
@@ -181,7 +185,7 @@ const updateDynamicTable = async (
       UPDATE "${schema}"."${table}"
       SET extracted_text = $1,
           extracted_metadata = $2,
-          extraction_status = $3
+          status = $3
       WHERE id = $4::uuid
     `;
     await client.query(query, [
@@ -196,10 +200,13 @@ const updateDynamicTable = async (
 };
 
 const handler: FunctionHandler<ExtractionPayload> = async (params, ctx) => {
-  const { file_id, key, mime_type, bucket_id, table, schema } = params;
+  // Support both standard JobTrigger format (id, file_key) and legacy format (file_id, key)
+  const file_id = params.id || params.file_id;
+  const key = params.file_key || params.key;
+  const { mime_type, bucket_id, table, schema } = params;
 
   if (!file_id || !key) {
-    throw new Error('Missing required payload fields: file_id, key');
+    throw new Error('Missing required payload fields: id/file_id, file_key/key');
   }
 
   // Determine update mode: dynamic table (when schema/table provided), test table, or GraphQL
