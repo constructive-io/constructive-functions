@@ -3,7 +3,9 @@ import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import FormData from 'form-data';
 import fetch from 'node-fetch';
 import { Readable } from 'stream';
-import pg from 'pg';
+import { TypedDocumentString } from '@constructive-io/graphql-query';
+import { singularize, toCamelCase, toPascalCase } from 'inflekt';
+import { GraphQLClient } from 'graphql-request';
 
 type ExtractionPayload = {
   // Standard JobTrigger fields
@@ -27,7 +29,22 @@ type ExtractionMetadata = {
   images?: number;
   extraction_time_ms?: number;
   docling_version?: string;
+  error?: string;
 };
+
+type UpdateResult = {
+  [key: string]: {
+    [key: string]: { id: string } | null;
+  } | null;
+};
+
+type UpdateVariables = {
+  input: {
+    id: string;
+    [patchField: string]: unknown;
+  };
+};
+
 
 const getRequiredEnv = (name: string): string => {
   const value = process.env[name];
@@ -119,7 +136,10 @@ const extractWithDocling = async (
   return { markdown, metadata };
 };
 
-const UpdateFileExtraction = `
+const UpdateFileExtraction = new TypedDocumentString<
+  { updateAppFile: { appFile: { id: string; extractionStatus: string } | null } | null },
+  { fileId: string; extractedText: string; extractedMetadata: unknown; extractionStatus: string }
+>(`
   mutation UpdateFileExtraction(
     $fileId: UUID!
     $extractedText: String!
@@ -142,65 +162,114 @@ const UpdateFileExtraction = `
       }
     }
   }
-`;
+`);
 
-const updateTestTable = async (
-  fileKey: string,
-  extractedText: string,
-  metadata: ExtractionMetadata,
-  status: string
-): Promise<void> => {
-  const client = new pg.Client({
-    connectionString: process.env.DATABASE_URL ||
-      `postgres://${process.env.PGUSER || 'postgres'}:${process.env.PGPASSWORD || 'postgres'}@${process.env.PGHOST || 'postgres'}:${process.env.PGPORT || '5432'}/${process.env.PGDATABASE || 'constructive'}`
-  });
-  await client.connect();
-  try {
-    await client.query(
-      `UPDATE public.test_extractions
-       SET extracted_text = $1, extracted_metadata = $2, extraction_status = $3
-       WHERE file_key = $4`,
-      [extractedText, JSON.stringify(metadata), status, fileKey]
-    );
-  } finally {
-    await client.end();
-  }
+const buildDynamicUpdateMutation = (tableName: string): TypedDocumentString<UpdateResult, UpdateVariables> => {
+  const singularCamel = toCamelCase(singularize(tableName));
+  const singularPascal = toPascalCase(singularize(tableName));
+
+  const query = `
+    mutation UpdateDynamicTable($input: Update${singularPascal}Input!) {
+      update${singularPascal}(input: $input) {
+        ${singularCamel} {
+          id
+        }
+      }
+    }
+  `;
+
+  return new TypedDocumentString<UpdateResult, UpdateVariables>(query);
 };
 
 const updateDynamicTable = async (
+  client: GraphQLClient,
   schema: string,
+  databaseId: string,
   table: string,
   fileId: string,
   extractedText: string,
-  metadata: ExtractionMetadata,
-  status: string
+  metadata: ExtractionMetadata
 ): Promise<void> => {
-  const client = new pg.Client({
-    connectionString: process.env.DATABASE_URL ||
-      `postgres://${process.env.PGUSER || 'postgres'}:${process.env.PGPASSWORD || 'postgres'}@${process.env.PGHOST || 'postgres'}:${process.env.PGPORT || '5432'}/${process.env.PGDATABASE || 'constructive'}`
+  const singularCamel = toCamelCase(singularize(table));
+  const patchFieldName = `${singularCamel}Patch`;
+  const mutation = buildDynamicUpdateMutation(table);
+
+  await client.request(mutation.toString(), {
+    input: {
+      id: fileId,
+      [patchFieldName]: {
+        extractedText,
+        extractedMetadata: metadata,
+      },
+    },
+  }, {
+    'X-Database-Id': databaseId,
+    'X-Schemata': schema,
   });
-  await client.connect();
+};
+
+type DatabaseQueryResult = {
+  databases: {
+    nodes: Array<{ id: string }>;
+  };
+};
+
+type DatabaseQueryVariables = {
+  name: string;
+};
+
+const GetDatabaseByNameQuery = new TypedDocumentString<DatabaseQueryResult, DatabaseQueryVariables>(`
+  query GetDatabaseByName($name: String!) {
+    databases(condition: { name: $name }, first: 1) {
+      nodes {
+        id
+      }
+    }
+  }
+`);
+
+const extractDatabaseIdFromSchema = async (
+  metaClient: { request: <T, V>(doc: TypedDocumentString<T, V>, vars: V) => Promise<T> },
+  schema: string
+): Promise<string | null> => {
+  const match = schema.match(/^([^-]+-[^-]+)-[0-9a-f]+-/);
+  if (!match) return null;
+
+  const dbName = match[1].replace(/-/g, '_');
   try {
-    const query = `
-      UPDATE "${schema}"."${table}"
-      SET extracted_text = $1,
-          extracted_metadata = $2,
-          status = $3
-      WHERE id = $4::uuid
-    `;
-    await client.query(query, [
-      extractedText,
-      JSON.stringify(metadata),
-      status,
-      fileId
-    ]);
-  } finally {
-    await client.end();
+    const result = await metaClient.request(GetDatabaseByNameQuery, { name: dbName });
+    return result.databases.nodes[0]?.id ?? null;
+  } catch {
+    return null;
   }
 };
 
+const resolveS3BucketName = async (
+  metaClient: { request: <T, V>(doc: TypedDocumentString<T, V>, vars: V) => Promise<T> },
+  schema: string | undefined,
+  fallbackDatabaseId: string | undefined,
+  bucketKey: string = 'files'
+): Promise<string> => {
+  const prefix = process.env.S3_BUCKET_NAME || process.env.BUCKET_NAME || 'cnc';
+
+  let databaseId = fallbackDatabaseId;
+
+  if (!databaseId && schema) {
+    databaseId = await extractDatabaseIdFromSchema(metaClient, schema) ?? undefined;
+  }
+
+  if (databaseId) {
+    return `${prefix}-${bucketKey}-${databaseId}`;
+  }
+
+  if (process.env.DEFAULT_S3_BUCKET) {
+    return process.env.DEFAULT_S3_BUCKET;
+  }
+
+  return `${prefix}-uploads`;
+};
+
 const handler: FunctionHandler<ExtractionPayload> = async (params, ctx) => {
-  // Support both standard JobTrigger format (id, file_key) and legacy format (file_id, key)
   const file_id = params.id || params.file_id;
   const key = params.file_key || params.key;
   const { mime_type, bucket_id, table, schema } = params;
@@ -209,12 +278,9 @@ const handler: FunctionHandler<ExtractionPayload> = async (params, ctx) => {
     throw new Error('Missing required payload fields: id/file_id, file_key/key');
   }
 
-  // Determine update mode: dynamic table (when schema/table provided), test table, or GraphQL
   const useDynamicTable = schema && table && process.env.USE_DYNAMIC_TABLE !== 'false';
-  const useTestTable = process.env.USE_TEST_TABLE === 'true';
 
-  // S3 bucket name from env (the actual MinIO/S3 bucket, not the database bucket_id)
-  const s3BucketName = process.env.S3_BUCKET_NAME || process.env.BUCKET_NAME || 'constructive-uploads';
+  const s3BucketName = await resolveS3BucketName(ctx.meta, schema, ctx.job.databaseId);
 
   ctx.log.info('Starting document extraction', {
     file_id,
@@ -246,12 +312,9 @@ const handler: FunctionHandler<ExtractionPayload> = async (params, ctx) => {
       extraction_time_ms: metadata.extraction_time_ms
     });
 
-    if (useDynamicTable && schema && table) {
-      await updateDynamicTable(schema, table, file_id, markdown, metadata, 'completed');
-      ctx.log.info('Updated dynamic table', { schema, table, file_id });
-    } else if (useTestTable) {
-      await updateTestTable(key, markdown, metadata, 'completed');
-      ctx.log.info('Updated test table', { key });
+    if (useDynamicTable && schema && table && ctx.job.databaseId) {
+      await updateDynamicTable(ctx.client as GraphQLClient, schema, ctx.job.databaseId, table, file_id, markdown, metadata);
+      ctx.log.info('Updated dynamic table via GraphQL', { schema, table, file_id });
     } else {
       await ctx.client.request(UpdateFileExtraction, {
         fileId: file_id,
@@ -268,11 +331,9 @@ const handler: FunctionHandler<ExtractionPayload> = async (params, ctx) => {
     ctx.log.error('Extraction failed', { file_id, error: errorMessage });
 
     try {
-      const errorMetadata = { error: errorMessage } as ExtractionMetadata;
-      if (useDynamicTable && schema && table) {
-        await updateDynamicTable(schema, table, file_id, '', errorMetadata, 'failed');
-      } else if (useTestTable) {
-        await updateTestTable(key, '', errorMetadata, 'failed');
+      const errorMetadata: ExtractionMetadata = { error: errorMessage };
+      if (useDynamicTable && schema && table && ctx.job.databaseId) {
+        await updateDynamicTable(ctx.client as GraphQLClient, schema, ctx.job.databaseId, table, file_id, '', errorMetadata);
       } else {
         await ctx.client.request(UpdateFileExtraction, {
           fileId: file_id,
