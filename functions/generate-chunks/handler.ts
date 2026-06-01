@@ -1,6 +1,8 @@
 import type { FunctionHandler } from '@constructive-io/fn-runtime';
 import { buildEmbedderFromEnv } from 'graphile-llm';
-import pg from 'pg';
+import { TypedDocumentString } from '@constructive-io/graphql-query';
+import { singularize, toCamelCase, toPascalCase } from 'inflekt';
+import { GraphQLClient } from 'graphql-request';
 
 type ChunkStrategy = 'fixed' | 'sentence' | 'paragraph';
 
@@ -148,6 +150,65 @@ function splitText(
   }
 }
 
+type QueryResult = {
+  [key: string]: {
+    extractedText: string | null;
+    ownerId: string | null;
+  } | null;
+};
+
+type CreateResult = {
+  [key: string]: {
+    [key: string]: { id: string } | null;
+  } | null;
+};
+
+const buildSelectQuery = (tableName: string, textColumn: string): TypedDocumentString<QueryResult, { id: string }> => {
+  const singularCamel = toCamelCase(singularize(tableName));
+  const textFieldCamel = toCamelCase(textColumn);
+
+  const query = `
+    query GetSourceText($id: UUID!) {
+      ${singularCamel}(id: $id) {
+        ${textFieldCamel}
+        ownerId
+      }
+    }
+  `;
+
+  return new TypedDocumentString<QueryResult, { id: string }>(query);
+};
+
+type CreateChunkInput = {
+  input: {
+    [key: string]: {
+      content: string;
+      chunkIndex: number;
+      embedding: string;
+      ownerId?: string;
+      [parentFk: string]: unknown;
+    };
+  };
+};
+
+const buildCreateChunkMutation = (chunksTable: string, parentFkColumn: string): TypedDocumentString<CreateResult, CreateChunkInput> => {
+  const singularCamel = toCamelCase(singularize(chunksTable));
+  const singularPascal = toPascalCase(singularize(chunksTable));
+  const inputFieldName = `${singularCamel}`;
+
+  const query = `
+    mutation CreateChunk($input: Create${singularPascal}Input!) {
+      create${singularPascal}(input: $input) {
+        ${singularCamel} {
+          id
+        }
+      }
+    }
+  `;
+
+  return new TypedDocumentString<CreateResult, CreateChunkInput>(query);
+};
+
 const handler: FunctionHandler<ChunkPayload> = async (params, ctx) => {
   const {
     id,
@@ -159,13 +220,16 @@ const handler: FunctionHandler<ChunkPayload> = async (params, ctx) => {
     text_column = 'extracted_text'
   } = params;
 
-  // Auto-derive chunks_table and parent_fk_column from table name
-  // e.g., "documents" -> chunks_table: "document_chunks", parent_fk_column: "document_id"
-  const chunks_table = params.chunks_table || table.replace(/s$/, '') + '_chunks';
-  const parent_fk_column = params.parent_fk_column || table.replace(/s$/, '') + '_id';
+  const chunks_table = params.chunks_table || singularize(table) + '_chunks';
+  const parent_fk_column = params.parent_fk_column || singularize(table) + '_id';
 
   if (!id || !table || !schema) {
     throw new Error('Missing required fields: id, table, schema');
+  }
+
+  const databaseId = ctx.job.databaseId;
+  if (!databaseId) {
+    throw new Error('Missing databaseId in job context');
   }
 
   ctx.log.info('Starting chunk generation', {
@@ -182,84 +246,85 @@ const handler: FunctionHandler<ChunkPayload> = async (params, ctx) => {
     throw new Error('Failed to initialize embedder from environment');
   }
 
-  const client = new pg.Client({
-    connectionString: process.env.DATABASE_URL ||
-      `postgres://${process.env.PGUSER || 'postgres'}:${process.env.PGPASSWORD || 'postgres'}@${process.env.PGHOST || 'postgres'}:${process.env.PGPORT || '5432'}/${process.env.PGDATABASE || 'constructive'}`
+  const client = ctx.client as GraphQLClient;
+  const headers = {
+    'X-Database-Id': databaseId,
+    'X-Schemata': schema,
+  };
+
+  const selectQuery = buildSelectQuery(table, text_column);
+  const result = await client.request(selectQuery.toString(), { id }, headers);
+
+  const singularCamel = toCamelCase(singularize(table));
+  const record = result[singularCamel];
+
+  if (!record) {
+    throw new Error(`Record not found: ${schema}.${table} id=${id}`);
+  }
+
+  const textFieldCamel = toCamelCase(text_column);
+  const text = (record as Record<string, unknown>)[textFieldCamel] as string | null;
+  const ownerId = record.ownerId;
+
+  if (!text || typeof text !== 'string' || text.trim().length === 0) {
+    ctx.log.warn('No text to chunk', { id });
+    return { complete: true, chunks_created: 0 };
+  }
+
+  const chunks = splitText(text, chunk_strategy, chunk_size, chunk_overlap);
+  ctx.log.info('Text split into chunks', { count: chunks.length });
+
+  let totalPromptTokens = 0;
+  const createMutation = buildCreateChunkMutation(chunks_table, parent_fk_column);
+  const chunkSingularCamel = toCamelCase(singularize(chunks_table));
+  const parentFkCamel = toCamelCase(parent_fk_column);
+
+  for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+    const batch = chunks.slice(i, i + BATCH_SIZE);
+
+    const embeddings = await Promise.all(
+      batch.map(async (chunk) => {
+        const embResult = await embedder(chunk.content);
+        totalPromptTokens += embResult.promptTokens;
+        return embResult.embedding;
+      })
+    );
+
+    for (let j = 0; j < batch.length; j++) {
+      const chunk = batch[j];
+      const embedding = embeddings[j];
+      const vectorStr = `[${embedding.join(',')}]`;
+
+      const input: Record<string, unknown> = {
+        [chunkSingularCamel]: {
+          [parentFkCamel]: id,
+          content: chunk.content,
+          chunkIndex: chunk.chunk_index,
+          embedding: vectorStr,
+          ...(ownerId ? { ownerId } : {}),
+        },
+      };
+
+      await client.request(createMutation.toString(), { input }, headers);
+    }
+
+    ctx.log.info('Batch inserted', {
+      batch: Math.floor(i / BATCH_SIZE) + 1,
+      chunks: batch.length
+    });
+  }
+
+  ctx.log.info('Chunk generation complete', {
+    id,
+    chunks_created: chunks.length,
+    total_prompt_tokens: totalPromptTokens
   });
 
-  await client.connect();
-
-  try {
-    const selectQuery = `SELECT "${text_column}", owner_id FROM "${schema}"."${table}" WHERE id = $1::uuid`;
-    const selectResult = await client.query(selectQuery, [id]);
-
-    if (selectResult.rows.length === 0) {
-      throw new Error(`Record not found: ${schema}.${table} id=${id}`);
-    }
-
-    const text = selectResult.rows[0][text_column];
-    const ownerId = selectResult.rows[0].owner_id;
-    if (!text || typeof text !== 'string' || text.trim().length === 0) {
-      ctx.log.warn('No text to chunk', { id });
-      return { complete: true, chunks_created: 0 };
-    }
-
-    const chunks = splitText(text, chunk_strategy, chunk_size, chunk_overlap);
-    ctx.log.info('Text split into chunks', { count: chunks.length });
-
-    let totalPromptTokens = 0;
-
-    for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
-      const batch = chunks.slice(i, i + BATCH_SIZE);
-
-      const embeddings = await Promise.all(
-        batch.map(async (chunk) => {
-          const result = await embedder(chunk.content);
-          totalPromptTokens += result.promptTokens;
-          return result.embedding;
-        })
-      );
-
-      const insertQuery = `
-        INSERT INTO "${schema}"."${chunks_table}"
-        ("${parent_fk_column}", content, chunk_index, embedding, owner_id)
-        VALUES ($1::uuid, $2, $3, $4::vector, $5::uuid)
-      `;
-
-      for (let j = 0; j < batch.length; j++) {
-        const chunk = batch[j];
-        const embedding = embeddings[j];
-        const vectorStr = `[${embedding.join(',')}]`;
-
-        await client.query(insertQuery, [
-          id,
-          chunk.content,
-          chunk.chunk_index,
-          vectorStr,
-          ownerId
-        ]);
-      }
-
-      ctx.log.info('Batch inserted', {
-        batch: Math.floor(i / BATCH_SIZE) + 1,
-        chunks: batch.length
-      });
-    }
-
-    ctx.log.info('Chunk generation complete', {
-      id,
-      chunks_created: chunks.length,
-      total_prompt_tokens: totalPromptTokens
-    });
-
-    return {
-      complete: true,
-      chunks_created: chunks.length,
-      total_prompt_tokens: totalPromptTokens
-    };
-  } finally {
-    await client.end();
-  }
+  return {
+    complete: true,
+    chunks_created: chunks.length,
+    total_prompt_tokens: totalPromptTokens
+  };
 };
 
 export default handler;

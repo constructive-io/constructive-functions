@@ -1,12 +1,13 @@
 {
   "name": "generate-chunks",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "node-graphql",
   "port": 8085,
   "taskIdentifier": "chunk:generate_chunks",
   "description": "Split text into overlapping chunks and generate per-chunk vector embeddings",
   "dependencies": {
+    "@constructive-io/graphql-query": "^3.27.1",
     "graphile-llm": "^0.10.0",
-    "pg": "^8.11.0"
+    "inflekt": "^0.7.1"
   }
 }
