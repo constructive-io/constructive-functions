@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "type": "node-graphql",
   "port": 8086,
-  "taskIdentifier": "embed:generate_embedding",
+  "taskIdentifier": "generate_embedding",
   "description": "Generate vector embedding for a row's text fields",
   "dependencies": {
     "@constructive-io/graphql-query": "^3.27.1",

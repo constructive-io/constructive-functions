@@ -1,20 +1,25 @@
 import type { FunctionHandler } from '@constructive-io/fn-runtime';
 import { buildEmbedderFromEnv } from 'graphile-llm';
 import { TypedDocumentString } from '@constructive-io/graphql-query';
-import { singularize, toCamelCase, toPascalCase } from 'inflekt';
+import { toCamelCase, toPascalCase } from 'inflekt';
 import { GraphQLClient } from 'graphql-request';
 
 type EmbedPayload = {
   id: string;
   table: string;
   schema: string;
-  source_fields: string[];
-  target_field: string;
+  // New format
+  source_fields?: string[];
+  target_field?: string;
+  // Legacy format from trigger (field = target_field)
+  field?: string;
+  // Optional
+  source_field?: string;
   stale_field?: string;
 };
 
 type QueryResult = {
-  [key: string]: Record<string, unknown> | null;
+  [key: string]: { nodes: Array<Record<string, unknown>> } | null;
 };
 
 type UpdateResult = {
@@ -23,21 +28,23 @@ type UpdateResult = {
   } | null;
 };
 
-type UpdateVariables = {
-  input: {
-    id: string;
-    [patchField: string]: unknown;
-  };
+type UpdateInput = {
+  id: string;
+  patch: Record<string, unknown>;
 };
 
+const DEFAULT_SOURCE_FIELD = 'extracted_text';
+
 const buildSelectQuery = (tableName: string, sourceFields: string[]): TypedDocumentString<QueryResult, { id: string }> => {
-  const singularCamel = toCamelCase(singularize(tableName));
-  const fieldsCamel = sourceFields.map(f => toCamelCase(f)).join('\n        ');
+  const pluralCamel = toCamelCase(tableName);
+  const fieldsCamel = sourceFields.map(f => toCamelCase(f)).join('\n          ');
 
   const query = `
     query GetSourceFields($id: UUID!) {
-      ${singularCamel}(id: $id) {
-        ${fieldsCamel}
+      ${pluralCamel}(where: {id: {equalTo: $id}}, first: 1) {
+        nodes {
+          ${fieldsCamel}
+        }
       }
     }
   `;
@@ -45,13 +52,14 @@ const buildSelectQuery = (tableName: string, sourceFields: string[]): TypedDocum
   return new TypedDocumentString<QueryResult, { id: string }>(query);
 };
 
-const buildUpdateMutation = (tableName: string): TypedDocumentString<UpdateResult, UpdateVariables> => {
-  const singularCamel = toCamelCase(singularize(tableName));
-  const singularPascal = toPascalCase(singularize(tableName));
+const buildUpdateMutation = (tableName: string): TypedDocumentString<UpdateResult, UpdateInput> => {
+  const singularCamel = toCamelCase(tableName.replace(/s$/, ''));
+  const singularPascal = toPascalCase(tableName.replace(/s$/, ''));
+  const patchFieldName = `${singularCamel}Patch`;
 
   const query = `
-    mutation UpdateEmbedding($input: Update${singularPascal}Input!) {
-      update${singularPascal}(input: $input) {
+    mutation UpdateEmbedding($id: UUID!, $patch: ${singularPascal}Patch!) {
+      update${singularPascal}(input: {id: $id, ${patchFieldName}: $patch}) {
         ${singularCamel} {
           id
         }
@@ -59,25 +67,30 @@ const buildUpdateMutation = (tableName: string): TypedDocumentString<UpdateResul
     }
   `;
 
-  return new TypedDocumentString<UpdateResult, UpdateVariables>(query);
+  return new TypedDocumentString<UpdateResult, UpdateInput>(query);
 };
 
 const handler: FunctionHandler<EmbedPayload> = async (params, ctx) => {
-  const {
-    id,
-    table,
-    schema,
-    source_fields,
-    target_field,
-    stale_field = 'embedding_stale'
-  } = params;
+  const { id, table, schema } = params;
 
-  if (!id || !table || !schema || !source_fields || !target_field) {
-    throw new Error('Missing required fields: id, table, schema, source_fields, target_field');
+  if (!id || !table || !schema) {
+    throw new Error('Missing required fields: id, table, schema');
   }
 
-  if (!Array.isArray(source_fields) || source_fields.length === 0) {
-    throw new Error('source_fields must be a non-empty array');
+  // Handle both formats: new (source_fields/target_field) and legacy (field)
+  const targetField = params.target_field || params.field;
+  if (!targetField) {
+    throw new Error('Missing target_field or field');
+  }
+
+  // Derive source_fields: explicit > source_field > default
+  let sourceFields: string[];
+  if (params.source_fields && Array.isArray(params.source_fields) && params.source_fields.length > 0) {
+    sourceFields = params.source_fields;
+  } else if (params.source_field) {
+    sourceFields = [params.source_field];
+  } else {
+    sourceFields = [DEFAULT_SOURCE_FIELD];
   }
 
   const databaseId = ctx.job.databaseId;
@@ -88,8 +101,8 @@ const handler: FunctionHandler<EmbedPayload> = async (params, ctx) => {
   ctx.log.info('Starting embedding generation', {
     id,
     table: `${schema}.${table}`,
-    source_fields,
-    target_field
+    sourceFields,
+    targetField
   });
 
   const embedder = buildEmbedderFromEnv();
@@ -103,19 +116,21 @@ const handler: FunctionHandler<EmbedPayload> = async (params, ctx) => {
     'X-Schemata': schema,
   };
 
-  const selectQuery = buildSelectQuery(table, source_fields);
+  // Query source fields
+  const selectQuery = buildSelectQuery(table, sourceFields);
   const result = await client.request(selectQuery.toString(), { id }, headers);
 
-  const singularCamel = toCamelCase(singularize(table));
-  const record = result[singularCamel];
+  const pluralCamel = toCamelCase(table);
+  const connection = result[pluralCamel];
+  const record = connection?.nodes?.[0];
 
   if (!record) {
     throw new Error(`Record not found: ${schema}.${table} id=${id}`);
   }
 
+  // Collect text from source fields
   const textParts: string[] = [];
-
-  for (const field of source_fields) {
+  for (const field of sourceFields) {
     const fieldCamel = toCamelCase(field);
     const value = record[fieldCamel];
     if (value != null && typeof value === 'string' && value.trim().length > 0) {
@@ -129,37 +144,38 @@ const handler: FunctionHandler<EmbedPayload> = async (params, ctx) => {
   }
 
   const text = textParts.join('\n\n');
-  ctx.log.info('Text prepared for embedding', { id, text_length: text.length });
+  ctx.log.info('Text prepared for embedding', { id, textLength: text.length });
 
+  // Generate embedding
   const embResult = await embedder(text);
-  const vectorStr = `[${embResult.embedding.join(',')}]`;
 
+  // Update record with embedding
   const updateMutation = buildUpdateMutation(table);
-  const patchFieldName = `${singularCamel}Patch`;
-  const targetFieldCamel = toCamelCase(target_field);
-  const staleFieldCamel = toCamelCase(stale_field);
+  const targetFieldCamel = toCamelCase(targetField);
 
-  await client.request(updateMutation.toString(), {
-    input: {
-      id,
-      [patchFieldName]: {
-        [targetFieldCamel]: vectorStr,
-        [staleFieldCamel]: false,
-      },
-    },
-  }, headers);
+  const patch: Record<string, unknown> = {
+    [targetFieldCamel]: embResult.embedding,
+  };
+
+  // Add stale field if provided
+  if (params.stale_field) {
+    const staleFieldCamel = toCamelCase(params.stale_field);
+    patch[staleFieldCamel] = false;
+  }
+
+  await client.request(updateMutation.toString(), { id, patch }, headers);
 
   ctx.log.info('Embedding generation complete', {
     id,
-    prompt_tokens: embResult.promptTokens,
-    embedding_dim: embResult.embedding.length
+    promptTokens: embResult.promptTokens,
+    embeddingDim: embResult.embedding.length
   });
 
   return {
     complete: true,
     embedded: true,
-    prompt_tokens: embResult.promptTokens,
-    embedding_dim: embResult.embedding.length
+    promptTokens: embResult.promptTokens,
+    embeddingDim: embResult.embedding.length
   };
 };
 
