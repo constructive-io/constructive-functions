@@ -20,5 +20,4 @@ export type FunctionContext = {
   pool: Pool;
   withUserContext: <T>(actorId: string | undefined, fn: (client: PoolClient) => Promise<T>) => Promise<T>;
   log: Logger;
-  env: Record<string, string | undefined>;
 };
