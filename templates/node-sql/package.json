@@ -3,7 +3,10 @@
   "version": "{{version}}",
   "description": "{{description}}",
   "private": true,
-  "main": "dist/index.js",
+  "main": "index.js",
+  "publishConfig": {
+    "directory": "dist"
+  },
   "scripts": {
     "build": "makage build",
     "build:dev": "makage build --dev",
@@ -13,7 +16,8 @@
   "dependencies": {
     "@constructive-io/knative-job-fn": "workspace:^",
     "@pgpmjs/logger": "^1.0.0",
-    "pg": "^8.11.0"
+    "pg": "^8.11.0",
+    "pg-cache": "^3.11.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.4",
