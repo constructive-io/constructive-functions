@@ -1,20 +1,6 @@
 const mockQuery = jest.fn();
 const mockRelease = jest.fn();
 
-jest.mock('pg', () => ({
-  Pool: jest.fn().mockImplementation(() => ({
-    connect: jest.fn().mockResolvedValue({
-      query: mockQuery,
-      release: mockRelease,
-    }),
-  })),
-  Client: jest.fn().mockImplementation(() => ({
-    connect: jest.fn(),
-    query: mockQuery,
-    end: jest.fn(),
-  })),
-}));
-
 const createMockContext = () => {
   const mockClient = {
     query: mockQuery,
