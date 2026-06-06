@@ -1,25 +1,8 @@
 import { createJobApp } from '@constructive-io/knative-job-fn';
 import { createLogger } from '@pgpmjs/logger';
+import { getPgPool } from 'pg-cache';
 import { Pool, PoolClient } from 'pg';
 import handler from './handler';
-
-let pool: Pool | null = null;
-
-function getPool(): Pool {
-  if (!pool) {
-    pool = new Pool({
-      host: process.env.PGHOST,
-      port: Number(process.env.PGPORT || 5432),
-      database: process.env.PGDATABASE,
-      user: process.env.PGUSER,
-      password: process.env.PGPASSWORD,
-      max: Number(process.env.PGPOOL_MAX || 10),
-      idleTimeoutMillis: Number(process.env.PGPOOL_IDLE_TIMEOUT || 30000),
-      connectionTimeoutMillis: Number(process.env.PGPOOL_CONNECTION_TIMEOUT || 5000),
-    });
-  }
-  return pool;
-}
 
 function createWithUserContext(pool: Pool, databaseId: string | undefined) {
   return async function withUserContext<T>(
@@ -60,19 +43,18 @@ const log = createLogger('{{name}}');
 
 app.post('/', async (req: any, res: any, next: any) => {
   try {
-    const databaseId = req.get('X-Database-Id') || req.get('x-database-id') || process.env.DEFAULT_DATABASE_ID;
-    const currentPool = getPool();
+    const databaseId = req.get('X-Database-Id') || process.env.DEFAULT_DATABASE_ID;
+    const currentPool = getPgPool({});
 
     const context = {
       job: {
-        jobId: req.get('X-Job-Id') || req.get('x-job-id'),
-        workerId: req.get('X-Worker-Id') || req.get('x-worker-id'),
+        jobId: req.get('X-Job-Id'),
+        workerId: req.get('X-Worker-Id'),
         databaseId,
       },
       pool: currentPool,
       withUserContext: createWithUserContext(currentPool, databaseId),
       log,
-      env: process.env as Record<string, string | undefined>,
     };
 
     const params = req.body || {};
