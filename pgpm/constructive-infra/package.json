@@ -16,15 +16,16 @@
     "test": "jest",
     "test:watch": "jest --watch"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/constructive-io/constructive-functions"
+  },
   "dependencies": {
+    "@pgpm/database-jobs": "0.26.5",
     "@pgpm/inflection": "*",
     "@pgpm/stamps": "*"
   },
   "devDependencies": {
     "pgpm": "^4.26.1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/constructive-io/constructive-functions"
   }
 }

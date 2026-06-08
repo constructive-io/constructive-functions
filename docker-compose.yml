@@ -56,7 +56,36 @@ services:
         pgpm deploy --yes --database "$$PGDATABASE" --package metaschema
         pgpm deploy --yes --database "$$PGDATABASE" --package pgpm-database-jobs
 
-        echo "Done"
+        echo "Done (core packages)"
+
+  # Deploy the local constructive-infra package and seed function definitions.
+  # This runs after db-setup and mounts the local pgpm/ and scripts/ dirs.
+  platform-setup:
+    image: ghcr.io/constructive-io/constructive:latest
+    depends_on:
+      db-setup:
+        condition: service_completed_successfully
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}
+      PGDATABASE: constructive
+    volumes:
+      - ./pgpm:/workspace/pgpm:ro
+      - ./scripts:/workspace/scripts:ro
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
+        cd /workspace/pgpm
+        echo "Deploying constructive-infra..."
+        pgpm deploy --yes --database "$$PGDATABASE" --package constructive-infra
+
+        echo "Seeding function definitions..."
+        psql -h "$$PGHOST" -U "$$PGUSER" -d "$$PGDATABASE" \
+          -f /workspace/scripts/seed-functions.sql
+
+        echo "Platform setup done"
 
   graphql-server:
     image: ghcr.io/constructive-io/constructive:latest

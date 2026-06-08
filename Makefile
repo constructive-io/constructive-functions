@@ -1,4 +1,4 @@
-.PHONY: install build clean lint generate dev dev-fn dev-down dev-logs docker-build skaffold-dev skaffold-dev-knative
+.PHONY: install build clean lint generate dev dev-fn dev-down dev-logs docker-build skaffold-dev skaffold-dev-knative dev-compute setup-platform
 
 install:
 	node --experimental-strip-types scripts/generate.ts
@@ -16,15 +16,40 @@ lint:
 generate:
 	pnpm run generate
 
-# --- Local development ---
+# ═══════════════════════════════════════════════════════════════════════════════
+# Tier 1 — pgpm-local
+# ═══════════════════════════════════════════════════════════════════════════════
+# Postgres only (via pgpm docker). Functions + services run as local Node
+# processes. Fastest edit-run cycle.
+#
+# Quick start:
+#   pgpm docker start --image docker.io/constructiveio/postgres-plus:18
+#   eval "$(pgpm env)"
+#   make setup-platform          # deploy infra + seed functions
+#   make dev-compute             # start compute-service + functions
+
+setup-platform:
+	./scripts/setup-platform-db.sh
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Tier 2 — compose-local
+# ═══════════════════════════════════════════════════════════════════════════════
 # Infrastructure (postgres, db-setup, graphql-server, mailpit) runs in Docker.
 # Functions run as local Node processes for fast edit-run cycles.
+#
+# Quick start:
+#   make dev                     # docker compose up -d
+#   make dev-fn                  # start existing job-service + functions
+#   make dev-compute             # or start compute-service + functions
 
 dev:
 	docker compose up -d
 
 dev-fn:
 	node --experimental-strip-types scripts/dev.ts
+
+dev-compute:
+	node --experimental-strip-types scripts/dev-compute.ts
 
 dev-down:
 	docker compose down
@@ -39,7 +64,15 @@ setup-dev:
 setup-check:
 	./scripts/setup-dev.sh --check
 
-# --- Skaffold k8s development ---
+# ═══════════════════════════════════════════════════════════════════════════════
+# Tier 3 — k8s-local
+# ═══════════════════════════════════════════════════════════════════════════════
+# Everything runs in a local Kubernetes cluster via Skaffold.
+#
+# Quick start:
+#   make skaffold-dev            # plain k8s (no Knative needed)
+#   make skaffold-dev-knative    # full Knative setup
+
 # Plain k8s (Deployments + Services, no Knative operators needed)
 skaffold-dev:
 	skaffold dev -p local-simple

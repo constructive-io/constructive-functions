@@ -141,6 +141,89 @@ importers:
         specifier: ^5.1.6
         version: 5.9.3
 
+  job/compute-service:
+    dependencies:
+      '@constructive-io/compute-worker':
+        specifier: workspace:^
+        version: link:../compute-worker
+      '@constructive-io/job-pg':
+        specifier: ^2.5.4
+        version: 2.5.4
+      '@constructive-io/job-scheduler':
+        specifier: ^2.5.4
+        version: 2.5.4
+      '@constructive-io/job-utils':
+        specifier: ^2.5.4
+        version: 2.5.4
+      '@constructive-io/knative-job-fn':
+        specifier: workspace:^
+        version: link:../../packages/fn-app
+      '@constructive-io/knative-job-server':
+        specifier: workspace:^
+        version: link:../server
+      '@constructive-io/send-email-fn':
+        specifier: workspace:^
+        version: link:../../generated/send-email
+      '@constructive-io/send-verification-link-fn':
+        specifier: workspace:^
+        version: link:../../generated/send-verification-link
+      '@pgpmjs/env':
+        specifier: ^2.15.3
+        version: 2.17.0
+      '@pgpmjs/logger':
+        specifier: ^2.4.3
+        version: 2.5.2
+      async-retry:
+        specifier: 1.3.3
+        version: 1.3.3
+      pg:
+        specifier: 8.20.0
+        version: 8.20.0
+    devDependencies:
+      '@types/async-retry':
+        specifier: ^1.4.9
+        version: 1.4.9
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.16.0
+      makage:
+        specifier: ^0.1.12
+        version: 0.1.12
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+
+  job/compute-worker:
+    dependencies:
+      '@constructive-io/job-pg':
+        specifier: ^2.5.4
+        version: 2.5.4
+      '@constructive-io/job-utils':
+        specifier: ^2.5.4
+        version: 2.5.4
+      '@pgpmjs/logger':
+        specifier: ^2.4.3
+        version: 2.5.2
+      pg:
+        specifier: 8.20.0
+        version: 8.20.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.16.0
+      makage:
+        specifier: ^0.1.12
+        version: 0.1.12
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+
   job/server:
     dependencies:
       '@constructive-io/job-pg':
@@ -3064,9 +3147,6 @@ packages:
     peerDependencies:
       pg: '>=8.0'
 
-  pg-protocol@1.11.0:
-    resolution: {integrity: sha512-pfsxk2M9M3BuGgDOfuy37VNRRX3jmKgMjcvAcWqNDpZSf4cUmv8HSOl5ViRQFsfARFn0KuUQTgLxVMbNq5NW3g==}
-
   pg-protocol@1.13.0:
     resolution: {integrity: sha512-zzdvXfS6v89r6v7OcFCHfHlyG/wvry1ALxZo4LqgUoy7W9xhBDMaqOuMiF3qEV45VqsN6rdlcehHrfDtlCPc8w==}
 
@@ -4674,7 +4754,7 @@ snapshots:
   '@types/pg@8.16.0':
     dependencies:
       '@types/node': 22.19.3
-      pg-protocol: 1.11.0
+      pg-protocol: 1.13.0
       pg-types: 2.2.0
 
   '@types/qs@6.14.0': {}
@@ -7226,8 +7306,6 @@ snapshots:
   pg-pool@3.13.0(pg@8.20.0):
     dependencies:
       pg: 8.20.0
-
-  pg-protocol@1.11.0: {}
 
   pg-protocol@1.13.0: {}
 
