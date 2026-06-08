@@ -113,6 +113,75 @@ ok "EMAIL_SEND_USE_SMTP=$EMAIL_SEND_USE_SMTP"
 ok "SMTP_HOST=$SMTP_HOST:$SMTP_PORT"
 ok "SEND_EMAIL_DRY_RUN=$SEND_EMAIL_DRY_RUN"
 
+# ─── Step 4b: Check function secret/config coverage ──────────────────────────
+
+echo ""
+echo -e "  ${BOLD}Checking secret/config coverage:${NC}"
+
+# Build list of env vars from .env + current exports
+declare -A LOADED_VARS
+for var in EMAIL_SEND_USE_SMTP SMTP_HOST SMTP_PORT SMTP_FROM SEND_EMAIL_DRY_RUN \
+           SEND_VERIFICATION_LINK_DRY_RUN MAILGUN_API_KEY MAILGUN_DOMAIN \
+           MAILGUN_FROM MAILGUN_REPLY MAILGUN_KEY LOCAL_APP_PORT; do
+  [ -n "${!var+x}" ] && LOADED_VARS["$var"]=1
+done
+if [ -f "$ROOT_DIR/.env" ]; then
+  while IFS= read -r line; do
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "$line" ]] && continue
+    if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)= ]]; then
+      LOADED_VARS["${BASH_REMATCH[1]}"]=1
+    fi
+  done < "$ROOT_DIR/.env"
+fi
+
+# Query function requirements from DB
+FN_REQS=$(psql -d "$DB_NAME" -t -A -F '|' -c "
+  SELECT
+    name,
+    COALESCE(array_to_string(
+      ARRAY(SELECT (r).name FROM unnest(required_secrets) AS r), ','
+    ), '') AS secrets,
+    COALESCE(array_to_string(
+      ARRAY(SELECT (r).name FROM unnest(required_configs) AS r), ','
+    ), '') AS configs
+  FROM constructive_infra_public.platform_function_definitions
+  WHERE is_invocable = true
+  ORDER BY name
+" 2>/dev/null) || true
+
+TOTAL_MISSING=0
+if [ -n "$FN_REQS" ]; then
+  while IFS='|' read -r fn_name secrets configs; do
+    ALL_KEYS=""
+    [ -n "$secrets" ] && ALL_KEYS="$secrets"
+    [ -n "$configs" ] && { [ -n "$ALL_KEYS" ] && ALL_KEYS="$ALL_KEYS,$configs" || ALL_KEYS="$configs"; }
+
+    FN_SET=0
+    FN_MISS=0
+    IFS=',' read -ra KEYS <<< "$ALL_KEYS"
+    for key in "${KEYS[@]}"; do
+      [ -z "$key" ] && continue
+      if [ -n "${LOADED_VARS[$key]+x}" ]; then
+        ((FN_SET++)) || true
+      else
+        ((FN_MISS++)) || true
+        ((TOTAL_MISSING++)) || true
+      fi
+    done
+    if [ "$FN_MISS" -gt 0 ]; then
+      warn "$fn_name: $FN_SET/${#KEYS[@]} secrets/configs set ($FN_MISS missing)"
+    else
+      ok "$fn_name: all $FN_SET secrets/configs set"
+    fi
+  done <<< "$FN_REQS"
+fi
+
+if [ "$TOTAL_MISSING" -gt 0 ]; then
+  warn "$TOTAL_MISSING secret(s)/config(s) missing — functions may use defaults"
+  echo "  Run 'make check-env' for details"
+fi
+
 # ─── Step 5: Start compute-service ──────────────────────────────────────────
 
 step 5 "Starting compute-service + functions"
