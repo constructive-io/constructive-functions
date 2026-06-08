@@ -57,7 +57,7 @@ export function JobsPanel() {
   );
 }
 
-const DEFAULT_PAYLOADS: Record<string, Record<string, unknown>> = {
+const HARDCODED_PAYLOADS: Record<string, Record<string, unknown>> = {
   'send-email': {
     to: 'test@example.com',
     subject: 'Hello from Platform UI',
@@ -71,6 +71,39 @@ const DEFAULT_PAYLOADS: Record<string, Record<string, unknown>> = {
   },
 };
 
+function defaultFromSchema(schema: Record<string, unknown> | null | undefined): Record<string, unknown> | null {
+  if (!schema || typeof schema !== 'object') return null;
+  const props = (schema as any).properties;
+  if (!props || typeof props !== 'object') return null;
+  const result: Record<string, unknown> = {};
+  for (const [key, def] of Object.entries(props) as [string, any][]) {
+    if (def.enum) { result[key] = def.enum[0]; continue; }
+    const t = Array.isArray(def.type) ? def.type[0] : def.type;
+    if (def.format === 'email') result[key] = 'test@example.com';
+    else if (def.format === 'uuid') result[key] = '00000000-0000-0000-0000-000000000000';
+    else if (t === 'string') result[key] = '';
+    else if (t === 'number' || t === 'integer') result[key] = 0;
+    else if (t === 'boolean') result[key] = false;
+    else result[key] = null;
+  }
+  return result;
+}
+
+interface FnInfo {
+  name: string;
+  taskIdentifier: string;
+  isInvocable: boolean;
+  description: string;
+  payloadSchema: Record<string, unknown> | null;
+}
+
+function getDefaultPayload(fn: FnInfo): Record<string, unknown> {
+  if (HARDCODED_PAYLOADS[fn.taskIdentifier]) return HARDCODED_PAYLOADS[fn.taskIdentifier];
+  const fromSchema = defaultFromSchema(fn.payloadSchema);
+  if (fromSchema) return fromSchema;
+  return { key: 'value' };
+}
+
 function NewJobForm({ onCreated }: { onCreated: () => void }) {
   const { data: fnData } = usePlatformFunctionDefinitionsQuery({
     selection: {
@@ -79,15 +112,11 @@ function NewJobForm({ onCreated }: { onCreated: () => void }) {
         taskIdentifier: true,
         isInvocable: true,
         description: true,
+        payloadSchema: true,
       },
     },
   });
-  const functions = (fnData?.platformFunctionDefinitions?.nodes ?? []) as Array<{
-    name: string;
-    taskIdentifier: string;
-    isInvocable: boolean;
-    description: string;
-  }>;
+  const functions = (fnData?.platformFunctionDefinitions?.nodes ?? []) as FnInfo[];
   const invocable = functions.filter((f) => f.isInvocable);
 
   const [taskId, setTaskId] = useState('');
@@ -108,15 +137,14 @@ function NewJobForm({ onCreated }: { onCreated: () => void }) {
     if (invocable.length > 0 && !taskId) {
       const first = invocable[0];
       setTaskId(first.taskIdentifier);
-      const defaultPayload = DEFAULT_PAYLOADS[first.taskIdentifier] || { key: 'value' };
-      setPayload(JSON.stringify(defaultPayload, null, 2));
+      setPayload(JSON.stringify(getDefaultPayload(first), null, 2));
     }
   }, [invocable, taskId]);
 
   const handleFunctionChange = (newTaskId: string) => {
     setTaskId(newTaskId);
-    const defaultPayload = DEFAULT_PAYLOADS[newTaskId] || { key: 'value' };
-    setPayload(JSON.stringify(defaultPayload, null, 2));
+    const fn = invocable.find((f) => f.taskIdentifier === newTaskId);
+    setPayload(JSON.stringify(fn ? getDefaultPayload(fn) : { key: 'value' }, null, 2));
     setError(null);
   };
 

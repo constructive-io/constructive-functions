@@ -11,6 +11,45 @@
 
 const BASE = '';
 
+export interface PlatformFunction {
+  name: string;
+  task_identifier: string;
+  service_url: string;
+  is_invocable: boolean;
+  is_built_in: boolean;
+  scope: string;
+  description: string;
+  required_secrets: Array<{ name: string; required: boolean }>;
+  required_configs: Array<{ name: string; required: boolean }>;
+  payload_schema: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PortDef {
+  name: string;
+  type: string;
+  schema?: Record<string, unknown>;
+  description?: string;
+}
+
+export interface PropDef {
+  name: string;
+  type: string;
+  required?: boolean;
+  description?: string;
+}
+
+export interface NodeDefinition {
+  context: string;
+  name: string;
+  category?: string;
+  description?: string;
+  inputs?: PortDef[];
+  outputs?: PortDef[];
+  props?: PropDef[];
+}
+
 export interface PlatformStatus {
   database: string;
   postgres: string;
@@ -83,6 +122,7 @@ export interface SyncResult {
 
 export const api = {
   getStatus: () => fetchJSON<PlatformStatus>('/api/status'),
+  getDefinitions: () => fetchJSON<NodeDefinition[]>('/api/definitions'),
 
   getEnv: () => fetchJSON<EnvFile>('/api/env'),
   saveEnv: (vars: Record<string, string>) =>

@@ -78,6 +78,11 @@ function sqlArray(items: Requirement[] | undefined, typeCast: string): string {
   return `ARRAY[\n${rows.join(',\n')}\n    ]::${typeCast}[]`;
 }
 
+function sqlJsonb(obj: Record<string, unknown> | undefined): string {
+  if (!obj || Object.keys(obj).length === 0) return 'NULL';
+  return `'${JSON.stringify(obj).replace(/'/g, "''")}'::jsonb`;
+}
+
 function generateValueBlock(m: FunctionManifest): string {
   const taskId = m.taskIdentifier || m.name;
   const scope = m.scope || 'platform';
@@ -85,6 +90,7 @@ function generateValueBlock(m: FunctionManifest): string {
   const port = m.port || 8080;
   const secrets = sqlArray(m.requiredSecrets, 'constructive_infra_public.function_requirement');
   const configs = sqlArray(m.requiredConfigs, 'constructive_infra_public.function_requirement');
+  const schema = sqlJsonb(m.payloadSchema);
 
   return `  (
     '${m.name}',
@@ -94,7 +100,8 @@ function generateValueBlock(m: FunctionManifest): string {
     '${desc}',
     (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
     ${secrets},
-    ${configs}
+    ${configs},
+    ${schema}
   )`;
 }
 
@@ -116,7 +123,7 @@ BEGIN;
 
 INSERT INTO constructive_infra_public.platform_function_definitions
   (name, task_identifier, service_url, is_invocable, is_built_in, scope, description,
-   namespace_id, required_secrets, required_configs)
+   namespace_id, required_secrets, required_configs, payload_schema)
 VALUES
 ${values}
 ON CONFLICT (scope, name) DO UPDATE SET
@@ -125,7 +132,8 @@ ON CONFLICT (scope, name) DO UPDATE SET
   namespace_id     = EXCLUDED.namespace_id,
   required_secrets = EXCLUDED.required_secrets,
   required_configs = EXCLUDED.required_configs,
-  description      = EXCLUDED.description;
+  description      = EXCLUDED.description,
+  payload_schema   = EXCLUDED.payload_schema;
 
 COMMIT;
 `;
@@ -188,7 +196,8 @@ function main(): void {
     const port = m.port || 8080;
     const secrets = (m.requiredSecrets || []).length;
     const configs = (m.requiredConfigs || []).length;
-    console.log(`  ${m.name} → :${port} (${secrets} secrets, ${configs} configs)`);
+    const hasSchema = m.payloadSchema && Object.keys(m.payloadSchema).length > 0;
+    console.log(`  ${m.name} → :${port} (${secrets} secrets, ${configs} configs${hasSchema ? ', has schema' : ''})`);
   }
 
   if (dryRun) {

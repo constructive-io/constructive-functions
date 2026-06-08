@@ -22,6 +22,7 @@ export function FunctionsPanel({ onNavigate }: { onNavigate?: (tab: Tab) => void
         isInvocable: true,
         scope: true,
         description: true,
+        payloadSchema: true,
       },
     },
     refetchInterval: false,
@@ -163,6 +164,30 @@ function FunctionCard({ fn, onNavigate }: { fn: PlatformFunctionDefinition; onNa
           </span>
         )}
       </div>
+
+      {/* Payload schema (FBP port definition) */}
+      {(fn as any).payloadSchema && ((fn as any).payloadSchema as any).properties && (
+        <div className="border-t border-zinc-800 pt-2 mt-1">
+          <div className="text-[11px] text-zinc-500 mb-1 font-semibold">Payload Schema</div>
+          <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[11px]">
+            {Object.entries(((fn as any).payloadSchema as any).properties).map(([key, def]: [string, any]) => {
+              const required = (((fn as any).payloadSchema as any).required || []).includes(key);
+              return (
+                <div key={key} className="contents">
+                  <span className="font-mono text-zinc-300">
+                    {key}{required && <span className="text-red-400">*</span>}
+                  </span>
+                  <span className="text-zinc-500">
+                    {def.enum ? def.enum.join(' | ') : Array.isArray(def.type) ? def.type.join(' | ') : def.type || 'any'}
+                    {def.format && <span className="text-zinc-600 ml-1">({def.format})</span>}
+                    {def.description && <span className="text-zinc-600 ml-1">— {def.description}</span>}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Inline trigger form */}
       {showTrigger && (

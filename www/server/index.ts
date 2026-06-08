@@ -27,6 +27,74 @@ const pool = new Pool({
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+function parseRequirements(raw: string): Array<{ name: string; required: boolean }> {
+  if (!raw || raw === '{}') return [];
+  const inner = raw.slice(1, -1);
+  const items: Array<{ name: string; required: boolean }> = [];
+  for (const match of inner.matchAll(/"?\(([^,]+),(t|f)\)"?/g)) {
+    items.push({ name: match[1], required: match[2] === 't' });
+  }
+  return items;
+}
+
+// ─── REST API — FBP Node Definitions ────────────────────────────────────────
+
+app.get('/api/definitions', async (_req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT name, task_identifier, service_url, is_invocable,
+             scope, description, required_secrets, required_configs,
+             payload_schema
+      FROM constructive_infra_public.platform_function_definitions
+      ORDER BY name
+    `);
+
+    const definitions = result.rows.map((r: any) => {
+      const secrets = parseRequirements(r.required_secrets);
+      const configs = parseRequirements(r.required_configs);
+      const schema = r.payload_schema;
+
+      const props = [
+        ...secrets.map((s: { name: string; required: boolean }) => ({
+          name: s.name,
+          type: 'secret',
+          required: s.required,
+          description: `Secret: ${s.name}`,
+        })),
+        ...configs.map((c: { name: string; required: boolean }) => ({
+          name: c.name,
+          type: 'config',
+          required: c.required,
+          description: `Config: ${c.name}`,
+        })),
+      ];
+
+      const inputs = [{
+        name: 'payload',
+        type: 'json',
+        description: 'Job payload object',
+        ...(schema ? { schema } : {}),
+      }];
+
+      return {
+        context: r.task_identifier,
+        name: r.name,
+        category: r.scope || 'default',
+        description: r.description,
+        inputs,
+        outputs: [{ name: 'result', type: 'json', description: 'Handler return value' }],
+        props: props.length > 0 ? props : undefined,
+      };
+    });
+
+    res.json(definitions);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── .env helpers (must be declared before Secret Values endpoints) ────────
+
 const PROJECT_ROOT = process.env.PROJECT_ROOT || resolve(process.cwd(), '..');
 const ENV_PATH = resolve(PROJECT_ROOT, '.env');
 
