@@ -1,0 +1,48 @@
+{
+  "name": "@constructive-io/functions-schema",
+  "version": "0.0.1",
+  "description": "Exported GraphQL SDL for constructive-functions infra schemas (constructive_infra_public)",
+  "author": "Constructive <developers@constructive.io>",
+  "license": "SEE LICENSE IN LICENSE",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "schemas",
+    "introspection",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/constructive-io/constructive-functions"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist",
+    "pregenerate": "rimraf schemas/*.graphql",
+    "generate": "pnpm run pregenerate && tsx scripts/generate-schemas.ts",
+    "generate:introspection": "rimraf introspection/*.json && tsx scripts/generate-introspection.ts",
+    "lint": "eslint . --fix"
+  },
+  "keywords": [
+    "graphql",
+    "schema",
+    "sdl",
+    "constructive",
+    "postgraphile",
+    "pgpm"
+  ],
+  "devDependencies": {
+    "@pgpmjs/core": "^6.21.0",
+    "@types/node": "^22.10.4",
+    "graphile-schema": "^1.22.1",
+    "pgsql-client": "^3.16.0",
+    "pgsql-seed": "^2.16.0",
+    "rimraf": "^5.0.10",
+    "tsx": "^4.19.0",
+    "typescript": "^5.1.6"
+  }
+}

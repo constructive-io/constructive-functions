@@ -136,3 +136,25 @@ pnpm build        # Recompile
 - The `generated/` directory is entirely gitignored
 - Templates use `{{name}}`, `{{version}}`, `{{description}}` placeholders
 - Generator supports `--only=<name>` for single-function generation
+
+## SDK / ORM Generation (`sdk/`)
+
+Typed ORM clients over the `constructive_infra_public` schema, generated with the
+same pgpm → SDL → codegen pipeline as `constructive-db` (Pattern A):
+
+- `sdk/functions-schema` — deploys `pgpm/constructive-infra` to an **ephemeral
+  Postgres**, introspects it via PostGraphile, and writes per-target SDL to
+  `schemas/*.graphql`. Requires `docker.io/constructiveio/postgres-plus:18`.
+- `sdk/functions-sdk` — runs `@constructive-io/graphql-codegen` over those SDL
+  files to emit a typed ORM at `src/<target>/` plus the `orm-<target>` skill.
+
+```bash
+pnpm run generate:schema   # pgpm module -> ephemeral DB -> schemas/*.graphql
+pnpm run generate:sdk      # schemas/*.graphql -> sdk/functions-sdk/src/*
+pnpm run generate:orm      # both, in order
+```
+
+**Generated — DO NOT EDIT** (regenerate via the commands above after pgpm changes):
+- `sdk/functions-schema/schemas/*.graphql`, `sdk/functions-schema/src/index.ts`
+- `sdk/functions-sdk/src/**`
+- `.agents/skills/orm-*/`

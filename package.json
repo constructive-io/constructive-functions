@@ -15,6 +15,9 @@
   "scripts": {
     "generate": "node --experimental-strip-types scripts/generate.ts",
     "generate:all": "node --experimental-strip-types scripts/generate.ts",
+    "generate:schema": "pnpm --filter @constructive-io/functions-schema run generate",
+    "generate:sdk": "pnpm --filter @constructive-io/functions-sdk run generate",
+    "generate:orm": "pnpm run generate:schema && pnpm run generate:sdk",
     "clean": "pnpm -r run clean",
     "build": "pnpm -r run build",
     "docker:build": "node --experimental-strip-types scripts/docker-build.ts --all",

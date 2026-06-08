@@ -7,7 +7,13 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['**/dist/**', '**/node_modules/**']
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      // Generated SDK output (codegen artifacts — do not lint or hand-edit)
+      'sdk/functions-sdk/src/**',
+      'sdk/functions-schema/src/**'
+    ]
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

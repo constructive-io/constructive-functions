@@ -1,0 +1,48 @@
+{
+  "name": "@constructive-io/functions-sdk",
+  "version": "0.0.1",
+  "description": "Typed GraphQL ORM client for constructive-functions infra schemas, generated from SDL",
+  "author": "Constructive <developers@constructive.io>",
+  "license": "SEE LICENSE IN LICENSE",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/constructive-io/constructive-functions"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist",
+    "generate": "rimraf src/index.ts && tsx scripts/generate-sdk.ts",
+    "lint": "eslint . --fix"
+  },
+  "keywords": [
+    "graphql",
+    "sdk",
+    "orm",
+    "constructive",
+    "postgraphile"
+  ],
+  "dependencies": {
+    "@0no-co/graphql.web": "^1.1.2",
+    "@constructive-io/graphql-query": "^3.27.1",
+    "@constructive-io/graphql-types": "^3.12.0",
+    "gql-ast": "^3.11.0",
+    "graphql": "16.13.0"
+  },
+  "devDependencies": {
+    "@constructive-io/functions-schema": "workspace:^",
+    "@constructive-io/graphql-codegen": "^4.47.0",
+    "@types/node": "^22.10.4",
+    "rimraf": "^5.0.10",
+    "tsx": "^4.19.0",
+    "typescript": "^5.1.6"
+  }
+}
