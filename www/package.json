@@ -8,14 +8,17 @@
     "dev:server": "node --experimental-strip-types server/index.ts",
     "dev:client": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "codegen": "graphql-codegen generate --react-query --endpoint http://localhost:3002/graphql --output src/generated --schema-enabled"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.0",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
     "@xyflow/react": "^12.11.0",
     "commander": "^15.0.0",
     "express": "^4.21.0",
+    "graphql": "16.13.0",
     "kubernetesjs": "^0.7.7",
     "lucide-react": "^0.525.0",
     "pg": "^8.13.0",
@@ -24,6 +27,7 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@constructive-io/graphql-codegen": "^4.47.6",
     "@tailwindcss/vite": "^4.1.0",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",

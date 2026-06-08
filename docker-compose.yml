@@ -105,7 +105,7 @@ services:
       PGDATABASE: constructive
       # API configuration — header-based routing (X-Api-Name, X-Database-Id)
       API_ENABLE_SERVICES: "true"
-      API_EXPOSED_SCHEMAS: "metaschema_public,services_public,constructive_auth_public"
+      API_EXPOSED_SCHEMAS: "metaschema_public,services_public,constructive_auth_public,constructive_infra_public,app_jobs"
       API_IS_PUBLIC: "false"
       API_META_SCHEMAS: "metaschema_public,services_public,metaschema_modules_public,constructive_auth_public"
       API_ANON_ROLE: "administrator"

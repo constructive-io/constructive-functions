@@ -13,68 +13,19 @@ const server = createServer(app);
 app.use(express.json());
 
 // ─── Postgres pool ──────────────────────────────────────────────────────────
+// Still used for /api/status (aggregate counts), /api/secret-values (DB
+// storage), and .env↔DB sync. Data-read routes (functions, secrets, jobs,
+// invocations, namespaces) are served by the GraphQL server on port 3002.
 
 const pool = new Pool({
   host: process.env.PGHOST || 'localhost',
   port: parseInt(process.env.PGPORT || '5432', 10),
   user: process.env.PGUSER || 'postgres',
   password: process.env.PGPASSWORD || 'password',
-  database: process.env.PGDATABASE || 'constructive-functions-db1',
+  database: process.env.PGDATABASE || 'constructive',
 });
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-function parseRequirements(raw: string): Array<{ name: string; required: boolean }> {
-  if (!raw || raw === '{}') return [];
-  const inner = raw.slice(1, -1);
-  const items: Array<{ name: string; required: boolean }> = [];
-  for (const match of inner.matchAll(/"?\(([^,]+),(t|f)\)"?/g)) {
-    items.push({ name: match[1], required: match[2] === 't' });
-  }
-  return items;
-}
-
-// ─── REST API — Functions ───────────────────────────────────────────────────
-
-app.get('/api/functions', async (_req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT name, task_identifier, service_url, is_invocable, is_built_in,
-             scope, description, required_secrets, required_configs,
-             namespace_id,
-             (SELECT n.name FROM constructive_infra_public.platform_namespaces n WHERE n.id = f.namespace_id) as namespace,
-             created_at, updated_at
-      FROM constructive_infra_public.platform_function_definitions f
-      ORDER BY name
-    `);
-    const rows = result.rows.map((r: any) => ({
-      ...r,
-      required_secrets: parseRequirements(r.required_secrets),
-      required_configs: parseRequirements(r.required_configs),
-    }));
-    res.json(rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ─── REST API — Secrets ─────────────────────────────────────────────────────
-
-app.get('/api/secrets', async (_req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT name, description, is_built_in, database_id,
-             created_at, updated_at
-      FROM constructive_infra_public.platform_secret_definitions
-      ORDER BY name
-    `);
-    res.json(result.rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ─── .env helpers (must be declared before Secret Values endpoints) ────────
 
 const PROJECT_ROOT = process.env.PROJECT_ROOT || resolve(process.cwd(), '..');
 const ENV_PATH = resolve(PROJECT_ROOT, '.env');
@@ -132,7 +83,6 @@ function writeDotEnv(filePath: string, vars: Record<string, string>): void {
     }
     lines.push('');
   }
-  // Write remaining keys not in any group
   const remaining = Object.entries(vars).filter(([k]) => !written.has(k));
   if (remaining.length > 0) {
     lines.push('# --- Other ---');
@@ -263,10 +213,8 @@ app.post('/api/env', async (req, res) => {
       res.status(400).json({ error: 'Body must contain { vars: { KEY: "value", ... } }' });
       return;
     }
-    // Merge with existing .env so we don't lose keys not in the request
     const existing = parseDotEnv(ENV_PATH);
     const merged = { ...existing, ...vars };
-    // Remove keys explicitly set to empty string if they didn't exist before
     for (const [k, v] of Object.entries(merged)) {
       if (v === '' && !(k in existing)) delete merged[k];
     }
@@ -291,72 +239,6 @@ app.post('/api/env', async (req, res) => {
     }
 
     res.json({ ok: true, path: ENV_PATH, count: Object.keys(merged).length });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ─── REST API — Namespaces ──────────────────────────────────────────────────
-
-app.get('/api/namespaces', async (_req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT id, name, namespace_name, description, is_active,
-             created_at, updated_at
-      FROM constructive_infra_public.platform_namespaces
-      ORDER BY name
-    `);
-    res.json(result.rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ─── REST API — Jobs ────────────────────────────────────────────────────────
-
-app.get('/api/jobs', async (_req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT id, task_identifier, payload, priority, attempts, max_attempts,
-             locked_by, locked_at, last_error, created_at, updated_at
-      FROM app_jobs.jobs
-      ORDER BY id DESC
-      LIMIT 50
-    `);
-    res.json(result.rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/jobs', async (req, res) => {
-  try {
-    const { task_identifier, payload } = req.body;
-    const result = await pool.query(
-      `INSERT INTO app_jobs.jobs (task_identifier, payload)
-       VALUES ($1, $2::json)
-       RETURNING id, task_identifier, payload, created_at`,
-      [task_identifier, JSON.stringify(payload)]
-    );
-    res.json(result.rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ─── REST API — Invocations ─────────────────────────────────────────────────
-
-app.get('/api/invocations', async (_req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT id, function_name, job_id, worker_id, status,
-             started_at, completed_at, duration_ms, error_message,
-             created_at
-      FROM constructive_infra_public.platform_function_invocations
-      ORDER BY created_at DESC
-      LIMIT 50
-    `);
-    res.json(result.rows);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -505,7 +387,8 @@ wss.on('connection', (ws: WebSocket) => {
 server.listen(PORT, () => {
   console.log(`\n  Platform UI server: http://localhost:${PORT}`);
   console.log(`  Terminal WebSocket: ws://localhost:${PORT}/ws/terminal`);
-  console.log(`  API endpoints:     http://localhost:${PORT}/api/{status,functions,jobs,invocations,secrets,secret-values,namespaces}`);
+  console.log(`  REST API:          http://localhost:${PORT}/api/{status,env,secret-values,run}`);
   console.log(`  K8s proxy:         http://localhost:${PORT}/api/k8s/* → ${K8S_API}`);
-  console.log(`  Database:          ${process.env.PGDATABASE || 'constructive-functions-db1'}\n`);
+  console.log(`  GraphQL:           http://localhost:3002/graphql (proxied via Vite at /graphql)`);
+  console.log(`  Database:          ${process.env.PGDATABASE || 'constructive'}\n`);
 });

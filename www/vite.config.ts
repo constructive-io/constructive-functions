@@ -12,6 +12,7 @@ export default defineConfig({
         target: 'ws://localhost:3456',
         ws: true,
       },
+      '/graphql': 'http://localhost:3002',
     },
   },
 });

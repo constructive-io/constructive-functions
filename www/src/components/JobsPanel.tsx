@@ -1,22 +1,13 @@
-import { useEffect, useState, useCallback } from 'react';
-import { api, type Job } from '../lib/api';
+import { useState } from 'react';
 import { RefreshCw, Plus, Send, Clock, AlertCircle } from 'lucide-react';
+import { useAllJobs, useCreateJob } from '../generated/hooks';
+import type { Job } from '../generated/types';
 
 export function JobsPanel() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: jobs = [], isLoading, refetch } = useAllJobs({
+    refetchInterval: 3000,
+  });
   const [showForm, setShowForm] = useState(false);
-
-  const refresh = useCallback(() => {
-    setLoading(true);
-    api.getJobs().then(setJobs).catch(() => {}).finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    refresh();
-    const id = setInterval(refresh, 3000);
-    return () => clearInterval(id);
-  }, [refresh]);
 
   return (
     <div className="flex flex-col h-full">
@@ -30,19 +21,19 @@ export function JobsPanel() {
             <Plus size={14} />
           </button>
           <button
-            onClick={refresh}
+            onClick={() => refetch()}
             className="p-1 rounded hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors"
           >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
           </button>
         </div>
       </div>
-      {showForm && <NewJobForm onCreated={() => { setShowForm(false); refresh(); }} />}
+      {showForm && <NewJobForm onCreated={() => { setShowForm(false); refetch(); }} />}
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {jobs.map((job) => (
           <JobRow key={job.id} job={job} />
         ))}
-        {!loading && jobs.length === 0 && (
+        {!isLoading && jobs.length === 0 && (
           <p className="text-zinc-500 text-sm">No jobs yet.</p>
         )}
       </div>
@@ -55,18 +46,13 @@ function NewJobForm({ onCreated }: { onCreated: () => void }) {
   const [to, setTo] = useState('test@example.com');
   const [subject, setSubject] = useState('Hello from Platform UI');
   const [html, setHtml] = useState('<p>Test email from the constructive platform UI</p>');
-  const [sending, setSending] = useState(false);
 
-  const submit = async () => {
-    setSending(true);
-    try {
-      await api.createJob(taskId, { to, subject, html });
-      onCreated();
-    } catch {
-      // error handling could go here
-    } finally {
-      setSending(false);
-    }
+  const createJob = useCreateJob({
+    onSuccess: () => onCreated(),
+  });
+
+  const submit = () => {
+    createJob.mutate({ taskIdentifier: taskId, payload: { to, subject, html } });
   };
 
   return (
@@ -111,37 +97,37 @@ function NewJobForm({ onCreated }: { onCreated: () => void }) {
       </div>
       <button
         onClick={submit}
-        disabled={sending}
+        disabled={createJob.isPending}
         className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded text-sm text-white transition-colors"
       >
         <Send size={12} />
-        {sending ? 'Sending...' : 'Create Job'}
+        {createJob.isPending ? 'Sending...' : 'Create Job'}
       </button>
     </div>
   );
 }
 
 function JobRow({ job }: { job: Job }) {
-  const isLocked = !!job.locked_by;
-  const hasError = !!job.last_error;
-  const age = timeSince(new Date(job.created_at));
+  const isLocked = !!job.lockedBy;
+  const hasError = !!job.lastError;
+  const age = timeSince(new Date(job.createdAt));
 
   return (
     <div className="flex items-center gap-3 rounded border border-zinc-800 bg-zinc-900/30 px-3 py-2 text-sm">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-zinc-200">{job.task_identifier}</span>
+          <span className="font-mono text-zinc-200">{job.taskIdentifier}</span>
           <span className="text-xs text-zinc-600">#{job.id}</span>
         </div>
         {hasError && (
           <div className="flex items-center gap-1 text-xs text-red-400 mt-0.5">
             <AlertCircle size={10} />
-            <span className="truncate">{job.last_error}</span>
+            <span className="truncate">{job.lastError}</span>
           </div>
         )}
       </div>
       <div className="flex items-center gap-2 text-xs text-zinc-500 shrink-0">
-        <span>{job.attempts}/{job.max_attempts}</span>
+        <span>{job.attempts}/{job.maxAttempts}</span>
         {isLocked && (
           <span className="px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-400">locked</span>
         )}

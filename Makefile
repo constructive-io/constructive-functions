@@ -1,7 +1,7 @@
 .PHONY: install build clean lint generate \
        up down status verify-platform check-env setup-platform \
        up\:email-job down\:email-job \
-       up\:www \
+       up\:www up\:server codegen \
        dev dev-fn dev-compute dev-down dev-logs setup-dev setup-check \
        secrets\:sync \
        skaffold-dev skaffold-dev-knative docker-build
@@ -49,6 +49,25 @@ down\:email-job:
 
 up\:www:
 	./scripts/www-up.sh $(DB_NAME)
+
+up\:server:
+	docker compose up -d graphql-server
+	@echo "GraphQL server starting on http://localhost:3002/graphql"
+	@echo "Waiting for server to be ready..."
+	@for i in 1 2 3 4 5 6 7 8 9 10; do \
+		if curl -sf http://localhost:3002/graphql -o /dev/null 2>/dev/null; then \
+			echo "GraphQL server is ready."; \
+			break; \
+		fi; \
+		sleep 2; \
+	done
+
+codegen:
+	cd www && npx @constructive-io/graphql-codegen generate \
+		--react-query \
+		--endpoint http://localhost:3002/graphql \
+		--output src/generated \
+		--schema-enabled
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Tier 1 — pgpm-local

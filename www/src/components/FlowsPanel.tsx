@@ -16,7 +16,8 @@ import {
   type NodeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { api, type PlatformFunction } from '../lib/api';
+import { useAllPlatformFunctions } from '../generated/hooks';
+import type { PlatformFunctionDefinition } from '../generated/types';
 import { RefreshCw, Save, Trash2, Zap, Lock, Settings } from 'lucide-react';
 
 const STORAGE_KEY = 'constructive-flows';
@@ -92,7 +93,17 @@ const nodeTypes: NodeTypes = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function functionToNode(fn: PlatformFunction, position: { x: number; y: number }): RFNode<FunctionNodeData> {
+function parseRequirements(raw: string): Array<{ name: string; required: boolean }> {
+  if (!raw || raw === '{}') return [];
+  const inner = raw.slice(1, -1);
+  const items: Array<{ name: string; required: boolean }> = [];
+  for (const match of inner.matchAll(/"?\(([^,]+),(t|f)\)"?/g)) {
+    items.push({ name: match[1], required: match[2] === 't' });
+  }
+  return items;
+}
+
+function functionToNode(fn: PlatformFunctionDefinition, position: { x: number; y: number }): RFNode<FunctionNodeData> {
   return {
     id: `${fn.name}-${Date.now()}`,
     type: 'functionNode',
@@ -100,11 +111,11 @@ function functionToNode(fn: PlatformFunction, position: { x: number; y: number }
     data: {
       label: fn.name,
       description: fn.description || '',
-      taskIdentifier: fn.task_identifier,
+      taskIdentifier: fn.taskIdentifier,
       scope: fn.scope || 'default',
-      isInvocable: fn.is_invocable,
-      secretsCount: fn.required_secrets?.length || 0,
-      configsCount: fn.required_configs?.length || 0,
+      isInvocable: fn.isInvocable,
+      secretsCount: parseRequirements(fn.requiredSecrets).length,
+      configsCount: parseRequirements(fn.requiredConfigs).length,
     },
   };
 }
@@ -125,8 +136,7 @@ function saveFlows(flows: FlowData[]) {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function FlowsPanel() {
-  const [functions, setFunctions] = useState<PlatformFunction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: functions = [], isLoading: loading } = useAllPlatformFunctions({ refetchInterval: false });
   const [flows, setFlowsList] = useState<FlowData[]>(loadFlows);
   const [activeFlowIdx, setActiveFlowIdx] = useState<number | null>(
     loadFlows().length > 0 ? 0 : null
@@ -136,20 +146,11 @@ export function FlowsPanel() {
   const [nodes, setNodes, onNodesChange] = useNodesState<RFNode<FunctionNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<RFEdge>([]);
 
-  // Load functions from API
-  useEffect(() => {
-    setLoading(true);
-    api.getFunctions()
-      .then(setFunctions)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
   // Load active flow into canvas
   useEffect(() => {
     if (activeFlowIdx !== null && flows[activeFlowIdx]) {
       const flow = flows[activeFlowIdx];
-      setNodes(flow.nodes);
+      setNodes(flow.nodes as RFNode<FunctionNodeData>[]);
       setEdges(flow.edges);
       setFlowName(flow.name);
     }
@@ -290,7 +291,7 @@ export function FlowsPanel() {
               className="rounded border border-zinc-800 bg-zinc-900/50 px-2 py-1.5 cursor-grab hover:border-zinc-700 transition-colors"
             >
               <div className="flex items-center gap-1.5">
-                <Zap size={10} className={fn.is_invocable ? 'text-emerald-400' : 'text-zinc-600'} />
+                <Zap size={10} className={fn.isInvocable ? 'text-emerald-400' : 'text-zinc-600'} />
                 <span className="font-mono text-[11px] text-zinc-300">{fn.name}</span>
               </div>
               {fn.description && (
