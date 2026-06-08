@@ -1,0 +1,7 @@
+# constructive-platform-seed extension
+comment = 'Platform metadata seed: database, schemas, compute API, domain, and site'
+default_version = '0.1.0'
+module_pathname = '$libdir/constructive-platform-seed'
+requires = 'plpgsql,metaschema-schema,services'
+relocatable = false
+superuser = false

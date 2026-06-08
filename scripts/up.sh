@@ -144,9 +144,37 @@ done
 
 rm -f "$DEPLOY_LOG"
 
-# ─── Step 5: Deploy constructive-infra-seed ──────────────────────────────────
+# ─── Step 5: Deploy platform metadata seed ───────────────────────────────────
 
-step 5 "Deploying constructive-infra-seed (function + secret definitions)"
+step 5 "Deploying constructive-platform-seed (database + schemas + compute API + domain + site)"
+
+SEED_RC=0
+pgpm deploy --yes --database "$DB_NAME" --package constructive-platform-seed > "$DEPLOY_LOG" 2>&1 || SEED_RC=$?
+if [ $SEED_RC -eq 0 ]; then
+  ok "constructive-platform-seed deployed"
+else
+  fail "constructive-platform-seed — deploy output:"
+  sed 's/^/    /' "$DEPLOY_LOG"
+fi
+rm -f "$DEPLOY_LOG"
+
+# ─── Step 6: Deploy constructive-infra-services ──────────────────────────────
+
+step 6 "Deploying constructive-infra-services (function module registration)"
+
+SVC_RC=0
+pgpm deploy --yes --database "$DB_NAME" --package constructive-infra-services > "$DEPLOY_LOG" 2>&1 || SVC_RC=$?
+if [ $SVC_RC -eq 0 ]; then
+  ok "constructive-infra-services deployed"
+else
+  fail "constructive-infra-services — deploy output:"
+  sed 's/^/    /' "$DEPLOY_LOG"
+fi
+rm -f "$DEPLOY_LOG"
+
+# ─── Step 7: Deploy constructive-infra-seed ──────────────────────────────────
+
+step 7 "Deploying constructive-infra-seed (function + secret definitions)"
 
 SEED_RC=0
 pgpm deploy --yes --database "$DB_NAME" --package constructive-infra-seed > "$DEPLOY_LOG" 2>&1 || SEED_RC=$?
@@ -160,9 +188,9 @@ rm -f "$DEPLOY_LOG"
 
 cd "$ROOT_DIR"
 
-# ─── Step 6: Start MinIO ────────────────────────────────────────────────────
+# ─── Step 8: Start MinIO ────────────────────────────────────────────────────
 
-step 6 "Starting MinIO (object storage)"
+step 8 "Starting MinIO (object storage)"
 
 MINIO_UP=$(docker ps --filter "name=minio" --filter "status=running" --format "{{.Names}}" 2>/dev/null | head -1)
 
@@ -184,15 +212,15 @@ fi
 echo "  API:     http://localhost:9000"
 echo "  Console: http://localhost:9001  (minioadmin/minioadmin)"
 
-# ─── Step 7: Verify ─────────────────────────────────────────────────────────
+# ─── Step 9: Verify ─────────────────────────────────────────────────────────
 
-step 7 "Verifying platform"
+step 9 "Verifying platform"
 
 "$SCRIPT_DIR/verify-platform.sh" "$DB_NAME"
 
-# ─── Step 8: Check .env ─────────────────────────────────────────────────────
+# ─── Step 10: Check .env ────────────────────────────────────────────────────
 
-step 8 "Loading .env into platform"
+step 10 "Loading .env into platform"
 
 if [ -f "$ROOT_DIR/.env" ]; then
   "$SCRIPT_DIR/load-platform-env.sh" "$ROOT_DIR/.env" "$DB_NAME" || true
