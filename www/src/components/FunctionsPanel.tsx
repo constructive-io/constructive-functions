@@ -43,9 +43,10 @@ const DEFAULT_PAYLOADS: Record<string, Record<string, unknown>> = {
     html: '<p>Test email sent via compute-worker</p>',
   },
   'send-verification-link': {
-    to: 'test@example.com',
-    type: 'invite',
-    link: 'http://localhost:3000/verify?token=test-token',
+    email_type: 'email_verification',
+    email: 'test@example.com',
+    email_id: '00000000-0000-0000-0000-000000000001',
+    verification_token: 'test-token-123',
   },
 };
 
