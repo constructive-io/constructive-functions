@@ -161,12 +161,6 @@ importers:
       '@constructive-io/knative-job-server':
         specifier: workspace:^
         version: link:../server
-      '@constructive-io/send-email-fn':
-        specifier: workspace:^
-        version: link:../../generated/send-email
-      '@constructive-io/send-verification-link-fn':
-        specifier: workspace:^
-        version: link:../../generated/send-verification-link
       '@pgpmjs/env':
         specifier: ^2.15.3
         version: 2.17.0
