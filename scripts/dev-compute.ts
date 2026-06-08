@@ -73,13 +73,24 @@ function loadDotEnv(): Record<string, string> {
 
 // --- Query DB for configured secret values ---
 
+// Standalone JWT claims — upstream functions read these from session settings.
+const JWT_CLAIMS_SQL = [
+  `SET LOCAL jwt.claims.database_id = '00000000-0000-0000-0000-000000000000'`,
+  `SET LOCAL jwt.claims.user_id = '00000000-0000-0000-0000-000000000001'`,
+  `SET LOCAL jwt.claims.token_id = '00000000-0000-0000-0000-000000000002'`,
+  `SET LOCAL jwt.claims.session_id = '00000000-0000-0000-0000-000000000003'`,
+  `SET LOCAL jwt.claims.ip_address = '127.0.0.1'`,
+  `SET LOCAL jwt.claims.user_agent = 'constructive-functions/standalone'`,
+  `SET LOCAL jwt.claims.origin = 'http://localhost:3000'`,
+].join('; ');
+
 function loadDbSecretValues(dbName: string): Record<string, string> {
   const vars: Record<string, string> = {};
   const dbId = '00000000-0000-0000-0000-000000000000';
 
   // Load secrets (decrypted via platform_secrets_get)
   try {
-    const sql = `SELECT s.name, constructive_store_private.platform_secrets_get(s.name, NULL, 'default') AS val FROM constructive_store_private.platform_secrets s WHERE s.database_id = '${dbId}' AND s.value IS NOT NULL`;
+    const sql = `BEGIN; ${JWT_CLAIMS_SQL}; SELECT s.name, constructive_store_private.platform_secrets_get(s.name, NULL, 'default') AS val FROM constructive_store_private.platform_secrets s WHERE s.database_id = '${dbId}' AND s.value IS NOT NULL; COMMIT`;
     const output = execSync(
       `psql -d "${dbName}" -t -A -F '|' -c "${sql}"`,
       { encoding: 'utf-8', timeout: 5000 }

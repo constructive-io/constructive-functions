@@ -20,6 +20,18 @@ DB_NAME="${2:-${DB_NAME:-constructive-functions-db1}}"
 
 DB_ID="00000000-0000-0000-0000-000000000000"
 
+# Standalone JWT claims — the upstream functions read database_id, user_id, etc.
+# from session settings. In production these come from PostGraphile JWT middleware.
+JWT_CLAIMS="
+  SET LOCAL jwt.claims.database_id = '$DB_ID';
+  SET LOCAL jwt.claims.user_id = '00000000-0000-0000-0000-000000000001';
+  SET LOCAL jwt.claims.token_id = '00000000-0000-0000-0000-000000000002';
+  SET LOCAL jwt.claims.session_id = '00000000-0000-0000-0000-000000000003';
+  SET LOCAL jwt.claims.ip_address = '127.0.0.1';
+  SET LOCAL jwt.claims.user_agent = 'constructive-functions/standalone';
+  SET LOCAL jwt.claims.origin = 'http://localhost:3000';
+"
+
 if [ ! -f "$ENV_FILE" ]; then
   echo "Error: $ENV_FILE not found."
   echo ""
@@ -190,12 +202,15 @@ if [ -n "$SECRET_KEYS" ]; then
     escaped_val="${val//\'/\'\'}"
 
     psql -d "$DB_NAME" -q -c "
+      BEGIN;
+      $JWT_CLAIMS
       SELECT constructive_store_public.platform_secrets_set(
         '$key',
         '$escaped_val',
         'pgp',
         'default'
       );
+      COMMIT;
     " 2>/dev/null && {
       SYNCED=$((SYNCED + 1))
     } || {
