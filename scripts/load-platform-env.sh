@@ -173,12 +173,12 @@ while IFS='|' read -r fn_name secrets configs req_secrets req_configs; do
   echo ""
 done <<< "$FUNCTIONS"
 
-# ─── Sync secrets into constructive_store_private.platform_secrets ───────────
+# ─── Sync secrets via platform_secrets_set (PGP encrypted) ───────────────────
 
 SYNCED=0
 
 if [ -n "$SECRET_KEYS" ]; then
-  echo "─── Syncing secrets → platform_secrets ───"
+  echo "─── Syncing secrets → platform_secrets (algo=pgp) ───"
 
   OLD_IFS="$IFS"; IFS=','
   for key in $SECRET_KEYS; do
@@ -190,18 +190,12 @@ if [ -n "$SECRET_KEYS" ]; then
     escaped_val="${val//\'/\'\'}"
 
     psql -d "$DB_NAME" -q -c "
-      INSERT INTO constructive_store_private.platform_secrets
-        (id, name, value, database_id, namespace_id)
-      VALUES (
-        gen_random_uuid(),
+      SELECT constructive_store_public.platform_secrets_set(
         '$key',
-        convert_to('$escaped_val', 'UTF8'),
-        '$DB_ID',
-        '$NS_ID'
-      )
-      ON CONFLICT (database_id, namespace_id, name)
-      DO UPDATE SET value = convert_to('$escaped_val', 'UTF8'),
-                    updated_at = now();
+        '$escaped_val',
+        'pgp',
+        'default'
+      );
     " 2>/dev/null && {
       SYNCED=$((SYNCED + 1))
     } || {
@@ -210,7 +204,7 @@ if [ -n "$SECRET_KEYS" ]; then
   done
   IFS="$OLD_IFS"
 
-  echo "  ✓ Synced $SYNCED secret(s)"
+  echo "  ✓ Synced $SYNCED secret(s) (PGP encrypted)"
   echo ""
 fi
 

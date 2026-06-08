@@ -78,11 +78,9 @@ if [ -f "$ENV_FILE" ]; then
 
     if is_secret "$key"; then
       psql -d "$DB_NAME" -q -c "
-        INSERT INTO constructive_store_private.platform_secrets
-          (id, name, value, database_id, namespace_id)
-        VALUES (gen_random_uuid(), '$key', convert_to('$escaped_val', 'UTF8'), '$DB_ID', '$NS_ID')
-        ON CONFLICT (database_id, namespace_id, name)
-        DO UPDATE SET value = convert_to('$escaped_val', 'UTF8'), updated_at = now()
+        SELECT constructive_store_public.platform_secrets_set(
+          '$key', '$escaped_val', 'pgp', 'default'
+        );
       " 2>/dev/null && ((SYNCED_TO_DB++)) || true
     elif is_config "$key"; then
       psql -d "$DB_NAME" -q -c "
@@ -107,12 +105,13 @@ echo "Reading configured values from DB..."
 
 SYNCED_FROM_DB=0
 
-# Read secrets
+# Read secrets (decrypted via platform_secrets_get)
 DB_SECRETS=$(psql -d "$DB_NAME" -t -A -F '|' -c "
-  SELECT name, convert_from(value, 'UTF8')
-  FROM constructive_store_private.platform_secrets
-  WHERE database_id = '$DB_ID' AND value IS NOT NULL
-  ORDER BY name
+  SELECT s.name,
+         constructive_store_private.platform_secrets_get(s.name, NULL, 'default') AS val
+  FROM constructive_store_private.platform_secrets s
+  WHERE s.database_id = '$DB_ID' AND s.value IS NOT NULL
+  ORDER BY s.name
 " 2>/dev/null || echo "")
 
 if [ -n "$DB_SECRETS" ]; then
