@@ -1,0 +1,11 @@
+-- Deploy: schemas/constructive_infra_public/tables/platform_secret_definitions/columns/name/alterations/alt0000000140
+-- made with <3 @ constructive.io
+
+-- requires: schemas/constructive_infra_public/schema
+-- requires: schemas/constructive_infra_public/tables/platform_secret_definitions/table
+-- requires: schemas/constructive_infra_public/tables/platform_secret_definitions/columns/name/column
+
+
+ALTER TABLE "constructive_infra_public".platform_secret_definitions 
+  ALTER COLUMN name SET NOT NULL;
+
