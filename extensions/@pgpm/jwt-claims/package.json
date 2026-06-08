@@ -1,0 +1,39 @@
+{
+  "name": "@pgpm/jwt-claims",
+  "version": "0.26.0",
+  "description": "JWT claim handling and validation functions",
+  "author": "Dan Lynch <pyramation@gmail.com>",
+  "contributors": [
+    "Constructive <developers@constructive.io>"
+  ],
+  "keywords": [
+    "postgresql",
+    "pgpm",
+    "jwt",
+    "authentication"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "bundle": "pgpm package",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "pgpm": "^4.23.2"
+  },
+  "dependencies": {
+    "@pgpm/types": "0.26.0",
+    "@pgpm/verify": "0.26.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/constructive-io/pgpm-modules"
+  },
+  "homepage": "https://github.com/constructive-io/pgpm-modules",
+  "bugs": {
+    "url": "https://github.com/constructive-io/pgpm-modules/issues"
+  },
+  "gitHead": "3badf1e5e2fc71deae9e194b779599d17ab28a0d"
+}

@@ -1,0 +1,39 @@
+{
+  "name": "@pgpm/stamps",
+  "version": "0.26.0",
+  "description": "Timestamp utilities and audit trail functions for PostgreSQL",
+  "author": "Dan Lynch <pyramation@gmail.com>",
+  "contributors": [
+    "Constructive <developers@constructive.io>"
+  ],
+  "keywords": [
+    "postgresql",
+    "pgpm",
+    "timestamp",
+    "audit"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "bundle": "pgpm package",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "@pgpm/jwt-claims": "0.26.0",
+    "@pgpm/verify": "0.26.0"
+  },
+  "devDependencies": {
+    "pgpm": "^4.23.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/constructive-io/pgpm-modules"
+  },
+  "homepage": "https://github.com/constructive-io/pgpm-modules",
+  "bugs": {
+    "url": "https://github.com/constructive-io/pgpm-modules/issues"
+  },
+  "gitHead": "3badf1e5e2fc71deae9e194b779599d17ab28a0d"
+}
