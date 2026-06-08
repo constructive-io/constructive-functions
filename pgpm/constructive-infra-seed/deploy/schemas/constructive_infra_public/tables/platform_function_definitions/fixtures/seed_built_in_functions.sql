@@ -5,7 +5,7 @@ BEGIN;
 
 INSERT INTO constructive_infra_public.platform_function_definitions
   (name, task_identifier, service_url, is_invocable, is_built_in, scope, description,
-   required_secrets, required_configs)
+   namespace_id, required_secrets, required_configs)
 VALUES
   (
     'send-email',
@@ -13,6 +13,7 @@ VALUES
     'http://localhost:8081',
     true, true, 'platform',
     'Sends transactional emails via Mailgun or SMTP',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
     ARRAY[
       ROW('MAILGUN_API_KEY', false),
       ROW('MAILGUN_DOMAIN',  false),
@@ -32,6 +33,7 @@ VALUES
     'http://localhost:8082',
     true, true, 'platform',
     'Sends invite, password reset, and verification emails',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
     ARRAY[
       ROW('MAILGUN_API_KEY', false),
       ROW('MAILGUN_DOMAIN',  false),
@@ -48,6 +50,7 @@ VALUES
     ]::constructive_infra_public.function_requirement[]
   )
 ON CONFLICT (scope, name) DO UPDATE SET
+  namespace_id     = EXCLUDED.namespace_id,
   required_secrets = EXCLUDED.required_secrets,
   required_configs = EXCLUDED.required_configs,
   description      = EXCLUDED.description;

@@ -1,6 +1,7 @@
 .PHONY: install build clean lint generate \
        up down status verify-platform check-env setup-platform \
        up\:email-job down\:email-job \
+       up\:www \
        dev dev-fn dev-compute dev-down dev-logs setup-dev setup-check \
        skaffold-dev skaffold-dev-knative docker-build
 
@@ -44,6 +45,9 @@ up\:email-job:
 
 down\:email-job:
 	./scripts/email-job-down.sh
+
+up\:www:
+	./scripts/www-up.sh $(DB_NAME)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Tier 1 — pgpm-local
