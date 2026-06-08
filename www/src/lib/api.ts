@@ -107,6 +107,12 @@ export interface K8sService {
   spec: { type: string; clusterIP: string; ports?: Array<{ port: number; targetPort: number | string; protocol: string }> };
 }
 
+export interface EnvFile {
+  path: string;
+  exists: boolean;
+  vars: Record<string, string>;
+}
+
 export const api = {
   getStatus: () => fetchJSON<PlatformStatus>('/api/status'),
   getFunctions: () => fetchJSON<PlatformFunction[]>('/api/functions'),
@@ -114,6 +120,14 @@ export const api = {
   getInvocations: () => fetchJSON<Invocation[]>('/api/invocations'),
   getSecrets: () => fetchJSON<PlatformSecret[]>('/api/secrets'),
   getNamespaces: () => fetchJSON<PlatformNamespace[]>('/api/namespaces'),
+
+  getEnv: () => fetchJSON<EnvFile>('/api/env'),
+  saveEnv: (vars: Record<string, string>) =>
+    fetchJSON<{ ok: boolean; path: string; count: number }>('/api/env', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vars }),
+    }),
 
   createJob: (task_identifier: string, payload: Record<string, unknown>) =>
     fetchJSON<Job>('/api/jobs', {
