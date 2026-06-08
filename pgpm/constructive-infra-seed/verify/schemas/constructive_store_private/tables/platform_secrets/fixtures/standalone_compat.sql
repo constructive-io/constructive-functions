@@ -1,4 +1,4 @@
--- Verify: platform_secrets_compat
+-- Verify: schemas/constructive_store_private/tables/platform_secrets/fixtures/standalone_compat
 -- made with <3 @ constructive.io
 
 BEGIN;

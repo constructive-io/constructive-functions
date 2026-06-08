@@ -36,13 +36,9 @@ echo "→ Deploying constructive-infra..."
 cd "$ROOT_DIR/pgpm"
 pgpm deploy --yes --database "$DB_NAME" --package constructive-infra
 
-# --- Deploy constructive-infra-seed (built-in function definitions) ---
+# --- Deploy constructive-infra-seed (built-in function definitions + compat patches) ---
 echo "→ Deploying constructive-infra-seed..."
 pgpm deploy --yes --database "$DB_NAME" --package constructive-infra-seed
-
-# --- Deploy standalone-patches (hand-written compat patches) ---
-echo "→ Deploying standalone-patches..."
-pgpm deploy --yes --database "$DB_NAME" --package standalone-patches
 
 # --- Verify ---
 echo ""

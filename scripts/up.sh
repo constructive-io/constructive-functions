@@ -158,17 +158,6 @@ else
 fi
 rm -f "$DEPLOY_LOG"
 
-# Deploy standalone-patches (hand-written compat patches, separate from generated code)
-PATCH_RC=0
-pgpm deploy --yes --database "$DB_NAME" --package standalone-patches > "$DEPLOY_LOG" 2>&1 || PATCH_RC=$?
-if [ $PATCH_RC -eq 0 ]; then
-  ok "standalone-patches deployed"
-else
-  fail "standalone-patches — deploy output:"
-  sed 's/^/    /' "$DEPLOY_LOG"
-fi
-rm -f "$DEPLOY_LOG"
-
 cd "$ROOT_DIR"
 
 # ─── Step 6: Start MinIO ────────────────────────────────────────────────────
