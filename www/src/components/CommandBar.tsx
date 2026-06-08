@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { api } from '../lib/api';
 import { Play, Loader } from 'lucide-react';
 
@@ -11,6 +11,42 @@ const COMMANDS = [
   { label: 'Email Job Up', command: 'make up:email-job' },
   { label: 'Email Job Down', command: 'make down:email-job' },
 ];
+
+const ANSI_COLORS: Record<string, string> = {
+  '30': '#6b7280', '31': '#ef4444', '32': '#22c55e', '33': '#eab308',
+  '34': '#3b82f6', '35': '#a855f7', '36': '#06b6d4', '37': '#d4d4d8',
+  '39': '#a1a1aa', '90': '#71717a', '91': '#f87171', '92': '#4ade80',
+  '93': '#facc15', '94': '#60a5fa', '95': '#c084fc', '96': '#22d3ee', '97': '#fafafa',
+};
+
+function ansiToHtml(text: string): string {
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  html = html.replace(/\x1b\[([0-9;]+)m/g, (_match, codes: string) => {
+    const parts = codes.split(';');
+    const spans: string[] = [];
+    for (const code of parts) {
+      if (code === '0') {
+        spans.push('</span>');
+      } else if (code === '1') {
+        spans.push('<span style="font-weight:bold">');
+      } else if (code === '22') {
+        spans.push('</span>');
+      } else if (ANSI_COLORS[code]) {
+        spans.push(`<span style="color:${ANSI_COLORS[code]}">`);
+      }
+    }
+    return spans.join('');
+  });
+
+  // Strip any remaining escape sequences
+  html = html.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '');
+
+  return html;
+}
 
 export function CommandBar() {
   const [running, setRunning] = useState<string | null>(null);
@@ -29,6 +65,11 @@ export function CommandBar() {
     }
   };
 
+  const outputHtml = useMemo(() => {
+    if (!result) return '';
+    return ansiToHtml(result.output || '(no output)');
+  }, [result]);
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
@@ -45,14 +86,25 @@ export function CommandBar() {
         ))}
       </div>
       {result && (
-        <pre className={`text-xs font-mono p-3 rounded border overflow-x-auto max-h-60 overflow-y-auto whitespace-pre-wrap ${
+        <div className={`rounded border ${
           result.exitCode === 0
-            ? 'bg-zinc-900/50 border-zinc-800 text-zinc-400'
-            : 'bg-red-950/30 border-red-900 text-red-300'
+            ? 'bg-zinc-900/50 border-zinc-800'
+            : 'bg-red-950/30 border-red-900'
         }`}>
-          {result.output || '(no output)'}
-          {'\n'}exit: {result.exitCode}
-        </pre>
+          <pre
+            className={`text-xs font-mono p-3 whitespace-pre-wrap ${
+              result.exitCode === 0 ? 'text-zinc-400' : 'text-red-300'
+            }`}
+            dangerouslySetInnerHTML={{ __html: outputHtml }}
+          />
+          <div className={`text-xs font-mono px-3 py-1.5 border-t ${
+            result.exitCode === 0
+              ? 'border-zinc-800 text-zinc-600'
+              : 'border-red-900 text-red-400'
+          }`}>
+            exit: {result.exitCode}
+          </div>
+        </div>
       )}
     </div>
   );
