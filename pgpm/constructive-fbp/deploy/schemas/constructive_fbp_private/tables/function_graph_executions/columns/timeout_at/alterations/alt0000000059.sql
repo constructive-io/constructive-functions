@@ -1,0 +1,11 @@
+-- Deploy: schemas/constructive_fbp_private/tables/function_graph_executions/columns/timeout_at/alterations/alt0000000059
+-- made with <3 @ constructive.io
+
+-- requires: schemas/constructive_fbp_private/schema
+-- requires: schemas/constructive_fbp_private/tables/function_graph_executions/table
+-- requires: schemas/constructive_fbp_private/tables/function_graph_executions/columns/timeout_at/column
+
+
+ALTER TABLE "constructive_fbp_private".function_graph_executions 
+  ALTER COLUMN timeout_at SET DEFAULT now() + '5 minutes'::interval;
+

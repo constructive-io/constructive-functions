@@ -38,14 +38,28 @@ else
   exit 1
 fi
 
-# --- constructive_infra_public schema ---
-HAS_INFRA=$(psql -d "$DB_NAME" -t -A -c "SELECT 1 FROM information_schema.schemata WHERE schema_name = 'constructive_infra_public'" 2>/dev/null)
-if [ "$HAS_INFRA" = "1" ]; then
-  ok "Schema constructive_infra_public exists"
-else
-  fail "Schema constructive_infra_public missing"
-  echo "    Fix: cd pgpm && pgpm deploy --yes --database $DB_NAME --package constructive-infra"
-fi
+# --- All module schemas ---
+SCHEMAS_TO_CHECK=(
+  constructive_infra_public
+  constructive_store_public
+  constructive_store_private
+  constructive_objects_public
+  constructive_objects_private
+  constructive_fbp_public
+  constructive_fbp_private
+  constructive_storage_public
+  constructive_storage_private
+  constructive_private
+)
+
+for schema in "${SCHEMAS_TO_CHECK[@]}"; do
+  HAS_SCHEMA=$(psql -d "$DB_NAME" -t -A -c "SELECT 1 FROM information_schema.schemata WHERE schema_name = '$schema'" 2>/dev/null)
+  if [ "$HAS_SCHEMA" = "1" ]; then
+    ok "Schema $schema exists"
+  else
+    fail "Schema $schema missing"
+  fi
+done
 
 # --- app_jobs schema ---
 HAS_JOBS=$(psql -d "$DB_NAME" -t -A -c "SELECT 1 FROM information_schema.schemata WHERE schema_name = 'app_jobs'" 2>/dev/null)

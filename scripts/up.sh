@@ -6,10 +6,11 @@
 #   1. Check prerequisites (docker, node, pnpm, pgpm)
 #   2. Start PostgreSQL via pgpm docker
 #   3. Bootstrap pgpm admin users
-#   4. Create + deploy constructive-infra (DDL)
+#   4. Create database + deploy all pgpm modules
 #   5. Deploy constructive-infra-seed (function + secret definitions)
-#   6. Verify everything
-#   7. Check .env coverage (if .env exists)
+#   6. Start MinIO (object storage)
+#   7. Verify everything
+#   8. Check .env coverage (if .env exists)
 #
 # Usage:
 #   make up                       # defaults to constructive-functions-db1
@@ -34,7 +35,7 @@ ok()   { echo -e "  ${GREEN}✓${NC} $1"; }
 warn() { echo -e "  ${YELLOW}●${NC} $1"; }
 fail() { echo -e "  ${RED}✗${NC} $1"; }
 
-TOTAL_STEPS=7
+TOTAL_STEPS=8
 
 echo ""
 echo -e "${BOLD}════════════════════════════════════════════════════════════${NC}"
@@ -98,34 +99,100 @@ step 3 "Bootstrapping pgpm admin users"
 
 pgpm admin-users bootstrap --yes 2>/dev/null && ok "Roles bootstrapped" || ok "Roles already exist"
 
-# ─── Step 4: Deploy constructive-infra ───────────────────────────────────────
+# ─── Step 4: Deploy all pgpm modules ────────────────────────────────────────
 
-step 4 "Deploying constructive-infra (DDL)"
+step 4 "Deploying pgpm modules"
 
 createdb "$DB_NAME" 2>/dev/null && ok "Database '$DB_NAME' created" || ok "Database '$DB_NAME' already exists"
 
 cd "$ROOT_DIR/pgpm"
-pgpm deploy --yes --database "$DB_NAME" --package constructive-infra 2>&1 | grep -E "(SUCCESS: ✅|already)" || true
-ok "constructive-infra deployed"
+
+# Deploy order matters: downstream modules depend on upstream ones.
+#
+#   constructive-infra     (standalone — namespaces, function defs, invocations)
+#   constructive-store     (depends on infra — encrypted secrets, config, user state)
+#   constructive-objects   (standalone — content-addressable merkle store)
+#   constructive-fbp       (standalone — flow graphs, graph-specific merkle store)
+#   constructive-storage   (standalone — file uploads, buckets, versioning)
+
+MODULES=(
+  constructive-infra
+  constructive-store
+  constructive-objects
+  constructive-fbp
+  constructive-storage
+)
+
+DEPLOY_LOG="$ROOT_DIR/.deploy-log"
+
+for mod in "${MODULES[@]}"; do
+  if [ -d "$mod" ]; then
+    DEPLOY_RC=0
+    pgpm deploy --yes --database "$DB_NAME" --package "$mod" > "$DEPLOY_LOG" 2>&1 || DEPLOY_RC=$?
+    if [ $DEPLOY_RC -eq 0 ] && grep -q "Deployment complete" "$DEPLOY_LOG"; then
+      ok "$mod"
+    elif grep -q "already" "$DEPLOY_LOG" && [ $DEPLOY_RC -eq 0 ]; then
+      ok "$mod (already deployed)"
+    else
+      fail "$mod — deploy output:"
+      sed 's/^/    /' "$DEPLOY_LOG"
+    fi
+  else
+    warn "$mod (not found, skipping)"
+  fi
+done
+
+rm -f "$DEPLOY_LOG"
 
 # ─── Step 5: Deploy constructive-infra-seed ──────────────────────────────────
 
 step 5 "Deploying constructive-infra-seed (function + secret definitions)"
 
-pgpm deploy --yes --database "$DB_NAME" --package constructive-infra-seed 2>&1 | grep -E "(SUCCESS: ✅|already)" || true
-ok "constructive-infra-seed deployed"
+SEED_RC=0
+pgpm deploy --yes --database "$DB_NAME" --package constructive-infra-seed > "$DEPLOY_LOG" 2>&1 || SEED_RC=$?
+if [ $SEED_RC -eq 0 ]; then
+  ok "constructive-infra-seed deployed"
+else
+  fail "constructive-infra-seed — deploy output:"
+  sed 's/^/    /' "$DEPLOY_LOG"
+fi
+rm -f "$DEPLOY_LOG"
 
 cd "$ROOT_DIR"
 
-# ─── Step 6: Verify ─────────────────────────────────────────────────────────
+# ─── Step 6: Start MinIO ────────────────────────────────────────────────────
 
-step 6 "Verifying platform"
+step 6 "Starting MinIO (object storage)"
+
+MINIO_UP=$(docker ps --filter "name=minio" --filter "status=running" --format "{{.Names}}" 2>/dev/null | head -1)
+
+if [ -n "$MINIO_UP" ]; then
+  ok "Already running ($MINIO_UP)"
+else
+  # Start MinIO via docker (detached)
+  docker run -d \
+    --name constructive-functions-minio \
+    -p 9000:9000 \
+    -p 9001:9001 \
+    -e MINIO_ROOT_USER=minioadmin \
+    -e MINIO_ROOT_PASSWORD=minioadmin \
+    -v minio-data:/data \
+    minio/minio:latest server /data --console-address ":9001" \
+    2>/dev/null && ok "MinIO started" || ok "MinIO already exists"
+fi
+
+echo "  API:     http://localhost:9000"
+echo "  Console: http://localhost:9001  (minioadmin/minioadmin)"
+
+# ─── Step 7: Verify ─────────────────────────────────────────────────────────
+
+step 7 "Verifying platform"
 
 "$SCRIPT_DIR/verify-platform.sh" "$DB_NAME"
 
-# ─── Step 7: Check .env ─────────────────────────────────────────────────────
+# ─── Step 8: Check .env ─────────────────────────────────────────────────────
 
-step 7 "Checking .env"
+step 8 "Checking .env"
 
 if [ -f "$ROOT_DIR/.env" ]; then
   "$SCRIPT_DIR/load-platform-env.sh" "$ROOT_DIR/.env" "$DB_NAME" || true
@@ -139,6 +206,18 @@ fi
 echo ""
 echo -e "${BOLD}════════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}${BOLD}  Platform is up. Database: $DB_NAME${NC}"
+echo ""
+echo -e "  ${BOLD}Modules:${NC}"
+for mod in "${MODULES[@]}"; do
+  if [ -d "$ROOT_DIR/pgpm/$mod" ]; then
+    echo "    ✓ $mod"
+  fi
+done
+echo ""
+echo -e "  ${BOLD}Services:${NC}"
+echo "    PostgreSQL    localhost:5432"
+echo "    MinIO API     http://localhost:9000"
+echo "    MinIO Console http://localhost:9001"
 echo ""
 echo -e "  ${BOLD}Next:${NC}"
 echo "    make up:email-job    # start mailpit + compute-service"

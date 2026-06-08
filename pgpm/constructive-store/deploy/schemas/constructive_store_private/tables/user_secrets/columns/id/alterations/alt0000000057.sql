@@ -1,0 +1,11 @@
+-- Deploy: schemas/constructive_store_private/tables/user_secrets/columns/id/alterations/alt0000000057
+-- made with <3 @ constructive.io
+
+-- requires: schemas/constructive_store_private/schema
+-- requires: schemas/constructive_store_private/tables/user_secrets/table
+-- requires: schemas/constructive_store_private/tables/user_secrets/columns/id/column
+
+
+ALTER TABLE "constructive_store_private".user_secrets 
+  ALTER COLUMN id SET DEFAULT uuidv7();
+

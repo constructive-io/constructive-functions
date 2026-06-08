@@ -45,6 +45,10 @@ if [ -n "$DB_NAME" ] && [ -n "$DROP" ]; then
   dropdb "$DB_NAME" 2>/dev/null && ok "Database '$DB_NAME' dropped" || ok "Database '$DB_NAME' does not exist"
 fi
 
+# --- Stop MinIO ---
+echo "Stopping MinIO..."
+docker stop constructive-functions-minio 2>/dev/null && docker rm constructive-functions-minio 2>/dev/null && ok "MinIO stopped" || ok "MinIO was not running"
+
 # --- Stop PostgreSQL ---
 echo "Stopping PostgreSQL..."
 pgpm docker stop 2>/dev/null && ok "PostgreSQL stopped" || ok "PostgreSQL was not running"

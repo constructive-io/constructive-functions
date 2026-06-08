@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { RefreshCw, Plus, Send, Clock, AlertCircle } from 'lucide-react';
-import { useJobsQuery, useAddJobMutation } from '../generated/hooks';
+import { useState, useEffect } from 'react';
+import { RefreshCw, Plus, Send, Clock, AlertCircle, ChevronDown } from 'lucide-react';
+import { useJobsQuery, usePlatformFunctionDefinitionsQuery, useAddJobMutation } from '../generated/hooks';
 import type { Job } from '../generated/types';
 
 export function JobsPanel() {
@@ -32,6 +32,7 @@ export function JobsPanel() {
           <button
             onClick={() => setShowForm(!showForm)}
             className="p-1 rounded hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors"
+            title="New job"
           >
             <Plus size={14} />
           </button>
@@ -49,18 +50,49 @@ export function JobsPanel() {
           <JobRow key={job.id} job={job} />
         ))}
         {!isLoading && jobs.length === 0 && (
-          <p className="text-zinc-500 text-sm">No jobs yet.</p>
+          <p className="text-zinc-500 text-sm">No jobs yet. Click <strong>+</strong> to create one.</p>
         )}
       </div>
     </div>
   );
 }
 
+const DEFAULT_PAYLOADS: Record<string, Record<string, unknown>> = {
+  'send-email': {
+    to: 'test@example.com',
+    subject: 'Hello from Platform UI',
+    html: '<p>Test email</p>',
+  },
+  'send-verification-link': {
+    email_type: 'email_verification',
+    email: 'test@example.com',
+    email_id: '00000000-0000-0000-0000-000000000001',
+    verification_token: 'test-token-123',
+  },
+};
+
 function NewJobForm({ onCreated }: { onCreated: () => void }) {
-  const [taskId, setTaskId] = useState('send-email');
-  const [to, setTo] = useState('test@example.com');
-  const [subject, setSubject] = useState('Hello from Platform UI');
-  const [html, setHtml] = useState('<p>Test email from the constructive platform UI</p>');
+  const { data: fnData } = usePlatformFunctionDefinitionsQuery({
+    selection: {
+      fields: {
+        name: true,
+        taskIdentifier: true,
+        isInvocable: true,
+        description: true,
+      },
+    },
+  });
+  const functions = (fnData?.platformFunctionDefinitions?.nodes ?? []) as Array<{
+    name: string;
+    taskIdentifier: string;
+    isInvocable: boolean;
+    description: string;
+  }>;
+  const invocable = functions.filter((f) => f.isInvocable);
+
+  const [taskId, setTaskId] = useState('');
+  const [payload, setPayload] = useState('{\n  "key": "value"\n}');
+  const [error, setError] = useState<string | null>(null);
 
   const addJob = useAddJobMutation({
     selection: {
@@ -69,59 +101,80 @@ function NewJobForm({ onCreated }: { onCreated: () => void }) {
       },
     },
     onSuccess: () => onCreated(),
+    onError: (err: Error) => setError(err.message || 'Failed to create job'),
   });
 
+  useEffect(() => {
+    if (invocable.length > 0 && !taskId) {
+      const first = invocable[0];
+      setTaskId(first.taskIdentifier);
+      const defaultPayload = DEFAULT_PAYLOADS[first.taskIdentifier] || { key: 'value' };
+      setPayload(JSON.stringify(defaultPayload, null, 2));
+    }
+  }, [invocable, taskId]);
+
+  const handleFunctionChange = (newTaskId: string) => {
+    setTaskId(newTaskId);
+    const defaultPayload = DEFAULT_PAYLOADS[newTaskId] || { key: 'value' };
+    setPayload(JSON.stringify(defaultPayload, null, 2));
+    setError(null);
+  };
+
   const submit = () => {
-    addJob.mutate({ input: { identifier: taskId, payload: { to, subject, html } } });
+    setError(null);
+    try {
+      const parsed = JSON.parse(payload);
+      addJob.mutate({ input: { identifier: taskId, payload: parsed } });
+    } catch (err: any) {
+      setError(err.message || 'Invalid JSON');
+    }
   };
 
   return (
     <div className="border-b border-zinc-800 p-4 space-y-3 bg-zinc-900/50">
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs text-zinc-500 mb-1">Task</label>
+      <div>
+        <label className="block text-xs text-zinc-500 mb-1">Function</label>
+        <div className="relative">
           <select
             value={taskId}
-            onChange={(e) => setTaskId(e.target.value)}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            onChange={(e) => handleFunctionChange(e.target.value)}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-500 appearance-none pr-8"
           >
-            <option value="send-email">send-email</option>
-            <option value="send-verification-link">send-verification-link</option>
+            {invocable.map((fn) => (
+              <option key={fn.taskIdentifier} value={fn.taskIdentifier}>
+                {fn.name} — {fn.description || fn.taskIdentifier}
+              </option>
+            ))}
+            {invocable.length === 0 && (
+              <option disabled>No invocable functions</option>
+            )}
           </select>
-        </div>
-        <div>
-          <label className="block text-xs text-zinc-500 mb-1">To</label>
-          <input
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
+          <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
         </div>
       </div>
       <div>
-        <label className="block text-xs text-zinc-500 mb-1">Subject</label>
-        <input
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        />
-      </div>
-      <div>
-        <label className="block text-xs text-zinc-500 mb-1">HTML Body</label>
+        <label className="block text-xs text-zinc-500 mb-1">Payload (JSON)</label>
         <textarea
-          value={html}
-          onChange={(e) => setHtml(e.target.value)}
-          rows={3}
+          value={payload}
+          onChange={(e) => setPayload(e.target.value)}
+          rows={5}
           className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+          spellCheck={false}
         />
       </div>
+      {error && (
+        <div className="flex items-center gap-1 text-xs text-red-400">
+          <AlertCircle size={10} />
+          {error}
+        </div>
+      )}
       <button
         onClick={submit}
-        disabled={addJob.isPending}
+        disabled={addJob.isPending || !taskId}
         className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded text-sm text-white transition-colors"
       >
         <Send size={12} />
-        {addJob.isPending ? 'Sending...' : 'Create Job'}
+        {addJob.isPending ? 'Creating...' : 'Create Job'}
       </button>
     </div>
   );

@@ -3,8 +3,23 @@
   "version": "2.6.4",
   "type": "node-graphql",
   "port": 8082,
-  "taskIdentifier": "email:send_verification_link",
+  "taskIdentifier": "send-verification-link",
+  "scope": "platform",
   "description": "Sends invite, password reset, and verification emails",
+  "requiredSecrets": [
+    { "name": "MAILGUN_API_KEY", "required": false },
+    { "name": "MAILGUN_DOMAIN", "required": false },
+    { "name": "MAILGUN_FROM", "required": false },
+    { "name": "MAILGUN_REPLY", "required": false }
+  ],
+  "requiredConfigs": [
+    { "name": "EMAIL_SEND_USE_SMTP", "required": false },
+    { "name": "SMTP_HOST", "required": false },
+    { "name": "SMTP_PORT", "required": false },
+    { "name": "SMTP_FROM", "required": false },
+    { "name": "LOCAL_APP_PORT", "required": false },
+    { "name": "SEND_VERIFICATION_LINK_DRY_RUN", "required": false }
+  ],
   "dependencies": {
     "@constructive-io/postmaster": "^1.5.2",
     "@launchql/mjml": "0.1.1",

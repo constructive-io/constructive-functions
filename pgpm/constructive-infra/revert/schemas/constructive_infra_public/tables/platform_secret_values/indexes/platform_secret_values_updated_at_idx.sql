@@ -1,4 +1,0 @@
--- Revert: schemas/constructive_infra_public/tables/platform_secret_values/indexes/platform_secret_values_updated_at_idx
-
-
-DROP INDEX "constructive_infra_public".platform_secret_values_updated_at_idx;
