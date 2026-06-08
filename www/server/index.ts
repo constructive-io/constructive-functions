@@ -245,11 +245,12 @@ async function getConfigNames(): Promise<Set<string>> {
 app.get('/api/secret-values', async (_req, res) => {
   try {
     const secrets = await pool.query(`
-      SELECT name, convert_from(value, 'UTF8') AS configured_value,
-             database_id, created_at, updated_at
-      FROM constructive_store_private.platform_secrets
-      WHERE database_id = $1
-      ORDER BY name
+      SELECT s.name,
+             constructive_store_private.platform_secrets_get(s.name, NULL, 'default') AS configured_value,
+             s.database_id, s.created_at, s.updated_at
+      FROM constructive_store_private.platform_secrets s
+      WHERE s.database_id = $1
+      ORDER BY s.name
     `, [DB_ID]);
     const configs = await pool.query(`
       SELECT name, value AS configured_value,
@@ -280,20 +281,16 @@ app.post('/api/secret-values', async (req, res) => {
       res.status(400).json({ error: 'Body must contain { vars: { KEY: "value", ... } }' });
       return;
     }
-    const nsId = await getDefaultNamespaceId();
     const secretNames = await getSecretNames();
     const configNames = await getConfigNames();
+    const nsId = await getDefaultNamespaceId();
     let upserted = 0;
     for (const [name, value] of Object.entries(vars)) {
       if (value === '') continue;
       if (secretNames.has(name)) {
         await pool.query(
-          `INSERT INTO constructive_store_private.platform_secrets
-             (id, name, value, database_id, namespace_id)
-           VALUES (gen_random_uuid(), $1, convert_to($2, 'UTF8'), $3, $4)
-           ON CONFLICT (database_id, namespace_id, name)
-           DO UPDATE SET value = convert_to($2, 'UTF8'), updated_at = now()`,
-          [name, value, DB_ID, nsId]
+          `SELECT constructive_store_public.platform_secrets_set($1, $2, 'pgp', 'default')`,
+          [name, value]
         );
         upserted++;
       } else if (configNames.has(name)) {
@@ -317,9 +314,10 @@ app.post('/api/secret-values', async (req, res) => {
 app.post('/api/secrets/sync-from-db', async (_req, res) => {
   try {
     const secrets = await pool.query(`
-      SELECT name, convert_from(value, 'UTF8') AS val
-      FROM constructive_store_private.platform_secrets
-      WHERE database_id = $1 AND value IS NOT NULL
+      SELECT s.name,
+             constructive_store_private.platform_secrets_get(s.name, NULL, 'default') AS val
+      FROM constructive_store_private.platform_secrets s
+      WHERE s.database_id = $1 AND s.value IS NOT NULL
     `, [DB_ID]);
     const configs = await pool.query(`
       SELECT name, value AS val
@@ -342,20 +340,16 @@ app.post('/api/secrets/sync-from-db', async (_req, res) => {
 app.post('/api/secrets/sync-to-db', async (_req, res) => {
   try {
     const envVars = parseDotEnv(ENV_PATH);
-    const nsId = await getDefaultNamespaceId();
     const secretNames = await getSecretNames();
     const configNames = await getConfigNames();
+    const nsId = await getDefaultNamespaceId();
     let upserted = 0;
     for (const [name, value] of Object.entries(envVars)) {
       if (value === '') continue;
       if (secretNames.has(name)) {
         await pool.query(
-          `INSERT INTO constructive_store_private.platform_secrets
-             (id, name, value, database_id, namespace_id)
-           VALUES (gen_random_uuid(), $1, convert_to($2, 'UTF8'), $3, $4)
-           ON CONFLICT (database_id, namespace_id, name)
-           DO UPDATE SET value = convert_to($2, 'UTF8'), updated_at = now()`,
-          [name, value, DB_ID, nsId]
+          `SELECT constructive_store_public.platform_secrets_set($1, $2, 'pgp', 'default')`,
+          [name, value]
         );
         upserted++;
       } else if (configNames.has(name)) {
@@ -405,19 +399,15 @@ app.post('/api/env', async (req, res) => {
 
     // Also sync non-empty values to DB (best-effort)
     try {
-      const nsId = await getDefaultNamespaceId();
       const secretNames = await getSecretNames();
       const configNames = await getConfigNames();
+      const nsId = await getDefaultNamespaceId();
       for (const [name, value] of Object.entries(merged)) {
         if (value === '') continue;
         if (secretNames.has(name)) {
           await pool.query(
-            `INSERT INTO constructive_store_private.platform_secrets
-               (id, name, value, database_id, namespace_id)
-             VALUES (gen_random_uuid(), $1, convert_to($2, 'UTF8'), $3, $4)
-             ON CONFLICT (database_id, namespace_id, name)
-             DO UPDATE SET value = convert_to($2, 'UTF8'), updated_at = now()`,
-            [name, value, DB_ID, nsId]
+            `SELECT constructive_store_public.platform_secrets_set($1, $2, 'pgp', 'default')`,
+            [name, value]
           );
         } else if (configNames.has(name)) {
           await pool.query(

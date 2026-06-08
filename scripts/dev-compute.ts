@@ -77,9 +77,9 @@ function loadDbSecretValues(dbName: string): Record<string, string> {
   const vars: Record<string, string> = {};
   const dbId = '00000000-0000-0000-0000-000000000000';
 
-  // Load secrets from constructive_store_private.platform_secrets
+  // Load secrets (decrypted via platform_secrets_get)
   try {
-    const sql = `SELECT name, convert_from(value, 'UTF8') AS val FROM constructive_store_private.platform_secrets WHERE database_id = '${dbId}' AND value IS NOT NULL`;
+    const sql = `SELECT s.name, constructive_store_private.platform_secrets_get(s.name, NULL, 'default') AS val FROM constructive_store_private.platform_secrets s WHERE s.database_id = '${dbId}' AND s.value IS NOT NULL`;
     const output = execSync(
       `psql -d "${dbName}" -t -A -F '|' -c "${sql}"`,
       { encoding: 'utf-8', timeout: 5000 }
