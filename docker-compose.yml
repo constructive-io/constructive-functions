@@ -74,18 +74,12 @@ services:
     volumes:
       - ./pgpm:/workspace/pgpm:ro
       - ./extensions:/workspace/extensions:ro
-      - ./scripts:/workspace/scripts:ro
     entrypoint: ["bash", "-c"]
     command:
       - |
         cd /workspace/pgpm
-        echo "Deploying constructive-infra..."
+        echo "Deploying constructive-infra (includes built-in function seeds)..."
         pgpm deploy --yes --database "$$PGDATABASE" --package constructive-infra
-
-        echo "Seeding function definitions..."
-        psql -h "$$PGHOST" -U "$$PGUSER" -d "$$PGDATABASE" \
-          -f /workspace/scripts/seed-functions.sql
-
         echo "Platform setup done"
 
   graphql-server:

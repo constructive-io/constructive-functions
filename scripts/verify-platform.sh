@@ -44,7 +44,7 @@ if [ "$HAS_INFRA" = "1" ]; then
   ok "Schema constructive_infra_public exists"
 else
   fail "Schema constructive_infra_public missing"
-  echo "    Fix: cd pgpm/constructive-infra && pgpm install && cd .. && pgpm deploy --yes --database $DB_NAME --package constructive-infra"
+  echo "    Fix: cd pgpm && pgpm deploy --yes --database $DB_NAME --package constructive-infra"
 fi
 
 # --- app_jobs schema ---
@@ -78,8 +78,8 @@ if [ "$HAS_TABLE" = "1" ]; then
     ok "$FN_COUNT invocable function(s) registered:"
     psql -d "$DB_NAME" -t -A -c "SELECT '    ' || name || ' → ' || COALESCE(service_url, '(no url)') FROM constructive_infra_public.platform_function_definitions WHERE is_invocable = true ORDER BY name" 2>/dev/null
   else
-    fail "No invocable functions seeded"
-    echo "    Fix: psql -d $DB_NAME -f scripts/seed-functions.sql"
+    fail "No invocable functions seeded (re-deploy to seed)"
+    echo "    Fix: cd pgpm && pgpm deploy --yes --database $DB_NAME --package constructive-infra"
   fi
 fi
 

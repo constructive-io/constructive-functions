@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 #
-# setup-platform-db.sh — deploy constructive-infra and seed function definitions
+# setup-platform-db.sh — deploy constructive-infra (includes built-in function seeds)
 #
 # Works with both Tier 1 (pgpm-local) and Tier 2 (compose-local).
-# Creates the database, bootstraps pgpm roles, deploys the infra schema,
-# and seeds platform_function_definitions with known functions.
+# Creates the database, bootstraps pgpm roles, and deploys the infra schema.
+# Built-in function definitions (send-email, send-verification-link) are seeded
+# as a pgpm fixture — no separate SQL step needed.
 #
 # Usage:
 #   ./scripts/setup-platform-db.sh                       # defaults to constructive-functions-db1
@@ -32,20 +33,15 @@ echo "→ Bootstrapping pgpm admin users..."
 pgpm admin-users bootstrap --yes 2>/dev/null || true
 
 # --- Deploy constructive-infra ---
+# This deploys all schemas (constructive_infra_public, app_jobs, etc.),
+# tables, triggers, and seeds built-in function definitions as a fixture.
 echo "→ Deploying constructive-infra package..."
 cd "$ROOT_DIR/pgpm"
 pgpm deploy --yes --database "$DB_NAME" --package constructive-infra
 
-# Note: @pgpm/database-jobs (app_jobs schema) deploys automatically
-# as a dependency of constructive-infra — no separate step needed.
-
-# --- Seed function definitions ---
-echo "→ Seeding function definitions..."
-psql -d "$DB_NAME" -f "$ROOT_DIR/scripts/seed-functions.sql"
-
 # --- Verify ---
 echo ""
-echo "→ Verifying seed data..."
+echo "→ Verifying..."
 FUNCTION_COUNT=$(psql -d "$DB_NAME" -t -A -c \
   "SELECT count(*) FROM constructive_infra_public.platform_function_definitions WHERE is_invocable = true")
 echo "  $FUNCTION_COUNT invocable function(s) registered."
