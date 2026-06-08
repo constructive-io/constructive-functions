@@ -41,7 +41,7 @@ app.get('/api/functions', async (_req, res) => {
     const result = await pool.query(`
       SELECT name, task_identifier, service_url, is_invocable, is_built_in,
              scope, description, required_secrets, required_configs,
-             namespace_id,
+             payload_schema, namespace_id,
              (SELECT n.name FROM constructive_infra_public.platform_namespaces n WHERE n.id = f.namespace_id) as namespace,
              created_at, updated_at
       FROM constructive_infra_public.platform_function_definitions f
@@ -53,6 +53,62 @@ app.get('/api/functions', async (_req, res) => {
       required_configs: parseRequirements(r.required_configs),
     }));
     res.json(rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── REST API — FBP Node Definitions ────────────────────────────────────────
+
+app.get('/api/definitions', async (_req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT name, task_identifier, service_url, is_invocable,
+             scope, description, required_secrets, required_configs,
+             payload_schema
+      FROM constructive_infra_public.platform_function_definitions
+      ORDER BY name
+    `);
+
+    const definitions = result.rows.map((r: any) => {
+      const secrets = parseRequirements(r.required_secrets);
+      const configs = parseRequirements(r.required_configs);
+      const schema = r.payload_schema;
+
+      const props = [
+        ...secrets.map((s: { name: string; required: boolean }) => ({
+          name: s.name,
+          type: 'secret',
+          required: s.required,
+          description: `Secret: ${s.name}`,
+        })),
+        ...configs.map((c: { name: string; required: boolean }) => ({
+          name: c.name,
+          type: 'config',
+          required: c.required,
+          description: `Config: ${c.name}`,
+        })),
+      ];
+
+      const inputs = [{
+        name: 'payload',
+        type: 'json',
+        description: 'Job payload object',
+        ...(schema ? { schema } : {}),
+      }];
+
+      return {
+        context: r.task_identifier,
+        name: r.name,
+        category: r.scope || 'default',
+        description: r.description,
+        inputs,
+        outputs: [{ name: 'result', type: 'json', description: 'Handler return value' }],
+        props: props.length > 0 ? props : undefined,
+      };
+    });
+
+    res.json(definitions);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

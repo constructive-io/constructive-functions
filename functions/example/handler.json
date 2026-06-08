@@ -8,5 +8,15 @@
   "description": "Example Node.js function — copy this to create a new function",
   "requiredSecrets": [],
   "requiredConfigs": [],
+  "payloadSchema": {
+    "type": "object",
+    "properties": {
+      "message": {
+        "type": "string",
+        "description": "A message to process"
+      }
+    },
+    "additionalProperties": true
+  },
   "dependencies": {}
 }

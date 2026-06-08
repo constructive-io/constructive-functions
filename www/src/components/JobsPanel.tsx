@@ -51,7 +51,7 @@ export function JobsPanel() {
   );
 }
 
-const DEFAULT_PAYLOADS: Record<string, Record<string, unknown>> = {
+const HARDCODED_PAYLOADS: Record<string, Record<string, unknown>> = {
   'send-email': {
     to: 'test@example.com',
     subject: 'Hello from Platform UI',
@@ -64,6 +64,31 @@ const DEFAULT_PAYLOADS: Record<string, Record<string, unknown>> = {
     verification_token: 'test-token-123',
   },
 };
+
+function defaultFromSchema(schema: Record<string, unknown> | null | undefined): Record<string, unknown> | null {
+  if (!schema || typeof schema !== 'object') return null;
+  const props = (schema as any).properties;
+  if (!props || typeof props !== 'object') return null;
+  const result: Record<string, unknown> = {};
+  for (const [key, def] of Object.entries(props) as [string, any][]) {
+    if (def.enum) { result[key] = def.enum[0]; continue; }
+    const t = Array.isArray(def.type) ? def.type[0] : def.type;
+    if (def.format === 'email') result[key] = 'test@example.com';
+    else if (def.format === 'uuid') result[key] = '00000000-0000-0000-0000-000000000000';
+    else if (t === 'string') result[key] = '';
+    else if (t === 'number' || t === 'integer') result[key] = 0;
+    else if (t === 'boolean') result[key] = false;
+    else result[key] = null;
+  }
+  return result;
+}
+
+function getDefaultPayload(fn: PlatformFunction): Record<string, unknown> {
+  if (HARDCODED_PAYLOADS[fn.task_identifier]) return HARDCODED_PAYLOADS[fn.task_identifier];
+  const fromSchema = defaultFromSchema(fn.payload_schema);
+  if (fromSchema) return fromSchema;
+  return { key: 'value' };
+}
 
 function NewJobForm({ onCreated }: { onCreated: () => void }) {
   const [functions, setFunctions] = useState<PlatformFunction[]>([]);
@@ -79,16 +104,15 @@ function NewJobForm({ onCreated }: { onCreated: () => void }) {
       if (invocable.length > 0 && !taskId) {
         const first = invocable[0];
         setTaskId(first.task_identifier);
-        const defaultPayload = DEFAULT_PAYLOADS[first.task_identifier] || { key: 'value' };
-        setPayload(JSON.stringify(defaultPayload, null, 2));
+        setPayload(JSON.stringify(getDefaultPayload(first), null, 2));
       }
     }).catch(() => {});
   }, []);
 
   const handleFunctionChange = (newTaskId: string) => {
     setTaskId(newTaskId);
-    const defaultPayload = DEFAULT_PAYLOADS[newTaskId] || { key: 'value' };
-    setPayload(JSON.stringify(defaultPayload, null, 2));
+    const fn = functions.find((f) => f.task_identifier === newTaskId);
+    setPayload(JSON.stringify(fn ? getDefaultPayload(fn) : { key: 'value' }, null, 2));
     setError(null);
   };
 

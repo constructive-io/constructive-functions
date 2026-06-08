@@ -7,5 +7,15 @@
   "scope": "platform",
   "description": "Example Python function — copy this to create a new Python function",
   "requiredSecrets": [],
-  "requiredConfigs": []
+  "requiredConfigs": [],
+  "payloadSchema": {
+    "type": "object",
+    "properties": {
+      "message": {
+        "type": "string",
+        "description": "A message to process"
+      }
+    },
+    "additionalProperties": true
+  }
 }
