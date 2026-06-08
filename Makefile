@@ -1,4 +1,4 @@
-.PHONY: install build clean lint generate \
+.PHONY: install build clean lint generate register \
        up down status verify-platform check-env setup-platform \
        up\:email-job down\:email-job \
        up\:www \
@@ -21,6 +21,9 @@ lint:
 
 generate:
 	pnpm run generate
+
+register:
+	node --experimental-strip-types scripts/register-functions.ts
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Lifecycle — up / down

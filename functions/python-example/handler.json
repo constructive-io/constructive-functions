@@ -1,6 +1,11 @@
 {
   "name": "python-example",
-  "version": "0.1.0",
-  "description": "Example Python function",
-  "type": "python"
+  "version": "1.0.0",
+  "type": "python",
+  "port": 8084,
+  "taskIdentifier": "python-example",
+  "scope": "platform",
+  "description": "Example Python function — copy this to create a new Python function",
+  "requiredSecrets": [],
+  "requiredConfigs": []
 }
