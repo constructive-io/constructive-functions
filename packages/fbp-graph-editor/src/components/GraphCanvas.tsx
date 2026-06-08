@@ -1,0 +1,455 @@
+import React, { useRef, useCallback, useEffect, useState } from 'react';
+import { useGraph, useSelection, useNavigation, useScopedGraph, Point } from '../context/GraphContext';
+import { GraphNode } from './GraphNode';
+import { GraphEdge, TempEdge } from './GraphEdge';
+import { screenToCanvas, clamp } from '../utils/geometry';
+
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 2;
+const GRID_SIZE = 20;
+const BOUNDARY_NODE_TYPES = ['core/graph/input', 'core/graph/output', 'core/graph/prop'];
+
+export function GraphCanvas() {
+  const { state, dispatch } = useGraph();
+  const { clearSelection, deleteSelection, duplicateSelection, copySelection, pasteSelection, selectAll, collapseSelection, layoutSelection } = useSelection();
+  const { goUp, canGoUp, diveInto } = useNavigation();
+  const { nodes: scopedNodes, edges: scopedEdges } = useScopedGraph();
+  
+  // Refs to always access latest values in event handlers (avoids stale closures)
+  const scopedNodesRef = useRef(scopedNodes);
+  scopedNodesRef.current = scopedNodes;
+  const selectionRef = useRef(state.selection.nodeIds);
+  selectionRef.current = state.selection.nodeIds;
+  const cwdRef = useRef(state.cwd);
+  cwdRef.current = state.cwd;
+  
+  const svgRef = useRef<SVGSVGElement>(null);
+  const bgRef = useRef<SVGRectElement>(null);
+  const [isPanning, setIsPanning] = useState(false);
+  const [isSpaceHeld, setIsSpaceHeld] = useState(false);
+  const [connectingEnd, setConnectingEnd] = useState<Point | null>(null);
+  const panStart = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
+  const lastMousePos = useRef<Point | null>(null);
+
+  // Use refs to access current state in native event handlers
+  const viewRef = useRef(state.view);
+  viewRef.current = state.view;
+
+  // Native wheel handler to properly prevent browser zoom
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+
+      const view = viewRef.current;
+
+      if (e.ctrlKey || e.metaKey) {
+        const rect = svg.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+        const newZoom = clamp(view.zoom * zoomFactor, MIN_ZOOM, MAX_ZOOM);
+
+        const canvasPoint = screenToCanvas({ x: mouseX, y: mouseY }, view.pan, view.zoom);
+        const newPanX = mouseX - canvasPoint.x * newZoom;
+        const newPanY = mouseY - canvasPoint.y * newZoom;
+
+        dispatch({ type: 'SET_VIEW', view: { zoom: newZoom, pan: { x: newPanX, y: newPanY } } });
+      } else {
+        dispatch({
+          type: 'SET_VIEW',
+          view: {
+            pan: {
+              x: view.pan.x - e.deltaX,
+              y: view.pan.y - e.deltaY
+            }
+          }
+        });
+      }
+    };
+
+    // Prevent Safari gesture zoom
+    const handleGesture = (e: Event) => {
+      e.preventDefault();
+    };
+
+    // Add with passive: false to allow preventDefault
+    svg.addEventListener('wheel', handleWheel, { passive: false });
+    svg.addEventListener('gesturestart', handleGesture);
+    svg.addEventListener('gesturechange', handleGesture);
+    svg.addEventListener('gestureend', handleGesture);
+
+    return () => {
+      svg.removeEventListener('wheel', handleWheel);
+      svg.removeEventListener('gesturestart', handleGesture);
+      svg.removeEventListener('gesturechange', handleGesture);
+      svg.removeEventListener('gestureend', handleGesture);
+    };
+  }, [dispatch]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Only handle clicks on the canvas background (svg or background rect)
+    const isCanvasClick = e.target === svgRef.current || e.target === bgRef.current;
+    if (!isCanvasClick) return;
+
+    // Pan mode: middle mouse, alt+click, or spacebar+click
+    if (e.button === 1 || (e.button === 0 && e.altKey) || (e.button === 0 && isSpaceHeld)) {
+      setIsPanning(true);
+      panStart.current = {
+        x: e.clientX,
+        y: e.clientY,
+        panX: state.view.pan.x,
+        panY: state.view.pan.y
+      };
+      return;
+    }
+
+    // Left click on canvas: clear selection and start marquee
+    if (e.button === 0) {
+      if (!e.shiftKey) {
+        clearSelection();
+      }
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const canvasPoint = screenToCanvas(
+        { x: e.clientX - rect.left, y: e.clientY - rect.top },
+        state.view.pan,
+        state.view.zoom
+      );
+      dispatch({ type: 'START_BOX_SELECT', start: canvasPoint });
+    }
+  }, [state.view, isSpaceHeld, clearSelection, dispatch]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const currentCanvasPoint = screenToCanvas(
+      { x: e.clientX - rect.left, y: e.clientY - rect.top },
+      state.view.pan,
+      state.view.zoom
+    );
+
+    if (isPanning && panStart.current) {
+      const dx = e.clientX - panStart.current.x;
+      const dy = e.clientY - panStart.current.y;
+      dispatch({
+        type: 'SET_VIEW',
+        view: { pan: { x: panStart.current.panX + dx, y: panStart.current.panY + dy } }
+      });
+      lastMousePos.current = currentCanvasPoint;
+      return;
+    }
+
+    if (state.boxSelect.active) {
+      if (isSpaceHeld && lastMousePos.current) {
+        // Move the entire marquee
+        const delta = {
+          x: currentCanvasPoint.x - lastMousePos.current.x,
+          y: currentCanvasPoint.y - lastMousePos.current.y
+        };
+        dispatch({ type: 'MOVE_BOX_SELECT', delta });
+      } else {
+        // Normal marquee resize
+        dispatch({ type: 'UPDATE_BOX_SELECT', end: currentCanvasPoint });
+      }
+    }
+
+    if (state.connecting.active) {
+      setConnectingEnd(currentCanvasPoint);
+    }
+
+    lastMousePos.current = currentCanvasPoint;
+  }, [isPanning, isSpaceHeld, state.boxSelect.active, state.connecting.active, state.view, dispatch]);
+
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    if (isPanning) {
+      setIsPanning(false);
+      panStart.current = null;
+    }
+
+    if (state.boxSelect.active) {
+      dispatch({ type: 'END_BOX_SELECT' });
+    }
+
+    if (state.connecting.active) {
+      dispatch({ type: 'CANCEL_CONNECTING' });
+      setConnectingEnd(null);
+    }
+  }, [isPanning, state.boxSelect.active, state.connecting.active, dispatch]);
+
+  const handleStartConnect = useCallback((
+    nodeId: string,
+    portName: string,
+    isOutput: boolean,
+    position: Point
+  ) => {
+    dispatch({ type: 'START_CONNECTING', nodeId, portName, isOutput });
+    setConnectingEnd(position);
+  }, [dispatch]);
+
+  const handleEndConnect = useCallback((
+    nodeId: string,
+    portName: string,
+    isOutput: boolean
+  ) => {
+    if (!state.connecting.active) return;
+    if (state.connecting.isOutput === isOutput) return;
+    if (state.connecting.sourceNode === nodeId) return;
+    
+    dispatch({ type: 'END_CONNECTING', nodeId, portName });
+    setConnectingEnd(null);
+  }, [state.connecting, dispatch]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<SVGSVGElement>) => {
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    // Spacebar for pan mode
+    if (e.code === 'Space' && !e.repeat) {
+      e.preventDefault();
+      setIsSpaceHeld(true);
+      return;
+    }
+
+    switch (e.key) {
+      case 'Delete':
+      case 'Backspace':
+        deleteSelection();
+        break;
+      case 'd':
+        if (e.metaKey || e.ctrlKey) {
+          e.preventDefault();
+          duplicateSelection();
+        }
+        break;
+      case 'a':
+        if (e.metaKey || e.ctrlKey) {
+          e.preventDefault();
+          selectAll();
+        }
+        break;
+      case 'Escape':
+        clearSelection();
+        if (state.connecting.active) {
+          dispatch({ type: 'CANCEL_CONNECTING' });
+          setConnectingEnd(null);
+        }
+        break;
+      // U and Enter handled by global document listener (see useEffect below)
+      case 'c':
+      case 'C':
+        if (e.shiftKey && state.selection.nodeIds.size >= 1) {
+          e.preventDefault();
+          collapseSelection();
+        } else if ((e.metaKey || e.ctrlKey) && state.selection.nodeIds.size >= 1) {
+          e.preventDefault();
+          copySelection();
+        }
+        break;
+      case 'v':
+      case 'V':
+        if (e.metaKey || e.ctrlKey) {
+          e.preventDefault();
+          pasteSelection();
+        }
+        break;
+      case 'l':
+      case 'L':
+        if (state.selection.nodeIds.size >= 1) {
+          e.preventDefault();
+          layoutSelection();
+        }
+        break;
+    }
+  }, [deleteSelection, duplicateSelection, copySelection, pasteSelection, selectAll, clearSelection, canGoUp, goUp, diveInto, collapseSelection, layoutSelection, state.selection.nodeIds, state.graph.nodes, state.connecting.active, dispatch]);
+
+  const handleKeyUp = useCallback((e: React.KeyboardEvent<SVGSVGElement>) => {
+    if (e.code === 'Space') {
+      setIsSpaceHeld(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes('application/fbp-node')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const data = e.dataTransfer.getData('application/fbp-node');
+    if (!data) return;
+
+    try {
+      const { definitionName, isBoundary } = JSON.parse(data);
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const position = screenToCanvas(
+        { x: e.clientX - rect.left, y: e.clientY - rect.top },
+        state.view.pan,
+        state.view.zoom
+      );
+
+      if (isBoundary) {
+        const boundaryType = definitionName === 'graph/input' ? 'input' 
+          : definitionName === 'graph/output' ? 'output' 
+          : 'prop';
+        dispatch({ type: 'ADD_BOUNDARY_NODE', boundaryType, position });
+      } else {
+        const newNode = {
+          name: `${definitionName.split('/').pop()}_${Date.now().toString(36)}`,
+          type: definitionName,
+          meta: position
+        };
+        dispatch({ type: 'ADD_NODE', node: newNode });
+      }
+    } catch (err) {
+      console.error('Failed to parse dropped node data:', err);
+    }
+  }, [state.view, dispatch]);
+
+  // Auto-focus the SVG canvas on mount and after navigation changes
+  useEffect(() => {
+    svgRef.current?.focus();
+  }, [state.cwd]);
+
+  // Global keyboard listener for navigation keys (U/Enter) —
+  // always uses document-level listener so it works regardless of focus state
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Skip if user is typing in an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
+
+      if (e.key === 'u' || e.key === 'U') {
+        if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+          const currentCwd = cwdRef.current;
+          if (currentCwd !== '/') {
+            e.preventDefault();
+            dispatch({ type: 'GO_UP' });
+            svgRef.current?.focus();
+          }
+        }
+      } else if (e.key === 'Enter') {
+        const currentSelection = Array.from(selectionRef.current);
+        const currentScopedNodes = scopedNodesRef.current;
+        if (currentSelection.length === 1) {
+          const node = currentScopedNodes.find(n => n.name === currentSelection[0]);
+          if (node?.nodes && node.nodes.length > 0) {
+            e.preventDefault();
+            dispatch({ type: 'DIVE_INTO', nodeId: currentSelection[0] });
+            svgRef.current?.focus();
+          }
+        }
+      }
+    };
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [dispatch]);
+
+  const getConnectingStartPos = (): Point | null => {
+    if (!state.connecting.active || !state.connecting.sourceNode || !state.connecting.sourcePort) {
+      return null;
+    }
+    // Use scoped nodes to find the source node (works in subgraphs)
+    const node = scopedNodes.find(n => n.name === state.connecting.sourceNode);
+    if (!node) return null;
+    
+    const x = node.meta?.x || 0;
+    const y = node.meta?.y || 0;
+    const isOutput = state.connecting.isOutput;
+    
+    const definition = state.definitions.get(node.type);
+    const ports = isOutput
+      ? (node.outputs || definition?.outputs || [])
+      : (node.inputs || definition?.inputs || []);
+    
+    const portIndex = ports.findIndex(p => p.name === state.connecting.sourcePort);
+    if (portIndex === -1) return null;
+    
+    return {
+      x: isOutput ? x + 180 : x,
+      y: y + 28 + portIndex * 24 + 12
+    };
+  };
+
+  const connectingStartPos = getConnectingStartPos();
+
+  return (
+    <svg
+      ref={svgRef}
+      tabIndex={0}
+      className="w-full h-full bg-zinc-950 outline-none"
+      onKeyDown={handleKeyDown}
+      onKeyUp={handleKeyUp}
+      onMouseDownCapture={() => svgRef.current?.focus()}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      style={{ cursor: isPanning ? 'grabbing' : isSpaceHeld ? 'grab' : 'default', userSelect: 'none', touchAction: 'none' }}
+    >
+      <defs>
+        <pattern
+          id="grid"
+          width={GRID_SIZE}
+          height={GRID_SIZE}
+          patternUnits="userSpaceOnUse"
+          patternTransform={`translate(${state.view.pan.x % (GRID_SIZE * state.view.zoom)}, ${state.view.pan.y % (GRID_SIZE * state.view.zoom)}) scale(${state.view.zoom})`}
+        >
+          <circle cx={GRID_SIZE / 2} cy={GRID_SIZE / 2} r={1} fill="#334155" />
+        </pattern>
+      </defs>
+      
+      <rect ref={bgRef} width="100%" height="100%" fill="url(#grid)" />
+
+      <g transform={`translate(${state.view.pan.x}, ${state.view.pan.y}) scale(${state.view.zoom})`}>
+        {scopedEdges.map((edge, i) => (
+          <GraphEdge key={`${edge.src.node}:${edge.src.port}->${edge.dst.node}:${edge.dst.port}`} edge={edge} />
+        ))}
+
+        {connectingStartPos && connectingEnd && (
+          <TempEdge start={connectingStartPos} end={connectingEnd} />
+        )}
+
+        {scopedNodes.map(node => (
+          <GraphNode
+            key={node.name}
+            node={node}
+            onStartConnect={handleStartConnect}
+            onEndConnect={handleEndConnect}
+          />
+        ))}
+
+        {state.boxSelect.active && state.boxSelect.start && state.boxSelect.end && (
+          <rect
+            x={Math.min(state.boxSelect.start.x, state.boxSelect.end.x)}
+            y={Math.min(state.boxSelect.start.y, state.boxSelect.end.y)}
+            width={Math.abs(state.boxSelect.end.x - state.boxSelect.start.x)}
+            height={Math.abs(state.boxSelect.end.y - state.boxSelect.start.y)}
+            fill="rgba(59, 130, 246, 0.1)"
+            stroke="#3b82f6"
+            strokeWidth={1}
+            strokeDasharray="4 2"
+          />
+        )}
+      </g>
+
+      {state.cwd !== '/' && (
+        <g>
+          <rect x={10} y={10} width={200} height={30} rx={4} fill="rgba(30, 41, 59, 0.9)" />
+          <text x={20} y={30} fill="#94a3b8" fontSize={12} fontFamily="system-ui, sans-serif">
+            {state.cwd}
+          </text>
+          <text x={180} y={30} fill="#64748b" fontSize={10} fontFamily="system-ui, sans-serif">
+            U to go up
+          </text>
+        </g>
+      )}
+    </svg>
+  );
+}
