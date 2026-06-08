@@ -47,11 +47,18 @@ export { getEdgeId } from '../utils/graphTransform';
 
 // Node dimension constants (must match GraphNode.tsx)
 const NODE_WIDTH = 180;
+const RICH_NODE_WIDTH = 320;
 const NODE_HEADER_HEIGHT = 28;
 const PORT_HEIGHT = 24;
+const RICH_TOTAL_HEIGHT = 42 + 80 + 28; // header + body + footer
+
+function getNodeWidthForDef(definition?: NodeDefinition): number {
+  return definition?.category === 'functions' ? RICH_NODE_WIDTH : NODE_WIDTH;
+}
 
 // Helper to calculate node height based on number of ports
 function getNodeHeight(node: Node, definition?: NodeDefinition): number {
+  if (definition?.category === 'functions') return RICH_TOTAL_HEIGHT;
   // For subnets, derive ports from boundary nodes (identified by type, not prefix)
   const isSubnet = node.nodes && node.nodes.length > 0;
   let inputCount = 0;
@@ -830,7 +837,7 @@ function graphReducer(state: GraphEditorState, action: GraphAction): GraphEditor
             // Node bounding box
             const nodeRect = {
               minX: nodeX,
-              maxX: nodeX + NODE_WIDTH,
+              maxX: nodeX + getNodeWidthForDef(definition),
               minY: nodeY,
               maxY: nodeY + nodeHeight
             };
@@ -871,7 +878,7 @@ function graphReducer(state: GraphEditorState, action: GraphAction): GraphEditor
             // Node bounding box
             const nodeRect = {
               minX: nodeX,
-              maxX: nodeX + NODE_WIDTH,
+              maxX: nodeX + getNodeWidthForDef(definition),
               minY: nodeY,
               maxY: nodeY + nodeHeight
             };
@@ -985,6 +992,26 @@ export function GraphProvider({ children, initialGraph, initialCwd, externalDefi
     ])
   });
 
+  // Sync external graph changes into internal state (avoid infinite loops with suppressCallback)
+  const suppressCallbackRef = React.useRef(false);
+  const prevInitialGraphRef = React.useRef(initialGraph);
+  React.useEffect(() => {
+    if (initialGraph && initialGraph !== prevInitialGraphRef.current) {
+      prevInitialGraphRef.current = initialGraph;
+      suppressCallbackRef.current = true;
+      dispatch({ type: 'SET_GRAPH', graph: initialGraph });
+    }
+  }, [initialGraph]);
+
+  // Sync external definitions into internal state
+  const prevExternalDefsRef = React.useRef(externalDefinitions);
+  React.useEffect(() => {
+    if (externalDefinitions && externalDefinitions !== prevExternalDefsRef.current) {
+      prevExternalDefsRef.current = externalDefinitions;
+      dispatch({ type: 'SET_DEFINITIONS', definitions: externalDefinitions });
+    }
+  }, [externalDefinitions]);
+
   // Call onSelectionChange when selection changes
   React.useEffect(() => {
     if (onSelectionChange) {
@@ -992,9 +1019,14 @@ export function GraphProvider({ children, initialGraph, initialCwd, externalDefi
     }
   }, [state.selection.nodeIds, onSelectionChange]);
 
-  // Call onGraphChange when graph changes
+  // Call onGraphChange when graph changes (skip if the change came from external sync)
   const graphRef = React.useRef(state.graph);
   React.useEffect(() => {
+    if (suppressCallbackRef.current) {
+      suppressCallbackRef.current = false;
+      graphRef.current = state.graph;
+      return;
+    }
     if (onGraphChange && state.graph !== graphRef.current) {
       onGraphChange(state.graph);
     }

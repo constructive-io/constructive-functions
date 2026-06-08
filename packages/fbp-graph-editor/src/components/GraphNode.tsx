@@ -1,14 +1,10 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { useGraph, useSelection } from '../context/GraphContext';
 import type { Node, Port } from '@fbp/types';
-import { clsx } from 'clsx';
 import { NodeIconSvg } from './NodeIcon';
 import { BOUNDARY_NODE_KINDS, getPortNameFromBoundary, getDataTypeFromBoundary } from '../types';
 
 // Derive ports from boundary nodes inside a subnet (ensures ports are always in sync)
-// Boundary nodes are identified by their kind property (graphInput, graphOutput, graphProp)
-// Port names are read from the portName property
-// Exported so GraphEdge can also use it for port position lookups
 export function deriveBoundaryPorts(nodes: Node[], type: 'input' | 'output'): Port[] {
   const nodeKind = type === 'input' ? BOUNDARY_NODE_KINDS.input : BOUNDARY_NODE_KINDS.output;
   return nodes
@@ -20,15 +16,30 @@ export function deriveBoundaryPorts(nodes: Node[], type: 'input' | 'output'): Po
     });
 }
 
+// Standard compact node dimensions
 const NODE_WIDTH = 180;
 const NODE_HEADER_HEIGHT = 28;
 const PORT_HEIGHT = 24;
 const PORT_RADIUS = 6;
 
+// Rich function card dimensions
+const RICH_NODE_WIDTH = 320;
+const RICH_HEADER_HEIGHT = 42;
+const RICH_BODY_HEIGHT = 80;
+const RICH_FOOTER_HEIGHT = 28;
+const RICH_PORT_Y_INPUT = 85;
+const RICH_PORT_Y_OUTPUT = 85;
+
 interface GraphNodeProps {
   node: Node;
   onStartConnect: (nodeId: string, portName: string, isOutput: boolean, position: { x: number; y: number }) => void;
   onEndConnect?: (nodeId: string, portName: string, isOutput: boolean) => void;
+}
+
+// Get node prop value helper
+function getNodeProp(node: Node, propName: string): any {
+  const prop = node.props?.find(p => p.name === propName);
+  return prop?.value;
 }
 
 export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps) {
@@ -42,37 +53,30 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
   const isSelected = selection.nodeIds.has(node.name);
   const isPreview = state.boxSelect.previewNodeIds.has(node.name);
   const isSubnet = node.nodes && node.nodes.length > 0;
-  
-  // For subnets, derive inputs/outputs from boundary nodes inside (always in sync)
-  // For regular nodes, use node.inputs/outputs or fall back to definition
+  const isRichNode = definition?.category === 'functions';
+
+  // For subnets, derive inputs/outputs from boundary nodes inside
   const inputs = isSubnet 
     ? deriveBoundaryPorts(node.nodes || [], 'input')
     : (node.inputs || definition?.inputs || []);
   const outputs = isSubnet 
     ? deriveBoundaryPorts(node.nodes || [], 'output')
     : (node.outputs || definition?.outputs || []);
-  const nodeHeight = NODE_HEADER_HEIGHT + Math.max(inputs.length, outputs.length, 1) * PORT_HEIGHT + 8;
 
   const x = node.meta?.x || 0;
   const y = node.meta?.y || 0;
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-
-    // Determine which nodes will be dragged BEFORE updating selection
-    // This avoids race conditions with async state updates
     let nodesToDrag: string[];
     const additive = e.shiftKey;
 
     if (additive) {
-      // Shift-click: add to existing selection, drag all
       nodesToDrag = [...Array.from(state.selection.nodeIds), node.name];
       selectNodes([node.name], true);
     } else if (isSelected) {
-      // Already selected without shift: drag all currently selected
       nodesToDrag = Array.from(state.selection.nodeIds);
     } else {
-      // Not selected, no shift: select only this node, drag only this node
       nodesToDrag = [node.name];
       selectNodes([node.name], false);
     }
@@ -84,7 +88,6 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
       if (!dragStart.current) return;
       const dx = (moveEvent.clientX - dragStart.current.x) / state.view.zoom;
       const dy = (moveEvent.clientY - dragStart.current.y) / state.view.zoom;
-
       dispatch({
         type: 'MOVE_NODES',
         nodeIds: nodesToDrag,
@@ -104,12 +107,10 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
     window.addEventListener('mouseup', handleMouseUp);
   }, [node.name, isSelected, x, y, state.view.zoom, state.selection.nodeIds, selectNodes, dispatch]);
 
-  const handlePortMouseDown = useCallback((e: React.MouseEvent, portName: string, isOutput: boolean, portIndex: number) => {
+  const handlePortMouseDown = useCallback((e: React.MouseEvent, portName: string, isOutput: boolean, portY: number, portX: number) => {
     e.stopPropagation();
-    const portY = y + NODE_HEADER_HEIGHT + portIndex * PORT_HEIGHT + PORT_HEIGHT / 2;
-    const portX = isOutput ? x + NODE_WIDTH : x;
     onStartConnect(node.name, portName, isOutput, { x: portX, y: portY });
-  }, [node.name, x, y, onStartConnect]);
+  }, [node.name, onStartConnect]);
 
   const handlePortMouseUp = useCallback((e: React.MouseEvent, portName: string, isOutput: boolean) => {
     e.stopPropagation();
@@ -123,11 +124,185 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
       case 'number': return '#4ade80';
       case 'string': return '#f472b6';
       case 'boolean': return '#facc15';
+      case 'json':
       case 'object': return '#60a5fa';
       case 'array': return '#a78bfa';
       default: return '#94a3b8';
     }
   };
+
+  // ── Rich function card rendering ──
+  if (isRichNode) {
+    const width = RICH_NODE_WIDTH;
+    const totalHeight = RICH_HEADER_HEIGHT + RICH_BODY_HEIGHT + RICH_FOOTER_HEIGHT;
+    const description = definition?.description || '';
+    const taskId = definition?.name || node.type;
+    const isInvocable = definition?.icon === 'zap';
+    const secretsCount = getNodeProp(node, 'secretsCount') ?? 0;
+    const configsCount = getNodeProp(node, 'configsCount') ?? 0;
+    const scope = getNodeProp(node, 'scope') || definition?.context || 'platform';
+
+    return (
+      <g
+        transform={`translate(${x}, ${y})`}
+        onMouseDown={handleMouseDown}
+        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+      >
+        {/* Shadow */}
+        <rect
+          x={4} y={4}
+          width={width} height={totalHeight}
+          rx={12} ry={12}
+          fill="rgba(0,0,0,0.4)"
+        />
+
+        {/* Card background */}
+        <rect
+          width={width} height={totalHeight}
+          rx={12} ry={12}
+          fill="#18181b"
+        />
+
+        {/* Header background */}
+        <rect
+          width={width}
+          height={RICH_HEADER_HEIGHT}
+          rx={12} ry={12}
+          fill="#27272a"
+        />
+        <rect
+          y={RICH_HEADER_HEIGHT - 12}
+          width={width} height={12}
+          fill="#27272a"
+        />
+
+        {/* Border */}
+        <rect
+          width={width} height={totalHeight}
+          rx={12} ry={12}
+          fill="none"
+          stroke={isSelected || isPreview ? '#3b82f6' : '#3f3f46'}
+          strokeWidth={isSelected || isPreview ? 2 : 1}
+        />
+
+        {/* Header: icon + name */}
+        <g transform={`translate(16, ${RICH_HEADER_HEIGHT / 2})`}>
+          {/* Lightning bolt for invocable */}
+          {isInvocable ? (
+            <g transform="translate(-4, -7)">
+              <text fill="#22d3ee" fontSize={14} fontFamily="system-ui">⚡</text>
+            </g>
+          ) : (
+            <g transform="translate(-4, -5)">
+              <NodeIconSvg icon={definition?.icon || 'circle'} size={12} />
+            </g>
+          )}
+          <text
+            x={18}
+            dominantBaseline="middle"
+            fill="#e4e4e7"
+            fontSize={16}
+            fontWeight={700}
+            fontFamily="'JetBrains Mono', 'Fira Code', ui-monospace, monospace"
+          >
+            {getShortName(node.type)}
+          </text>
+        </g>
+
+        {/* Body: description + task identifier */}
+        <text
+          x={16} y={RICH_HEADER_HEIGHT + 20}
+          fill="#a1a1aa"
+          fontSize={12}
+          fontFamily="system-ui, sans-serif"
+        >
+          {description.length > 45 ? description.slice(0, 42) + '…' : description}
+        </text>
+        <text
+          x={16} y={RICH_HEADER_HEIGHT + 42}
+          fill="#71717a"
+          fontSize={11}
+          fontFamily="'JetBrains Mono', 'Fira Code', ui-monospace, monospace"
+        >
+          {taskId}
+        </text>
+
+        {/* Footer: secrets, configs, scope */}
+        <g transform={`translate(16, ${RICH_HEADER_HEIGHT + RICH_BODY_HEIGHT + 4})`}>
+          {/* Lock icon + secrets count */}
+          <text fill="#71717a" fontSize={11} fontFamily="system-ui">🔒</text>
+          <text x={16} y={0} dominantBaseline="hanging" fill="#a1a1aa" fontSize={11} fontFamily="system-ui">{secretsCount}</text>
+
+          {/* Gear icon + configs count */}
+          <text x={36} fill="#71717a" fontSize={11} fontFamily="system-ui">⚙️</text>
+          <text x={54} y={0} dominantBaseline="hanging" fill="#a1a1aa" fontSize={11} fontFamily="system-ui">{configsCount}</text>
+
+          {/* Scope badge */}
+          <rect x={76} y={-2} width={scope.length * 7 + 16} height={18} rx={4} fill="#27272a" />
+          <text
+            x={84} y={7}
+            dominantBaseline="middle"
+            fill="#a1a1aa"
+            fontSize={10}
+            fontFamily="system-ui, sans-serif"
+          >
+            {scope}
+          </text>
+        </g>
+
+        {/* Input ports (left) */}
+        {inputs.map((port, i) => {
+          const portY = RICH_PORT_Y_INPUT + i * PORT_HEIGHT;
+          const isValidDrop = state.connecting.active && state.connecting.isOutput && state.connecting.sourceNode !== node.name;
+          const isHov = hoveredPort?.name === port.name && !hoveredPort?.isOutput;
+          const highlight = isValidDrop && isHov;
+          return (
+            <g key={`input-${port.name}`}>
+              <circle
+                cx={0} cy={portY}
+                r={PORT_RADIUS + 2}
+                fill={highlight ? '#60a5fa' : '#3b82f6'}
+                stroke="#18181b"
+                strokeWidth={3}
+                style={{ cursor: 'crosshair' }}
+                onMouseDown={(e) => handlePortMouseDown(e, port.name, false, y + portY, x)}
+                onMouseUp={(e) => handlePortMouseUp(e, port.name, false)}
+                onMouseEnter={() => setHoveredPort({ name: port.name, isOutput: false })}
+                onMouseLeave={() => setHoveredPort(null)}
+              />
+            </g>
+          );
+        })}
+
+        {/* Output ports (right) */}
+        {outputs.map((port, i) => {
+          const portY = RICH_PORT_Y_OUTPUT + i * PORT_HEIGHT;
+          const isValidDrop = state.connecting.active && !state.connecting.isOutput && state.connecting.sourceNode !== node.name;
+          const isHov = hoveredPort?.name === port.name && hoveredPort?.isOutput;
+          const highlight = isValidDrop && isHov;
+          return (
+            <g key={`output-${port.name}`}>
+              <circle
+                cx={width} cy={portY}
+                r={PORT_RADIUS + 2}
+                fill={highlight ? '#60a5fa' : '#22c55e'}
+                stroke="#18181b"
+                strokeWidth={3}
+                style={{ cursor: 'crosshair' }}
+                onMouseDown={(e) => handlePortMouseDown(e, port.name, true, y + portY, x + width)}
+                onMouseUp={(e) => handlePortMouseUp(e, port.name, true)}
+                onMouseEnter={() => setHoveredPort({ name: port.name, isOutput: true })}
+                onMouseLeave={() => setHoveredPort(null)}
+              />
+            </g>
+          );
+        })}
+      </g>
+    );
+  }
+
+  // ── Standard compact node rendering ──
+  const nodeHeight = NODE_HEADER_HEIGHT + Math.max(inputs.length, outputs.length, 1) * PORT_HEIGHT + 8;
 
   return (
     <g
@@ -141,7 +316,7 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
         height={nodeHeight}
         rx={8}
         ry={8}
-        fill="#1e293b"
+        fill="#18181b"
       />
 
       {/* Header background */}
@@ -150,23 +325,23 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
         height={NODE_HEADER_HEIGHT}
         rx={8}
         ry={8}
-        fill={isSubnet ? '#7c3aed' : '#334155'}
+        fill={isSubnet ? '#7c3aed' : '#27272a'}
       />
       <rect
         y={NODE_HEADER_HEIGHT - 8}
         width={NODE_WIDTH}
         height={8}
-        fill={isSubnet ? '#7c3aed' : '#334155'}
+        fill={isSubnet ? '#7c3aed' : '#27272a'}
       />
 
-      {/* Border on top of everything */}
+      {/* Border */}
       <rect
         width={NODE_WIDTH}
         height={nodeHeight}
         rx={8}
         ry={8}
         fill="none"
-        stroke={isSelected || isPreview ? '#3b82f6' : '#334155'}
+        stroke={isSelected || isPreview ? '#3b82f6' : '#3f3f46'}
         strokeWidth={isSelected || isPreview ? 2 : 1}
       />
       
@@ -180,7 +355,7 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
         y={NODE_HEADER_HEIGHT / 2 + 1}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="white"
+        fill="#e4e4e7"
         fontSize={12}
         fontWeight={600}
         fontFamily="system-ui, sans-serif"
@@ -213,10 +388,10 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
               cy={PORT_HEIGHT / 2}
               r={PORT_RADIUS}
               fill={highlight ? '#60a5fa' : getPortColor(port.type)}
-              stroke={highlight ? '#3b82f6' : '#1e293b'}
+              stroke="#18181b"
               strokeWidth={2}
               style={{ cursor: 'crosshair' }}
-              onMouseDown={(e) => handlePortMouseDown(e, port.name, false, i)}
+              onMouseDown={(e) => handlePortMouseDown(e, port.name, false, y + NODE_HEADER_HEIGHT + i * PORT_HEIGHT + PORT_HEIGHT / 2, x)}
               onMouseUp={(e) => handlePortMouseUp(e, port.name, false)}
               onMouseEnter={() => setHoveredPort({ name: port.name, isOutput: false })}
               onMouseLeave={() => setHoveredPort(null)}
@@ -225,7 +400,7 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
               x={12}
               y={PORT_HEIGHT / 2}
               dominantBaseline="middle"
-              fill="#94a3b8"
+              fill="#a1a1aa"
               fontSize={11}
               fontFamily="system-ui, sans-serif"
             >
@@ -246,10 +421,10 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
               cy={PORT_HEIGHT / 2}
               r={PORT_RADIUS}
               fill={highlight ? '#60a5fa' : getPortColor(port.type)}
-              stroke={highlight ? '#3b82f6' : '#1e293b'}
+              stroke="#18181b"
               strokeWidth={2}
               style={{ cursor: 'crosshair' }}
-              onMouseDown={(e) => handlePortMouseDown(e, port.name, true, i)}
+              onMouseDown={(e) => handlePortMouseDown(e, port.name, true, y + NODE_HEADER_HEIGHT + i * PORT_HEIGHT + PORT_HEIGHT / 2, x + NODE_WIDTH)}
               onMouseUp={(e) => handlePortMouseUp(e, port.name, true)}
               onMouseEnter={() => setHoveredPort({ name: port.name, isOutput: true })}
               onMouseLeave={() => setHoveredPort(null)}
@@ -259,7 +434,7 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
               y={PORT_HEIGHT / 2}
               textAnchor="end"
               dominantBaseline="middle"
-              fill="#94a3b8"
+              fill="#a1a1aa"
               fontSize={11}
               fontFamily="system-ui, sans-serif"
             >
@@ -276,13 +451,13 @@ export function getNodePortPosition(
   node: Node,
   portName: string,
   isOutput: boolean,
-  definition?: { inputs?: Port[]; outputs?: Port[] }
+  definition?: { inputs?: Port[]; outputs?: Port[]; category?: string }
 ): { x: number; y: number } | null {
   const x = node.meta?.x || 0;
   const y = node.meta?.y || 0;
   
-  // For subnets, derive ports from boundary nodes inside (always in sync)
   const isSubnet = node.nodes && node.nodes.length > 0;
+  const isRich = definition?.category === 'functions';
   const ports = isSubnet
     ? deriveBoundaryPorts(node.nodes || [], isOutput ? 'output' : 'input')
     : isOutput
@@ -291,6 +466,13 @@ export function getNodePortPosition(
   
   const portIndex = ports.findIndex(p => p.name === portName);
   if (portIndex === -1) return null;
+
+  if (isRich) {
+    return {
+      x: isOutput ? x + RICH_NODE_WIDTH : x,
+      y: y + RICH_PORT_Y_INPUT + portIndex * PORT_HEIGHT
+    };
+  }
   
   return {
     x: isOutput ? x + NODE_WIDTH : x,
@@ -298,4 +480,9 @@ export function getNodePortPosition(
   };
 }
 
-export { NODE_WIDTH, NODE_HEADER_HEIGHT, PORT_HEIGHT };
+export function getNodeWidth(node: Node, definition?: { category?: string }): number {
+  if (definition?.category === 'functions') return RICH_NODE_WIDTH;
+  return NODE_WIDTH;
+}
+
+export { NODE_WIDTH, NODE_HEADER_HEIGHT, PORT_HEIGHT, RICH_NODE_WIDTH };

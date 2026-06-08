@@ -47,15 +47,15 @@ export function NodePalette() {
   }, []);
 
   return (
-    <div className="h-full flex flex-col bg-slate-800">
-      <div className="px-3 py-2 border-b border-slate-700">
-        <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Nodes</span>
+    <div className="h-full flex flex-col bg-zinc-900">
+      <div className="px-3 py-2 border-b border-zinc-800">
+        <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Nodes</span>
       </div>
       
       <div className="flex-1 overflow-y-auto p-2">
         {Object.entries(groupedDefinitions).map(([category, defs]) => (
           <div key={category} className="mb-3">
-            <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1.5 px-1">
+            <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1.5 px-1">
               {category}
             </div>
             <div className="flex flex-col gap-1">
@@ -65,7 +65,7 @@ export function NodePalette() {
                   onClick={() => handleAddNode(def)}
                   draggable
                   onDragStart={(e) => handleDragStart(e, def)}
-                  className="w-full px-2 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-left text-xs text-slate-300 transition-colors flex items-center gap-2 cursor-grab active:cursor-grabbing"
+                  className="w-full px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded text-left text-xs text-zinc-300 transition-colors flex items-center gap-2 cursor-grab active:cursor-grabbing"
                   title={`Drag to add ${def.name}`}
                 >
                   {def.icon && <NodeIcon icon={def.icon} size={14} className="opacity-70" />}
@@ -76,7 +76,7 @@ export function NodePalette() {
           </div>
         ))}
         {definitions.length === 0 && (
-          <div className="text-xs text-slate-500 px-1 py-2">No node definitions available</div>
+          <div className="text-xs text-zinc-500 px-1 py-2">No node definitions available</div>
         )}
       </div>
     </div>

@@ -382,7 +382,7 @@ export function GraphCanvas() {
     <svg
       ref={svgRef}
       tabIndex={0}
-      className="w-full h-full bg-slate-950 outline-none"
+      className="w-full h-full bg-zinc-950 outline-none"
       onKeyDown={handleKeyDown}
       onKeyUp={handleKeyUp}
       onMouseDownCapture={() => svgRef.current?.focus()}
