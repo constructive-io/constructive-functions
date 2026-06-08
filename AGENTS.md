@@ -158,3 +158,16 @@ pnpm run generate:orm      # both, in order
 - `sdk/functions-schema/schemas/*.graphql`, `sdk/functions-schema/src/index.ts`
 - `sdk/functions-sdk/src/**`
 - `.agents/skills/orm-*/`
+
+### CI automation
+
+The same `pnpm run generate:orm` pipeline runs in GitHub Actions (mirrors
+`constructive-db`'s generate-all / schema-sdk-update / validate-introspection):
+
+- `.github/workflows/generate-orm.yml` — reusable (`workflow_call`/dispatch)
+  single source of truth: spins up Postgres, deploys the pgpm module to an
+  ephemeral DB, regenerates schema + ORM, reports drift, uploads the artifact.
+- `.github/workflows/validate-orm.yml` — PR check on `pgpm/**` / `sdk/**`;
+  regenerates and **fails if the committed output is stale**.
+- `.github/workflows/sdk-update.yml` — manual dispatch; regenerates and opens a
+  PR with the fresh output so you don't have to regenerate locally.

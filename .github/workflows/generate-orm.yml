@@ -1,0 +1,135 @@
+name: Generate ORM
+
+# Reusable workflow that runs the full constructive-functions ORM generation
+# pipeline (the same `pnpm run generate:orm` you run locally):
+#   1. Spin up Postgres (postgres-plus:18) and seed roles
+#   2. Deploy the `pgpm/constructive-infra` module to an ephemeral DB,
+#      introspect it, and export `sdk/functions-schema/schemas/*.graphql`
+#   3. Codegen the typed ORM into `sdk/functions-sdk/src/**` + `.agents/skills/orm-*`
+#   4. Detect drift against the committed output and upload artifacts
+#
+# This is the SINGLE SOURCE OF TRUTH for ORM generation in CI. Consumed by:
+#   - sdk-update.yml    — manual regen that opens a PR with the fresh output
+#   - validate-orm.yml  — PR check that fails if the committed output is stale
+#
+# NOTE: this workflow only *generates* and reports — it never commits or fails
+# on drift. Callers decide what to do with `has_changes`.
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Branch/tag/SHA to generate from'
+        required: false
+        default: ''
+        type: string
+    outputs:
+      has_changes:
+        description: 'Whether any generated ORM output changed'
+        value: ${{ jobs.generate.outputs.has_changes }}
+      ref_sha:
+        description: 'Short SHA of the source commit'
+        value: ${{ jobs.generate.outputs.ref_sha }}
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch/tag/SHA to generate from (default: current ref)'
+        required: false
+        default: ''
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PGHOST: localhost
+  PGPORT: 5432
+  PGUSER: postgres
+  PGPASSWORD: password
+
+jobs:
+  generate:
+    name: Generate schema + ORM
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      pg_db:
+        image: constructiveio/postgres-plus:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    outputs:
+      has_changes: ${{ steps.check.outputs.has_changes }}
+      ref_sha: ${{ steps.refs.outputs.ref_sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Record ref
+        id: refs
+        run: echo "ref_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install pgpm CLI
+        run: npm install -g pgpm
+
+      - name: Seed pg users
+        run: pgpm admin-users bootstrap --yes
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Deploys pgpm/constructive-infra -> ephemeral DB -> SDL, then codegens
+      # the ORM. Mirrors `pnpm run generate:orm` exactly.
+      - name: Generate schema + ORM
+        run: pnpm run generate:orm
+
+      - name: Check for drift
+        id: check
+        run: |
+          PATHS="sdk/functions-schema/schemas sdk/functions-schema/src sdk/functions-sdk/src .agents/skills"
+          UNTRACKED=$(git ls-files --others --exclude-standard $PATHS | head -20)
+          if git diff --quiet -- $PATHS && [ -z "$UNTRACKED" ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "Generated ORM output is up-to-date."
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Generated ORM output changed:"
+            git diff --stat -- $PATHS
+            if [ -n "$UNTRACKED" ]; then
+              echo "New untracked files:"
+              echo "$UNTRACKED"
+            fi
+          fi
+
+      - name: Upload generated ORM tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-orm-tree
+          path: |
+            sdk/functions-schema/schemas/
+            sdk/functions-schema/src/
+            sdk/functions-sdk/src/
+            .agents/skills/orm-infra/
+          retention-days: 7

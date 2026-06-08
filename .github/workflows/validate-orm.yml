@@ -1,0 +1,40 @@
+name: Validate ORM
+
+# Fails a PR if the committed ORM output is stale relative to the
+# `pgpm/constructive-infra` module — i.e. someone changed the SQL (or the
+# generator) but forgot to run `pnpm run generate:orm` and commit the result.
+#
+# Regenerates via the reusable generate-orm workflow and asserts no drift.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'pgpm/**'
+      - 'sdk/functions-schema/**'
+      - 'sdk/functions-sdk/**'
+      - 'package.json'
+      - '.github/workflows/generate-orm.yml'
+      - '.github/workflows/validate-orm.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    if: github.event.pull_request.draft != true
+    uses: ./.github/workflows/generate-orm.yml
+
+  verify:
+    needs: generate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assert no drift
+        run: |
+          if [ "${{ needs.generate.outputs.has_changes }}" = "true" ]; then
+            echo "::error::Committed ORM output is stale. Run 'pnpm run generate:orm' and commit the result."
+            exit 1
+          fi
+          echo "ORM output is up-to-date."
