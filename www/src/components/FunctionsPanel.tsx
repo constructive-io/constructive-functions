@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api, type PlatformFunction } from '../lib/api';
-import { RefreshCw, Zap, Lock, Settings, Play, X, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import { RefreshCw, Zap, Lock, Settings, Play, X, CheckCircle, AlertCircle, Loader, ExternalLink } from 'lucide-react';
 
-export function FunctionsPanel() {
+type Tab = 'functions' | 'flows' | 'secrets' | 'jobs' | 'invocations' | 'k8s' | 'commands' | 'terminal';
+
+export function FunctionsPanel({ onNavigate }: { onNavigate?: (tab: Tab) => void }) {
   const [functions, setFunctions] = useState<PlatformFunction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +28,7 @@ export function FunctionsPanel() {
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {functions.map((fn) => (
-          <FunctionCard key={fn.name} fn={fn} />
+          <FunctionCard key={fn.name} fn={fn} onNavigate={onNavigate} />
         ))}
         {!loading && functions.length === 0 && (
           <p className="text-zinc-500 text-sm">No functions found. Run <code className="text-amber-400">make up</code> to deploy.</p>
@@ -55,7 +57,7 @@ interface TriggerResult {
   jobId?: string;
 }
 
-function FunctionCard({ fn }: { fn: PlatformFunction }) {
+function FunctionCard({ fn, onNavigate }: { fn: PlatformFunction; onNavigate?: (tab: Tab) => void }) {
   const [showTrigger, setShowTrigger] = useState(false);
   const [payload, setPayload] = useState('');
   const [result, setResult] = useState<TriggerResult>({ status: 'idle' });
@@ -173,6 +175,15 @@ function FunctionCard({ fn }: { fn: PlatformFunction }) {
               <span className="flex items-center gap-1 text-xs text-emerald-400">
                 <CheckCircle size={12} />
                 {result.message}
+                {onNavigate && (
+                  <button
+                    onClick={() => onNavigate('invocations')}
+                    className="ml-2 flex items-center gap-0.5 text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    <ExternalLink size={10} />
+                    Invocations
+                  </button>
+                )}
               </span>
             )}
             {result.status === 'error' && (
