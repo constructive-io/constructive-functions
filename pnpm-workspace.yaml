@@ -2,3 +2,4 @@ packages:
   - 'generated/*'
   - 'packages/*'
   - 'job/*'
+  - 'www'

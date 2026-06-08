@@ -1,0 +1,26 @@
+{
+  "name": "@constructive-io/compute-worker",
+  "version": "0.1.0",
+  "description": "Platform-aware job worker — discovers functions from constructive_infra_public and tracks invocations",
+  "author": "Constructive <developers@constructive.io>",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "makage build",
+    "build:dev": "makage build --dev",
+    "clean": "makage clean",
+    "lint": "eslint . --fix"
+  },
+  "dependencies": {
+    "@constructive-io/job-pg": "^2.5.4",
+    "@constructive-io/job-utils": "^2.5.4",
+    "@pgpmjs/logger": "^2.4.3",
+    "pg": "8.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.4",
+    "@types/pg": "^8.11.0",
+    "makage": "^0.1.12",
+    "typescript": "^5.1.6"
+  }
+}

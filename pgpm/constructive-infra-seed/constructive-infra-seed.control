@@ -1,0 +1,7 @@
+# constructive-infra-seed extension
+comment = 'Built-in function seed data for constructive-infra'
+default_version = '0.0.1'
+module_pathname = '$libdir/constructive-infra-seed'
+requires = 'constructive-infra'
+relocatable = false
+superuser = false

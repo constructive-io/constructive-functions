@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: compute-service
+  labels:
+    app: compute-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: compute-service
+  template:
+    metadata:
+      labels:
+        app: compute-service
+    spec:
+      containers:
+        - name: compute-service
+          image: constructive-functions:local
+          command: ["node"]
+          args: ["job/compute-service/dist/run.js"]
+          envFrom:
+            - configMapRef:
+                name: constructive
+            - configMapRef:
+                name: functions-registry
+            - secretRef:
+                name: pg-credentials
+          env:
+            - name: NODE_ENV
+              value: "development"
+            - name: JOBS_SCHEMA
+              value: "app_jobs"
+            - name: COMPUTE_JOBS_ENABLED
+              value: "true"
+            - name: JOBS_SUPPORT_ANY
+              value: "true"
+            - name: INTERNAL_JOBS_CALLBACK_PORT
+              value: "8080"
+            - name: INTERNAL_JOBS_CALLBACK_URL
+              value: "http://compute-service.constructive-functions.svc.cluster.local:8080/callback"
+            - name: COMPUTE_CALLBACK_URL
+              value: "http://compute-service.constructive-functions.svc.cluster.local:8080/callback"
+            - name: JOBS_CALLBACK_HOST
+              value: "compute-service.constructive-functions.svc.cluster.local"
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - containerPort: 8080
+              name: jobs-http
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: compute-service
+  labels:
+    app: compute-service
+spec:
+  type: ClusterIP
+  selector:
+    app: compute-service
+  ports:
+    - name: jobs-http
+      port: 8080
+      targetPort: jobs-http

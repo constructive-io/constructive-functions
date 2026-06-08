@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@import "@xterm/xterm/css/xterm.css";
+
+/* Scan FBP graph-editor package for Tailwind classes */
+@source "../../packages/fbp-graph-editor/src/**/*.tsx";
+
+:root {
+  --color-brand: #3b82f6;
+}
