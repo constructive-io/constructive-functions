@@ -90,9 +90,6 @@ services:
 
   graphql-server:
     image: ghcr.io/constructive-io/constructive:latest
-    depends_on:
-      db-setup:
-        condition: service_completed_successfully
     entrypoint: ["bash", "-c"]
     command:
       - |
@@ -111,6 +108,8 @@ services:
           });
           GraphQLServer(opts);
         "
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       NODE_ENV: development
       PORT: "3000"
@@ -118,13 +117,13 @@ services:
       SERVER_TRUST_PROXY: "true"
       SERVER_ORIGIN: "*"
       SERVER_STRICT_AUTH: "false"
-      # Postgres connection
-      PGHOST: postgres
+      # Postgres — connects to pgpm-managed postgres on host
+      PGHOST: host.docker.internal
       PGPORT: "5432"
       PGUSER: postgres
-      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}
-      PGDATABASE: constructive
-      # API configuration — services routing with seeded database record
+      PGPASSWORD: ${POSTGRES_PASSWORD:-password}
+      PGDATABASE: ${PGDATABASE:-constructive-functions-db1}
+      # API configuration
       API_EXPOSED_SCHEMAS: "constructive_infra_public,app_jobs"
       API_ANON_ROLE: "administrator"
       API_ROLE_NAME: "administrator"

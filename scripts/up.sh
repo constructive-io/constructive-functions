@@ -158,6 +158,18 @@ else
 fi
 rm -f "$DEPLOY_LOG"
 
+# Grant schema access to the administrator role (used by the GraphQL server)
+psql -d "$DB_NAME" -c "
+  GRANT USAGE ON SCHEMA constructive_infra_public TO administrator;
+  GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA constructive_infra_public TO administrator;
+  GRANT USAGE ON SCHEMA constructive_infra_private TO administrator;
+  GRANT SELECT ON ALL TABLES IN SCHEMA constructive_infra_private TO administrator;
+  GRANT USAGE ON SCHEMA app_jobs TO administrator;
+  GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA app_jobs TO administrator;
+  GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app_jobs TO administrator;
+  GRANT USAGE ON ALL SEQUENCES IN SCHEMA app_jobs TO administrator;
+" &>/dev/null && ok "Schema grants applied" || warn "Schema grants failed (non-critical)"
+
 cd "$ROOT_DIR"
 
 # ─── Step 6: Start MinIO ────────────────────────────────────────────────────
