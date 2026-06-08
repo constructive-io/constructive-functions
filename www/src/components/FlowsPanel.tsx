@@ -402,18 +402,15 @@ export function FlowsPanel() {
 
                     {/* Category items */}
                     {!isCollapsed && (
-                      <div className="space-y-1 mb-2">
+                      <div className="space-y-0.5 mb-2">
                         {items.map(({ def, fn }) => (
                           <button
                             key={`${def.context}:${def.name}`}
                             onClick={() => handleAddNode(def, fn)}
                             draggable
                             onDragStart={(e) => handleDragStart(e, def)}
-                            className={`w-full text-left rounded-lg transition-colors cursor-grab active:cursor-grabbing ${
-                              isFunction
-                                ? 'p-3 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:bg-zinc-900'
-                                : 'px-2.5 py-1.5 hover:bg-zinc-800/70 rounded-md'
-                            }`}
+                            title={fn?.description || def.description || ''}
+                            className="w-full text-left px-2.5 py-1.5 rounded-md hover:bg-zinc-800/70 transition-colors cursor-grab active:cursor-grabbing"
                           >
                             <div className="flex items-center gap-2">
                               {isFunction ? (
@@ -421,17 +418,10 @@ export function FlowsPanel() {
                               ) : (
                                 def.icon && <NodeIcon icon={def.icon} size={14} className="text-zinc-500 flex-shrink-0" />
                               )}
-                              <span className={`text-sm truncate ${
-                                isFunction
-                                  ? 'font-medium text-zinc-200 font-mono'
-                                  : 'text-zinc-300'
-                              }`}>
+                              <span className="text-sm text-zinc-300 truncate">
                                 {def.name.split('/').pop()}
                               </span>
                             </div>
-                            {isFunction && fn?.description && (
-                              <p className="text-xs text-zinc-500 leading-relaxed mt-1 ml-6">{fn.description}</p>
-                            )}
                           </button>
                         ))}
                         {isFunction && functions.length > 0 && (

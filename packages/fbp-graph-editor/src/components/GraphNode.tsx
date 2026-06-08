@@ -134,7 +134,6 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
   if (isRichNode) {
     const width = RICH_NODE_WIDTH;
     const description = definition?.description || '';
-    const isInvocable = definition?.icon === 'zap';
     const secretsCount = getNodeProp(node, 'secretsCount') ?? 0;
     const configsCount = getNodeProp(node, 'configsCount') ?? 0;
     const scope = getNodeProp(node, 'scope') || definition?.context || 'platform';
@@ -192,15 +191,9 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
 
         {/* Header: icon + name (same layout as compact) */}
         <g transform={`translate(14, ${RICH_HEADER_HEIGHT / 2})`}>
-          {isInvocable ? (
-            <g transform="translate(-2, -7)">
-              <text fill="#22d3ee" fontSize={13} fontFamily="system-ui">⚡</text>
-            </g>
-          ) : (
-            <g transform="translate(-2, -6)">
-              <NodeIconSvg icon={definition?.icon || 'circle'} size={12} />
-            </g>
-          )}
+          <g transform="translate(-2, -6)">
+            <NodeIconSvg icon={definition?.icon || 'circle'} size={12} />
+          </g>
           <text
             x={16}
             dominantBaseline="middle"
