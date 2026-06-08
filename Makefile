@@ -1,4 +1,4 @@
-.PHONY: install build clean lint generate dev dev-fn dev-down dev-logs docker-build skaffold-dev skaffold-dev-knative dev-compute setup-platform
+.PHONY: install build clean lint generate dev dev-fn dev-down dev-logs docker-build skaffold-dev skaffold-dev-knative dev-compute setup-platform status verify-platform
 
 install:
 	node --experimental-strip-types scripts/generate.ts
@@ -30,6 +30,12 @@ generate:
 
 setup-platform:
 	./scripts/setup-platform-db.sh
+
+status:
+	@./scripts/status.sh
+
+verify-platform:
+	@./scripts/verify-platform.sh $(DB_NAME)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Tier 2 — compose-local
