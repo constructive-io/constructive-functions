@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { GraphEditor } from '@fbp/graph-editor';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { GraphEditor, NodeIcon } from '@fbp/graph-editor';
 import { evaluate } from '@fbp/evaluator';
 import {
   mathDefinitions,
@@ -13,9 +13,10 @@ import {
 import type { NodeDefinitionWithImpl } from '@fbp/evaluator';
 import type { Graph, NodeDefinition, Node } from '@fbp/types';
 import { api, type PlatformFunction } from '../lib/api';
-import { RefreshCw, Save, Trash2, Plus, Play, Zap } from 'lucide-react';
+import { RefreshCw, Save, Trash2, Plus, Play, Zap, ChevronDown, ChevronRight } from 'lucide-react';
 
 const STORAGE_KEY = 'constructive-flows-v2';
+const BOUNDARY_NAMES = ['graph/input', 'graph/output', 'graph/prop'];
 
 interface SavedFlow {
   name: string;
@@ -61,6 +62,15 @@ function functionToNode(fn: PlatformFunction, position: { x: number; y: number }
   };
 }
 
+// Create a graph node from a definition
+function definitionToNode(def: NodeDefinition, position: { x: number; y: number }): Node {
+  return {
+    name: `${def.name.split('/').pop()}_${Date.now().toString(36)}`,
+    type: def.name,
+    meta: position,
+  };
+}
+
 // Mock functions for demo when API is unavailable
 const MOCK_FUNCTIONS: PlatformFunction[] = [
   {
@@ -89,12 +99,22 @@ const DEFAULT_GRAPH: Graph = {
   edges: [],
 };
 
-// Palette definitions for graph/input, graph/output, graph/prop nodes
-const PALETTE_DEFINITIONS: NodeDefinition[] = [
-  { context: 'core', name: 'graph/input', category: 'graph', inputs: [], outputs: [{ name: 'value', type: 'any' }], icon: 'arrow-right' },
-  { context: 'core', name: 'graph/output', category: 'graph', inputs: [{ name: 'value', type: 'any' }], outputs: [], icon: 'arrow-left' },
-  { context: 'core', name: 'graph/prop', category: 'graph', inputs: [], outputs: [{ name: 'value', type: 'any' }], icon: 'settings' },
-];
+
+// Category display order and labels
+const CATEGORY_ORDER = ['functions', 'graph', 'const', 'math', 'json', 'flow', 'string', 'layout', 'form', 'content', 'graphql'];
+const CATEGORY_LABELS: Record<string, string> = {
+  functions: 'Functions',
+  graph: 'Graph I/O',
+  const: 'Constants',
+  math: 'Math',
+  json: 'JSON',
+  flow: 'Flow Control',
+  string: 'String',
+  layout: 'Layout',
+  form: 'Form',
+  content: 'Content',
+  graphql: 'GraphQL',
+};
 
 export function FlowsPanel() {
   const [functions, setFunctions] = useState<PlatformFunction[]>([]);
@@ -107,6 +127,7 @@ export function FlowsPanel() {
   const [currentGraph, setCurrentGraph] = useState<Graph>(DEFAULT_GRAPH);
   const [evaluationResult, setEvaluationResult] = useState<unknown>(undefined);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
 
   const graphRef = useRef<Graph>(currentGraph);
   graphRef.current = currentGraph;
@@ -130,18 +151,17 @@ export function FlowsPanel() {
     }
   }, [activeFlowIdx, flows]);
 
-  // Build definitions: platform functions + built-in evaluator defs + palette boundary nodes
-  const definitions: NodeDefinition[] = [
+  // Build all definitions: platform functions + built-in evaluator defs + palette boundary nodes
+  const definitions: NodeDefinition[] = useMemo(() => [
     ...functions.map(platformFnToDefinition),
     ...mathDefinitions.map(({ impl, ...rest }) => rest as NodeDefinition),
     ...coreDefinitions.map(({ impl, ...rest }) => rest as NodeDefinition),
     ...uiDefinitions.map(({ impl, ...rest }) => rest as NodeDefinition),
     ...netDefinitions.map(({ impl, ...rest }) => rest as NodeDefinition),
-    ...PALETTE_DEFINITIONS,
-  ];
+  ], [functions]);
 
   // Build impl definitions for evaluation
-  const implDefinitions: NodeDefinitionWithImpl[] = [
+  const implDefinitions: NodeDefinitionWithImpl[] = useMemo(() => [
     ...mathDefinitions,
     ...coreDefinitions,
     ...uiDefinitions,
@@ -155,7 +175,32 @@ export function FlowsPanel() {
         return { result: inputs.payload ?? inputs };
       },
     })),
-  ];
+  ], [functions]);
+
+  // Group definitions by category for the unified sidebar
+  const groupedDefinitions = useMemo(() => {
+    const groups: Record<string, { def: NodeDefinition; fn?: PlatformFunction }[]> = {};
+    const fnMap = new Map(functions.map(f => [f.task_identifier || f.name, f]));
+
+    for (const def of definitions) {
+      const cat = def.category || 'other';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push({ def, fn: fnMap.get(def.name) });
+    }
+    return groups;
+  }, [definitions, functions]);
+
+  // Ordered categories
+  const orderedCategories = useMemo(() => {
+    const result: string[] = [];
+    for (const cat of CATEGORY_ORDER) {
+      if (groupedDefinitions[cat]) result.push(cat);
+    }
+    for (const cat of Object.keys(groupedDefinitions)) {
+      if (!result.includes(cat)) result.push(cat);
+    }
+    return result;
+  }, [groupedDefinitions]);
 
   const handleGraphChange = useCallback((graph: Graph) => {
     setCurrentGraph(graph);
@@ -224,13 +269,16 @@ export function FlowsPanel() {
     }
   }, [activeFlowIdx, flows, handleNew]);
 
-  // Add function to canvas
-  const handleAddFunction = useCallback((fn: PlatformFunction) => {
-    const node = functionToNode(fn, { x: 300 + Math.random() * 200, y: 100 + Math.random() * 200 });
-    setCurrentGraph(prev => ({
-      ...prev,
-      nodes: [...prev.nodes, node],
-    }));
+  // Add a node to canvas from a definition
+  const handleAddNode = useCallback((def: NodeDefinition, fn?: PlatformFunction) => {
+    const position = { x: 300 + Math.random() * 200, y: 100 + Math.random() * 200 };
+    if (fn) {
+      const node = functionToNode(fn, position);
+      setCurrentGraph(prev => ({ ...prev, nodes: [...prev.nodes, node] }));
+    } else {
+      const node = definitionToNode(def, position);
+      setCurrentGraph(prev => ({ ...prev, nodes: [...prev.nodes, node] }));
+    }
   }, []);
 
   // Load all functions to canvas
@@ -238,16 +286,31 @@ export function FlowsPanel() {
     const newNodes = functions.map((fn, i) =>
       functionToNode(fn, { x: 300, y: 50 + i * 200 })
     );
-    setCurrentGraph(prev => ({
-      ...prev,
-      nodes: [...prev.nodes, ...newNodes],
-    }));
+    setCurrentGraph(prev => ({ ...prev, nodes: [...prev.nodes, ...newNodes] }));
   }, [functions]);
+
+  // Drag start for node palette items (uses same format as internal NodePalette)
+  const handleDragStart = useCallback((e: React.DragEvent, def: NodeDefinition) => {
+    e.dataTransfer.setData('application/fbp-node', JSON.stringify({
+      definitionName: def.name,
+      isBoundary: BOUNDARY_NAMES.includes(def.name),
+    }));
+    e.dataTransfer.effectAllowed = 'copy';
+  }, []);
+
+  const toggleCategory = useCallback((cat: string) => {
+    setCollapsedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  }, []);
 
   return (
     <div className="flex flex-col h-full bg-zinc-950">
       {/* Top bar: flow name + save */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-zinc-800 flex-shrink-0" style={{ marginLeft: '20rem' }}>
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-zinc-800 flex-shrink-0" style={{ marginLeft: '18rem' }}>
         <input
           value={flowName}
           onChange={(e) => setFlowName(e.target.value)}
@@ -280,15 +343,15 @@ export function FlowsPanel() {
       </div>
 
       <div className="flex flex-1 min-h-0">
-        {/* Left sidebar: FLOWS + FUNCTIONS */}
-        <div className="w-80 border-r border-zinc-800 flex flex-col bg-zinc-950 flex-shrink-0 overflow-y-auto">
+        {/* Unified left sidebar: FLOWS + NODES */}
+        <div className="w-72 border-r border-zinc-800 flex flex-col bg-zinc-950 flex-shrink-0">
           {/* FLOWS section */}
-          <div className="p-4 border-b border-zinc-800">
-            <div className="flex items-center justify-between mb-3">
+          <div className="p-3 border-b border-zinc-800">
+            <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Flows</h3>
               {loading && <RefreshCw size={12} className="animate-spin text-zinc-500" />}
             </div>
-            <div className="space-y-1 mb-3">
+            <div className="space-y-0.5 mb-2">
               {flows.map((f, i) => (
                 <button
                   key={i}
@@ -312,42 +375,84 @@ export function FlowsPanel() {
             </button>
           </div>
 
-          {/* FUNCTIONS section */}
-          <div className="p-4 flex-1">
-            <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Functions</h3>
-            <p className="text-xs text-zinc-600 mb-3">Drag onto canvas</p>
-
-            <div className="space-y-2">
-              {functions.map((fn) => (
-                <button
-                  key={fn.name}
-                  onClick={() => handleAddFunction(fn)}
-                  className="w-full text-left p-3 rounded-lg border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:bg-zinc-900 transition-colors group"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <Zap size={14} className="text-cyan-400" />
-                    <span className="text-sm font-medium text-zinc-200 font-mono">{fn.name}</span>
-                  </div>
-                  {fn.description && (
-                    <p className="text-xs text-zinc-500 leading-relaxed">{fn.description}</p>
-                  )}
-                </button>
-              ))}
+          {/* NODES section — unified palette */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="px-3 py-2 border-b border-zinc-800 sticky top-0 bg-zinc-950 z-10">
+              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Nodes</h3>
+              <p className="text-[10px] text-zinc-600 mt-0.5">Click or drag onto canvas</p>
             </div>
 
-            {functions.length > 0 && (
-              <button
-                onClick={handleLoadAll}
-                className="w-full text-center text-xs text-zinc-500 hover:text-zinc-300 mt-3 py-1 transition-colors"
-              >
-                Load all to canvas
-              </button>
-            )}
+            <div className="p-2 space-y-1">
+              {orderedCategories.map(cat => {
+                const items = groupedDefinitions[cat];
+                const isCollapsed = collapsedCategories.has(cat);
+                const isFunction = cat === 'functions';
+
+                return (
+                  <div key={cat}>
+                    {/* Category header */}
+                    <button
+                      onClick={() => toggleCategory(cat)}
+                      className="w-full flex items-center gap-1.5 px-2 py-1.5 text-[10px] uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors"
+                    >
+                      {isCollapsed ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
+                      {CATEGORY_LABELS[cat] || cat}
+                      <span className="text-zinc-700 ml-auto">{items.length}</span>
+                    </button>
+
+                    {/* Category items */}
+                    {!isCollapsed && (
+                      <div className="space-y-1 mb-2">
+                        {items.map(({ def, fn }) => (
+                          <button
+                            key={`${def.context}:${def.name}`}
+                            onClick={() => handleAddNode(def, fn)}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, def)}
+                            className={`w-full text-left rounded-lg transition-colors cursor-grab active:cursor-grabbing ${
+                              isFunction
+                                ? 'p-3 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:bg-zinc-900'
+                                : 'px-2.5 py-1.5 hover:bg-zinc-800/70 rounded-md'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              {isFunction ? (
+                                <Zap size={14} className="text-cyan-400 flex-shrink-0" />
+                              ) : (
+                                def.icon && <NodeIcon icon={def.icon} size={14} className="text-zinc-500 flex-shrink-0" />
+                              )}
+                              <span className={`text-sm truncate ${
+                                isFunction
+                                  ? 'font-medium text-zinc-200 font-mono'
+                                  : 'text-zinc-300'
+                              }`}>
+                                {def.name.split('/').pop()}
+                              </span>
+                            </div>
+                            {isFunction && fn?.description && (
+                              <p className="text-xs text-zinc-500 leading-relaxed mt-1 ml-6">{fn.description}</p>
+                            )}
+                          </button>
+                        ))}
+                        {isFunction && functions.length > 0 && (
+                          <button
+                            onClick={handleLoadAll}
+                            className="w-full text-center text-[10px] text-zinc-600 hover:text-zinc-400 py-1 transition-colors"
+                          >
+                            Load all to canvas
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Evaluation result */}
           {evaluationResult !== undefined && (
-            <div className="p-4 border-t border-zinc-800">
+            <div className="p-3 border-t border-zinc-800 flex-shrink-0">
               <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Result</h4>
               <pre className="text-xs text-zinc-300 bg-zinc-900 rounded-md p-2 overflow-x-auto whitespace-pre-wrap break-all max-h-40 overflow-y-auto">
                 {JSON.stringify(evaluationResult, null, 2)}
@@ -356,13 +461,14 @@ export function FlowsPanel() {
           )}
         </div>
 
-        {/* Graph Editor */}
+        {/* Graph Editor — no inner palette, just canvas + properties */}
         <div className="flex-1 min-w-0 min-h-0 relative">
           <GraphEditor
             graph={currentGraph}
             definitions={definitions}
+            showHeader={false}
             showPropertiesPanel={true}
-            showNodePalette={true}
+            showNodePalette={false}
             showStatusBar={true}
             onGraphChange={handleGraphChange}
             evaluateFn={evaluate as any}

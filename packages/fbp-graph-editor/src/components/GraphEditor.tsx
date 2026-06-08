@@ -13,6 +13,7 @@ interface GraphEditorProps {
   graph?: Graph;
   definitions?: NodeDefinition[];
   initialCwd?: string;
+  showHeader?: boolean;
   showPropertiesPanel?: boolean;
   showNodePalette?: boolean;
   showStatusBar?: boolean;
@@ -28,6 +29,7 @@ export function GraphEditor({
   graph,
   definitions,
   initialCwd,
+  showHeader = true,
   showPropertiesPanel = true,
   showNodePalette = true,
   showStatusBar = true,
@@ -41,10 +43,12 @@ export function GraphEditor({
   return (
     <GraphProvider initialGraph={graph} initialCwd={initialCwd} externalDefinitions={definitions} onSelectionChange={onSelectionChange} onGraphChange={onGraphChange}>
       <div className={`flex flex-col h-full bg-zinc-950 ${className}`}>
-        <div className="h-10 bg-zinc-900 border-b border-zinc-800 flex items-center px-4 flex-shrink-0">
-          <span className="text-sm font-medium text-zinc-300">FBP Graph Editor</span>
-          <span className="ml-3 text-xs text-zinc-500">Flow-Based Programming</span>
-        </div>
+        {showHeader && (
+          <div className="h-10 bg-zinc-900 border-b border-zinc-800 flex items-center px-4 flex-shrink-0">
+            <span className="text-sm font-medium text-zinc-300">FBP Graph Editor</span>
+            <span className="ml-3 text-xs text-zinc-500">Flow-Based Programming</span>
+          </div>
+        )}
         
         <div className="flex flex-1 min-h-0">
           {showNodePalette && (
