@@ -10,7 +10,7 @@
 
 const fs = require('fs') as typeof import('fs');
 const path = require('path') as typeof import('path');
-const { spawn } = require('child_process') as typeof import('child_process');
+const { spawn, execSync } = require('child_process') as typeof import('child_process');
 
 const ROOT: string = process.cwd();
 
@@ -39,36 +39,110 @@ function loadManifest(): FunctionsManifest {
 
 const manifest = loadManifest();
 
-// --- Shared env vars for all processes ---
+// --- Load .env file if present ---
 
-const sharedEnv: Record<string, string> = {
-  ...process.env as Record<string, string>,
-  NODE_ENV: 'development',
-  LOG_LEVEL: 'info',
-  // Postgres (matches docker-compose or pgpm-local)
-  PGHOST: process.env.PGHOST || 'localhost',
-  PGPORT: process.env.PGPORT || '5432',
-  PGUSER: process.env.PGUSER || 'postgres',
-  PGPASSWORD: process.env.PGPASSWORD || 'password',
-  PGDATABASE: process.env.PGDATABASE || 'constructive-functions-db1',
-  // GraphQL (optional — only if graphql-server is running)
-  GRAPHQL_URL: process.env.GRAPHQL_URL || 'http://localhost:3002/graphql',
-  META_GRAPHQL_URL: process.env.META_GRAPHQL_URL || 'http://localhost:3002/graphql',
-  GRAPHQL_API_NAME: 'private',
-  DEFAULT_DATABASE_ID: 'dbe',
-  // Mailpit SMTP
+function loadDotEnv(): Record<string, string> {
+  const envVars: Record<string, string> = {};
+  const envPath = path.resolve(ROOT, '.env');
+  if (!fs.existsSync(envPath)) return envVars;
+
+  const content = fs.readFileSync(envPath, 'utf-8');
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = trimmed.slice(0, eqIdx).trim();
+    let val = trimmed.slice(eqIdx + 1).trim();
+    // Strip surrounding quotes
+    if ((val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.slice(1, -1);
+    }
+    envVars[key] = val;
+  }
+  return envVars;
+}
+
+// --- Query DB for function secret/config requirements ---
+
+interface FnRequirement {
+  fnName: string;
+  secrets: string[];
+  configs: string[];
+}
+
+function loadFunctionRequirements(dbName: string): FnRequirement[] {
+  try {
+    const sql = `
+      SELECT
+        name,
+        COALESCE(array_to_string(
+          ARRAY(SELECT (r).name FROM unnest(required_secrets) AS r), ','
+        ), '') AS secrets,
+        COALESCE(array_to_string(
+          ARRAY(SELECT (r).name FROM unnest(required_configs) AS r), ','
+        ), '') AS configs
+      FROM constructive_infra_public.platform_function_definitions
+      WHERE is_invocable = true
+      ORDER BY name
+    `;
+    const output = execSync(
+      `psql -d "${dbName}" -t -A -F '|' -c "${sql.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`,
+      { encoding: 'utf-8', timeout: 5000 }
+    ).trim();
+
+    if (!output) return [];
+    return output.split('\n').map((line: string) => {
+      const [fnName, secrets, configs] = line.split('|');
+      return {
+        fnName,
+        secrets: secrets ? secrets.split(',') : [],
+        configs: configs ? configs.split(',') : [],
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+const dotEnv = loadDotEnv();
+const dbName = process.env.PGDATABASE || 'constructive-functions-db1';
+const fnReqs = loadFunctionRequirements(dbName);
+
+// Merge: process.env (lowest) → .env file → hardcoded defaults (for known dev values)
+const DEFAULTS: Record<string, string> = {
   MAILGUN_API_KEY: 'test-key',
   MAILGUN_KEY: 'test-key',
   MAILGUN_DOMAIN: 'mg.constructive.io',
   MAILGUN_FROM: 'no-reply@mg.constructive.io',
   MAILGUN_REPLY: 'info@mg.constructive.io',
-  SMTP_HOST: process.env.SMTP_HOST || 'localhost',
-  SMTP_PORT: process.env.SMTP_PORT || '1025',
   LOCAL_APP_PORT: '3000',
-  SEND_VERIFICATION_LINK_DRY_RUN: process.env.SEND_VERIFICATION_LINK_DRY_RUN || 'true',
-  SEND_EMAIL_DRY_RUN: process.env.SEND_EMAIL_DRY_RUN || 'true',
-  EMAIL_SEND_USE_SMTP: process.env.EMAIL_SEND_USE_SMTP || '',
-  SMTP_FROM: process.env.SMTP_FROM || 'test@localhost',
+};
+
+// --- Shared env vars for all processes ---
+
+const sharedEnv: Record<string, string> = {
+  ...process.env as Record<string, string>,
+  ...DEFAULTS,
+  ...dotEnv,
+  NODE_ENV: 'development',
+  LOG_LEVEL: 'info',
+  PGHOST: dotEnv.PGHOST || process.env.PGHOST || 'localhost',
+  PGPORT: dotEnv.PGPORT || process.env.PGPORT || '5432',
+  PGUSER: dotEnv.PGUSER || process.env.PGUSER || 'postgres',
+  PGPASSWORD: dotEnv.PGPASSWORD || process.env.PGPASSWORD || 'password',
+  PGDATABASE: dotEnv.PGDATABASE || process.env.PGDATABASE || dbName,
+  GRAPHQL_URL: dotEnv.GRAPHQL_URL || process.env.GRAPHQL_URL || 'http://localhost:3002/graphql',
+  META_GRAPHQL_URL: dotEnv.META_GRAPHQL_URL || process.env.META_GRAPHQL_URL || 'http://localhost:3002/graphql',
+  GRAPHQL_API_NAME: 'private',
+  DEFAULT_DATABASE_ID: 'dbe',
+  SMTP_HOST: dotEnv.SMTP_HOST || process.env.SMTP_HOST || 'localhost',
+  SMTP_PORT: dotEnv.SMTP_PORT || process.env.SMTP_PORT || '1025',
+  SMTP_FROM: dotEnv.SMTP_FROM || process.env.SMTP_FROM || 'test@localhost',
+  SEND_VERIFICATION_LINK_DRY_RUN: dotEnv.SEND_VERIFICATION_LINK_DRY_RUN || process.env.SEND_VERIFICATION_LINK_DRY_RUN || 'true',
+  SEND_EMAIL_DRY_RUN: dotEnv.SEND_EMAIL_DRY_RUN || process.env.SEND_EMAIL_DRY_RUN || 'true',
+  EMAIL_SEND_USE_SMTP: dotEnv.EMAIL_SEND_USE_SMTP || process.env.EMAIL_SEND_USE_SMTP || '',
 };
 
 // --- Process definitions (built from manifest) ---
@@ -195,6 +269,34 @@ console.log(`  Database: ${sharedEnv.PGDATABASE}`);
 if (sharedEnv.EMAIL_SEND_USE_SMTP === 'true') {
   console.log(`  Mailpit UI:                                http://localhost:8025`);
 }
+
+// Report secret/config coverage
+if (fnReqs.length > 0) {
+  console.log('');
+  console.log('  Secrets/Configs:');
+  let totalMissing = 0;
+  for (const req of fnReqs) {
+    const allKeys = [...req.secrets, ...req.configs];
+    const missing = allKeys.filter((k) => !sharedEnv[k]);
+    const set = allKeys.length - missing.length;
+    if (missing.length > 0) {
+      console.log(`    ● ${req.fnName}: ${set}/${allKeys.length} set (${missing.length} missing)`);
+      totalMissing += missing.length;
+    } else {
+      console.log(`    ✓ ${req.fnName}: all ${set} secrets/configs set`);
+    }
+  }
+  if (totalMissing > 0) {
+    console.log(`  ⚠ ${totalMissing} missing — create .env or run 'make check-env' for details`);
+  }
+}
+
+if (Object.keys(dotEnv).length > 0) {
+  console.log(`  .env: loaded ${Object.keys(dotEnv).length} variable(s)`);
+} else {
+  console.log('  .env: not found (using defaults)');
+}
+
 console.log('════════════════════════════════════════════════════════════');
 console.log('');
 
