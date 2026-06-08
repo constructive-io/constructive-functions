@@ -1,7 +1,7 @@
 {
   "name": "@constructive-io/constructive-infra",
   "version": "0.0.1",
-  "description": "Infrastructure module — schemas, types, all infra tables, triggers (no RLS/grants, standalone publishable)",
+  "description": "Infrastructure module — function definitions, invocations, namespaces, secret definitions",
   "author": "Constructive <developers@constructive.io>",
   "keywords": [
     "postgresql",
@@ -16,18 +16,16 @@
     "test": "jest",
     "test:watch": "jest --watch"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/constructive-io/constructive-functions"
-  },
   "dependencies": {
-    "@pgpm/database-jobs": "0.26.5",
     "@pgpm/inflection": "*",
-    "@pgpm/metaschema-modules": "0.26.5",
-    "@pgpm/services": "0.26.5",
-    "@pgpm/stamps": "*"
+    "@pgpm/stamps": "*",
+    "@pgpm/database-jobs": "*"
   },
   "devDependencies": {
     "pgpm": "^4.26.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/constructive-io/constructive-functions"
   }
 }

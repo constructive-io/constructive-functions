@@ -10,8 +10,33 @@ export interface PlatformFunction {
   description: string;
   required_secrets: Array<{ name: string; required: boolean }>;
   required_configs: Array<{ name: string; required: boolean }>;
+  payload_schema: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface PortDef {
+  name: string;
+  type: string;
+  schema?: Record<string, unknown>;
+  description?: string;
+}
+
+export interface PropDef {
+  name: string;
+  type: string;
+  required?: boolean;
+  description?: string;
+}
+
+export interface NodeDefinition {
+  context: string;
+  name: string;
+  category?: string;
+  description?: string;
+  inputs?: PortDef[];
+  outputs?: PortDef[];
+  props?: PropDef[];
 }
 
 export interface Job {
@@ -113,9 +138,27 @@ export interface EnvFile {
   vars: Record<string, string>;
 }
 
+export interface SecretValuesResponse {
+  vars: Record<string, string>;
+  rows: Array<{
+    secret_name: string;
+    configured_value: string | null;
+    kind: 'secret' | 'config';
+    created_at: string;
+    updated_at: string;
+  }>;
+}
+
+export interface SyncResult {
+  ok: boolean;
+  synced: number;
+  total?: number;
+}
+
 export const api = {
   getStatus: () => fetchJSON<PlatformStatus>('/api/status'),
   getFunctions: () => fetchJSON<PlatformFunction[]>('/api/functions'),
+  getDefinitions: () => fetchJSON<NodeDefinition[]>('/api/definitions'),
   getJobs: () => fetchJSON<Job[]>('/api/jobs'),
   getInvocations: () => fetchJSON<Invocation[]>('/api/invocations'),
   getSecrets: () => fetchJSON<PlatformSecret[]>('/api/secrets'),
@@ -128,6 +171,18 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ vars }),
     }),
+
+  getSecretValues: () => fetchJSON<SecretValuesResponse>('/api/secret-values'),
+  saveSecretValues: (vars: Record<string, string>) =>
+    fetchJSON<{ ok: boolean; upserted: number }>('/api/secret-values', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vars }),
+    }),
+  syncFromDb: () =>
+    fetchJSON<SyncResult>('/api/secrets/sync-from-db', { method: 'POST' }),
+  syncToDb: () =>
+    fetchJSON<SyncResult>('/api/secrets/sync-to-db', { method: 'POST' }),
 
   createJob: (task_identifier: string, payload: Record<string, unknown>) =>
     fetchJSON<Job>('/api/jobs', {

@@ -3,8 +3,55 @@
   "version": "1.6.4",
   "type": "node-graphql",
   "port": 8081,
-  "taskIdentifier": "email:send_email",
-  "description": "Knative email function that sends emails directly from job payload",
+  "taskIdentifier": "send-email",
+  "scope": "platform",
+  "description": "Sends transactional emails via Mailgun or SMTP",
+  "requiredSecrets": [
+    { "name": "MAILGUN_API_KEY", "required": false },
+    { "name": "MAILGUN_DOMAIN", "required": false },
+    { "name": "MAILGUN_FROM", "required": false }
+  ],
+  "requiredConfigs": [
+    { "name": "EMAIL_SEND_USE_SMTP", "required": false },
+    { "name": "SMTP_HOST", "required": false },
+    { "name": "SMTP_PORT", "required": false },
+    { "name": "SMTP_FROM", "required": false },
+    { "name": "SEND_EMAIL_DRY_RUN", "required": false }
+  ],
+  "payloadSchema": {
+    "type": "object",
+    "required": ["to", "subject"],
+    "properties": {
+      "to": {
+        "type": "string",
+        "format": "email",
+        "description": "Recipient email address"
+      },
+      "subject": {
+        "type": "string",
+        "description": "Email subject line"
+      },
+      "html": {
+        "type": "string",
+        "description": "HTML body content"
+      },
+      "text": {
+        "type": "string",
+        "description": "Plain text body content"
+      },
+      "from": {
+        "type": "string",
+        "format": "email",
+        "description": "Sender email address (overrides env default)"
+      },
+      "replyTo": {
+        "type": "string",
+        "format": "email",
+        "description": "Reply-to email address"
+      }
+    },
+    "additionalProperties": false
+  },
   "dependencies": {
     "@constructive-io/postmaster": "^1.5.2",
     "@pgpmjs/env": "^2.15.3",

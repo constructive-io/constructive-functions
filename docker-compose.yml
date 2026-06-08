@@ -78,8 +78,12 @@ services:
     command:
       - |
         cd /workspace/pgpm
-        echo "Deploying constructive-infra..."
-        pgpm deploy --yes --database "$$PGDATABASE" --package constructive-infra
+        for mod in constructive-infra constructive-store constructive-objects constructive-fbp constructive-storage; do
+          if [ -d "$$mod" ]; then
+            echo "Deploying $$mod..."
+            pgpm deploy --yes --database "$$PGDATABASE" --package "$$mod"
+          fi
+        done
         echo "Deploying constructive-infra-seed..."
         pgpm deploy --yes --database "$$PGDATABASE" --package constructive-infra-seed
         echo "Platform setup done"
@@ -113,6 +117,23 @@ services:
     ports:
       - "3002:3000"
 
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Console UI
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   mailpit:
     image: axllent/mailpit:latest
     ports:
@@ -121,3 +142,4 @@ services:
 
 volumes:
   pgdata:
+  minio-data:

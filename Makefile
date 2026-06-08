@@ -1,8 +1,9 @@
-.PHONY: install build clean lint generate \
+.PHONY: install build clean lint generate register \
        up down status verify-platform check-env setup-platform \
        up\:email-job down\:email-job \
        up\:www \
        dev dev-fn dev-compute dev-down dev-logs setup-dev setup-check \
+       secrets\:sync \
        skaffold-dev skaffold-dev-knative docker-build
 
 install:
@@ -20,6 +21,9 @@ lint:
 
 generate:
 	pnpm run generate
+
+register:
+	node --experimental-strip-types scripts/register-functions.ts
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Lifecycle — up / down
@@ -103,6 +107,9 @@ setup-dev:
 
 setup-check:
 	./scripts/setup-dev.sh --check
+
+secrets\:sync:
+	./scripts/secrets-sync.sh $(ENV_FILE) $(DB_NAME)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Tier 3 — k8s-local

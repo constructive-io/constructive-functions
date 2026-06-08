@@ -3,8 +3,71 @@
   "version": "2.6.4",
   "type": "node-graphql",
   "port": 8082,
-  "taskIdentifier": "email:send_verification_link",
+  "taskIdentifier": "send-verification-link",
+  "scope": "platform",
   "description": "Sends invite, password reset, and verification emails",
+  "requiredSecrets": [
+    { "name": "MAILGUN_API_KEY", "required": false },
+    { "name": "MAILGUN_DOMAIN", "required": false },
+    { "name": "MAILGUN_FROM", "required": false },
+    { "name": "MAILGUN_REPLY", "required": false }
+  ],
+  "requiredConfigs": [
+    { "name": "EMAIL_SEND_USE_SMTP", "required": false },
+    { "name": "SMTP_HOST", "required": false },
+    { "name": "SMTP_PORT", "required": false },
+    { "name": "SMTP_FROM", "required": false },
+    { "name": "LOCAL_APP_PORT", "required": false },
+    { "name": "SEND_VERIFICATION_LINK_DRY_RUN", "required": false }
+  ],
+  "payloadSchema": {
+    "type": "object",
+    "required": ["email_type", "email"],
+    "properties": {
+      "email_type": {
+        "type": "string",
+        "enum": ["invite_email", "forgot_password", "email_verification"],
+        "description": "Type of verification email to send"
+      },
+      "email": {
+        "type": "string",
+        "format": "email",
+        "description": "Recipient email address"
+      },
+      "invite_type": {
+        "type": ["number", "string"],
+        "description": "Invite type identifier (for invite_email)"
+      },
+      "invite_token": {
+        "type": "string",
+        "description": "Invitation token (required for invite_email)"
+      },
+      "sender_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "User ID of the sender (required for invite_email)"
+      },
+      "user_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "User ID (required for forgot_password)"
+      },
+      "reset_token": {
+        "type": "string",
+        "description": "Password reset token (required for forgot_password)"
+      },
+      "email_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Email record ID (required for email_verification)"
+      },
+      "verification_token": {
+        "type": "string",
+        "description": "Email verification token (required for email_verification)"
+      }
+    },
+    "additionalProperties": false
+  },
   "dependencies": {
     "@constructive-io/postmaster": "^1.5.2",
     "@launchql/mjml": "0.1.1",

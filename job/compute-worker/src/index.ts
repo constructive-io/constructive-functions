@@ -25,6 +25,8 @@ import { InvocationTracker } from './invocation';
 import { compute_request } from './req';
 import type { ComputeJobRow, ComputeWorkerOptions } from './types';
 
+const DEFAULT_DATABASE_ID = '00000000-0000-0000-0000-000000000000';
+
 export { TtlCache } from './cache';
 export { FunctionDiscovery } from './discovery';
 export { InvocationTracker } from './invocation';
@@ -251,12 +253,14 @@ export default class ComputeWorker {
       );
     }
 
+    const databaseId = job.database_id || DEFAULT_DATABASE_ID;
+
     const { id: invocationId } = await this.tracker.create({
       function_id: fn.id,
       task_identifier,
       payload,
       job_id: job.id,
-      database_id: job.database_id,
+      database_id: databaseId,
       actor_id: job.actor_id,
     });
 
@@ -264,7 +268,7 @@ export default class ComputeWorker {
     try {
       await compute_request(url, {
         body: payload,
-        database_id: job.database_id,
+        database_id: databaseId,
         actor_id: job.actor_id,
         entity_id: job.entity_id,
         worker_id: this.workerId,

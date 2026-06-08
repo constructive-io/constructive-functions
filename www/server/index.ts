@@ -41,7 +41,7 @@ app.get('/api/functions', async (_req, res) => {
     const result = await pool.query(`
       SELECT name, task_identifier, service_url, is_invocable, is_built_in,
              scope, description, required_secrets, required_configs,
-             namespace_id,
+             payload_schema, namespace_id,
              (SELECT n.name FROM constructive_infra_public.platform_namespaces n WHERE n.id = f.namespace_id) as namespace,
              created_at, updated_at
       FROM constructive_infra_public.platform_function_definitions f
@@ -58,14 +58,77 @@ app.get('/api/functions', async (_req, res) => {
   }
 });
 
+// ─── REST API — FBP Node Definitions ────────────────────────────────────────
+
+app.get('/api/definitions', async (_req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT name, task_identifier, service_url, is_invocable,
+             scope, description, required_secrets, required_configs,
+             payload_schema
+      FROM constructive_infra_public.platform_function_definitions
+      ORDER BY name
+    `);
+
+    const definitions = result.rows.map((r: any) => {
+      const secrets = parseRequirements(r.required_secrets);
+      const configs = parseRequirements(r.required_configs);
+      const schema = r.payload_schema;
+
+      const props = [
+        ...secrets.map((s: { name: string; required: boolean }) => ({
+          name: s.name,
+          type: 'secret',
+          required: s.required,
+          description: `Secret: ${s.name}`,
+        })),
+        ...configs.map((c: { name: string; required: boolean }) => ({
+          name: c.name,
+          type: 'config',
+          required: c.required,
+          description: `Config: ${c.name}`,
+        })),
+      ];
+
+      const inputs = [{
+        name: 'payload',
+        type: 'json',
+        description: 'Job payload object',
+        ...(schema ? { schema } : {}),
+      }];
+
+      return {
+        context: r.task_identifier,
+        name: r.name,
+        category: r.scope || 'default',
+        description: r.description,
+        inputs,
+        outputs: [{ name: 'result', type: 'json', description: 'Handler return value' }],
+        props: props.length > 0 ? props : undefined,
+      };
+    });
+
+    res.json(definitions);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── REST API — Secrets ─────────────────────────────────────────────────────
 
 app.get('/api/secrets', async (_req, res) => {
   try {
+    // Derive secret/config definitions from function definitions (inlined arrays)
     const result = await pool.query(`
-      SELECT name, description, is_built_in, database_id,
-             created_at, updated_at
-      FROM constructive_infra_public.platform_secret_definitions
+      SELECT DISTINCT (r).name, (r).required, 'secret' AS kind
+      FROM constructive_infra_public.platform_function_definitions,
+           unnest(required_secrets) AS r
+      WHERE is_invocable = true
+      UNION
+      SELECT DISTINCT (r).name, (r).required, 'config' AS kind
+      FROM constructive_infra_public.platform_function_definitions,
+           unnest(required_configs) AS r
+      WHERE is_invocable = true
       ORDER BY name
     `);
     res.json(result.rows);
@@ -74,7 +137,7 @@ app.get('/api/secrets', async (_req, res) => {
   }
 });
 
-// ─── REST API — .env file (read / write) ─────────────────────────────────────
+// ─── .env helpers (must be declared before Secret Values endpoints) ────────
 
 const PROJECT_ROOT = process.env.PROJECT_ROOT || resolve(process.cwd(), '..');
 const ENV_PATH = resolve(PROJECT_ROOT, '.env');
@@ -145,6 +208,176 @@ function writeDotEnv(filePath: string, vars: Record<string, string>): void {
   writeFileSync(filePath, lines.join('\n'), 'utf-8');
 }
 
+// ─── REST API — Secret/Config Values (real upstream tables) ─────────────────
+
+const DB_ID = '00000000-0000-0000-0000-000000000000';
+
+async function getDefaultNamespaceId(): Promise<string> {
+  const result = await pool.query(
+    `SELECT id FROM constructive_infra_public.platform_namespaces
+     WHERE name = 'default' AND database_id = $1 LIMIT 1`,
+    [DB_ID]
+  );
+  if (result.rows.length > 0) return result.rows[0].id;
+  throw new Error('Default namespace not found — deploy constructive-infra-seed first');
+}
+
+async function getSecretNames(): Promise<Set<string>> {
+  const result = await pool.query(`
+    SELECT DISTINCT (r).name AS secret_name
+    FROM constructive_infra_public.platform_function_definitions,
+         unnest(required_secrets) AS r
+    WHERE is_invocable = true
+  `);
+  return new Set(result.rows.map((r: any) => r.secret_name));
+}
+
+async function getConfigNames(): Promise<Set<string>> {
+  const result = await pool.query(`
+    SELECT DISTINCT (r).name AS config_name
+    FROM constructive_infra_public.platform_function_definitions,
+         unnest(required_configs) AS r
+    WHERE is_invocable = true
+  `);
+  return new Set(result.rows.map((r: any) => r.config_name));
+}
+
+app.get('/api/secret-values', async (_req, res) => {
+  try {
+    const secrets = await pool.query(`
+      SELECT name, convert_from(value, 'UTF8') AS configured_value,
+             database_id, created_at, updated_at
+      FROM constructive_store_private.platform_secrets
+      WHERE database_id = $1
+      ORDER BY name
+    `, [DB_ID]);
+    const configs = await pool.query(`
+      SELECT name, value AS configured_value,
+             created_at, updated_at
+      FROM constructive_store_public.platform_config
+      ORDER BY name
+    `);
+    const vars: Record<string, string> = {};
+    const rows: any[] = [];
+    for (const row of secrets.rows) {
+      if (row.configured_value != null) vars[row.name] = row.configured_value;
+      rows.push({ secret_name: row.name, configured_value: row.configured_value, kind: 'secret', ...row });
+    }
+    for (const row of configs.rows) {
+      if (row.configured_value != null) vars[row.name] = row.configured_value;
+      rows.push({ secret_name: row.name, configured_value: row.configured_value, kind: 'config', ...row });
+    }
+    res.json({ vars, rows });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/secret-values', async (req, res) => {
+  try {
+    const { vars } = req.body as { vars: Record<string, string> };
+    if (!vars || typeof vars !== 'object') {
+      res.status(400).json({ error: 'Body must contain { vars: { KEY: "value", ... } }' });
+      return;
+    }
+    const nsId = await getDefaultNamespaceId();
+    const secretNames = await getSecretNames();
+    const configNames = await getConfigNames();
+    let upserted = 0;
+    for (const [name, value] of Object.entries(vars)) {
+      if (value === '') continue;
+      if (secretNames.has(name)) {
+        await pool.query(
+          `INSERT INTO constructive_store_private.platform_secrets
+             (id, name, value, database_id, namespace_id)
+           VALUES (gen_random_uuid(), $1, convert_to($2, 'UTF8'), $3, $4)
+           ON CONFLICT (database_id, namespace_id, name)
+           DO UPDATE SET value = convert_to($2, 'UTF8'), updated_at = now()`,
+          [name, value, DB_ID, nsId]
+        );
+        upserted++;
+      } else if (configNames.has(name)) {
+        await pool.query(
+          `INSERT INTO constructive_store_public.platform_config
+             (id, name, value, namespace_id)
+           VALUES (gen_random_uuid(), $1, $2, $3)
+           ON CONFLICT (namespace_id, name)
+           DO UPDATE SET value = $2, updated_at = now()`,
+          [name, value, nsId]
+        );
+        upserted++;
+      }
+    }
+    res.json({ ok: true, upserted });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/secrets/sync-from-db', async (_req, res) => {
+  try {
+    const secrets = await pool.query(`
+      SELECT name, convert_from(value, 'UTF8') AS val
+      FROM constructive_store_private.platform_secrets
+      WHERE database_id = $1 AND value IS NOT NULL
+    `, [DB_ID]);
+    const configs = await pool.query(`
+      SELECT name, value AS val
+      FROM constructive_store_public.platform_config
+      WHERE value IS NOT NULL AND value != ''
+    `);
+    const dbVars: Record<string, string> = {};
+    for (const row of [...secrets.rows, ...configs.rows]) {
+      dbVars[row.name] = row.val;
+    }
+    const existing = parseDotEnv(ENV_PATH);
+    const merged = { ...existing, ...dbVars };
+    writeDotEnv(ENV_PATH, merged);
+    res.json({ ok: true, synced: Object.keys(dbVars).length, total: Object.keys(merged).length });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/secrets/sync-to-db', async (_req, res) => {
+  try {
+    const envVars = parseDotEnv(ENV_PATH);
+    const nsId = await getDefaultNamespaceId();
+    const secretNames = await getSecretNames();
+    const configNames = await getConfigNames();
+    let upserted = 0;
+    for (const [name, value] of Object.entries(envVars)) {
+      if (value === '') continue;
+      if (secretNames.has(name)) {
+        await pool.query(
+          `INSERT INTO constructive_store_private.platform_secrets
+             (id, name, value, database_id, namespace_id)
+           VALUES (gen_random_uuid(), $1, convert_to($2, 'UTF8'), $3, $4)
+           ON CONFLICT (database_id, namespace_id, name)
+           DO UPDATE SET value = convert_to($2, 'UTF8'), updated_at = now()`,
+          [name, value, DB_ID, nsId]
+        );
+        upserted++;
+      } else if (configNames.has(name)) {
+        await pool.query(
+          `INSERT INTO constructive_store_public.platform_config
+             (id, name, value, namespace_id)
+           VALUES (gen_random_uuid(), $1, $2, $3)
+           ON CONFLICT (namespace_id, name)
+           DO UPDATE SET value = $2, updated_at = now()`,
+          [name, value, nsId]
+        );
+        upserted++;
+      }
+    }
+    res.json({ ok: true, synced: upserted });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── REST API — .env file (read / write) ─────────────────────────────────────
+
 app.get('/api/env', (_req, res) => {
   try {
     const vars = parseDotEnv(ENV_PATH);
@@ -154,7 +387,7 @@ app.get('/api/env', (_req, res) => {
   }
 });
 
-app.post('/api/env', (req, res) => {
+app.post('/api/env', async (req, res) => {
   try {
     const { vars } = req.body as { vars: Record<string, string> };
     if (!vars || typeof vars !== 'object') {
@@ -169,6 +402,38 @@ app.post('/api/env', (req, res) => {
       if (v === '' && !(k in existing)) delete merged[k];
     }
     writeDotEnv(ENV_PATH, merged);
+
+    // Also sync non-empty values to DB (best-effort)
+    try {
+      const nsId = await getDefaultNamespaceId();
+      const secretNames = await getSecretNames();
+      const configNames = await getConfigNames();
+      for (const [name, value] of Object.entries(merged)) {
+        if (value === '') continue;
+        if (secretNames.has(name)) {
+          await pool.query(
+            `INSERT INTO constructive_store_private.platform_secrets
+               (id, name, value, database_id, namespace_id)
+             VALUES (gen_random_uuid(), $1, convert_to($2, 'UTF8'), $3, $4)
+             ON CONFLICT (database_id, namespace_id, name)
+             DO UPDATE SET value = convert_to($2, 'UTF8'), updated_at = now()`,
+            [name, value, DB_ID, nsId]
+          );
+        } else if (configNames.has(name)) {
+          await pool.query(
+            `INSERT INTO constructive_store_public.platform_config
+               (id, name, value, namespace_id)
+             VALUES (gen_random_uuid(), $1, $2, $3)
+             ON CONFLICT (namespace_id, name)
+             DO UPDATE SET value = $2, updated_at = now()`,
+            [name, value, nsId]
+          );
+        }
+      }
+    } catch {
+      // DB sync is best-effort; .env write already succeeded
+    }
+
     res.json({ ok: true, path: ENV_PATH, count: Object.keys(merged).length });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -384,7 +649,7 @@ wss.on('connection', (ws: WebSocket) => {
 server.listen(PORT, () => {
   console.log(`\n  Platform UI server: http://localhost:${PORT}`);
   console.log(`  Terminal WebSocket: ws://localhost:${PORT}/ws/terminal`);
-  console.log(`  API endpoints:     http://localhost:${PORT}/api/{status,functions,jobs,invocations,secrets,namespaces}`);
+  console.log(`  API endpoints:     http://localhost:${PORT}/api/{status,functions,jobs,invocations,secrets,secret-values,namespaces}`);
   console.log(`  K8s proxy:         http://localhost:${PORT}/api/k8s/* → ${K8S_API}`);
   console.log(`  Database:          ${process.env.PGDATABASE || 'constructive-functions-db1'}\n`);
 });

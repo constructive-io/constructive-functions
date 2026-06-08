@@ -45,9 +45,10 @@ const DEFAULT_PAYLOADS: Record<string, Record<string, unknown>> = {
     html: '<p>Test email sent via compute-worker</p>',
   },
   'send-verification-link': {
-    to: 'test@example.com',
-    type: 'invite',
-    link: 'http://localhost:3000/verify?token=test-token',
+    email_type: 'email_verification',
+    email: 'test@example.com',
+    email_id: '00000000-0000-0000-0000-000000000001',
+    verification_token: 'test-token-123',
   },
 };
 
@@ -132,6 +133,30 @@ function FunctionCard({ fn, onNavigate }: { fn: PlatformFunction; onNavigate?: (
           </span>
         )}
       </div>
+
+      {/* Payload schema (FBP port definition) */}
+      {fn.payload_schema && (fn.payload_schema as any).properties && (
+        <div className="border-t border-zinc-800 pt-2 mt-1">
+          <div className="text-[11px] text-zinc-500 mb-1 font-semibold">Payload Schema</div>
+          <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[11px]">
+            {Object.entries((fn.payload_schema as any).properties).map(([key, def]: [string, any]) => {
+              const required = ((fn.payload_schema as any).required || []).includes(key);
+              return (
+                <div key={key} className="contents">
+                  <span className="font-mono text-zinc-300">
+                    {key}{required && <span className="text-red-400">*</span>}
+                  </span>
+                  <span className="text-zinc-500">
+                    {def.enum ? def.enum.join(' | ') : Array.isArray(def.type) ? def.type.join(' | ') : def.type || 'any'}
+                    {def.format && <span className="text-zinc-600 ml-1">({def.format})</span>}
+                    {def.description && <span className="text-zinc-600 ml-1">— {def.description}</span>}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Inline trigger form */}
       {showTrigger && (

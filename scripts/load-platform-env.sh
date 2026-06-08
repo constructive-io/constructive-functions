@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 #
-# load-platform-env.sh — load .env and check platform secret/config coverage
+# load-platform-env.sh — load .env values into platform_secrets + platform_config
 #
 # Reads your .env file, cross-references it against the required_secrets and
-# required_configs declared in platform_function_definitions, and reports
-# which are satisfied vs missing.
+# required_configs declared in platform_function_definitions, reports coverage,
+# and UPSERTs matching values into the real upstream tables:
+#   - requiredSecrets → constructive_store_private.platform_secrets  (bytea value)
+#   - requiredConfigs → constructive_store_public.platform_config    (text value)
 #
 # Usage:
 #   ./scripts/load-platform-env.sh                       # defaults to .env + constructive-functions-db1
@@ -15,6 +17,8 @@ set -euo pipefail
 
 ENV_FILE="${1:-.env}"
 DB_NAME="${2:-${DB_NAME:-constructive-functions-db1}}"
+
+DB_ID="00000000-0000-0000-0000-000000000000"
 
 if [ ! -f "$ENV_FILE" ]; then
   echo "Error: $ENV_FILE not found."
@@ -34,12 +38,12 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 
 echo "════════════════════════════════════════════════════════════"
-echo "  Platform Environment Check"
+echo "  Platform Environment Sync"
 echo "  .env: $ENV_FILE    database: $DB_NAME"
 echo "════════════════════════════════════════════════════════════"
 echo ""
 
-# Load env file into newline-separated KEY=VALUE list (bash 3 compatible)
+# Load env file into newline-separated KEY list (bash 3 compatible)
 ENV_KEYS=""
 ENV_COUNT=0
 while IFS= read -r line; do
@@ -54,7 +58,7 @@ $key"
   esac
 done < "$ENV_FILE"
 
-# Also source the file so we can display values
+# Also source the file so we can read values
 set -a
 . "$ENV_FILE"
 set +a
@@ -65,6 +69,19 @@ has_env() {
 
 echo "Loaded $ENV_COUNT variable(s) from $ENV_FILE"
 echo ""
+
+# Resolve the default namespace_id
+NS_ID=$(psql -d "$DB_NAME" -t -A -c "
+  SELECT id FROM constructive_infra_public.platform_namespaces
+  WHERE name = 'default' AND database_id = '$DB_ID'
+  LIMIT 1
+" 2>/dev/null)
+
+if [ -z "$NS_ID" ]; then
+  echo "Error: default namespace not found in $DB_NAME."
+  echo "  Ensure constructive-infra-seed has been deployed."
+  exit 1
+fi
 
 # Query functions and their requirements
 FUNCTIONS=$(psql -d "$DB_NAME" -t -A -F '|' -c "
@@ -93,6 +110,8 @@ if [ -z "$FUNCTIONS" ]; then
 fi
 
 TOTAL_MISSING=0
+SECRET_KEYS=""
+CONFIG_KEYS=""
 
 while IFS='|' read -r fn_name secrets configs req_secrets req_configs; do
   echo "─── $fn_name ───"
@@ -120,6 +139,24 @@ while IFS='|' read -r fn_name secrets configs req_secrets req_configs; do
       fi
       echo "  ✓ $key = $display"
       SATISFIED=$((SATISFIED + 1))
+
+      # Track for DB sync (deduplicate into secret vs config buckets)
+      case ",$secrets," in
+        *",$key,"*)
+          case ",$SECRET_KEYS," in
+            *",$key,"*) ;;
+            *) SECRET_KEYS="${SECRET_KEYS:+$SECRET_KEYS,}$key" ;;
+          esac
+          ;;
+      esac
+      case ",$configs," in
+        *",$key,"*)
+          case ",$CONFIG_KEYS," in
+            *",$key,"*) ;;
+            *) CONFIG_KEYS="${CONFIG_KEYS:+$CONFIG_KEYS,}$key" ;;
+          esac
+          ;;
+      esac
     else
       if $IS_REQUIRED; then
         echo "  ✗ $key (REQUIRED — missing!)"
@@ -136,12 +173,98 @@ while IFS='|' read -r fn_name secrets configs req_secrets req_configs; do
   echo ""
 done <<< "$FUNCTIONS"
 
+# ─── Sync secrets into constructive_store_private.platform_secrets ───────────
+
+SYNCED=0
+
+if [ -n "$SECRET_KEYS" ]; then
+  echo "─── Syncing secrets → platform_secrets ───"
+
+  OLD_IFS="$IFS"; IFS=','
+  for key in $SECRET_KEYS; do
+    IFS="$OLD_IFS"
+    [ -z "$key" ] && continue
+    eval "val=\${$key:-}"
+    [ -z "$val" ] && continue
+
+    escaped_val="${val//\'/\'\'}"
+
+    psql -d "$DB_NAME" -q -c "
+      INSERT INTO constructive_store_private.platform_secrets
+        (id, name, value, database_id, namespace_id)
+      VALUES (
+        gen_random_uuid(),
+        '$key',
+        convert_to('$escaped_val', 'UTF8'),
+        '$DB_ID',
+        '$NS_ID'
+      )
+      ON CONFLICT (database_id, namespace_id, name)
+      DO UPDATE SET value = convert_to('$escaped_val', 'UTF8'),
+                    updated_at = now();
+    " 2>/dev/null && {
+      SYNCED=$((SYNCED + 1))
+    } || {
+      echo "  ⚠ Failed to sync secret $key"
+    }
+  done
+  IFS="$OLD_IFS"
+
+  echo "  ✓ Synced $SYNCED secret(s)"
+  echo ""
+fi
+
+# ─── Sync configs into constructive_store_public.platform_config ─────────────
+
+CONFIG_SYNCED=0
+
+if [ -n "$CONFIG_KEYS" ]; then
+  echo "─── Syncing configs → platform_config ───"
+
+  OLD_IFS="$IFS"; IFS=','
+  for key in $CONFIG_KEYS; do
+    IFS="$OLD_IFS"
+    [ -z "$key" ] && continue
+    eval "val=\${$key:-}"
+    [ -z "$val" ] && continue
+
+    escaped_val="${val//\'/\'\'}"
+
+    psql -d "$DB_NAME" -q -c "
+      INSERT INTO constructive_store_public.platform_config
+        (id, name, value, namespace_id)
+      VALUES (
+        gen_random_uuid(),
+        '$key',
+        '$escaped_val',
+        '$NS_ID'
+      )
+      ON CONFLICT (namespace_id, name)
+      DO UPDATE SET value = '$escaped_val',
+                    updated_at = now();
+    " 2>/dev/null && {
+      CONFIG_SYNCED=$((CONFIG_SYNCED + 1))
+    } || {
+      echo "  ⚠ Failed to sync config $key"
+    }
+  done
+  IFS="$OLD_IFS"
+
+  echo "  ✓ Synced $CONFIG_SYNCED config(s)"
+  echo ""
+fi
+
+# ─── Summary ─────────────────────────────────────────────────────────────────
+
+TOTAL_SYNCED=$((SYNCED + CONFIG_SYNCED))
+
 if [ "$TOTAL_MISSING" -gt 0 ]; then
   echo "⚠  $TOTAL_MISSING required secret(s)/config(s) missing."
   echo "   Add them to $ENV_FILE and re-run."
   exit 1
 else
   echo "All required secrets and configs are satisfied."
+  echo "$SYNCED secret(s) + $CONFIG_SYNCED config(s) loaded into DB."
   echo ""
   echo "Start the compute-service:"
   echo "  set -a; source $ENV_FILE; set +a"
