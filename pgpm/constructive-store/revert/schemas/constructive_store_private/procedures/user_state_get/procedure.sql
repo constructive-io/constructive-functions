@@ -1,6 +1,6 @@
 -- Revert: schemas/constructive_store_private/procedures/user_state_get/procedure
 
 
-DROP FUNCTION "constructive_store_private".user_state_get;
+DROP FUNCTION "constructive_store_private".user_state_get(uuid, text, text);
 
 
