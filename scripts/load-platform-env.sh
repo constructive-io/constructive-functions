@@ -39,26 +39,31 @@ echo "  .env: $ENV_FILE    database: $DB_NAME"
 echo "════════════════════════════════════════════════════════════"
 echo ""
 
-# Load env file into associative array (bash 4+)
-declare -A ENV_VARS
+# Load env file into newline-separated KEY=VALUE list (bash 3 compatible)
+ENV_KEYS=""
+ENV_COUNT=0
 while IFS= read -r line; do
-  # Skip comments and blank lines
-  [[ "$line" =~ ^[[:space:]]*# ]] && continue
-  [[ -z "$line" ]] && continue
-  # Parse KEY=VALUE (strip quotes)
-  if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*) ]]; then
-    key="${BASH_REMATCH[1]}"
-    val="${BASH_REMATCH[2]}"
-    # Strip surrounding quotes
-    val="${val#\"}"
-    val="${val%\"}"
-    val="${val#\'}"
-    val="${val%\'}"
-    ENV_VARS["$key"]="$val"
-  fi
+  case "$line" in \#*|"") continue ;; esac
+  key="${line%%=*}"
+  case "$key" in
+    [A-Za-z_]*)
+      ENV_KEYS="$ENV_KEYS
+$key"
+      ENV_COUNT=$((ENV_COUNT + 1))
+      ;;
+  esac
 done < "$ENV_FILE"
 
-echo "Loaded ${#ENV_VARS[@]} variable(s) from $ENV_FILE"
+# Also source the file so we can display values
+set -a
+. "$ENV_FILE"
+set +a
+
+has_env() {
+  echo "$ENV_KEYS" | grep -qx "$1"
+}
+
+echo "Loaded $ENV_COUNT variable(s) from $ENV_FILE"
 echo ""
 
 # Query functions and their requirements
@@ -99,32 +104,33 @@ while IFS='|' read -r fn_name secrets configs req_secrets req_configs; do
   MISSING=0
   SATISFIED=0
 
-  IFS=',' read -ra KEYS <<< "$ALL_KEYS"
-  for key in "${KEYS[@]}"; do
+  OLD_IFS="$IFS"; IFS=','
+  for key in $ALL_KEYS; do
+    IFS="$OLD_IFS"
     [ -z "$key" ] && continue
     IS_REQUIRED=false
-    [[ ",$req_secrets,$req_configs," == *",$key,"* ]] && IS_REQUIRED=true
+    case ",$req_secrets,$req_configs," in *",$key,"*) IS_REQUIRED=true ;; esac
 
-    if [ -n "${ENV_VARS[$key]+x}" ]; then
-      val="${ENV_VARS[$key]}"
-      # Mask secret values (show first 4 chars)
+    if has_env "$key"; then
+      eval "val=\${$key:-}"
       if [ ${#val} -gt 8 ]; then
-        display="${val:0:4}****"
+        display="${val%"${val#????}"}****"
       else
         display="$val"
       fi
       echo "  ✓ $key = $display"
-      ((SATISFIED++)) || true
+      SATISFIED=$((SATISFIED + 1))
     else
       if $IS_REQUIRED; then
         echo "  ✗ $key (REQUIRED — missing!)"
-        ((MISSING++)) || true
-        ((TOTAL_MISSING++)) || true
+        MISSING=$((MISSING + 1))
+        TOTAL_MISSING=$((TOTAL_MISSING + 1))
       else
         echo "  · $key (optional — not set)"
       fi
     fi
   done
+  IFS="$OLD_IFS"
 
   echo "  → $SATISFIED set, $MISSING missing"
   echo ""

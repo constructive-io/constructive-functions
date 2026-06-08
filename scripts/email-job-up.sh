@@ -118,22 +118,29 @@ ok "SEND_EMAIL_DRY_RUN=$SEND_EMAIL_DRY_RUN"
 echo ""
 echo -e "  ${BOLD}Checking secret/config coverage:${NC}"
 
-# Build list of env vars from .env + current exports
-declare -A LOADED_VARS
+# Build a newline-separated list of loaded env var names (bash 3 compatible)
+LOADED_VARS=""
 for var in EMAIL_SEND_USE_SMTP SMTP_HOST SMTP_PORT SMTP_FROM SEND_EMAIL_DRY_RUN \
            SEND_VERIFICATION_LINK_DRY_RUN MAILGUN_API_KEY MAILGUN_DOMAIN \
            MAILGUN_FROM MAILGUN_REPLY MAILGUN_KEY LOCAL_APP_PORT; do
-  [ -n "${!var+x}" ] && LOADED_VARS["$var"]=1
+  eval "val=\${$var+x}"
+  [ -n "$val" ] && LOADED_VARS="$LOADED_VARS
+$var"
 done
 if [ -f "$ROOT_DIR/.env" ]; then
   while IFS= read -r line; do
-    [[ "$line" =~ ^[[:space:]]*# ]] && continue
-    [[ -z "$line" ]] && continue
-    if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)= ]]; then
-      LOADED_VARS["${BASH_REMATCH[1]}"]=1
-    fi
+    case "$line" in \#*|"") continue ;; esac
+    key="${line%%=*}"
+    case "$key" in
+      [A-Za-z_]*) LOADED_VARS="$LOADED_VARS
+$key" ;;
+    esac
   done < "$ROOT_DIR/.env"
 fi
+
+has_var() {
+  echo "$LOADED_VARS" | grep -qx "$1"
+}
 
 # Query function requirements from DB
 FN_REQS=$(psql -d "$DB_NAME" -t -A -F '|' -c "
@@ -159,18 +166,22 @@ if [ -n "$FN_REQS" ]; then
 
     FN_SET=0
     FN_MISS=0
-    IFS=',' read -ra KEYS <<< "$ALL_KEYS"
-    for key in "${KEYS[@]}"; do
+    FN_TOTAL=0
+    OLD_IFS="$IFS"; IFS=','
+    for key in $ALL_KEYS; do
+      IFS="$OLD_IFS"
       [ -z "$key" ] && continue
-      if [ -n "${LOADED_VARS[$key]+x}" ]; then
-        ((FN_SET++)) || true
+      FN_TOTAL=$((FN_TOTAL + 1))
+      if has_var "$key"; then
+        FN_SET=$((FN_SET + 1))
       else
-        ((FN_MISS++)) || true
-        ((TOTAL_MISSING++)) || true
+        FN_MISS=$((FN_MISS + 1))
+        TOTAL_MISSING=$((TOTAL_MISSING + 1))
       fi
     done
+    IFS="$OLD_IFS"
     if [ "$FN_MISS" -gt 0 ]; then
-      warn "$fn_name: $FN_SET/${#KEYS[@]} secrets/configs set ($FN_MISS missing)"
+      warn "$fn_name: $FN_SET/$FN_TOTAL secrets/configs set ($FN_MISS missing)"
     else
       ok "$fn_name: all $FN_SET secrets/configs set"
     fi
