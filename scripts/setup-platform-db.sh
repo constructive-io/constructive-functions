@@ -31,6 +31,11 @@ createdb "$DB_NAME" 2>/dev/null && echo "  Created." || echo "  Already exists."
 echo "→ Bootstrapping pgpm admin users..."
 pgpm admin-users bootstrap --yes 2>/dev/null || true
 
+# --- Install pgpm module dependencies ---
+echo "→ Installing pgpm dependencies..."
+cd "$ROOT_DIR/pgpm/constructive-infra"
+pgpm install
+
 # --- Deploy constructive-infra ---
 echo "→ Deploying constructive-infra package..."
 cd "$ROOT_DIR/pgpm"
