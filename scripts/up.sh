@@ -192,13 +192,14 @@ step 7 "Verifying platform"
 
 # ─── Step 8: Check .env ─────────────────────────────────────────────────────
 
-step 8 "Checking .env"
+step 8 "Loading .env into platform"
 
 if [ -f "$ROOT_DIR/.env" ]; then
   "$SCRIPT_DIR/load-platform-env.sh" "$ROOT_DIR/.env" "$DB_NAME" || true
 else
-  warn "No .env file found. Create one from the example:"
+  warn "No .env file found — secrets/configs not loaded."
   echo "    cp .env.example .env"
+  echo "    # Then re-run: make up"
 fi
 
 # ─── Done ────────────────────────────────────────────────────────────────────

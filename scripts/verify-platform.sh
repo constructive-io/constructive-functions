@@ -85,6 +85,14 @@ else
   fail "Table platform_function_invocations missing"
 fi
 
+# --- platform_secret_values table ---
+HAS_SV=$(psql -d "$DB_NAME" -t -A -c "SELECT 1 FROM information_schema.tables WHERE table_schema = 'constructive_infra_public' AND table_name = 'platform_secret_values'" 2>/dev/null)
+if [ "$HAS_SV" = "1" ]; then
+  ok "Table platform_secret_values exists"
+else
+  fail "Table platform_secret_values missing"
+fi
+
 # --- Seeded functions ---
 if [ "$HAS_TABLE" = "1" ]; then
   FN_COUNT=$(psql -d "$DB_NAME" -t -A -c "SELECT count(*) FROM constructive_infra_public.platform_function_definitions WHERE is_invocable = true" 2>/dev/null)
@@ -94,6 +102,27 @@ if [ "$HAS_TABLE" = "1" ]; then
   else
     fail "No invocable functions seeded (re-deploy to seed)"
     echo "    Fix: cd pgpm && pgpm deploy --yes --database $DB_NAME --package constructive-infra"
+  fi
+fi
+
+# --- Seeded secret definitions ---
+HAS_SD=$(psql -d "$DB_NAME" -t -A -c "SELECT 1 FROM information_schema.tables WHERE table_schema = 'constructive_infra_public' AND table_name = 'platform_secret_definitions'" 2>/dev/null)
+if [ "$HAS_SD" = "1" ]; then
+  SD_COUNT=$(psql -d "$DB_NAME" -t -A -c "SELECT count(*) FROM constructive_infra_public.platform_secret_definitions WHERE is_built_in = true" 2>/dev/null)
+  if [ "$SD_COUNT" -gt 0 ] 2>/dev/null; then
+    ok "$SD_COUNT secret/config definition(s) registered"
+  else
+    fail "No secret definitions seeded"
+  fi
+fi
+
+# --- Secret values loaded ---
+if [ "$HAS_SV" = "1" ]; then
+  SV_COUNT=$(psql -d "$DB_NAME" -t -A -c "SELECT count(*) FROM constructive_infra_public.platform_secret_values WHERE configured_value IS NOT NULL AND configured_value != ''" 2>/dev/null)
+  if [ "$SV_COUNT" -gt 0 ] 2>/dev/null; then
+    ok "$SV_COUNT secret/config value(s) loaded from .env"
+  else
+    ok "0 secret values loaded (run load-platform-env.sh to sync .env)"
   fi
 fi
 
