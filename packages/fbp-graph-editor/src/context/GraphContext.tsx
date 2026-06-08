@@ -47,10 +47,11 @@ export { getEdgeId } from '../utils/graphTransform';
 
 // Node dimension constants (must match GraphNode.tsx)
 const NODE_WIDTH = 240;
-const RICH_NODE_WIDTH = 320;
+const RICH_NODE_WIDTH = NODE_WIDTH; // same width for uniformity
 const NODE_HEADER_HEIGHT = 32;
 const PORT_HEIGHT = 24;
-const RICH_TOTAL_HEIGHT = 42 + 80 + 28; // header + body + footer
+const RICH_DESC_HEIGHT = 22;
+const RICH_META_HEIGHT = 20;
 
 function getNodeWidthForDef(definition?: NodeDefinition): number {
   return definition?.category === 'functions' ? RICH_NODE_WIDTH : NODE_WIDTH;
@@ -58,7 +59,6 @@ function getNodeWidthForDef(definition?: NodeDefinition): number {
 
 // Helper to calculate node height based on number of ports
 function getNodeHeight(node: Node, definition?: NodeDefinition): number {
-  if (definition?.category === 'functions') return RICH_TOTAL_HEIGHT;
   // For subnets, derive ports from boundary nodes (identified by type, not prefix)
   const isSubnet = node.nodes && node.nodes.length > 0;
   let inputCount = 0;
@@ -71,8 +71,15 @@ function getNodeHeight(node: Node, definition?: NodeDefinition): number {
     inputCount = (node.inputs || definition?.inputs || []).length;
     outputCount = (node.outputs || definition?.outputs || []).length;
   }
+
+  const portRows = Math.max(inputCount, outputCount, 1);
+
+  if (definition?.category === 'functions') {
+    const portStartY = NODE_HEADER_HEIGHT + 4 + RICH_DESC_HEIGHT + RICH_META_HEIGHT + 2;
+    return portStartY + portRows * PORT_HEIGHT + 4;
+  }
   
-  return NODE_HEADER_HEIGHT + Math.max(inputCount, outputCount, 1) * PORT_HEIGHT + 8;
+  return NODE_HEADER_HEIGHT + portRows * PORT_HEIGHT + 8;
 }
 
 // Check if two rectangles overlap (any intersection counts)

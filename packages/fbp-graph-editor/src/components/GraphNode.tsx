@@ -22,13 +22,11 @@ const NODE_HEADER_HEIGHT = 32;
 const PORT_HEIGHT = 24;
 const PORT_RADIUS = 6;
 
-// Rich function card dimensions
-const RICH_NODE_WIDTH = 320;
-const RICH_HEADER_HEIGHT = 42;
-const RICH_BODY_HEIGHT = 80;
-const RICH_FOOTER_HEIGHT = 28;
-const RICH_PORT_Y_INPUT = 85;
-const RICH_PORT_Y_OUTPUT = 85;
+// Rich function card dimensions (same width as compact for uniformity)
+const RICH_NODE_WIDTH = NODE_WIDTH;
+const RICH_HEADER_HEIGHT = NODE_HEADER_HEIGHT;
+const RICH_DESC_HEIGHT = 22;
+const RICH_META_HEIGHT = 20;
 
 interface GraphNodeProps {
   node: Node;
@@ -132,15 +130,22 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
   };
 
   // ── Rich function card rendering ──
+  // Uses same width as compact nodes; adds description + metadata rows below header
   if (isRichNode) {
     const width = RICH_NODE_WIDTH;
-    const totalHeight = RICH_HEADER_HEIGHT + RICH_BODY_HEIGHT + RICH_FOOTER_HEIGHT;
     const description = definition?.description || '';
-    const taskId = definition?.name || node.type;
     const isInvocable = definition?.icon === 'zap';
     const secretsCount = getNodeProp(node, 'secretsCount') ?? 0;
     const configsCount = getNodeProp(node, 'configsCount') ?? 0;
     const scope = getNodeProp(node, 'scope') || definition?.context || 'platform';
+
+    // Layout: header + description + metadata + ports
+    const bodyTop = RICH_HEADER_HEIGHT;
+    const descTop = bodyTop + 4;
+    const metaTop = descTop + RICH_DESC_HEIGHT;
+    const portStartY = metaTop + RICH_META_HEIGHT + 2;
+    const portRows = Math.max(inputs.length, outputs.length, 1);
+    const totalHeight = portStartY + portRows * PORT_HEIGHT + 4;
 
     return (
       <g
@@ -150,16 +155,16 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
       >
         {/* Shadow */}
         <rect
-          x={4} y={4}
+          x={3} y={3}
           width={width} height={totalHeight}
-          rx={12} ry={12}
-          fill="rgba(0,0,0,0.4)"
+          rx={10} ry={10}
+          fill="rgba(0,0,0,0.3)"
         />
 
         {/* Card background */}
         <rect
           width={width} height={totalHeight}
-          rx={12} ry={12}
+          rx={10} ry={10}
           fill="#18181b"
         />
 
@@ -167,92 +172,76 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
         <rect
           width={width}
           height={RICH_HEADER_HEIGHT}
-          rx={12} ry={12}
+          rx={10} ry={10}
           fill="#27272a"
         />
         <rect
-          y={RICH_HEADER_HEIGHT - 12}
-          width={width} height={12}
+          y={RICH_HEADER_HEIGHT - 10}
+          width={width} height={10}
           fill="#27272a"
         />
 
         {/* Border */}
         <rect
           width={width} height={totalHeight}
-          rx={12} ry={12}
+          rx={10} ry={10}
           fill="none"
           stroke={isSelected || isPreview ? '#3b82f6' : '#3f3f46'}
           strokeWidth={isSelected || isPreview ? 2 : 1}
         />
 
-        {/* Header: icon + name */}
-        <g transform={`translate(16, ${RICH_HEADER_HEIGHT / 2})`}>
-          {/* Lightning bolt for invocable */}
+        {/* Header: icon + name (same layout as compact) */}
+        <g transform={`translate(14, ${RICH_HEADER_HEIGHT / 2})`}>
           {isInvocable ? (
-            <g transform="translate(-4, -7)">
-              <text fill="#22d3ee" fontSize={14} fontFamily="system-ui">⚡</text>
+            <g transform="translate(-2, -7)">
+              <text fill="#22d3ee" fontSize={13} fontFamily="system-ui">⚡</text>
             </g>
           ) : (
-            <g transform="translate(-4, -5)">
+            <g transform="translate(-2, -6)">
               <NodeIconSvg icon={definition?.icon || 'circle'} size={12} />
             </g>
           )}
           <text
-            x={18}
+            x={16}
             dominantBaseline="middle"
             fill="#e4e4e7"
-            fontSize={16}
-            fontWeight={700}
-            fontFamily="'JetBrains Mono', 'Fira Code', ui-monospace, monospace"
+            fontSize={13}
+            fontWeight={600}
+            fontFamily="system-ui, sans-serif"
           >
             {getShortName(node.type)}
           </text>
         </g>
 
-        {/* Body: description + task identifier */}
-        <text
-          x={16} y={RICH_HEADER_HEIGHT + 20}
-          fill="#a1a1aa"
-          fontSize={12}
-          fontFamily="system-ui, sans-serif"
-        >
-          {description.length > 45 ? description.slice(0, 42) + '…' : description}
-        </text>
-        <text
-          x={16} y={RICH_HEADER_HEIGHT + 42}
-          fill="#71717a"
-          fontSize={11}
-          fontFamily="'JetBrains Mono', 'Fira Code', ui-monospace, monospace"
-        >
-          {taskId}
-        </text>
-
-        {/* Footer: secrets, configs, scope */}
-        <g transform={`translate(16, ${RICH_HEADER_HEIGHT + RICH_BODY_HEIGHT + 4})`}>
-          {/* Lock icon + secrets count */}
-          <text fill="#71717a" fontSize={11} fontFamily="system-ui">🔒</text>
-          <text x={16} y={0} dominantBaseline="hanging" fill="#a1a1aa" fontSize={11} fontFamily="system-ui">{secretsCount}</text>
-
-          {/* Gear icon + configs count */}
-          <text x={36} fill="#71717a" fontSize={11} fontFamily="system-ui">⚙️</text>
-          <text x={54} y={0} dominantBaseline="hanging" fill="#a1a1aa" fontSize={11} fontFamily="system-ui">{configsCount}</text>
-
-          {/* Scope badge */}
-          <rect x={76} y={-2} width={scope.length * 7 + 16} height={18} rx={4} fill="#27272a" />
+        {/* Description (single line, truncated) */}
+        {description && (
           <text
-            x={84} y={7}
-            dominantBaseline="middle"
-            fill="#a1a1aa"
+            x={14} y={descTop + 14}
+            fill="#71717a"
             fontSize={10}
             fontFamily="system-ui, sans-serif"
           >
-            {scope}
+            {description.length > 38 ? description.slice(0, 35) + '…' : description}
           </text>
+        )}
+
+        {/* Metadata row: scope badge + secrets + configs */}
+        <g transform={`translate(14, ${metaTop + 2})`}>
+          <rect x={0} y={0} width={scope.length * 5.5 + 10} height={14} rx={3} fill="#27272a" />
+          <text x={5} y={10} fill="#a1a1aa" fontSize={9} fontFamily="system-ui">{scope}</text>
+          {secretsCount > 0 && (
+            <>
+              <text x={scope.length * 5.5 + 16} y={10} fill="#71717a" fontSize={9} fontFamily="system-ui">🔒{secretsCount}</text>
+            </>
+          )}
+          {configsCount > 0 && (
+            <text x={scope.length * 5.5 + (secretsCount > 0 ? 42 : 16)} y={10} fill="#71717a" fontSize={9} fontFamily="system-ui">⚙{configsCount}</text>
+          )}
         </g>
 
         {/* Input ports (left) */}
         {inputs.map((port, i) => {
-          const portY = RICH_PORT_Y_INPUT + i * PORT_HEIGHT;
+          const portY = portStartY + i * PORT_HEIGHT + PORT_HEIGHT / 2;
           const isValidDrop = state.connecting.active && state.connecting.isOutput && state.connecting.sourceNode !== node.name;
           const isHov = hoveredPort?.name === port.name && !hoveredPort?.isOutput;
           const highlight = isValidDrop && isHov;
@@ -260,23 +249,32 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
             <g key={`input-${port.name}`}>
               <circle
                 cx={0} cy={portY}
-                r={PORT_RADIUS + 2}
+                r={PORT_RADIUS}
                 fill={highlight ? '#60a5fa' : '#3b82f6'}
                 stroke="#18181b"
-                strokeWidth={3}
+                strokeWidth={2}
                 style={{ cursor: 'crosshair' }}
                 onMouseDown={(e) => handlePortMouseDown(e, port.name, false, y + portY, x)}
                 onMouseUp={(e) => handlePortMouseUp(e, port.name, false)}
                 onMouseEnter={() => setHoveredPort({ name: port.name, isOutput: false })}
                 onMouseLeave={() => setHoveredPort(null)}
               />
+              <text
+                x={12} y={portY}
+                dominantBaseline="middle"
+                fill="#a1a1aa"
+                fontSize={11}
+                fontFamily="system-ui, sans-serif"
+              >
+                {port.name}
+              </text>
             </g>
           );
         })}
 
         {/* Output ports (right) */}
         {outputs.map((port, i) => {
-          const portY = RICH_PORT_Y_OUTPUT + i * PORT_HEIGHT;
+          const portY = portStartY + i * PORT_HEIGHT + PORT_HEIGHT / 2;
           const isValidDrop = state.connecting.active && !state.connecting.isOutput && state.connecting.sourceNode !== node.name;
           const isHov = hoveredPort?.name === port.name && hoveredPort?.isOutput;
           const highlight = isValidDrop && isHov;
@@ -284,16 +282,26 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
             <g key={`output-${port.name}`}>
               <circle
                 cx={width} cy={portY}
-                r={PORT_RADIUS + 2}
+                r={PORT_RADIUS}
                 fill={highlight ? '#60a5fa' : '#22c55e'}
                 stroke="#18181b"
-                strokeWidth={3}
+                strokeWidth={2}
                 style={{ cursor: 'crosshair' }}
                 onMouseDown={(e) => handlePortMouseDown(e, port.name, true, y + portY, x + width)}
                 onMouseUp={(e) => handlePortMouseUp(e, port.name, true)}
                 onMouseEnter={() => setHoveredPort({ name: port.name, isOutput: true })}
                 onMouseLeave={() => setHoveredPort(null)}
               />
+              <text
+                x={width - 12} y={portY}
+                textAnchor="end"
+                dominantBaseline="middle"
+                fill="#a1a1aa"
+                fontSize={11}
+                fontFamily="system-ui, sans-serif"
+              >
+                {port.name}
+              </text>
             </g>
           );
         })}
@@ -480,9 +488,10 @@ export function getNodePortPosition(
   if (portIndex === -1) return null;
 
   if (isRich) {
+    const portStartY = RICH_HEADER_HEIGHT + 4 + RICH_DESC_HEIGHT + RICH_META_HEIGHT + 2;
     return {
       x: isOutput ? x + RICH_NODE_WIDTH : x,
-      y: y + RICH_PORT_Y_INPUT + portIndex * PORT_HEIGHT
+      y: y + portStartY + portIndex * PORT_HEIGHT + PORT_HEIGHT / 2
     };
   }
   
