@@ -20,6 +20,7 @@ interface FunctionEntry {
   name: string;
   dir: string;
   port: number;
+  type?: string;
   taskIdentifier?: string;
 }
 
@@ -64,8 +65,10 @@ const sharedEnv: Record<string, string> = {
   SMTP_HOST: process.env.SMTP_HOST || 'localhost',
   SMTP_PORT: process.env.SMTP_PORT || '1025',
   LOCAL_APP_PORT: '3000',
-  SEND_VERIFICATION_LINK_DRY_RUN: 'true',
-  SEND_EMAIL_DRY_RUN: 'true',
+  SEND_VERIFICATION_LINK_DRY_RUN: process.env.SEND_VERIFICATION_LINK_DRY_RUN || 'true',
+  SEND_EMAIL_DRY_RUN: process.env.SEND_EMAIL_DRY_RUN || 'true',
+  EMAIL_SEND_USE_SMTP: process.env.EMAIL_SEND_USE_SMTP || '',
+  SMTP_FROM: process.env.SMTP_FROM || 'test@localhost',
 };
 
 // --- Process definitions (built from manifest) ---
@@ -77,10 +80,15 @@ interface ProcessDef {
   extraEnv?: Record<string, string>;
 }
 
+// Only start Node-based functions (skip python, etc.)
+const nodeFunctions = manifest.functions.filter(
+  (fn) => !fn.type || fn.type === 'node-graphql'
+);
+
 function buildComputeServiceEnv(): Record<string, string> {
   const taskId = (fn: FunctionEntry): string => fn.taskIdentifier ?? fn.name;
   const gatewayMap: Record<string, string> = {};
-  for (const fn of manifest.functions) {
+  for (const fn of nodeFunctions) {
     gatewayMap[taskId(fn)] = `http://localhost:${fn.port}`;
   }
 
@@ -93,9 +101,9 @@ function buildComputeServiceEnv(): Record<string, string> {
     INTERNAL_JOBS_CALLBACK_URL: 'http://localhost:8080/callback',
     COMPUTE_CALLBACK_URL: 'http://localhost:8080/callback',
     JOBS_CALLBACK_HOST: 'localhost',
-    COMPUTE_GATEWAY_URL: `http://localhost:${manifest.functions[0]?.port || 8081}`,
+    COMPUTE_GATEWAY_URL: `http://localhost:${nodeFunctions[0]?.port || 8081}`,
     INTERNAL_GATEWAY_DEVELOPMENT_MAP: JSON.stringify(gatewayMap),
-    INTERNAL_GATEWAY_URL: `http://localhost:${manifest.functions[0]?.port || 8081}`,
+    INTERNAL_GATEWAY_URL: `http://localhost:${nodeFunctions[0]?.port || 8081}`,
   };
 }
 
@@ -106,7 +114,7 @@ const allProcesses: ProcessDef[] = [
     port: 8080,
     extraEnv: buildComputeServiceEnv(),
   },
-  ...manifest.functions.map((fn) => ({
+  ...nodeFunctions.map((fn) => ({
     name: fn.name,
     script: path.resolve(ROOT, `generated/${fn.dir}/dist/index.js`),
     port: fn.port,
@@ -174,7 +182,21 @@ if (processes.length === 0) {
   process.exit(1);
 }
 
-console.log(`Starting: ${processes.map((p) => `${p.name} (:${p.port})`).join(', ')}`);
+// Print a clear port summary
+console.log('');
+console.log('════════════════════════════════════════════════════════════');
+console.log('  Services:');
+for (const p of processes) {
+  const label = p.name === 'compute-service' ? `${p.name} (job dispatcher)` : p.name;
+  console.log(`    ${label.padEnd(40)} http://localhost:${p.port}`);
+}
+console.log('');
+console.log(`  Database: ${sharedEnv.PGDATABASE}`);
+if (sharedEnv.EMAIL_SEND_USE_SMTP === 'true') {
+  console.log(`  Mailpit UI:                                http://localhost:8025`);
+}
+console.log('════════════════════════════════════════════════════════════');
+console.log('');
 
 for (const def of processes) {
   startProcess(def);
