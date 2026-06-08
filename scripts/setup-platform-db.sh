@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 #
-# setup-platform-db.sh — deploy constructive-infra (includes built-in function seeds)
+# setup-platform-db.sh — deploy constructive-infra + constructive-infra-seed
 #
 # Works with both Tier 1 (pgpm-local) and Tier 2 (compose-local).
-# Creates the database, bootstraps pgpm roles, and deploys the infra schema.
-# Built-in function definitions (send-email, send-verification-link) are seeded
-# as a pgpm fixture — no separate SQL step needed.
+# Creates the database, bootstraps pgpm roles, deploys the infra schema,
+# then deploys the seed package (built-in function definitions).
 #
 # Usage:
 #   ./scripts/setup-platform-db.sh                       # defaults to constructive-functions-db1
@@ -32,12 +31,14 @@ createdb "$DB_NAME" 2>/dev/null && echo "  Created." || echo "  Already exists."
 echo "→ Bootstrapping pgpm admin users..."
 pgpm admin-users bootstrap --yes 2>/dev/null || true
 
-# --- Deploy constructive-infra ---
-# This deploys all schemas (constructive_infra_public, app_jobs, etc.),
-# tables, triggers, and seeds built-in function definitions as a fixture.
-echo "→ Deploying constructive-infra package..."
+# --- Deploy constructive-infra (DDL: schemas, tables, triggers) ---
+echo "→ Deploying constructive-infra..."
 cd "$ROOT_DIR/pgpm"
 pgpm deploy --yes --database "$DB_NAME" --package constructive-infra
+
+# --- Deploy constructive-infra-seed (built-in function definitions) ---
+echo "→ Deploying constructive-infra-seed..."
+pgpm deploy --yes --database "$DB_NAME" --package constructive-infra-seed
 
 # --- Verify ---
 echo ""

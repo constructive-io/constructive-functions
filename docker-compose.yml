@@ -78,8 +78,10 @@ services:
     command:
       - |
         cd /workspace/pgpm
-        echo "Deploying constructive-infra (includes built-in function seeds)..."
+        echo "Deploying constructive-infra..."
         pgpm deploy --yes --database "$$PGDATABASE" --package constructive-infra
+        echo "Deploying constructive-infra-seed..."
+        pgpm deploy --yes --database "$$PGDATABASE" --package constructive-infra-seed
         echo "Platform setup done"
 
   graphql-server:
