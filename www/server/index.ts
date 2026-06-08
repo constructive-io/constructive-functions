@@ -198,6 +198,43 @@ app.post('/api/run', (req, res) => {
   });
 });
 
+// ─── REST API — K8s proxy ────────────────────────────────────────────────────
+
+const K8S_API = process.env.KUBERNETES_API_URL || 'http://127.0.0.1:8001';
+
+app.all('/api/k8s/*', async (req, res) => {
+  const k8sPath = '/' + (req.params as any)[0];
+  const url = `${K8S_API}${k8sPath}${req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`;
+
+  try {
+    const headers: Record<string, string> = { 'Accept': 'application/json' };
+    if (req.headers['content-type']) {
+      headers['Content-Type'] = req.headers['content-type'] as string;
+    }
+
+    const init: RequestInit = {
+      method: req.method,
+      headers,
+    };
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
+      init.body = JSON.stringify(req.body);
+    }
+
+    const k8sRes = await fetch(url, init);
+    const body = await k8sRes.text();
+
+    res.status(k8sRes.status);
+    for (const [key, value] of k8sRes.headers.entries()) {
+      if (key.toLowerCase() !== 'transfer-encoding') {
+        res.setHeader(key, value);
+      }
+    }
+    res.send(body);
+  } catch (err: any) {
+    res.status(502).json({ error: `K8s proxy error: ${err.message}`, target: url });
+  }
+});
+
 // ─── WebSocket — Shell Terminal ─────────────────────────────────────────────
 
 const wss = new WebSocketServer({ server, path: '/ws/terminal' });
@@ -245,5 +282,6 @@ server.listen(PORT, () => {
   console.log(`\n  Platform UI server: http://localhost:${PORT}`);
   console.log(`  Terminal WebSocket: ws://localhost:${PORT}/ws/terminal`);
   console.log(`  API endpoints:     http://localhost:${PORT}/api/{status,functions,jobs,invocations,secrets,namespaces}`);
+  console.log(`  K8s proxy:         http://localhost:${PORT}/api/k8s/* → ${K8S_API}`);
   console.log(`  Database:          ${process.env.PGDATABASE || 'constructive-functions-db1'}\n`);
 });

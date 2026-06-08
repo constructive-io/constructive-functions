@@ -77,6 +77,36 @@ async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
+export interface K8sNamespace {
+  metadata: { name: string; uid: string; creationTimestamp: string; labels?: Record<string, string> };
+  status: { phase: string };
+}
+
+export interface K8sPod {
+  metadata: { name: string; namespace: string; uid: string; creationTimestamp: string; labels?: Record<string, string> };
+  status: {
+    phase: string;
+    containerStatuses?: Array<{
+      name: string;
+      image: string;
+      ready: boolean;
+      restartCount: number;
+      state: Record<string, unknown>;
+    }>;
+  };
+}
+
+export interface K8sDeployment {
+  metadata: { name: string; namespace: string; uid: string; creationTimestamp: string };
+  spec: { replicas: number };
+  status: { readyReplicas?: number; availableReplicas?: number; updatedReplicas?: number };
+}
+
+export interface K8sService {
+  metadata: { name: string; namespace: string; uid: string; creationTimestamp: string };
+  spec: { type: string; clusterIP: string; ports?: Array<{ port: number; targetPort: number | string; protocol: string }> };
+}
+
 export const api = {
   getStatus: () => fetchJSON<PlatformStatus>('/api/status'),
   getFunctions: () => fetchJSON<PlatformFunction[]>('/api/functions'),
@@ -98,4 +128,14 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ command }),
     }),
+
+  // K8s via proxy
+  k8sListNamespaces: () =>
+    fetchJSON<{ items: K8sNamespace[] }>('/api/k8s/api/v1/namespaces'),
+  k8sListPods: (namespace: string) =>
+    fetchJSON<{ items: K8sPod[] }>(`/api/k8s/api/v1/namespaces/${namespace}/pods`),
+  k8sListDeployments: (namespace: string) =>
+    fetchJSON<{ items: K8sDeployment[] }>(`/api/k8s/apis/apps/v1/namespaces/${namespace}/deployments`),
+  k8sListServices: (namespace: string) =>
+    fetchJSON<{ items: K8sService[] }>(`/api/k8s/api/v1/namespaces/${namespace}/services`),
 };

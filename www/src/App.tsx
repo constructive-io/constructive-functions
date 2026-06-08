@@ -4,17 +4,19 @@ import { FunctionsPanel } from './components/FunctionsPanel';
 import { SecretsPanel } from './components/SecretsPanel';
 import { JobsPanel } from './components/JobsPanel';
 import { InvocationsPanel } from './components/InvocationsPanel';
+import { K8sPanel } from './components/K8sPanel';
 import { Terminal } from './components/Terminal';
 import { CommandBar } from './components/CommandBar';
-import { TerminalSquare, Cpu, Key, Briefcase, Activity, Wrench } from 'lucide-react';
+import { TerminalSquare, Cpu, Key, Briefcase, Activity, Wrench, Container } from 'lucide-react';
 
-type Tab = 'functions' | 'secrets' | 'jobs' | 'invocations' | 'commands' | 'terminal';
+type Tab = 'functions' | 'secrets' | 'jobs' | 'invocations' | 'k8s' | 'commands' | 'terminal';
 
 const TABS: { id: Tab; label: string; icon: typeof Cpu }[] = [
   { id: 'functions', label: 'Functions', icon: Cpu },
   { id: 'secrets', label: 'Secrets', icon: Key },
   { id: 'jobs', label: 'Jobs', icon: Briefcase },
   { id: 'invocations', label: 'Invocations', icon: Activity },
+  { id: 'k8s', label: 'K8s', icon: Container },
   { id: 'commands', label: 'Commands', icon: Wrench },
   { id: 'terminal', label: 'Terminal', icon: TerminalSquare },
 ];
@@ -56,6 +58,7 @@ export function App() {
         {activeTab === 'secrets' && <SecretsPanel />}
         {activeTab === 'jobs' && <JobsPanel />}
         {activeTab === 'invocations' && <InvocationsPanel />}
+        {activeTab === 'k8s' && <K8sPanel />}
         {activeTab === 'commands' && (
           <div className="p-4 h-full overflow-y-auto">
             <CommandBar />
