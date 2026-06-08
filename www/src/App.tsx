@@ -5,14 +5,16 @@ import { SecretsPanel } from './components/SecretsPanel';
 import { JobsPanel } from './components/JobsPanel';
 import { InvocationsPanel } from './components/InvocationsPanel';
 import { K8sPanel } from './components/K8sPanel';
+import { FlowsPanel } from './components/FlowsPanel';
 import { Terminal } from './components/Terminal';
 import { CommandBar } from './components/CommandBar';
-import { TerminalSquare, Cpu, Key, Briefcase, Activity, Wrench, Container } from 'lucide-react';
+import { TerminalSquare, Cpu, Key, Briefcase, Activity, Wrench, Container, Workflow } from 'lucide-react';
 
-type Tab = 'functions' | 'secrets' | 'jobs' | 'invocations' | 'k8s' | 'commands' | 'terminal';
+type Tab = 'functions' | 'flows' | 'secrets' | 'jobs' | 'invocations' | 'k8s' | 'commands' | 'terminal';
 
 const TABS: { id: Tab; label: string; icon: typeof Cpu }[] = [
   { id: 'functions', label: 'Functions', icon: Cpu },
+  { id: 'flows', label: 'Flows', icon: Workflow },
   { id: 'secrets', label: 'Secrets', icon: Key },
   { id: 'jobs', label: 'Jobs', icon: Briefcase },
   { id: 'invocations', label: 'Invocations', icon: Activity },
@@ -23,6 +25,8 @@ const TABS: { id: Tab; label: string; icon: typeof Cpu }[] = [
 
 export function App() {
   const [activeTab, setActiveTab] = useState<Tab>('functions');
+
+  const navigateToTab = (tab: Tab) => setActiveTab(tab);
 
   return (
     <div className="flex flex-col h-screen">
@@ -54,7 +58,8 @@ export function App() {
       <StatusBar />
 
       <main className="flex-1 overflow-hidden">
-        {activeTab === 'functions' && <FunctionsPanel />}
+        {activeTab === 'functions' && <FunctionsPanel onNavigate={navigateToTab} />}
+        {activeTab === 'flows' && <FlowsPanel />}
         {activeTab === 'secrets' && <SecretsPanel />}
         {activeTab === 'jobs' && <JobsPanel />}
         {activeTab === 'invocations' && <InvocationsPanel />}
