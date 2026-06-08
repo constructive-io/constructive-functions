@@ -1,4 +1,8 @@
-.PHONY: install build clean lint generate dev dev-fn dev-down dev-logs docker-build skaffold-dev skaffold-dev-knative dev-compute setup-platform status verify-platform check-env
+.PHONY: install build clean lint generate \
+       up down status verify-platform check-env setup-platform \
+       up\:email-job down\:email-job \
+       dev dev-fn dev-compute dev-down dev-logs setup-dev setup-check \
+       skaffold-dev skaffold-dev-knative docker-build
 
 install:
 	node --experimental-strip-types scripts/generate.ts
@@ -17,16 +21,39 @@ generate:
 	pnpm run generate
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Lifecycle — up / down
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Full procedural setup and teardown. Idempotent — safe to run repeatedly.
+#
+#   make up                       # postgres + deploy infra + seed + verify
+#   make up DB_NAME=mydb          # same, custom DB name
+#   make up:email-job             # add mailpit + compute-service (SMTP mode)
+#   make down:email-job           # stop mailpit + compute-service
+#   make down                     # stop everything (postgres, compose, etc.)
+#   DROP=1 make down DB_NAME=mydb # also drop the database
+
+up:
+	./scripts/up.sh $(DB_NAME)
+
+down:
+	./scripts/down.sh $(DB_NAME)
+
+up\:email-job:
+	./scripts/email-job-up.sh $(DB_NAME)
+
+down\:email-job:
+	./scripts/email-job-down.sh
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Tier 1 — pgpm-local
 # ═══════════════════════════════════════════════════════════════════════════════
 # Postgres only (via pgpm docker). Functions + services run as local Node
 # processes. Fastest edit-run cycle.
 #
 # Quick start:
-#   pgpm docker start --image docker.io/constructiveio/postgres-plus:18
-#   eval "$(pgpm env)"
-#   make setup-platform          # deploy infra + seed functions
-#   make dev-compute             # start compute-service + functions
+#   make up                      # full setup
+#   make up:email-job            # start mailpit + compute-service
 
 setup-platform:
 	./scripts/setup-platform-db.sh

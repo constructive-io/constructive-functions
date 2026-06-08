@@ -39,6 +39,13 @@ if command -v docker &>/dev/null; then
   else
     warn "MinIO not running (optional)"
   fi
+
+  MAILPIT_UP=$(docker ps --filter "name=mailpit" --filter "status=running" --format "{{.Names}}" 2>/dev/null | head -1)
+  if [ -n "$MAILPIT_UP" ]; then
+    ok "Mailpit running ($MAILPIT_UP) — SMTP :1025, UI http://localhost:8025"
+  else
+    warn "Mailpit not running (start with: make up:email-job)"
+  fi
 else
   fail "Docker not available"
 fi
