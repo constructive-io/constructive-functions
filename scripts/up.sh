@@ -125,8 +125,13 @@ MODULES=(
 
 for mod in "${MODULES[@]}"; do
   if [ -d "$mod" ]; then
-    pgpm deploy --yes --database "$DB_NAME" --package "$mod" 2>&1 | grep -E "(SUCCESS: ✅|already)" || true
-    ok "$mod"
+    DEPLOY_OUT=$(pgpm deploy --yes --database "$DB_NAME" --package "$mod" 2>&1) || true
+    if echo "$DEPLOY_OUT" | grep -qE "(SUCCESS|already)"; then
+      ok "$mod"
+    else
+      fail "$mod — deploy output:"
+      echo "$DEPLOY_OUT" | sed 's/^/    /'
+    fi
   else
     warn "$mod (not found, skipping)"
   fi
@@ -136,8 +141,13 @@ done
 
 step 5 "Deploying constructive-infra-seed (function + secret definitions)"
 
-pgpm deploy --yes --database "$DB_NAME" --package constructive-infra-seed 2>&1 | grep -E "(SUCCESS: ✅|already)" || true
-ok "constructive-infra-seed deployed"
+SEED_OUT=$(pgpm deploy --yes --database "$DB_NAME" --package constructive-infra-seed 2>&1) || true
+if echo "$SEED_OUT" | grep -qE "(SUCCESS|already)"; then
+  ok "constructive-infra-seed deployed"
+else
+  fail "constructive-infra-seed — deploy output:"
+  echo "$SEED_OUT" | sed 's/^/    /'
+fi
 
 cd "$ROOT_DIR"
 
