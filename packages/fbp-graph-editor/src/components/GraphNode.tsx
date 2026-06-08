@@ -17,8 +17,8 @@ export function deriveBoundaryPorts(nodes: Node[], type: 'input' | 'output'): Po
 }
 
 // Standard compact node dimensions
-const NODE_WIDTH = 180;
-const NODE_HEADER_HEIGHT = 28;
+const NODE_WIDTH = 240;
+const NODE_HEADER_HEIGHT = 32;
 const PORT_HEIGHT = 24;
 const PORT_RADIUS = 6;
 
@@ -303,6 +303,7 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
 
   // ── Standard compact node rendering ──
   const nodeHeight = NODE_HEADER_HEIGHT + Math.max(inputs.length, outputs.length, 1) * PORT_HEIGHT + 8;
+  const headerFill = isSubnet ? '#7c3aed' : '#27272a';
 
   return (
     <g
@@ -310,12 +311,22 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
       onMouseDown={handleMouseDown}
       style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
     >
+      {/* Shadow */}
+      <rect
+        x={3} y={3}
+        width={NODE_WIDTH}
+        height={nodeHeight}
+        rx={10}
+        ry={10}
+        fill="rgba(0,0,0,0.3)"
+      />
+
       {/* Background fill */}
       <rect
         width={NODE_WIDTH}
         height={nodeHeight}
-        rx={8}
-        ry={8}
+        rx={10}
+        ry={10}
         fill="#18181b"
       />
 
@@ -323,50 +334,51 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
       <rect
         width={NODE_WIDTH}
         height={NODE_HEADER_HEIGHT}
-        rx={8}
-        ry={8}
-        fill={isSubnet ? '#7c3aed' : '#27272a'}
+        rx={10}
+        ry={10}
+        fill={headerFill}
       />
       <rect
-        y={NODE_HEADER_HEIGHT - 8}
+        y={NODE_HEADER_HEIGHT - 10}
         width={NODE_WIDTH}
-        height={8}
-        fill={isSubnet ? '#7c3aed' : '#27272a'}
+        height={10}
+        fill={headerFill}
       />
 
       {/* Border */}
       <rect
         width={NODE_WIDTH}
         height={nodeHeight}
-        rx={8}
-        ry={8}
+        rx={10}
+        ry={10}
         fill="none"
         stroke={isSelected || isPreview ? '#3b82f6' : '#3f3f46'}
         strokeWidth={isSelected || isPreview ? 2 : 1}
       />
-      
-      {definition?.icon && (
-        <g transform={`translate(10, ${NODE_HEADER_HEIGHT / 2 - 5.5})`}>
-          <NodeIconSvg icon={definition.icon} size={11} />
-        </g>
-      )}
-      <text
-        x={NODE_WIDTH / 2}
-        y={NODE_HEADER_HEIGHT / 2 + 1}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill="#e4e4e7"
-        fontSize={12}
-        fontWeight={600}
-        fontFamily="system-ui, sans-serif"
-      >
-        {getShortName(node.type)}
-      </text>
-      
+
+      {/* Header: icon + title aligned together */}
+      <g transform={`translate(14, ${NODE_HEADER_HEIGHT / 2})`}>
+        {definition?.icon && (
+          <g transform="translate(-2, -6)">
+            <NodeIconSvg icon={definition.icon} size={12} />
+          </g>
+        )}
+        <text
+          x={definition?.icon ? 16 : 0}
+          dominantBaseline="middle"
+          fill="#e4e4e7"
+          fontSize={13}
+          fontWeight={600}
+          fontFamily="system-ui, sans-serif"
+        >
+          {getShortName(node.type)}
+        </text>
+      </g>
+
       {isSubnet && (
         <text
-          x={NODE_WIDTH - 8}
-          y={NODE_HEADER_HEIGHT / 2 + 1}
+          x={NODE_WIDTH - 10}
+          y={NODE_HEADER_HEIGHT / 2}
           textAnchor="end"
           dominantBaseline="middle"
           fill="rgba(255,255,255,0.6)"

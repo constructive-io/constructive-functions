@@ -46,9 +46,9 @@ const BOUNDARY_NODE_DEFINITIONS: NodeDefinition[] = [
 export { getEdgeId } from '../utils/graphTransform';
 
 // Node dimension constants (must match GraphNode.tsx)
-const NODE_WIDTH = 180;
+const NODE_WIDTH = 240;
 const RICH_NODE_WIDTH = 320;
-const NODE_HEADER_HEIGHT = 28;
+const NODE_HEADER_HEIGHT = 32;
 const PORT_HEIGHT = 24;
 const RICH_TOTAL_HEIGHT = 42 + 80 + 28; // header + body + footer
 
@@ -174,8 +174,8 @@ function generateId(): string {
 // Auto-layout nodes in a layered/hierarchical arrangement
 // Inputs on left, outputs on right, other nodes in layers based on dependency depth
 function autoLayoutNodes(nodes: Node[], edges: Edge[]): Node[] {
-  const NODE_WIDTH = 180;
-  const NODE_SPACING_X = 250;
+  const NODE_WIDTH = 240;
+  const NODE_SPACING_X = 300;
   const NODE_SPACING_Y = 100;
   const START_X = 50;
   const START_Y = 50;
