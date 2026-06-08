@@ -17,6 +17,18 @@ DB_NAME="${2:-${DB_NAME:-constructive-functions-db1}}"
 
 DB_ID="00000000-0000-0000-0000-000000000000"
 
+# Standalone JWT claims — upstream functions read database_id, user_id, etc.
+# from session settings. In production these come from PostGraphile JWT middleware.
+JWT_CLAIMS="
+  SET LOCAL jwt.claims.database_id = '$DB_ID';
+  SET LOCAL jwt.claims.user_id = '00000000-0000-0000-0000-000000000001';
+  SET LOCAL jwt.claims.token_id = '00000000-0000-0000-0000-000000000002';
+  SET LOCAL jwt.claims.session_id = '00000000-0000-0000-0000-000000000003';
+  SET LOCAL jwt.claims.ip_address = '127.0.0.1';
+  SET LOCAL jwt.claims.user_agent = 'constructive-functions/standalone';
+  SET LOCAL jwt.claims.origin = 'http://localhost:3000';
+"
+
 echo "════════════════════════════════════════════════════════════"
 echo "  Secrets Bidirectional Sync"
 echo "  .env: $ENV_FILE    database: $DB_NAME"
@@ -78,9 +90,12 @@ if [ -f "$ENV_FILE" ]; then
 
     if is_secret "$key"; then
       psql -d "$DB_NAME" -q -c "
+        BEGIN;
+        $JWT_CLAIMS
         SELECT constructive_store_public.platform_secrets_set(
           '$key', '$escaped_val', 'pgp', 'default'
         );
+        COMMIT;
       " 2>/dev/null && ((SYNCED_TO_DB++)) || true
     elif is_config "$key"; then
       psql -d "$DB_NAME" -q -c "
@@ -107,11 +122,14 @@ SYNCED_FROM_DB=0
 
 # Read secrets (decrypted via platform_secrets_get)
 DB_SECRETS=$(psql -d "$DB_NAME" -t -A -F '|' -c "
+  BEGIN;
+  $JWT_CLAIMS
   SELECT s.name,
          constructive_store_private.platform_secrets_get(s.name, NULL, 'default') AS val
   FROM constructive_store_private.platform_secrets s
   WHERE s.database_id = '$DB_ID' AND s.value IS NOT NULL
-  ORDER BY s.name
+  ORDER BY s.name;
+  COMMIT;
 " 2>/dev/null || echo "")
 
 if [ -n "$DB_SECRETS" ]; then

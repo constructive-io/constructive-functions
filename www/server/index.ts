@@ -212,6 +212,34 @@ function writeDotEnv(filePath: string, vars: Record<string, string>): void {
 
 const DB_ID = '00000000-0000-0000-0000-000000000000';
 
+// Standalone JWT claims — upstream functions read database_id, user_id, etc.
+// from session settings. In production these come from PostGraphile JWT middleware.
+const JWT_CLAIMS_SQL = `
+  SET LOCAL jwt.claims.database_id = '${DB_ID}';
+  SET LOCAL jwt.claims.user_id = '00000000-0000-0000-0000-000000000001';
+  SET LOCAL jwt.claims.token_id = '00000000-0000-0000-0000-000000000002';
+  SET LOCAL jwt.claims.session_id = '00000000-0000-0000-0000-000000000003';
+  SET LOCAL jwt.claims.ip_address = '127.0.0.1';
+  SET LOCAL jwt.claims.user_agent = 'constructive-functions/standalone';
+  SET LOCAL jwt.claims.origin = 'http://localhost:3000';
+`;
+
+async function withJwtClaims<T>(fn: (client: import('pg').PoolClient) => Promise<T>): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(JWT_CLAIMS_SQL);
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 async function getDefaultNamespaceId(): Promise<string> {
   const result = await pool.query(
     `SELECT id FROM constructive_infra_public.platform_namespaces
@@ -244,30 +272,33 @@ async function getConfigNames(): Promise<Set<string>> {
 
 app.get('/api/secret-values', async (_req, res) => {
   try {
-    const secrets = await pool.query(`
-      SELECT s.name,
-             constructive_store_private.platform_secrets_get(s.name, NULL, 'default') AS configured_value,
-             s.database_id, s.created_at, s.updated_at
-      FROM constructive_store_private.platform_secrets s
-      WHERE s.database_id = $1
-      ORDER BY s.name
-    `, [DB_ID]);
-    const configs = await pool.query(`
-      SELECT name, value AS configured_value,
-             created_at, updated_at
-      FROM constructive_store_public.platform_config
-      ORDER BY name
-    `);
-    const vars: Record<string, string> = {};
-    const rows: any[] = [];
-    for (const row of secrets.rows) {
-      if (row.configured_value != null) vars[row.name] = row.configured_value;
-      rows.push({ secret_name: row.name, configured_value: row.configured_value, kind: 'secret', ...row });
-    }
-    for (const row of configs.rows) {
-      if (row.configured_value != null) vars[row.name] = row.configured_value;
-      rows.push({ secret_name: row.name, configured_value: row.configured_value, kind: 'config', ...row });
-    }
+    const { vars, rows } = await withJwtClaims(async (client) => {
+      const secrets = await client.query(`
+        SELECT s.name,
+               constructive_store_private.platform_secrets_get(s.name, NULL, 'default') AS configured_value,
+               s.database_id, s.created_at, s.updated_at
+        FROM constructive_store_private.platform_secrets s
+        WHERE s.database_id = $1
+        ORDER BY s.name
+      `, [DB_ID]);
+      const configs = await client.query(`
+        SELECT name, value AS configured_value,
+               created_at, updated_at
+        FROM constructive_store_public.platform_config
+        ORDER BY name
+      `);
+      const v: Record<string, string> = {};
+      const r: any[] = [];
+      for (const row of secrets.rows) {
+        if (row.configured_value != null) v[row.name] = row.configured_value;
+        r.push({ secret_name: row.name, configured_value: row.configured_value, kind: 'secret', ...row });
+      }
+      for (const row of configs.rows) {
+        if (row.configured_value != null) v[row.name] = row.configured_value;
+        r.push({ secret_name: row.name, configured_value: row.configured_value, kind: 'config', ...row });
+      }
+      return { vars: v, rows: r };
+    });
     res.json({ vars, rows });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -284,27 +315,30 @@ app.post('/api/secret-values', async (req, res) => {
     const secretNames = await getSecretNames();
     const configNames = await getConfigNames();
     const nsId = await getDefaultNamespaceId();
-    let upserted = 0;
-    for (const [name, value] of Object.entries(vars)) {
-      if (value === '') continue;
-      if (secretNames.has(name)) {
-        await pool.query(
-          `SELECT constructive_store_public.platform_secrets_set($1, $2, 'pgp', 'default')`,
-          [name, value]
-        );
-        upserted++;
-      } else if (configNames.has(name)) {
-        await pool.query(
-          `INSERT INTO constructive_store_public.platform_config
-             (id, name, value, namespace_id)
-           VALUES (gen_random_uuid(), $1, $2, $3)
-           ON CONFLICT (namespace_id, name)
-           DO UPDATE SET value = $2, updated_at = now()`,
-          [name, value, nsId]
-        );
-        upserted++;
+    const upserted = await withJwtClaims(async (client) => {
+      let count = 0;
+      for (const [name, value] of Object.entries(vars)) {
+        if (value === '') continue;
+        if (secretNames.has(name)) {
+          await client.query(
+            `SELECT constructive_store_public.platform_secrets_set($1, $2, 'pgp', 'default')`,
+            [name, value]
+          );
+          count++;
+        } else if (configNames.has(name)) {
+          await client.query(
+            `INSERT INTO constructive_store_public.platform_config
+               (id, name, value, namespace_id)
+             VALUES (gen_random_uuid(), $1, $2, $3)
+             ON CONFLICT (namespace_id, name)
+             DO UPDATE SET value = $2, updated_at = now()`,
+            [name, value, nsId]
+          );
+          count++;
+        }
       }
-    }
+      return count;
+    });
     res.json({ ok: true, upserted });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -313,21 +347,24 @@ app.post('/api/secret-values', async (req, res) => {
 
 app.post('/api/secrets/sync-from-db', async (_req, res) => {
   try {
-    const secrets = await pool.query(`
-      SELECT s.name,
-             constructive_store_private.platform_secrets_get(s.name, NULL, 'default') AS val
-      FROM constructive_store_private.platform_secrets s
-      WHERE s.database_id = $1 AND s.value IS NOT NULL
-    `, [DB_ID]);
-    const configs = await pool.query(`
-      SELECT name, value AS val
-      FROM constructive_store_public.platform_config
-      WHERE value IS NOT NULL AND value != ''
-    `);
-    const dbVars: Record<string, string> = {};
-    for (const row of [...secrets.rows, ...configs.rows]) {
-      dbVars[row.name] = row.val;
-    }
+    const dbVars = await withJwtClaims(async (client) => {
+      const secrets = await client.query(`
+        SELECT s.name,
+               constructive_store_private.platform_secrets_get(s.name, NULL, 'default') AS val
+        FROM constructive_store_private.platform_secrets s
+        WHERE s.database_id = $1 AND s.value IS NOT NULL
+      `, [DB_ID]);
+      const configs = await client.query(`
+        SELECT name, value AS val
+        FROM constructive_store_public.platform_config
+        WHERE value IS NOT NULL AND value != ''
+      `);
+      const v: Record<string, string> = {};
+      for (const row of [...secrets.rows, ...configs.rows]) {
+        v[row.name] = row.val;
+      }
+      return v;
+    });
     const existing = parseDotEnv(ENV_PATH);
     const merged = { ...existing, ...dbVars };
     writeDotEnv(ENV_PATH, merged);
@@ -343,27 +380,30 @@ app.post('/api/secrets/sync-to-db', async (_req, res) => {
     const secretNames = await getSecretNames();
     const configNames = await getConfigNames();
     const nsId = await getDefaultNamespaceId();
-    let upserted = 0;
-    for (const [name, value] of Object.entries(envVars)) {
-      if (value === '') continue;
-      if (secretNames.has(name)) {
-        await pool.query(
-          `SELECT constructive_store_public.platform_secrets_set($1, $2, 'pgp', 'default')`,
-          [name, value]
-        );
-        upserted++;
-      } else if (configNames.has(name)) {
-        await pool.query(
-          `INSERT INTO constructive_store_public.platform_config
-             (id, name, value, namespace_id)
-           VALUES (gen_random_uuid(), $1, $2, $3)
-           ON CONFLICT (namespace_id, name)
-           DO UPDATE SET value = $2, updated_at = now()`,
-          [name, value, nsId]
-        );
-        upserted++;
+    const upserted = await withJwtClaims(async (client) => {
+      let count = 0;
+      for (const [name, value] of Object.entries(envVars)) {
+        if (value === '') continue;
+        if (secretNames.has(name)) {
+          await client.query(
+            `SELECT constructive_store_public.platform_secrets_set($1, $2, 'pgp', 'default')`,
+            [name, value]
+          );
+          count++;
+        } else if (configNames.has(name)) {
+          await client.query(
+            `INSERT INTO constructive_store_public.platform_config
+               (id, name, value, namespace_id)
+             VALUES (gen_random_uuid(), $1, $2, $3)
+             ON CONFLICT (namespace_id, name)
+             DO UPDATE SET value = $2, updated_at = now()`,
+            [name, value, nsId]
+          );
+          count++;
+        }
       }
-    }
+      return count;
+    });
     res.json({ ok: true, synced: upserted });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -402,24 +442,26 @@ app.post('/api/env', async (req, res) => {
       const secretNames = await getSecretNames();
       const configNames = await getConfigNames();
       const nsId = await getDefaultNamespaceId();
-      for (const [name, value] of Object.entries(merged)) {
-        if (value === '') continue;
-        if (secretNames.has(name)) {
-          await pool.query(
-            `SELECT constructive_store_public.platform_secrets_set($1, $2, 'pgp', 'default')`,
-            [name, value]
-          );
-        } else if (configNames.has(name)) {
-          await pool.query(
-            `INSERT INTO constructive_store_public.platform_config
-               (id, name, value, namespace_id)
-             VALUES (gen_random_uuid(), $1, $2, $3)
-             ON CONFLICT (namespace_id, name)
-             DO UPDATE SET value = $2, updated_at = now()`,
-            [name, value, nsId]
-          );
+      await withJwtClaims(async (client) => {
+        for (const [name, value] of Object.entries(merged)) {
+          if (value === '') continue;
+          if (secretNames.has(name)) {
+            await client.query(
+              `SELECT constructive_store_public.platform_secrets_set($1, $2, 'pgp', 'default')`,
+              [name, value]
+            );
+          } else if (configNames.has(name)) {
+            await client.query(
+              `INSERT INTO constructive_store_public.platform_config
+                 (id, name, value, namespace_id)
+               VALUES (gen_random_uuid(), $1, $2, $3)
+               ON CONFLICT (namespace_id, name)
+               DO UPDATE SET value = $2, updated_at = now()`,
+              [name, value, nsId]
+            );
+          }
         }
-      }
+      });
     } catch {
       // DB sync is best-effort; .env write already succeeded
     }
