@@ -1,6 +1,6 @@
 -- Revert: schemas/constructive_fbp_public/procedures/create_function_graph/procedure
 
 
-DROP FUNCTION "constructive_fbp_public".create_function_graph;
+DROP FUNCTION "constructive_fbp_public".create_function_graph(uuid, text, text, text, uuid, uuid, uuid);
 
 
