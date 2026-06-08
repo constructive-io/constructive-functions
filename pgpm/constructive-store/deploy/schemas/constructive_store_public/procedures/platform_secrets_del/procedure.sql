@@ -7,7 +7,8 @@
 
 CREATE FUNCTION "constructive_store_public".platform_secrets_del(
   IN secret_name text,
-  IN secret_namespace text DEFAULT 'default'
+  IN secret_namespace text DEFAULT 'default',
+  IN secret_database_id uuid DEFAULT '00000000-0000-0000-0000-000000000000'
 ) RETURNS void AS $_PGFN_$
 DECLARE
   v_namespace_id uuid;
@@ -18,7 +19,7 @@ BEGIN
     ns.name = platform_secrets_del.secret_namespace INTO v_namespace_id;
   DELETE FROM "constructive_store_private".platform_secrets AS s
   WHERE
-    s.namespace_id = v_namespace_id AND s.name = platform_secrets_del.secret_name;
+    s.database_id = platform_secrets_del.secret_database_id AND s.namespace_id = v_namespace_id AND s.name = platform_secrets_del.secret_name;
 END;
 $_PGFN_$ LANGUAGE plpgsql VOLATILE;
 

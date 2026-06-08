@@ -8,7 +8,8 @@
 CREATE FUNCTION "constructive_store_private".platform_secrets_get(
   IN secret_name text,
   IN default_value text DEFAULT NULL,
-  IN secret_namespace text DEFAULT 'default'
+  IN secret_namespace text DEFAULT 'default',
+  IN secret_database_id uuid DEFAULT '00000000-0000-0000-0000-000000000000'
 ) RETURNS text AS $_PGFN_$
 DECLARE
   v_namespace_id uuid;
@@ -21,7 +22,7 @@ BEGIN
   SELECT *
   FROM "constructive_store_private".platform_secrets AS s
   WHERE
-    s.namespace_id = v_namespace_id AND s.name = platform_secrets_get.secret_name INTO v_secret;
+    s.database_id = platform_secrets_get.secret_database_id AND s.namespace_id = v_namespace_id AND s.name = platform_secrets_get.secret_name INTO v_secret;
   IF NOT (FOUND) OR v_secret IS NULL THEN
     RETURN platform_secrets_get.default_value;
   END IF;
