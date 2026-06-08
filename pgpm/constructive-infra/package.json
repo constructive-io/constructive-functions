@@ -23,6 +23,8 @@
   "dependencies": {
     "@pgpm/database-jobs": "0.26.5",
     "@pgpm/inflection": "*",
+    "@pgpm/metaschema-modules": "0.26.5",
+    "@pgpm/services": "0.26.5",
     "@pgpm/stamps": "*"
   },
   "devDependencies": {
