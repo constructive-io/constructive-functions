@@ -72,15 +72,12 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}
       PGDATABASE: constructive
     volumes:
-      - ./pgpm:/workspace/pgpm
+      - ./pgpm:/workspace/pgpm:ro
+      - ./extensions:/workspace/extensions:ro
       - ./scripts:/workspace/scripts:ro
     entrypoint: ["bash", "-c"]
     command:
       - |
-        cd /workspace/pgpm/constructive-infra
-        echo "Installing pgpm dependencies..."
-        pgpm install
-
         cd /workspace/pgpm
         echo "Deploying constructive-infra..."
         pgpm deploy --yes --database "$$PGDATABASE" --package constructive-infra
