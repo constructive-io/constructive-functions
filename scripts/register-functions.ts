@@ -201,7 +201,7 @@ function main(): void {
   }
 
   if (dryRun) {
-    console.log('\n--- Generated SQL (dry run) ---\n');
+    console.log('\n--- Generated Functions SQL (dry run) ---\n');
     console.log(deploySql);
     return;
   }

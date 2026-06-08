@@ -6,7 +6,7 @@
 //
 // Secrets loading pipeline:
 //   1. Read .env file
-//   2. Query DB for configured values (platform_secret_values)
+//   2. Query DB for configured values (platform_secrets + platform_config)
 //   3. Merge with priority: .env > DB > hardcoded defaults
 //   4. Resolve per-function requirements
 //   5. Inject ONLY needed env vars into each function's child process
@@ -74,24 +74,44 @@ function loadDotEnv(): Record<string, string> {
 // --- Query DB for configured secret values ---
 
 function loadDbSecretValues(dbName: string): Record<string, string> {
+  const vars: Record<string, string> = {};
+  const dbId = '00000000-0000-0000-0000-000000000000';
+
+  // Load secrets from constructive_store_private.platform_secrets
   try {
-    const sql = `SELECT secret_name, configured_value FROM constructive_infra_public.platform_secret_values WHERE configured_value IS NOT NULL AND configured_value != ''`;
+    const sql = `SELECT name, convert_from(value, 'UTF8') AS val FROM constructive_store_private.platform_secrets WHERE database_id = '${dbId}' AND value IS NOT NULL`;
     const output = execSync(
       `psql -d "${dbName}" -t -A -F '|' -c "${sql}"`,
       { encoding: 'utf-8', timeout: 5000 }
     ).trim();
-
-    if (!output) return {};
-    const vars: Record<string, string> = {};
-    for (const line of output.split('\n')) {
-      const [name, value] = line.split('|');
-      if (name && value) vars[name] = value;
+    if (output) {
+      for (const line of output.split('\n')) {
+        const [name, value] = line.split('|');
+        if (name && value) vars[name] = value;
+      }
     }
-    return vars;
   } catch {
-    console.log('  (DB secret values not available — table may not exist yet)');
-    return {};
+    console.log('  (platform_secrets not available yet)');
   }
+
+  // Load configs from constructive_store_public.platform_config
+  try {
+    const sql = `SELECT name, value FROM constructive_store_public.platform_config WHERE value IS NOT NULL AND value != ''`;
+    const output = execSync(
+      `psql -d "${dbName}" -t -A -F '|' -c "${sql}"`,
+      { encoding: 'utf-8', timeout: 5000 }
+    ).trim();
+    if (output) {
+      for (const line of output.split('\n')) {
+        const [name, value] = line.split('|');
+        if (name && value) vars[name] = value;
+      }
+    }
+  } catch {
+    console.log('  (platform_config not available yet)');
+  }
+
+  return vars;
 }
 
 // --- Query DB for function secret/config requirements (with required flag) ---

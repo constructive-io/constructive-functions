@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# secrets-sync.sh — bidirectional sync between .env and platform_secret_values
+# secrets-sync.sh — bidirectional sync between .env and platform_secrets + platform_config
 #
-# Reads .env → upserts into DB, then reads DB → merges into .env.
+# Reads .env → upserts into real upstream tables, then reads DB → merges into .env.
 # Priority on conflict: .env wins (values already in .env are not overwritten by DB).
 #
 # Usage:
@@ -15,11 +15,39 @@ set -euo pipefail
 ENV_FILE="${1:-.env}"
 DB_NAME="${2:-${DB_NAME:-constructive-functions-db1}}"
 
+DB_ID="00000000-0000-0000-0000-000000000000"
+
 echo "════════════════════════════════════════════════════════════"
 echo "  Secrets Bidirectional Sync"
 echo "  .env: $ENV_FILE    database: $DB_NAME"
 echo "════════════════════════════════════════════════════════════"
 echo ""
+
+# Resolve namespace
+NS_ID=$(psql -d "$DB_NAME" -t -A -c "
+  SELECT id FROM constructive_infra_public.platform_namespaces
+  WHERE name = 'default' AND database_id = '$DB_ID'
+  LIMIT 1
+" 2>/dev/null)
+
+if [ -z "$NS_ID" ]; then
+  echo "Error: default namespace not found in $DB_NAME."
+  exit 1
+fi
+
+# Collect known secret/config names from function definitions
+SECRET_NAMES=$(psql -d "$DB_NAME" -t -A -c "
+  SELECT DISTINCT (r).name FROM constructive_infra_public.platform_function_definitions,
+  unnest(required_secrets) AS r WHERE is_invocable = true
+" 2>/dev/null || echo "")
+
+CONFIG_NAMES=$(psql -d "$DB_NAME" -t -A -c "
+  SELECT DISTINCT (r).name FROM constructive_infra_public.platform_function_definitions,
+  unnest(required_configs) AS r WHERE is_invocable = true
+" 2>/dev/null || echo "")
+
+is_secret() { echo "$SECRET_NAMES" | grep -qx "$1" 2>/dev/null; }
+is_config() { echo "$CONFIG_NAMES" | grep -qx "$1" 2>/dev/null; }
 
 # --- Step 1: .env → DB ---
 
@@ -43,24 +71,28 @@ if [ -f "$ENV_FILE" ]; then
 
   echo "Loaded ${#ENV_VARS[@]} variable(s) from $ENV_FILE"
 
-  # Get a database_id for scoping
-  DB_ID=$(psql -d "$DB_NAME" -t -A -c "
-    SELECT COALESCE(
-      (SELECT database_id FROM constructive_infra_public.platform_secret_definitions LIMIT 1),
-      'default'
-    )
-  " 2>/dev/null || echo "default")
-
   for key in "${!ENV_VARS[@]}"; do
     val="${ENV_VARS[$key]}"
     [ -z "$val" ] && continue
-    psql -d "$DB_NAME" -q -c "
-      INSERT INTO constructive_infra_public.platform_secret_values
-        (secret_name, configured_value, database_id)
-      VALUES ('$key', '$(echo "$val" | sed "s/'/''/g")', '$DB_ID')
-      ON CONFLICT (secret_name, database_id)
-      DO UPDATE SET configured_value = EXCLUDED.configured_value
-    " 2>/dev/null && ((SYNCED_TO_DB++)) || true
+    escaped_val="${val//\'/\'\'}"
+
+    if is_secret "$key"; then
+      psql -d "$DB_NAME" -q -c "
+        INSERT INTO constructive_store_private.platform_secrets
+          (id, name, value, database_id, namespace_id)
+        VALUES (gen_random_uuid(), '$key', convert_to('$escaped_val', 'UTF8'), '$DB_ID', '$NS_ID')
+        ON CONFLICT (database_id, namespace_id, name)
+        DO UPDATE SET value = convert_to('$escaped_val', 'UTF8'), updated_at = now()
+      " 2>/dev/null && ((SYNCED_TO_DB++)) || true
+    elif is_config "$key"; then
+      psql -d "$DB_NAME" -q -c "
+        INSERT INTO constructive_store_public.platform_config
+          (id, name, value, namespace_id)
+        VALUES (gen_random_uuid(), '$key', '$escaped_val', '$NS_ID')
+        ON CONFLICT (namespace_id, name)
+        DO UPDATE SET value = '$escaped_val', updated_at = now()
+      " 2>/dev/null && ((SYNCED_TO_DB++)) || true
+    fi
   done
 
   echo "→ Synced $SYNCED_TO_DB values from .env → DB"
@@ -73,23 +105,42 @@ fi
 echo ""
 echo "Reading configured values from DB..."
 
-DB_VALUES=$(psql -d "$DB_NAME" -t -A -F '|' -c "
-  SELECT secret_name, configured_value
-  FROM constructive_infra_public.platform_secret_values
-  WHERE configured_value IS NOT NULL AND configured_value != ''
-  ORDER BY secret_name
-" 2>/dev/null || echo "")
-
 SYNCED_FROM_DB=0
 
-if [ -n "$DB_VALUES" ]; then
+# Read secrets
+DB_SECRETS=$(psql -d "$DB_NAME" -t -A -F '|' -c "
+  SELECT name, convert_from(value, 'UTF8')
+  FROM constructive_store_private.platform_secrets
+  WHERE database_id = '$DB_ID' AND value IS NOT NULL
+  ORDER BY name
+" 2>/dev/null || echo "")
+
+if [ -n "$DB_SECRETS" ]; then
   while IFS='|' read -r name value; do
     [ -z "$name" ] && continue
     if [ -z "${ENV_VARS[$name]+x}" ]; then
       ENV_VARS["$name"]="$value"
       ((SYNCED_FROM_DB++)) || true
     fi
-  done <<< "$DB_VALUES"
+  done <<< "$DB_SECRETS"
+fi
+
+# Read configs
+DB_CONFIGS=$(psql -d "$DB_NAME" -t -A -F '|' -c "
+  SELECT name, value
+  FROM constructive_store_public.platform_config
+  WHERE value IS NOT NULL AND value != ''
+  ORDER BY name
+" 2>/dev/null || echo "")
+
+if [ -n "$DB_CONFIGS" ]; then
+  while IFS='|' read -r name value; do
+    [ -z "$name" ] && continue
+    if [ -z "${ENV_VARS[$name]+x}" ]; then
+      ENV_VARS["$name"]="$value"
+      ((SYNCED_FROM_DB++)) || true
+    fi
+  done <<< "$DB_CONFIGS"
 fi
 
 echo "→ Synced $SYNCED_FROM_DB new values from DB → .env"

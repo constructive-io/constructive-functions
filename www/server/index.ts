@@ -93,6 +93,7 @@ app.get('/api/definitions', async (_req, res) => {
   }
 });
 
+
 // ─── .env helpers (must be declared before Secret Values endpoints) ────────
 
 const PROJECT_ROOT = process.env.PROJECT_ROOT || resolve(process.cwd(), '..');
@@ -163,31 +164,66 @@ function writeDotEnv(filePath: string, vars: Record<string, string>): void {
   writeFileSync(filePath, lines.join('\n'), 'utf-8');
 }
 
-// ─── REST API — Secret Values (DB storage) ─────────────────────────────────
+// ─── REST API — Secret/Config Values (real upstream tables) ─────────────────
 
-async function getDefaultDatabaseId(): Promise<string> {
+const DB_ID = '00000000-0000-0000-0000-000000000000';
+
+async function getDefaultNamespaceId(): Promise<string> {
   const result = await pool.query(
-    `SELECT database_id FROM constructive_infra_public.platform_secret_definitions LIMIT 1`
+    `SELECT id FROM constructive_infra_public.platform_namespaces
+     WHERE name = 'default' AND database_id = $1 LIMIT 1`,
+    [DB_ID]
   );
-  if (result.rows.length > 0) return result.rows[0].database_id ?? 'default';
-  return 'default';
+  if (result.rows.length > 0) return result.rows[0].id;
+  throw new Error('Default namespace not found — deploy constructive-infra-seed first');
+}
+
+async function getSecretNames(): Promise<Set<string>> {
+  const result = await pool.query(`
+    SELECT DISTINCT (r).name AS secret_name
+    FROM constructive_infra_public.platform_function_definitions,
+         unnest(required_secrets) AS r
+    WHERE is_invocable = true
+  `);
+  return new Set(result.rows.map((r: any) => r.secret_name));
+}
+
+async function getConfigNames(): Promise<Set<string>> {
+  const result = await pool.query(`
+    SELECT DISTINCT (r).name AS config_name
+    FROM constructive_infra_public.platform_function_definitions,
+         unnest(required_configs) AS r
+    WHERE is_invocable = true
+  `);
+  return new Set(result.rows.map((r: any) => r.config_name));
 }
 
 app.get('/api/secret-values', async (_req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT secret_name, configured_value, database_id,
+    const secrets = await pool.query(`
+      SELECT name, convert_from(value, 'UTF8') AS configured_value,
+             database_id, created_at, updated_at
+      FROM constructive_store_private.platform_secrets
+      WHERE database_id = $1
+      ORDER BY name
+    `, [DB_ID]);
+    const configs = await pool.query(`
+      SELECT name, value AS configured_value,
              created_at, updated_at
-      FROM constructive_infra_public.platform_secret_values
-      ORDER BY secret_name
+      FROM constructive_store_public.platform_config
+      ORDER BY name
     `);
     const vars: Record<string, string> = {};
-    for (const row of result.rows) {
-      if (row.configured_value != null) {
-        vars[row.secret_name] = row.configured_value;
-      }
+    const rows: any[] = [];
+    for (const row of secrets.rows) {
+      if (row.configured_value != null) vars[row.name] = row.configured_value;
+      rows.push({ secret_name: row.name, configured_value: row.configured_value, kind: 'secret', ...row });
     }
-    res.json({ vars, rows: result.rows });
+    for (const row of configs.rows) {
+      if (row.configured_value != null) vars[row.name] = row.configured_value;
+      rows.push({ secret_name: row.name, configured_value: row.configured_value, kind: 'config', ...row });
+    }
+    res.json({ vars, rows });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -200,19 +236,33 @@ app.post('/api/secret-values', async (req, res) => {
       res.status(400).json({ error: 'Body must contain { vars: { KEY: "value", ... } }' });
       return;
     }
-    const dbId = await getDefaultDatabaseId();
+    const nsId = await getDefaultNamespaceId();
+    const secretNames = await getSecretNames();
+    const configNames = await getConfigNames();
     let upserted = 0;
     for (const [name, value] of Object.entries(vars)) {
       if (value === '') continue;
-      await pool.query(
-        `INSERT INTO constructive_infra_public.platform_secret_values
-           (secret_name, configured_value, database_id)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (secret_name, database_id)
-         DO UPDATE SET configured_value = EXCLUDED.configured_value`,
-        [name, value, dbId]
-      );
-      upserted++;
+      if (secretNames.has(name)) {
+        await pool.query(
+          `INSERT INTO constructive_store_private.platform_secrets
+             (id, name, value, database_id, namespace_id)
+           VALUES (gen_random_uuid(), $1, convert_to($2, 'UTF8'), $3, $4)
+           ON CONFLICT (database_id, namespace_id, name)
+           DO UPDATE SET value = convert_to($2, 'UTF8'), updated_at = now()`,
+          [name, value, DB_ID, nsId]
+        );
+        upserted++;
+      } else if (configNames.has(name)) {
+        await pool.query(
+          `INSERT INTO constructive_store_public.platform_config
+             (id, name, value, namespace_id)
+           VALUES (gen_random_uuid(), $1, $2, $3)
+           ON CONFLICT (namespace_id, name)
+           DO UPDATE SET value = $2, updated_at = now()`,
+          [name, value, nsId]
+        );
+        upserted++;
+      }
     }
     res.json({ ok: true, upserted });
   } catch (err: any) {
@@ -222,14 +272,19 @@ app.post('/api/secret-values', async (req, res) => {
 
 app.post('/api/secrets/sync-from-db', async (_req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT secret_name, configured_value
-      FROM constructive_infra_public.platform_secret_values
-      WHERE configured_value IS NOT NULL AND configured_value != ''
+    const secrets = await pool.query(`
+      SELECT name, convert_from(value, 'UTF8') AS val
+      FROM constructive_store_private.platform_secrets
+      WHERE database_id = $1 AND value IS NOT NULL
+    `, [DB_ID]);
+    const configs = await pool.query(`
+      SELECT name, value AS val
+      FROM constructive_store_public.platform_config
+      WHERE value IS NOT NULL AND value != ''
     `);
     const dbVars: Record<string, string> = {};
-    for (const row of result.rows) {
-      dbVars[row.secret_name] = row.configured_value;
+    for (const row of [...secrets.rows, ...configs.rows]) {
+      dbVars[row.name] = row.val;
     }
     const existing = parseDotEnv(ENV_PATH);
     const merged = { ...existing, ...dbVars };
@@ -243,19 +298,33 @@ app.post('/api/secrets/sync-from-db', async (_req, res) => {
 app.post('/api/secrets/sync-to-db', async (_req, res) => {
   try {
     const envVars = parseDotEnv(ENV_PATH);
-    const dbId = await getDefaultDatabaseId();
+    const nsId = await getDefaultNamespaceId();
+    const secretNames = await getSecretNames();
+    const configNames = await getConfigNames();
     let upserted = 0;
     for (const [name, value] of Object.entries(envVars)) {
       if (value === '') continue;
-      await pool.query(
-        `INSERT INTO constructive_infra_public.platform_secret_values
-           (secret_name, configured_value, database_id)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (secret_name, database_id)
-         DO UPDATE SET configured_value = EXCLUDED.configured_value`,
-        [name, value, dbId]
-      );
-      upserted++;
+      if (secretNames.has(name)) {
+        await pool.query(
+          `INSERT INTO constructive_store_private.platform_secrets
+             (id, name, value, database_id, namespace_id)
+           VALUES (gen_random_uuid(), $1, convert_to($2, 'UTF8'), $3, $4)
+           ON CONFLICT (database_id, namespace_id, name)
+           DO UPDATE SET value = convert_to($2, 'UTF8'), updated_at = now()`,
+          [name, value, DB_ID, nsId]
+        );
+        upserted++;
+      } else if (configNames.has(name)) {
+        await pool.query(
+          `INSERT INTO constructive_store_public.platform_config
+             (id, name, value, namespace_id)
+           VALUES (gen_random_uuid(), $1, $2, $3)
+           ON CONFLICT (namespace_id, name)
+           DO UPDATE SET value = $2, updated_at = now()`,
+          [name, value, nsId]
+        );
+        upserted++;
+      }
     }
     res.json({ ok: true, synced: upserted });
   } catch (err: any) {
@@ -288,19 +357,32 @@ app.post('/api/env', async (req, res) => {
     }
     writeDotEnv(ENV_PATH, merged);
 
-    // Also sync non-empty values to DB
+    // Also sync non-empty values to DB (best-effort)
     try {
-      const dbId = await getDefaultDatabaseId();
+      const nsId = await getDefaultNamespaceId();
+      const secretNames = await getSecretNames();
+      const configNames = await getConfigNames();
       for (const [name, value] of Object.entries(merged)) {
         if (value === '') continue;
-        await pool.query(
-          `INSERT INTO constructive_infra_public.platform_secret_values
-             (secret_name, configured_value, database_id)
-           VALUES ($1, $2, $3)
-           ON CONFLICT (secret_name, database_id)
-           DO UPDATE SET configured_value = EXCLUDED.configured_value`,
-          [name, value, dbId]
-        );
+        if (secretNames.has(name)) {
+          await pool.query(
+            `INSERT INTO constructive_store_private.platform_secrets
+               (id, name, value, database_id, namespace_id)
+             VALUES (gen_random_uuid(), $1, convert_to($2, 'UTF8'), $3, $4)
+             ON CONFLICT (database_id, namespace_id, name)
+             DO UPDATE SET value = convert_to($2, 'UTF8'), updated_at = now()`,
+            [name, value, DB_ID, nsId]
+          );
+        } else if (configNames.has(name)) {
+          await pool.query(
+            `INSERT INTO constructive_store_public.platform_config
+               (id, name, value, namespace_id)
+             VALUES (gen_random_uuid(), $1, $2, $3)
+             ON CONFLICT (namespace_id, name)
+             DO UPDATE SET value = $2, updated_at = now()`,
+            [name, value, nsId]
+          );
+        }
       }
     } catch {
       // DB sync is best-effort; .env write already succeeded

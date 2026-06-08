@@ -243,7 +243,7 @@ export function SecretsPanel() {
           </div>
           <div className="flex items-center gap-2">
             <Database size={12} />
-            <span>platform_secret_values</span>
+            <span>platform_secrets + platform_config</span>
             <span className="px-1.5 py-0.5 rounded bg-blue-900/50 text-blue-400">bidirectional sync</span>
           </div>
         </div>

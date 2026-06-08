@@ -158,7 +158,7 @@ else
 fi
 rm -f "$DEPLOY_LOG"
 
-# Grant schema access to the administrator role (used by the GraphQL server)
+# Grant schema access to the administrator role (used by the GraphQL server + Express API)
 psql -d "$DB_NAME" -c "
   GRANT USAGE ON SCHEMA constructive_infra_public TO administrator;
   GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA constructive_infra_public TO administrator;
@@ -168,6 +168,12 @@ psql -d "$DB_NAME" -c "
   GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA app_jobs TO administrator;
   GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app_jobs TO administrator;
   GRANT USAGE ON ALL SEQUENCES IN SCHEMA app_jobs TO administrator;
+  GRANT USAGE ON SCHEMA constructive_store_public TO administrator;
+  GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA constructive_store_public TO administrator;
+  GRANT USAGE ON ALL SEQUENCES IN SCHEMA constructive_store_public TO administrator;
+  GRANT USAGE ON SCHEMA constructive_store_private TO administrator;
+  GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA constructive_store_private TO administrator;
+  GRANT USAGE ON ALL SEQUENCES IN SCHEMA constructive_store_private TO administrator;
 " &>/dev/null && ok "Schema grants applied" || warn "Schema grants failed (non-critical)"
 
 cd "$ROOT_DIR"
@@ -204,13 +210,14 @@ step 7 "Verifying platform"
 
 # ─── Step 8: Check .env ─────────────────────────────────────────────────────
 
-step 8 "Checking .env"
+step 8 "Loading .env into platform"
 
 if [ -f "$ROOT_DIR/.env" ]; then
   "$SCRIPT_DIR/load-platform-env.sh" "$ROOT_DIR/.env" "$DB_NAME" || true
 else
-  warn "No .env file found. Create one from the example:"
+  warn "No .env file found — secrets/configs not loaded."
   echo "    cp .env.example .env"
+  echo "    # Then re-run: make up"
 fi
 
 # ─── Done ────────────────────────────────────────────────────────────────────

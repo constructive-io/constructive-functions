@@ -108,7 +108,7 @@ export interface SecretValuesResponse {
   rows: Array<{
     secret_name: string;
     configured_value: string | null;
-    database_id: string;
+    kind: 'secret' | 'config';
     created_at: string;
     updated_at: string;
   }>;

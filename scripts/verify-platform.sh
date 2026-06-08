@@ -97,6 +97,22 @@ if [ "$HAS_TABLE" = "1" ]; then
   fi
 fi
 
+# --- Secrets loaded (constructive_store_private.platform_secrets) ---
+SEC_COUNT=$(psql -d "$DB_NAME" -t -A -c "SELECT count(*) FROM constructive_store_private.platform_secrets WHERE value IS NOT NULL" 2>/dev/null || echo "0")
+if [ "$SEC_COUNT" -gt 0 ] 2>/dev/null; then
+  ok "$SEC_COUNT platform secret(s) loaded from .env"
+else
+  ok "0 platform secrets loaded (run load-platform-env.sh to sync .env)"
+fi
+
+# --- Configs loaded (constructive_store_public.platform_config) ---
+CFG_COUNT=$(psql -d "$DB_NAME" -t -A -c "SELECT count(*) FROM constructive_store_public.platform_config WHERE value IS NOT NULL AND value != ''" 2>/dev/null || echo "0")
+if [ "$CFG_COUNT" -gt 0 ] 2>/dev/null; then
+  ok "$CFG_COUNT platform config(s) loaded from .env"
+else
+  ok "0 platform configs loaded (run load-platform-env.sh to sync .env)"
+fi
+
 # --- jobs table ---
 if [ "$HAS_JOBS" = "1" ]; then
   JOB_COUNT=$(psql -d "$DB_NAME" -t -A -c "SELECT count(*) FROM app_jobs.jobs" 2>/dev/null)
