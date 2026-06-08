@@ -1,0 +1,9 @@
+-- Deploy: schemas/constructive_store_public/tables/platform_config/columns/id/alterations/alt0000000085
+-- made with <3 @ constructive.io
+
+-- requires: schemas/constructive_store_public/schema
+-- requires: schemas/constructive_store_public/tables/platform_config/columns/id/column
+
+
+COMMENT ON COLUMN "constructive_store_public".platform_config.id IS 'Unique identifier for this config entry';
+

@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_fbp_private/tables/function_graph_execution_outputs/indexes/idx_function_graph_execution_outputs_unique_hash
+
+
+DROP INDEX "constructive_fbp_private".idx_function_graph_execution_outputs_unique_hash;
+
+

@@ -1,0 +1,9 @@
+-- Deploy: schemas/constructive_store_private/tables/platform_secrets/columns/namespace_id/alterations/alt0000000049
+-- made with <3 @ constructive.io
+
+-- requires: schemas/constructive_store_private/schema
+-- requires: schemas/constructive_store_private/tables/platform_secrets/columns/namespace_id/column
+
+
+COMMENT ON COLUMN "constructive_store_private".platform_secrets.namespace_id IS E'FK to namespaces — logical grouping for secrets';
+

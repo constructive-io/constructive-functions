@@ -1,0 +1,5 @@
+# constructive-store extension
+comment = 'constructive-store module'
+default_version = '0.0.1'
+relocatable = false
+requires = 'plpgsql,pgpm-inflection,pgpm-stamps,pgcrypto'
