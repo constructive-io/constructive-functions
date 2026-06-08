@@ -3,6 +3,8 @@
 
 -- requires: schemas/constructive_infra_public/schema
 -- requires: schemas/constructive_infra_public/tables/platform_function_execution_logs/table
+-- requires: schemas/constructive_infra_public/tables/platform_function_execution_logs/columns/created_at/column
+-- requires: schemas/constructive_infra_public/tables/platform_function_execution_logs/columns/id/column
 
 
 ALTER TABLE "constructive_infra_public".platform_function_execution_logs 

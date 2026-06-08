@@ -3,6 +3,8 @@
 
 -- requires: schemas/constructive_infra_public/schema
 -- requires: schemas/constructive_infra_public/tables/platform_namespaces/table
+-- requires: schemas/constructive_infra_public/tables/platform_namespaces/columns/database_id/column
+-- requires: schemas/constructive_infra_public/tables/platform_namespaces/columns/name/column
 
 
 ALTER TABLE "constructive_infra_public".platform_namespaces 

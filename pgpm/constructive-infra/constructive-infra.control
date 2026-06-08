@@ -1,7 +1,5 @@
 # constructive-infra extension
-comment = 'constructive-infra extension'
+comment = 'constructive-infra module'
 default_version = '0.0.1'
-module_pathname = '$libdir/constructive-infra'
-requires = 'pgpm-inflection,pgpm-jwt-claims,pgpm-stamps,pgpm-types,pgpm-verify,plpgsql'
 relocatable = false
-superuser = false
+requires = 'plpgsql,pgpm-inflection,pgpm-stamps'
