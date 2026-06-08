@@ -5,10 +5,9 @@
  */
 import { OrmClient } from './client';
 import type { OrmClientConfig } from './client';
-import { PlatformSecretValueModel } from './models/platformSecretValue';
 import { JobQueueModel } from './models/jobQueue';
-import { PlatformFunctionExecutionLogModel } from './models/platformFunctionExecutionLog';
 import { PlatformSecretDefinitionModel } from './models/platformSecretDefinition';
+import { PlatformFunctionExecutionLogModel } from './models/platformFunctionExecutionLog';
 import { PlatformNamespaceModel } from './models/platformNamespace';
 import { PlatformFunctionInvocationModel } from './models/platformFunctionInvocation';
 import { ScheduledJobModel } from './models/scheduledJob';
@@ -48,10 +47,9 @@ export { createMutationOperations } from './mutation';
 export function createClient(config: OrmClientConfig) {
   const client = new OrmClient(config);
   return {
-    platformSecretValue: new PlatformSecretValueModel(client),
     jobQueue: new JobQueueModel(client),
-    platformFunctionExecutionLog: new PlatformFunctionExecutionLogModel(client),
     platformSecretDefinition: new PlatformSecretDefinitionModel(client),
+    platformFunctionExecutionLog: new PlatformFunctionExecutionLogModel(client),
     platformNamespace: new PlatformNamespaceModel(client),
     platformFunctionInvocation: new PlatformFunctionInvocationModel(client),
     scheduledJob: new ScheduledJobModel(client),

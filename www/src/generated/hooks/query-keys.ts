@@ -19,15 +19,6 @@
 // Entity Query Keys
 // ============================================================================
 
-export const platformSecretValueKeys = {
-  /** All platformSecretValue queries */ all: ['platformsecretvalue'] as const,
-  /** List query keys */ lists: () => [...platformSecretValueKeys.all, 'list'] as const,
-  /** List query key with variables */ list: (variables?: object) =>
-    [...platformSecretValueKeys.lists(), variables] as const,
-  /** Detail query keys */ details: () => [...platformSecretValueKeys.all, 'detail'] as const,
-  /** Detail query key for specific item */ detail: (id: string | number) =>
-    [...platformSecretValueKeys.details(), id] as const,
-} as const;
 export const jobQueueKeys = {
   /** All jobQueue queries */ all: ['jobqueue'] as const,
   /** List query keys */ lists: () => [...jobQueueKeys.all, 'list'] as const,
@@ -36,6 +27,15 @@ export const jobQueueKeys = {
   /** Detail query keys */ details: () => [...jobQueueKeys.all, 'detail'] as const,
   /** Detail query key for specific item */ detail: (id: string | number) =>
     [...jobQueueKeys.details(), id] as const,
+} as const;
+export const platformSecretDefinitionKeys = {
+  /** All platformSecretDefinition queries */ all: ['platformsecretdefinition'] as const,
+  /** List query keys */ lists: () => [...platformSecretDefinitionKeys.all, 'list'] as const,
+  /** List query key with variables */ list: (variables?: object) =>
+    [...platformSecretDefinitionKeys.lists(), variables] as const,
+  /** Detail query keys */ details: () => [...platformSecretDefinitionKeys.all, 'detail'] as const,
+  /** Detail query key for specific item */ detail: (id: string | number) =>
+    [...platformSecretDefinitionKeys.details(), id] as const,
 } as const;
 export const platformFunctionExecutionLogKeys = {
   /** All platformFunctionExecutionLog queries */ all: ['platformfunctionexecutionlog'] as const,
@@ -46,15 +46,6 @@ export const platformFunctionExecutionLogKeys = {
     [...platformFunctionExecutionLogKeys.all, 'detail'] as const,
   /** Detail query key for specific item */ detail: (id: string | number) =>
     [...platformFunctionExecutionLogKeys.details(), id] as const,
-} as const;
-export const platformSecretDefinitionKeys = {
-  /** All platformSecretDefinition queries */ all: ['platformsecretdefinition'] as const,
-  /** List query keys */ lists: () => [...platformSecretDefinitionKeys.all, 'list'] as const,
-  /** List query key with variables */ list: (variables?: object) =>
-    [...platformSecretDefinitionKeys.lists(), variables] as const,
-  /** Detail query keys */ details: () => [...platformSecretDefinitionKeys.all, 'detail'] as const,
-  /** Detail query key for specific item */ detail: (id: string | number) =>
-    [...platformSecretDefinitionKeys.details(), id] as const,
 } as const;
 export const platformNamespaceKeys = {
   /** All platformNamespace queries */ all: ['platformnamespace'] as const,
@@ -135,10 +126,9 @@ export const platformFunctionDefinitionKeys = {
  * ```
  */
 export const queryKeys = {
-  platformSecretValue: platformSecretValueKeys,
   jobQueue: jobQueueKeys,
-  platformFunctionExecutionLog: platformFunctionExecutionLogKeys,
   platformSecretDefinition: platformSecretDefinitionKeys,
+  platformFunctionExecutionLog: platformFunctionExecutionLogKeys,
   platformNamespace: platformNamespaceKeys,
   platformFunctionInvocation: platformFunctionInvocationKeys,
   scheduledJob: scheduledJobKeys,

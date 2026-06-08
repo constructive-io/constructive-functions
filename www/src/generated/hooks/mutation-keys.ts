@@ -18,15 +18,6 @@
 // Entity Mutation Keys
 // ============================================================================
 
-export const platformSecretValueMutationKeys = {
-  /** All platformSecretValue mutation keys */ all: ['mutation', 'platformsecretvalue'] as const,
-  /** Create platformSecretValue mutation key */ create: () =>
-    ['mutation', 'platformsecretvalue', 'create'] as const,
-  /** Update platformSecretValue mutation key */ update: (id: string | number) =>
-    ['mutation', 'platformsecretvalue', 'update', id] as const,
-  /** Delete platformSecretValue mutation key */ delete: (id: string | number) =>
-    ['mutation', 'platformsecretvalue', 'delete', id] as const,
-} as const;
 export const jobQueueMutationKeys = {
   /** All jobQueue mutation keys */ all: ['mutation', 'jobqueue'] as const,
   /** Create jobQueue mutation key */ create: () => ['mutation', 'jobqueue', 'create'] as const,
@@ -34,18 +25,6 @@ export const jobQueueMutationKeys = {
     ['mutation', 'jobqueue', 'update', id] as const,
   /** Delete jobQueue mutation key */ delete: (id: string | number) =>
     ['mutation', 'jobqueue', 'delete', id] as const,
-} as const;
-export const platformFunctionExecutionLogMutationKeys = {
-  /** All platformFunctionExecutionLog mutation keys */ all: [
-    'mutation',
-    'platformfunctionexecutionlog',
-  ] as const,
-  /** Create platformFunctionExecutionLog mutation key */ create: () =>
-    ['mutation', 'platformfunctionexecutionlog', 'create'] as const,
-  /** Update platformFunctionExecutionLog mutation key */ update: (id: string | number) =>
-    ['mutation', 'platformfunctionexecutionlog', 'update', id] as const,
-  /** Delete platformFunctionExecutionLog mutation key */ delete: (id: string | number) =>
-    ['mutation', 'platformfunctionexecutionlog', 'delete', id] as const,
 } as const;
 export const platformSecretDefinitionMutationKeys = {
   /** All platformSecretDefinition mutation keys */ all: [
@@ -58,6 +37,18 @@ export const platformSecretDefinitionMutationKeys = {
     ['mutation', 'platformsecretdefinition', 'update', id] as const,
   /** Delete platformSecretDefinition mutation key */ delete: (id: string | number) =>
     ['mutation', 'platformsecretdefinition', 'delete', id] as const,
+} as const;
+export const platformFunctionExecutionLogMutationKeys = {
+  /** All platformFunctionExecutionLog mutation keys */ all: [
+    'mutation',
+    'platformfunctionexecutionlog',
+  ] as const,
+  /** Create platformFunctionExecutionLog mutation key */ create: () =>
+    ['mutation', 'platformfunctionexecutionlog', 'create'] as const,
+  /** Update platformFunctionExecutionLog mutation key */ update: (id: string | number) =>
+    ['mutation', 'platformfunctionexecutionlog', 'update', id] as const,
+  /** Delete platformFunctionExecutionLog mutation key */ delete: (id: string | number) =>
+    ['mutation', 'platformfunctionexecutionlog', 'delete', id] as const,
 } as const;
 export const platformNamespaceMutationKeys = {
   /** All platformNamespace mutation keys */ all: ['mutation', 'platformnamespace'] as const,
@@ -211,10 +202,9 @@ export const customMutationKeys = {
  * ```
  */
 export const mutationKeys = {
-  platformSecretValue: platformSecretValueMutationKeys,
   jobQueue: jobQueueMutationKeys,
-  platformFunctionExecutionLog: platformFunctionExecutionLogMutationKeys,
   platformSecretDefinition: platformSecretDefinitionMutationKeys,
+  platformFunctionExecutionLog: platformFunctionExecutionLogMutationKeys,
   platformNamespace: platformNamespaceMutationKeys,
   platformFunctionInvocation: platformFunctionInvocationMutationKeys,
   scheduledJob: scheduledJobMutationKeys,

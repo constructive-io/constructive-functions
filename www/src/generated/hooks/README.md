@@ -32,26 +32,21 @@ function App() {
 
 | Hook | Type | Description |
 |------|------|-------------|
-| `usePlatformSecretValuesQuery` | Query | Stores configured values for platform secrets (plaintext for now). |
-| `usePlatformSecretValueQuery` | Query | Stores configured values for platform secrets (plaintext for now). |
-| `useCreatePlatformSecretValueMutation` | Mutation | Stores configured values for platform secrets (plaintext for now). |
-| `useUpdatePlatformSecretValueMutation` | Mutation | Stores configured values for platform secrets (plaintext for now). |
-| `useDeletePlatformSecretValueMutation` | Mutation | Stores configured values for platform secrets (plaintext for now). |
 | `useJobQueuesQuery` | Query | Queue metadata: tracks job counts and locking state for each named queue |
 | `useJobQueueQuery` | Query | Queue metadata: tracks job counts and locking state for each named queue |
 | `useCreateJobQueueMutation` | Mutation | Queue metadata: tracks job counts and locking state for each named queue |
 | `useUpdateJobQueueMutation` | Mutation | Queue metadata: tracks job counts and locking state for each named queue |
 | `useDeleteJobQueueMutation` | Mutation | Queue metadata: tracks job counts and locking state for each named queue |
-| `usePlatformFunctionExecutionLogsQuery` | Query | Function execution logs — structured console output per invocation |
-| `usePlatformFunctionExecutionLogQuery` | Query | Function execution logs — structured console output per invocation |
-| `useCreatePlatformFunctionExecutionLogMutation` | Mutation | Function execution logs — structured console output per invocation |
-| `useUpdatePlatformFunctionExecutionLogMutation` | Mutation | Function execution logs — structured console output per invocation |
-| `useDeletePlatformFunctionExecutionLogMutation` | Mutation | Function execution logs — structured console output per invocation |
 | `usePlatformSecretDefinitionsQuery` | Query | Global secret name registry — declares which secrets the platform recognizes. Actual values live in app_secrets. |
 | `usePlatformSecretDefinitionQuery` | Query | Global secret name registry — declares which secrets the platform recognizes. Actual values live in app_secrets. |
 | `useCreatePlatformSecretDefinitionMutation` | Mutation | Global secret name registry — declares which secrets the platform recognizes. Actual values live in app_secrets. |
 | `useUpdatePlatformSecretDefinitionMutation` | Mutation | Global secret name registry — declares which secrets the platform recognizes. Actual values live in app_secrets. |
 | `useDeletePlatformSecretDefinitionMutation` | Mutation | Global secret name registry — declares which secrets the platform recognizes. Actual values live in app_secrets. |
+| `usePlatformFunctionExecutionLogsQuery` | Query | Function execution logs — structured console output per invocation |
+| `usePlatformFunctionExecutionLogQuery` | Query | Function execution logs — structured console output per invocation |
+| `useCreatePlatformFunctionExecutionLogMutation` | Mutation | Function execution logs — structured console output per invocation |
+| `useUpdatePlatformFunctionExecutionLogMutation` | Mutation | Function execution logs — structured console output per invocation |
+| `useDeletePlatformFunctionExecutionLogMutation` | Mutation | Function execution logs — structured console output per invocation |
 | `usePlatformNamespacesQuery` | Query | Logical namespace containers for grouping secrets, config, functions, and other resources |
 | `usePlatformNamespaceQuery` | Query | Logical namespace containers for grouping secrets, config, functions, and other resources |
 | `useCreatePlatformNamespaceMutation` | Mutation | Logical namespace containers for grouping secrets, config, functions, and other resources |
@@ -104,27 +99,6 @@ and lifecycle settings. |
 
 ## Table Hooks
 
-### PlatformSecretValue
-
-```typescript
-// List all platformSecretValues
-const { data, isLoading } = usePlatformSecretValuesQuery({
-  selection: { fields: { id: true, secretName: true, configuredValue: true, databaseId: true, createdAt: true, updatedAt: true } },
-});
-
-// Get one platformSecretValue
-const { data: item } = usePlatformSecretValueQuery({
-  id: '<UUID>',
-  selection: { fields: { id: true, secretName: true, configuredValue: true, databaseId: true, createdAt: true, updatedAt: true } },
-});
-
-// Create a platformSecretValue
-const { mutate: create } = useCreatePlatformSecretValueMutation({
-  selection: { fields: { id: true } },
-});
-create({ secretName: '<String>', configuredValue: '<String>', databaseId: '<UUID>' });
-```
-
 ### JobQueue
 
 ```typescript
@@ -146,27 +120,6 @@ const { mutate: create } = useCreateJobQueueMutation({
 create({ jobCount: '<Int>', lockedAt: '<Datetime>', lockedBy: '<String>' });
 ```
 
-### PlatformFunctionExecutionLog
-
-```typescript
-// List all platformFunctionExecutionLogs
-const { data, isLoading } = usePlatformFunctionExecutionLogsQuery({
-  selection: { fields: { createdAt: true, actorId: true, databaseId: true, id: true, invocationId: true, logLevel: true, message: true, metadata: true, taskIdentifier: true } },
-});
-
-// Get one platformFunctionExecutionLog
-const { data: item } = usePlatformFunctionExecutionLogQuery({
-  id: '<UUID>',
-  selection: { fields: { createdAt: true, actorId: true, databaseId: true, id: true, invocationId: true, logLevel: true, message: true, metadata: true, taskIdentifier: true } },
-});
-
-// Create a platformFunctionExecutionLog
-const { mutate: create } = useCreatePlatformFunctionExecutionLogMutation({
-  selection: { fields: { id: true } },
-});
-create({ actorId: '<UUID>', databaseId: '<UUID>', invocationId: '<UUID>', logLevel: '<String>', message: '<String>', metadata: '<JSON>', taskIdentifier: '<String>' });
-```
-
 ### PlatformSecretDefinition
 
 ```typescript
@@ -186,6 +139,27 @@ const { mutate: create } = useCreatePlatformSecretDefinitionMutation({
   selection: { fields: { id: true } },
 });
 create({ annotations: '<JSON>', databaseId: '<UUID>', description: '<String>', isBuiltIn: '<Boolean>', labels: '<JSON>', name: '<String>' });
+```
+
+### PlatformFunctionExecutionLog
+
+```typescript
+// List all platformFunctionExecutionLogs
+const { data, isLoading } = usePlatformFunctionExecutionLogsQuery({
+  selection: { fields: { createdAt: true, actorId: true, databaseId: true, id: true, invocationId: true, logLevel: true, message: true, metadata: true, taskIdentifier: true } },
+});
+
+// Get one platformFunctionExecutionLog
+const { data: item } = usePlatformFunctionExecutionLogQuery({
+  id: '<UUID>',
+  selection: { fields: { createdAt: true, actorId: true, databaseId: true, id: true, invocationId: true, logLevel: true, message: true, metadata: true, taskIdentifier: true } },
+});
+
+// Create a platformFunctionExecutionLog
+const { mutate: create } = useCreatePlatformFunctionExecutionLogMutation({
+  selection: { fields: { id: true } },
+});
+create({ actorId: '<UUID>', databaseId: '<UUID>', invocationId: '<UUID>', logLevel: '<String>', message: '<String>', metadata: '<JSON>', taskIdentifier: '<String>' });
 ```
 
 ### PlatformNamespace
@@ -298,20 +272,20 @@ create({ databaseId: '<UUID>', actorId: '<UUID>', entityId: '<UUID>', organizati
 ```typescript
 // List all platformFunctionDefinitions
 const { data, isLoading } = usePlatformFunctionDefinitionsQuery({
-  selection: { fields: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true } },
+  selection: { fields: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, payloadSchema: true, requiredConfigs: true, requiredSecrets: true } },
 });
 
 // Get one platformFunctionDefinition
 const { data: item } = usePlatformFunctionDefinitionQuery({
   id: '<UUID>',
-  selection: { fields: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true } },
+  selection: { fields: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, payloadSchema: true, requiredConfigs: true, requiredSecrets: true } },
 });
 
 // Create a platformFunctionDefinition
 const { mutate: create } = useCreatePlatformFunctionDefinitionMutation({
   selection: { fields: { id: true } },
 });
-create({ description: '<String>', isBuiltIn: '<Boolean>', isInvocable: '<Boolean>', maxAttempts: '<Int>', name: '<String>', namespaceId: '<UUID>', priority: '<Int>', queueName: '<String>', scope: '<String>', serviceUrl: '<String>', taskIdentifier: '<String>', requiredConfigs: '<FunctionRequirement>', requiredSecrets: '<FunctionRequirement>' });
+create({ description: '<String>', isBuiltIn: '<Boolean>', isInvocable: '<Boolean>', maxAttempts: '<Int>', name: '<String>', namespaceId: '<UUID>', priority: '<Int>', queueName: '<String>', scope: '<String>', serviceUrl: '<String>', taskIdentifier: '<String>', payloadSchema: '<JSON>', requiredConfigs: '<FunctionRequirement>', requiredSecrets: '<FunctionRequirement>' });
 ```
 
 ## Custom Operation Hooks

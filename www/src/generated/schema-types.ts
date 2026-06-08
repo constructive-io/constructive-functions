@@ -13,7 +13,6 @@ import type {
   PlatformNamespace,
   PlatformNamespaceEvent,
   PlatformSecretDefinition,
-  PlatformSecretValue,
   ScheduledJob,
   BigFloatFilter,
   BigIntFilter,
@@ -33,23 +32,6 @@ import type {
   UUIDListFilter,
   VectorFilter,
 } from './types';
-/** Methods to use when ordering `PlatformSecretValue`. */
-export type PlatformSecretValueOrderBy =
-  | 'NATURAL'
-  | 'PRIMARY_KEY_ASC'
-  | 'PRIMARY_KEY_DESC'
-  | 'ID_ASC'
-  | 'ID_DESC'
-  | 'SECRET_NAME_ASC'
-  | 'SECRET_NAME_DESC'
-  | 'CONFIGURED_VALUE_ASC'
-  | 'CONFIGURED_VALUE_DESC'
-  | 'DATABASE_ID_ASC'
-  | 'DATABASE_ID_DESC'
-  | 'CREATED_AT_ASC'
-  | 'CREATED_AT_DESC'
-  | 'UPDATED_AT_ASC'
-  | 'UPDATED_AT_DESC';
 /** Methods to use when ordering `JobQueue`. */
 export type JobQueueOrderBy =
   | 'NATURAL'
@@ -63,29 +45,6 @@ export type JobQueueOrderBy =
   | 'LOCKED_AT_DESC'
   | 'LOCKED_BY_ASC'
   | 'LOCKED_BY_DESC';
-/** Methods to use when ordering `PlatformFunctionExecutionLog`. */
-export type PlatformFunctionExecutionLogOrderBy =
-  | 'NATURAL'
-  | 'PRIMARY_KEY_ASC'
-  | 'PRIMARY_KEY_DESC'
-  | 'CREATED_AT_ASC'
-  | 'CREATED_AT_DESC'
-  | 'ACTOR_ID_ASC'
-  | 'ACTOR_ID_DESC'
-  | 'DATABASE_ID_ASC'
-  | 'DATABASE_ID_DESC'
-  | 'ID_ASC'
-  | 'ID_DESC'
-  | 'INVOCATION_ID_ASC'
-  | 'INVOCATION_ID_DESC'
-  | 'LOG_LEVEL_ASC'
-  | 'LOG_LEVEL_DESC'
-  | 'MESSAGE_ASC'
-  | 'MESSAGE_DESC'
-  | 'METADATA_ASC'
-  | 'METADATA_DESC'
-  | 'TASK_IDENTIFIER_ASC'
-  | 'TASK_IDENTIFIER_DESC';
 /** Methods to use when ordering `PlatformSecretDefinition`. */
 export type PlatformSecretDefinitionOrderBy =
   | 'NATURAL'
@@ -109,6 +68,29 @@ export type PlatformSecretDefinitionOrderBy =
   | 'NAME_DESC'
   | 'UPDATED_AT_ASC'
   | 'UPDATED_AT_DESC';
+/** Methods to use when ordering `PlatformFunctionExecutionLog`. */
+export type PlatformFunctionExecutionLogOrderBy =
+  | 'NATURAL'
+  | 'PRIMARY_KEY_ASC'
+  | 'PRIMARY_KEY_DESC'
+  | 'CREATED_AT_ASC'
+  | 'CREATED_AT_DESC'
+  | 'ACTOR_ID_ASC'
+  | 'ACTOR_ID_DESC'
+  | 'DATABASE_ID_ASC'
+  | 'DATABASE_ID_DESC'
+  | 'ID_ASC'
+  | 'ID_DESC'
+  | 'INVOCATION_ID_ASC'
+  | 'INVOCATION_ID_DESC'
+  | 'LOG_LEVEL_ASC'
+  | 'LOG_LEVEL_DESC'
+  | 'MESSAGE_ASC'
+  | 'MESSAGE_DESC'
+  | 'METADATA_ASC'
+  | 'METADATA_DESC'
+  | 'TASK_IDENTIFIER_ASC'
+  | 'TASK_IDENTIFIER_DESC';
 /** Methods to use when ordering `PlatformNamespace`. */
 export type PlatformNamespaceOrderBy =
   | 'NATURAL'
@@ -315,31 +297,12 @@ export type PlatformFunctionDefinitionOrderBy =
   | 'TASK_IDENTIFIER_DESC'
   | 'UPDATED_AT_ASC'
   | 'UPDATED_AT_DESC'
+  | 'PAYLOAD_SCHEMA_ASC'
+  | 'PAYLOAD_SCHEMA_DESC'
   | 'REQUIRED_CONFIGS_ASC'
   | 'REQUIRED_CONFIGS_DESC'
   | 'REQUIRED_SECRETS_ASC'
   | 'REQUIRED_SECRETS_DESC';
-/** A filter to be used against `PlatformSecretValue` object types. All fields are combined with a logical ‘and.’ */
-export interface PlatformSecretValueFilter {
-  /** Filter by the object’s `id` field. */
-  id?: UUIDFilter;
-  /** Filter by the object’s `secretName` field. */
-  secretName?: StringFilter;
-  /** Filter by the object’s `configuredValue` field. */
-  configuredValue?: StringFilter;
-  /** Filter by the object’s `databaseId` field. */
-  databaseId?: UUIDFilter;
-  /** Filter by the object’s `createdAt` field. */
-  createdAt?: DatetimeFilter;
-  /** Filter by the object’s `updatedAt` field. */
-  updatedAt?: DatetimeFilter;
-  /** Checks for all expressions in this list. */
-  and?: PlatformSecretValueFilter[];
-  /** Checks for any expressions in this list. */
-  or?: PlatformSecretValueFilter[];
-  /** Negates the expression. */
-  not?: PlatformSecretValueFilter;
-}
 /** A filter to be used against `JobQueue` object types. All fields are combined with a logical ‘and.’ */
 export interface JobQueueFilter {
   /** Filter by the object’s `queueName` field. */
@@ -356,33 +319,6 @@ export interface JobQueueFilter {
   or?: JobQueueFilter[];
   /** Negates the expression. */
   not?: JobQueueFilter;
-}
-/** A filter to be used against `PlatformFunctionExecutionLog` object types. All fields are combined with a logical ‘and.’ */
-export interface PlatformFunctionExecutionLogFilter {
-  /** Filter by the object’s `createdAt` field. */
-  createdAt?: DatetimeFilter;
-  /** Filter by the object’s `actorId` field. */
-  actorId?: UUIDFilter;
-  /** Filter by the object’s `databaseId` field. */
-  databaseId?: UUIDFilter;
-  /** Filter by the object’s `id` field. */
-  id?: UUIDFilter;
-  /** Filter by the object’s `invocationId` field. */
-  invocationId?: UUIDFilter;
-  /** Filter by the object’s `logLevel` field. */
-  logLevel?: StringFilter;
-  /** Filter by the object’s `message` field. */
-  message?: StringFilter;
-  /** Filter by the object’s `metadata` field. */
-  metadata?: JSONFilter;
-  /** Filter by the object’s `taskIdentifier` field. */
-  taskIdentifier?: StringFilter;
-  /** Checks for all expressions in this list. */
-  and?: PlatformFunctionExecutionLogFilter[];
-  /** Checks for any expressions in this list. */
-  or?: PlatformFunctionExecutionLogFilter[];
-  /** Negates the expression. */
-  not?: PlatformFunctionExecutionLogFilter;
 }
 /** A filter to be used against `PlatformSecretDefinition` object types. All fields are combined with a logical ‘and.’ */
 export interface PlatformSecretDefinitionFilter {
@@ -410,6 +346,33 @@ export interface PlatformSecretDefinitionFilter {
   or?: PlatformSecretDefinitionFilter[];
   /** Negates the expression. */
   not?: PlatformSecretDefinitionFilter;
+}
+/** A filter to be used against `PlatformFunctionExecutionLog` object types. All fields are combined with a logical ‘and.’ */
+export interface PlatformFunctionExecutionLogFilter {
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: DatetimeFilter;
+  /** Filter by the object’s `actorId` field. */
+  actorId?: UUIDFilter;
+  /** Filter by the object’s `databaseId` field. */
+  databaseId?: UUIDFilter;
+  /** Filter by the object’s `id` field. */
+  id?: UUIDFilter;
+  /** Filter by the object’s `invocationId` field. */
+  invocationId?: UUIDFilter;
+  /** Filter by the object’s `logLevel` field. */
+  logLevel?: StringFilter;
+  /** Filter by the object’s `message` field. */
+  message?: StringFilter;
+  /** Filter by the object’s `metadata` field. */
+  metadata?: JSONFilter;
+  /** Filter by the object’s `taskIdentifier` field. */
+  taskIdentifier?: StringFilter;
+  /** Checks for all expressions in this list. */
+  and?: PlatformFunctionExecutionLogFilter[];
+  /** Checks for any expressions in this list. */
+  or?: PlatformFunctionExecutionLogFilter[];
+  /** Negates the expression. */
+  not?: PlatformFunctionExecutionLogFilter;
 }
 /** A filter to be used against `PlatformNamespace` object types. All fields are combined with a logical ‘and.’ */
 export interface PlatformNamespaceFilter {
@@ -628,6 +591,8 @@ export interface PlatformFunctionDefinitionFilter {
   taskIdentifier?: StringFilter;
   /** Filter by the object’s `updatedAt` field. */
   updatedAt?: DatetimeFilter;
+  /** Filter by the object’s `payloadSchema` field. */
+  payloadSchema?: JSONFilter;
   /** Checks for all expressions in this list. */
   and?: PlatformFunctionDefinitionFilter[];
   /** Checks for any expressions in this list. */
@@ -747,22 +712,6 @@ export interface GetJobInput {
   taskIdentifiers?: string[];
   jobExpiry?: IntervalInput;
 }
-export interface CreatePlatformSecretValueInput {
-  clientMutationId?: string;
-  /** The `PlatformSecretValue` to be created by this mutation. */
-  platformSecretValue: PlatformSecretValueInput;
-}
-/** An input for mutations affecting `PlatformSecretValue` */
-export interface PlatformSecretValueInput {
-  id?: string;
-  /** References the secret name from platform_secret_definitions. */
-  secretName: string;
-  configuredValue?: string;
-  /** Scoped to a specific database context. */
-  databaseId: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
 export interface CreateJobQueueInput {
   clientMutationId?: string;
   /** The `JobQueue` to be created by this mutation. */
@@ -778,6 +727,29 @@ export interface JobQueueInput {
   lockedAt?: string;
   /** Identifier of the worker that currently holds the queue lock */
   lockedBy?: string;
+}
+export interface CreatePlatformSecretDefinitionInput {
+  clientMutationId?: string;
+  /** The `PlatformSecretDefinition` to be created by this mutation. */
+  platformSecretDefinition: PlatformSecretDefinitionInput;
+}
+/** An input for mutations affecting `PlatformSecretDefinition` */
+export interface PlatformSecretDefinitionInput {
+  /** Freeform metadata annotations for secret definitions */
+  annotations?: unknown;
+  createdAt?: string;
+  /** Database that owns this resource (database-scoped isolation) */
+  databaseId: string;
+  /** Human-readable description of what this secret is used for */
+  description?: string;
+  id?: string;
+  /** Whether this row was seeded as a built-in secret definition. Built-in rows are immutable. */
+  isBuiltIn?: boolean;
+  /** Key-value metadata for filtering and grouping secret definitions */
+  labels?: unknown;
+  /** Secret name (must match app_secrets.name for resolution) */
+  name: string;
+  updatedAt?: string;
 }
 export interface CreatePlatformFunctionExecutionLogInput {
   clientMutationId?: string;
@@ -804,29 +776,6 @@ export interface PlatformFunctionExecutionLogInput {
   metadata?: unknown;
   /** Function routing key (NULL for generic job logs) */
   taskIdentifier?: string;
-}
-export interface CreatePlatformSecretDefinitionInput {
-  clientMutationId?: string;
-  /** The `PlatformSecretDefinition` to be created by this mutation. */
-  platformSecretDefinition: PlatformSecretDefinitionInput;
-}
-/** An input for mutations affecting `PlatformSecretDefinition` */
-export interface PlatformSecretDefinitionInput {
-  /** Freeform metadata annotations for secret definitions */
-  annotations?: unknown;
-  createdAt?: string;
-  /** Database that owns this resource (database-scoped isolation) */
-  databaseId: string;
-  /** Human-readable description of what this secret is used for */
-  description?: string;
-  id?: string;
-  /** Whether this row was seeded as a built-in secret definition. Built-in rows are immutable. */
-  isBuiltIn?: boolean;
-  /** Key-value metadata for filtering and grouping secret definitions */
-  labels?: unknown;
-  /** Secret name (must match app_secrets.name for resolution) */
-  name: string;
-  updatedAt?: string;
 }
 export interface CreatePlatformNamespaceInput {
   clientMutationId?: string;
@@ -1043,6 +992,7 @@ export interface PlatformFunctionDefinitionInput {
   /** Computed routing slug: scope:name (used by Knative job worker for dispatch) */
   taskIdentifier: string;
   updatedAt?: string;
+  payloadSchema?: unknown;
   /** Embedded config requirements: array of (name, required) tuples */
   requiredConfigs?: FunctionRequirementInput[];
   /** Embedded secret requirements: array of (name, required) tuples */
@@ -1052,23 +1002,6 @@ export interface PlatformFunctionDefinitionInput {
 export interface FunctionRequirementInput {
   name?: string;
   required?: boolean;
-}
-export interface UpdatePlatformSecretValueInput {
-  clientMutationId?: string;
-  id: string;
-  /** An object where the defined keys will be set on the `PlatformSecretValue` being updated. */
-  platformSecretValuePatch: PlatformSecretValuePatch;
-}
-/** Represents an update to a `PlatformSecretValue`. Fields that are set will be updated. */
-export interface PlatformSecretValuePatch {
-  id?: string;
-  /** References the secret name from platform_secret_definitions. */
-  secretName?: string;
-  configuredValue?: string;
-  /** Scoped to a specific database context. */
-  databaseId?: string;
-  createdAt?: string;
-  updatedAt?: string;
 }
 export interface UpdateJobQueueInput {
   clientMutationId?: string;
@@ -1087,6 +1020,30 @@ export interface JobQueuePatch {
   lockedAt?: string;
   /** Identifier of the worker that currently holds the queue lock */
   lockedBy?: string;
+}
+export interface UpdatePlatformSecretDefinitionInput {
+  clientMutationId?: string;
+  id: string;
+  /** An object where the defined keys will be set on the `PlatformSecretDefinition` being updated. */
+  platformSecretDefinitionPatch: PlatformSecretDefinitionPatch;
+}
+/** Represents an update to a `PlatformSecretDefinition`. Fields that are set will be updated. */
+export interface PlatformSecretDefinitionPatch {
+  /** Freeform metadata annotations for secret definitions */
+  annotations?: unknown;
+  createdAt?: string;
+  /** Database that owns this resource (database-scoped isolation) */
+  databaseId?: string;
+  /** Human-readable description of what this secret is used for */
+  description?: string;
+  id?: string;
+  /** Whether this row was seeded as a built-in secret definition. Built-in rows are immutable. */
+  isBuiltIn?: boolean;
+  /** Key-value metadata for filtering and grouping secret definitions */
+  labels?: unknown;
+  /** Secret name (must match app_secrets.name for resolution) */
+  name?: string;
+  updatedAt?: string;
 }
 export interface UpdatePlatformFunctionExecutionLogInput {
   clientMutationId?: string;
@@ -1117,30 +1074,6 @@ export interface PlatformFunctionExecutionLogPatch {
   metadata?: unknown;
   /** Function routing key (NULL for generic job logs) */
   taskIdentifier?: string;
-}
-export interface UpdatePlatformSecretDefinitionInput {
-  clientMutationId?: string;
-  id: string;
-  /** An object where the defined keys will be set on the `PlatformSecretDefinition` being updated. */
-  platformSecretDefinitionPatch: PlatformSecretDefinitionPatch;
-}
-/** Represents an update to a `PlatformSecretDefinition`. Fields that are set will be updated. */
-export interface PlatformSecretDefinitionPatch {
-  /** Freeform metadata annotations for secret definitions */
-  annotations?: unknown;
-  createdAt?: string;
-  /** Database that owns this resource (database-scoped isolation) */
-  databaseId?: string;
-  /** Human-readable description of what this secret is used for */
-  description?: string;
-  id?: string;
-  /** Whether this row was seeded as a built-in secret definition. Built-in rows are immutable. */
-  isBuiltIn?: boolean;
-  /** Key-value metadata for filtering and grouping secret definitions */
-  labels?: unknown;
-  /** Secret name (must match app_secrets.name for resolution) */
-  name?: string;
-  updatedAt?: string;
 }
 export interface UpdatePlatformNamespaceInput {
   clientMutationId?: string;
@@ -1371,29 +1304,26 @@ export interface PlatformFunctionDefinitionPatch {
   /** Computed routing slug: scope:name (used by Knative job worker for dispatch) */
   taskIdentifier?: string;
   updatedAt?: string;
+  payloadSchema?: unknown;
   /** Embedded config requirements: array of (name, required) tuples */
   requiredConfigs?: FunctionRequirementInput[];
   /** Embedded secret requirements: array of (name, required) tuples */
   requiredSecrets?: FunctionRequirementInput[];
-}
-export interface DeletePlatformSecretValueInput {
-  clientMutationId?: string;
-  id: string;
 }
 export interface DeleteJobQueueInput {
   clientMutationId?: string;
   /** Unique name identifying this queue */
   queueName: string;
 }
+export interface DeletePlatformSecretDefinitionInput {
+  clientMutationId?: string;
+  id: string;
+}
 export interface DeletePlatformFunctionExecutionLogInput {
   clientMutationId?: string;
   /** Log entry timestamp (partition key) */
   createdAt: string;
   /** Unique log entry identifier */
-  id: string;
-}
-export interface DeletePlatformSecretDefinitionInput {
-  clientMutationId?: string;
   id: string;
 }
 export interface DeletePlatformNamespaceInput {
@@ -1437,13 +1367,6 @@ export interface ProvisionBucketInput {
    */
   ownerId?: string;
 }
-/** A connection to a list of `PlatformSecretValue` values. */
-export interface PlatformSecretValueConnection {
-  nodes: PlatformSecretValue[];
-  edges: PlatformSecretValueEdge[];
-  pageInfo: PageInfo;
-  totalCount: number;
-}
 /** A connection to a list of `JobQueue` values. */
 export interface JobQueueConnection {
   nodes: JobQueue[];
@@ -1451,17 +1374,17 @@ export interface JobQueueConnection {
   pageInfo: PageInfo;
   totalCount: number;
 }
-/** A connection to a list of `PlatformFunctionExecutionLog` values. */
-export interface PlatformFunctionExecutionLogConnection {
-  nodes: PlatformFunctionExecutionLog[];
-  edges: PlatformFunctionExecutionLogEdge[];
-  pageInfo: PageInfo;
-  totalCount: number;
-}
 /** A connection to a list of `PlatformSecretDefinition` values. */
 export interface PlatformSecretDefinitionConnection {
   nodes: PlatformSecretDefinition[];
   edges: PlatformSecretDefinitionEdge[];
+  pageInfo: PageInfo;
+  totalCount: number;
+}
+/** A connection to a list of `PlatformFunctionExecutionLog` values. */
+export interface PlatformFunctionExecutionLogConnection {
+  nodes: PlatformFunctionExecutionLog[];
+  edges: PlatformFunctionExecutionLogEdge[];
   pageInfo: PageInfo;
   totalCount: number;
 }
@@ -1576,29 +1499,23 @@ export interface GetJobPayload {
   result?: Job | null;
   jobEdge?: JobEdge | null;
 }
-export interface CreatePlatformSecretValuePayload {
-  clientMutationId?: string | null;
-  /** The `PlatformSecretValue` that was created by this mutation. */
-  platformSecretValue?: PlatformSecretValue | null;
-  platformSecretValueEdge?: PlatformSecretValueEdge | null;
-}
 export interface CreateJobQueuePayload {
   clientMutationId?: string | null;
   /** The `JobQueue` that was created by this mutation. */
   jobQueue?: JobQueue | null;
   jobQueueEdge?: JobQueueEdge | null;
 }
-export interface CreatePlatformFunctionExecutionLogPayload {
-  clientMutationId?: string | null;
-  /** The `PlatformFunctionExecutionLog` that was created by this mutation. */
-  platformFunctionExecutionLog?: PlatformFunctionExecutionLog | null;
-  platformFunctionExecutionLogEdge?: PlatformFunctionExecutionLogEdge | null;
-}
 export interface CreatePlatformSecretDefinitionPayload {
   clientMutationId?: string | null;
   /** The `PlatformSecretDefinition` that was created by this mutation. */
   platformSecretDefinition?: PlatformSecretDefinition | null;
   platformSecretDefinitionEdge?: PlatformSecretDefinitionEdge | null;
+}
+export interface CreatePlatformFunctionExecutionLogPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformFunctionExecutionLog` that was created by this mutation. */
+  platformFunctionExecutionLog?: PlatformFunctionExecutionLog | null;
+  platformFunctionExecutionLogEdge?: PlatformFunctionExecutionLogEdge | null;
 }
 export interface CreatePlatformNamespacePayload {
   clientMutationId?: string | null;
@@ -1636,29 +1553,23 @@ export interface CreatePlatformFunctionDefinitionPayload {
   platformFunctionDefinition?: PlatformFunctionDefinition | null;
   platformFunctionDefinitionEdge?: PlatformFunctionDefinitionEdge | null;
 }
-export interface UpdatePlatformSecretValuePayload {
-  clientMutationId?: string | null;
-  /** The `PlatformSecretValue` that was updated by this mutation. */
-  platformSecretValue?: PlatformSecretValue | null;
-  platformSecretValueEdge?: PlatformSecretValueEdge | null;
-}
 export interface UpdateJobQueuePayload {
   clientMutationId?: string | null;
   /** The `JobQueue` that was updated by this mutation. */
   jobQueue?: JobQueue | null;
   jobQueueEdge?: JobQueueEdge | null;
 }
-export interface UpdatePlatformFunctionExecutionLogPayload {
-  clientMutationId?: string | null;
-  /** The `PlatformFunctionExecutionLog` that was updated by this mutation. */
-  platformFunctionExecutionLog?: PlatformFunctionExecutionLog | null;
-  platformFunctionExecutionLogEdge?: PlatformFunctionExecutionLogEdge | null;
-}
 export interface UpdatePlatformSecretDefinitionPayload {
   clientMutationId?: string | null;
   /** The `PlatformSecretDefinition` that was updated by this mutation. */
   platformSecretDefinition?: PlatformSecretDefinition | null;
   platformSecretDefinitionEdge?: PlatformSecretDefinitionEdge | null;
+}
+export interface UpdatePlatformFunctionExecutionLogPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformFunctionExecutionLog` that was updated by this mutation. */
+  platformFunctionExecutionLog?: PlatformFunctionExecutionLog | null;
+  platformFunctionExecutionLogEdge?: PlatformFunctionExecutionLogEdge | null;
 }
 export interface UpdatePlatformNamespacePayload {
   clientMutationId?: string | null;
@@ -1696,29 +1607,23 @@ export interface UpdatePlatformFunctionDefinitionPayload {
   platformFunctionDefinition?: PlatformFunctionDefinition | null;
   platformFunctionDefinitionEdge?: PlatformFunctionDefinitionEdge | null;
 }
-export interface DeletePlatformSecretValuePayload {
-  clientMutationId?: string | null;
-  /** The `PlatformSecretValue` that was deleted by this mutation. */
-  platformSecretValue?: PlatformSecretValue | null;
-  platformSecretValueEdge?: PlatformSecretValueEdge | null;
-}
 export interface DeleteJobQueuePayload {
   clientMutationId?: string | null;
   /** The `JobQueue` that was deleted by this mutation. */
   jobQueue?: JobQueue | null;
   jobQueueEdge?: JobQueueEdge | null;
 }
-export interface DeletePlatformFunctionExecutionLogPayload {
-  clientMutationId?: string | null;
-  /** The `PlatformFunctionExecutionLog` that was deleted by this mutation. */
-  platformFunctionExecutionLog?: PlatformFunctionExecutionLog | null;
-  platformFunctionExecutionLogEdge?: PlatformFunctionExecutionLogEdge | null;
-}
 export interface DeletePlatformSecretDefinitionPayload {
   clientMutationId?: string | null;
   /** The `PlatformSecretDefinition` that was deleted by this mutation. */
   platformSecretDefinition?: PlatformSecretDefinition | null;
   platformSecretDefinitionEdge?: PlatformSecretDefinitionEdge | null;
+}
+export interface DeletePlatformFunctionExecutionLogPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformFunctionExecutionLog` that was deleted by this mutation. */
+  platformFunctionExecutionLog?: PlatformFunctionExecutionLog | null;
+  platformFunctionExecutionLogEdge?: PlatformFunctionExecutionLogEdge | null;
 }
 export interface DeletePlatformNamespacePayload {
   clientMutationId?: string | null;
@@ -1770,11 +1675,11 @@ export interface ProvisionBucketPayload {
   /** Error message if provisioning failed */
   error?: string | null;
 }
-/** A `PlatformSecretValue` edge in the connection. */
-export interface PlatformSecretValueEdge {
+/** A `JobQueue` edge in the connection. */
+export interface JobQueueEdge {
   cursor?: string | null;
-  /** The `PlatformSecretValue` at the end of the edge. */
-  node?: PlatformSecretValue | null;
+  /** The `JobQueue` at the end of the edge. */
+  node?: JobQueue | null;
 }
 /** Information about pagination in a connection. */
 export interface PageInfo {
@@ -1787,23 +1692,17 @@ export interface PageInfo {
   /** When paginating forwards, the cursor to continue. */
   endCursor?: string | null;
 }
-/** A `JobQueue` edge in the connection. */
-export interface JobQueueEdge {
+/** A `PlatformSecretDefinition` edge in the connection. */
+export interface PlatformSecretDefinitionEdge {
   cursor?: string | null;
-  /** The `JobQueue` at the end of the edge. */
-  node?: JobQueue | null;
+  /** The `PlatformSecretDefinition` at the end of the edge. */
+  node?: PlatformSecretDefinition | null;
 }
 /** A `PlatformFunctionExecutionLog` edge in the connection. */
 export interface PlatformFunctionExecutionLogEdge {
   cursor?: string | null;
   /** The `PlatformFunctionExecutionLog` at the end of the edge. */
   node?: PlatformFunctionExecutionLog | null;
-}
-/** A `PlatformSecretDefinition` edge in the connection. */
-export interface PlatformSecretDefinitionEdge {
-  cursor?: string | null;
-  /** The `PlatformSecretDefinition` at the end of the edge. */
-  node?: PlatformSecretDefinition | null;
 }
 /** A `PlatformNamespace` edge in the connection. */
 export interface PlatformNamespaceEdge {

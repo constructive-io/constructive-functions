@@ -4,30 +4,11 @@
  * DO NOT EDIT - changes will be overwritten
  */
 export type FunctionRequirement = unknown;
-export interface PlatformSecretValue {
-  id: string | null;
-  secretName: string | null;
-  configuredValue: string | null;
-  databaseId: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-}
 export interface JobQueue {
   queueName: string | null;
   jobCount: number | null;
   lockedAt: string | null;
   lockedBy: string | null;
-}
-export interface PlatformFunctionExecutionLog {
-  createdAt: string | null;
-  actorId: string | null;
-  databaseId: string | null;
-  id: string | null;
-  invocationId: string | null;
-  logLevel: string | null;
-  message: string | null;
-  metadata: unknown | null;
-  taskIdentifier: string | null;
 }
 export interface PlatformSecretDefinition {
   annotations: unknown | null;
@@ -39,6 +20,17 @@ export interface PlatformSecretDefinition {
   labels: unknown | null;
   name: string | null;
   updatedAt: string | null;
+}
+export interface PlatformFunctionExecutionLog {
+  createdAt: string | null;
+  actorId: string | null;
+  databaseId: string | null;
+  id: string | null;
+  invocationId: string | null;
+  logLevel: string | null;
+  message: string | null;
+  metadata: unknown | null;
+  taskIdentifier: string | null;
 }
 export interface PlatformNamespace {
   annotations: unknown | null;
@@ -139,6 +131,7 @@ export interface PlatformFunctionDefinition {
   serviceUrl: string | null;
   taskIdentifier: string | null;
   updatedAt: string | null;
+  payloadSchema: unknown | null;
   requiredConfigs: FunctionRequirement[] | null;
   requiredSecrets: FunctionRequirement[] | null;
 }

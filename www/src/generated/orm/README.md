@@ -21,10 +21,9 @@ const db = createClient({
 
 | Model | Operations |
 |-------|------------|
-| `platformSecretValue` | findMany, findOne, create, update, delete |
 | `jobQueue` | findMany, findOne, create, update, delete |
-| `platformFunctionExecutionLog` | findMany, findOne, create, update, delete |
 | `platformSecretDefinition` | findMany, findOne, create, update, delete |
+| `platformFunctionExecutionLog` | findMany, findOne, create, update, delete |
 | `platformNamespace` | findMany, findOne, create, update, delete |
 | `platformFunctionInvocation` | findMany, findOne, create, update, delete |
 | `scheduledJob` | findMany, findOne, create, update, delete |
@@ -33,40 +32,6 @@ const db = createClient({
 | `platformFunctionDefinition` | findMany, findOne, create, update, delete |
 
 ## Table Operations
-
-### `db.platformSecretValue`
-
-CRUD operations for PlatformSecretValue records.
-
-**Fields:**
-
-| Field | Type | Editable |
-|-------|------|----------|
-| `id` | UUID | No |
-| `secretName` | String | Yes |
-| `configuredValue` | String | Yes |
-| `databaseId` | UUID | Yes |
-| `createdAt` | Datetime | No |
-| `updatedAt` | Datetime | No |
-
-**Operations:**
-
-```typescript
-// List all platformSecretValue records
-const items = await db.platformSecretValue.findMany({ select: { id: true, secretName: true, configuredValue: true, databaseId: true, createdAt: true, updatedAt: true } }).execute();
-
-// Get one by id
-const item = await db.platformSecretValue.findOne({ id: '<UUID>', select: { id: true, secretName: true, configuredValue: true, databaseId: true, createdAt: true, updatedAt: true } }).execute();
-
-// Create
-const created = await db.platformSecretValue.create({ data: { secretName: '<String>', configuredValue: '<String>', databaseId: '<UUID>' }, select: { id: true } }).execute();
-
-// Update
-const updated = await db.platformSecretValue.update({ where: { id: '<UUID>' }, data: { secretName: '<String>' }, select: { id: true } }).execute();
-
-// Delete
-const deleted = await db.platformSecretValue.delete({ where: { id: '<UUID>' } }).execute();
-```
 
 ### `db.jobQueue`
 
@@ -98,43 +63,6 @@ const updated = await db.jobQueue.update({ where: { queueName: '<String>' }, dat
 
 // Delete
 const deleted = await db.jobQueue.delete({ where: { queueName: '<String>' } }).execute();
-```
-
-### `db.platformFunctionExecutionLog`
-
-CRUD operations for PlatformFunctionExecutionLog records.
-
-**Fields:**
-
-| Field | Type | Editable |
-|-------|------|----------|
-| `createdAt` | Datetime | No |
-| `actorId` | UUID | Yes |
-| `databaseId` | UUID | Yes |
-| `id` | UUID | No |
-| `invocationId` | UUID | Yes |
-| `logLevel` | String | Yes |
-| `message` | String | Yes |
-| `metadata` | JSON | Yes |
-| `taskIdentifier` | String | Yes |
-
-**Operations:**
-
-```typescript
-// List all platformFunctionExecutionLog records
-const items = await db.platformFunctionExecutionLog.findMany({ select: { createdAt: true, actorId: true, databaseId: true, id: true, invocationId: true, logLevel: true, message: true, metadata: true, taskIdentifier: true } }).execute();
-
-// Get one by id
-const item = await db.platformFunctionExecutionLog.findOne({ id: '<UUID>', select: { createdAt: true, actorId: true, databaseId: true, id: true, invocationId: true, logLevel: true, message: true, metadata: true, taskIdentifier: true } }).execute();
-
-// Create
-const created = await db.platformFunctionExecutionLog.create({ data: { actorId: '<UUID>', databaseId: '<UUID>', invocationId: '<UUID>', logLevel: '<String>', message: '<String>', metadata: '<JSON>', taskIdentifier: '<String>' }, select: { id: true } }).execute();
-
-// Update
-const updated = await db.platformFunctionExecutionLog.update({ where: { id: '<UUID>' }, data: { actorId: '<UUID>' }, select: { id: true } }).execute();
-
-// Delete
-const deleted = await db.platformFunctionExecutionLog.delete({ where: { id: '<UUID>' } }).execute();
 ```
 
 ### `db.platformSecretDefinition`
@@ -172,6 +100,43 @@ const updated = await db.platformSecretDefinition.update({ where: { id: '<UUID>'
 
 // Delete
 const deleted = await db.platformSecretDefinition.delete({ where: { id: '<UUID>' } }).execute();
+```
+
+### `db.platformFunctionExecutionLog`
+
+CRUD operations for PlatformFunctionExecutionLog records.
+
+**Fields:**
+
+| Field | Type | Editable |
+|-------|------|----------|
+| `createdAt` | Datetime | No |
+| `actorId` | UUID | Yes |
+| `databaseId` | UUID | Yes |
+| `id` | UUID | No |
+| `invocationId` | UUID | Yes |
+| `logLevel` | String | Yes |
+| `message` | String | Yes |
+| `metadata` | JSON | Yes |
+| `taskIdentifier` | String | Yes |
+
+**Operations:**
+
+```typescript
+// List all platformFunctionExecutionLog records
+const items = await db.platformFunctionExecutionLog.findMany({ select: { createdAt: true, actorId: true, databaseId: true, id: true, invocationId: true, logLevel: true, message: true, metadata: true, taskIdentifier: true } }).execute();
+
+// Get one by id
+const item = await db.platformFunctionExecutionLog.findOne({ id: '<UUID>', select: { createdAt: true, actorId: true, databaseId: true, id: true, invocationId: true, logLevel: true, message: true, metadata: true, taskIdentifier: true } }).execute();
+
+// Create
+const created = await db.platformFunctionExecutionLog.create({ data: { actorId: '<UUID>', databaseId: '<UUID>', invocationId: '<UUID>', logLevel: '<String>', message: '<String>', metadata: '<JSON>', taskIdentifier: '<String>' }, select: { id: true } }).execute();
+
+// Update
+const updated = await db.platformFunctionExecutionLog.update({ where: { id: '<UUID>' }, data: { actorId: '<UUID>' }, select: { id: true } }).execute();
+
+// Delete
+const deleted = await db.platformFunctionExecutionLog.delete({ where: { id: '<UUID>' } }).execute();
 ```
 
 ### `db.platformNamespace`
@@ -410,6 +375,7 @@ CRUD operations for PlatformFunctionDefinition records.
 | `serviceUrl` | String | Yes |
 | `taskIdentifier` | String | Yes |
 | `updatedAt` | Datetime | No |
+| `payloadSchema` | JSON | Yes |
 | `requiredConfigs` | FunctionRequirement | Yes |
 | `requiredSecrets` | FunctionRequirement | Yes |
 
@@ -417,13 +383,13 @@ CRUD operations for PlatformFunctionDefinition records.
 
 ```typescript
 // List all platformFunctionDefinition records
-const items = await db.platformFunctionDefinition.findMany({ select: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true } }).execute();
+const items = await db.platformFunctionDefinition.findMany({ select: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, payloadSchema: true, requiredConfigs: true, requiredSecrets: true } }).execute();
 
 // Get one by id
-const item = await db.platformFunctionDefinition.findOne({ id: '<UUID>', select: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true } }).execute();
+const item = await db.platformFunctionDefinition.findOne({ id: '<UUID>', select: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, payloadSchema: true, requiredConfigs: true, requiredSecrets: true } }).execute();
 
 // Create
-const created = await db.platformFunctionDefinition.create({ data: { description: '<String>', isBuiltIn: '<Boolean>', isInvocable: '<Boolean>', maxAttempts: '<Int>', name: '<String>', namespaceId: '<UUID>', priority: '<Int>', queueName: '<String>', scope: '<String>', serviceUrl: '<String>', taskIdentifier: '<String>', requiredConfigs: '<FunctionRequirement>', requiredSecrets: '<FunctionRequirement>' }, select: { id: true } }).execute();
+const created = await db.platformFunctionDefinition.create({ data: { description: '<String>', isBuiltIn: '<Boolean>', isInvocable: '<Boolean>', maxAttempts: '<Int>', name: '<String>', namespaceId: '<UUID>', priority: '<Int>', queueName: '<String>', scope: '<String>', serviceUrl: '<String>', taskIdentifier: '<String>', payloadSchema: '<JSON>', requiredConfigs: '<FunctionRequirement>', requiredSecrets: '<FunctionRequirement>' }, select: { id: true } }).execute();
 
 // Update
 const updated = await db.platformFunctionDefinition.update({ where: { id: '<UUID>' }, data: { description: '<String>' }, select: { id: true } }).execute();

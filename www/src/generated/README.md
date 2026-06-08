@@ -8,13 +8,13 @@
 
 ## Overview
 
-- **Tables:** 10
+- **Tables:** 9
 - **Custom queries:** 0
 - **Custom mutations:** 16
 
 **Generators:** ORM, React Query
 
-**Endpoint:** `http://graphql-server:3000/graphql`
+**Endpoint:** `http://localhost:3002/graphql`
 
 ## Modules
 

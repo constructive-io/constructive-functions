@@ -15,10 +15,9 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import {
-  platformSecretValueKeys,
   jobQueueKeys,
-  platformFunctionExecutionLogKeys,
   platformSecretDefinitionKeys,
+  platformFunctionExecutionLogKeys,
   platformNamespaceKeys,
   platformFunctionInvocationKeys,
   scheduledJobKeys,
@@ -46,23 +45,6 @@ import {
  * ```
  */
 export const invalidate = {
-  /** Invalidate platformSecretValue queries */ platformSecretValue: {
-    /** Invalidate all platformSecretValue queries */ all: (queryClient: QueryClient) =>
-      queryClient.invalidateQueries({
-        queryKey: platformSecretValueKeys.all,
-      }),
-    /** Invalidate platformSecretValue list queries */ lists: (queryClient: QueryClient) =>
-      queryClient.invalidateQueries({
-        queryKey: platformSecretValueKeys.lists(),
-      }),
-    /** Invalidate a specific platformSecretValue */ detail: (
-      queryClient: QueryClient,
-      id: string | number
-    ) =>
-      queryClient.invalidateQueries({
-        queryKey: platformSecretValueKeys.detail(id),
-      }),
-  },
   /** Invalidate jobQueue queries */ jobQueue: {
     /** Invalidate all jobQueue queries */ all: (queryClient: QueryClient) =>
       queryClient.invalidateQueries({
@@ -75,23 +57,6 @@ export const invalidate = {
     /** Invalidate a specific jobQueue */ detail: (queryClient: QueryClient, id: string | number) =>
       queryClient.invalidateQueries({
         queryKey: jobQueueKeys.detail(id),
-      }),
-  },
-  /** Invalidate platformFunctionExecutionLog queries */ platformFunctionExecutionLog: {
-    /** Invalidate all platformFunctionExecutionLog queries */ all: (queryClient: QueryClient) =>
-      queryClient.invalidateQueries({
-        queryKey: platformFunctionExecutionLogKeys.all,
-      }),
-    /** Invalidate platformFunctionExecutionLog list queries */ lists: (queryClient: QueryClient) =>
-      queryClient.invalidateQueries({
-        queryKey: platformFunctionExecutionLogKeys.lists(),
-      }),
-    /** Invalidate a specific platformFunctionExecutionLog */ detail: (
-      queryClient: QueryClient,
-      id: string | number
-    ) =>
-      queryClient.invalidateQueries({
-        queryKey: platformFunctionExecutionLogKeys.detail(id),
       }),
   },
   /** Invalidate platformSecretDefinition queries */ platformSecretDefinition: {
@@ -109,6 +74,23 @@ export const invalidate = {
     ) =>
       queryClient.invalidateQueries({
         queryKey: platformSecretDefinitionKeys.detail(id),
+      }),
+  },
+  /** Invalidate platformFunctionExecutionLog queries */ platformFunctionExecutionLog: {
+    /** Invalidate all platformFunctionExecutionLog queries */ all: (queryClient: QueryClient) =>
+      queryClient.invalidateQueries({
+        queryKey: platformFunctionExecutionLogKeys.all,
+      }),
+    /** Invalidate platformFunctionExecutionLog list queries */ lists: (queryClient: QueryClient) =>
+      queryClient.invalidateQueries({
+        queryKey: platformFunctionExecutionLogKeys.lists(),
+      }),
+    /** Invalidate a specific platformFunctionExecutionLog */ detail: (
+      queryClient: QueryClient,
+      id: string | number
+    ) =>
+      queryClient.invalidateQueries({
+        queryKey: platformFunctionExecutionLogKeys.detail(id),
       }),
   },
   /** Invalidate platformNamespace queries */ platformNamespace: {
@@ -223,25 +205,9 @@ export const invalidate = {
  * instead of just invalidating (which would trigger a refetch).
  */
 export const remove = {
-  /** Remove platformSecretValue from cache */ platformSecretValue: (
-    queryClient: QueryClient,
-    id: string | number
-  ) => {
-    queryClient.removeQueries({
-      queryKey: platformSecretValueKeys.detail(id),
-    });
-  },
   /** Remove jobQueue from cache */ jobQueue: (queryClient: QueryClient, id: string | number) => {
     queryClient.removeQueries({
       queryKey: jobQueueKeys.detail(id),
-    });
-  },
-  /** Remove platformFunctionExecutionLog from cache */ platformFunctionExecutionLog: (
-    queryClient: QueryClient,
-    id: string | number
-  ) => {
-    queryClient.removeQueries({
-      queryKey: platformFunctionExecutionLogKeys.detail(id),
     });
   },
   /** Remove platformSecretDefinition from cache */ platformSecretDefinition: (
@@ -250,6 +216,14 @@ export const remove = {
   ) => {
     queryClient.removeQueries({
       queryKey: platformSecretDefinitionKeys.detail(id),
+    });
+  },
+  /** Remove platformFunctionExecutionLog from cache */ platformFunctionExecutionLog: (
+    queryClient: QueryClient,
+    id: string | number
+  ) => {
+    queryClient.removeQueries({
+      queryKey: platformFunctionExecutionLogKeys.detail(id),
     });
   },
   /** Remove platformNamespace from cache */ platformNamespace: (
