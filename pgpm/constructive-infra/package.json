@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "@pgpm/inflection": "*",
-    "@pgpm/stamps": "*"
+    "@pgpm/stamps": "*",
+    "@pgpm/database-jobs": "*"
   },
   "devDependencies": {
     "pgpm": "^4.26.1"
