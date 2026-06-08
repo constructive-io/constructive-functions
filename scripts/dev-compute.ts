@@ -4,6 +4,14 @@
 // The compute-service discovers functions from the database (platform_function_definitions)
 // instead of relying on a static manifest. Functions still run as local Node processes.
 //
+// Secrets loading pipeline:
+//   1. Read .env file
+//   2. Query DB for configured values (platform_secret_values)
+//   3. Merge with priority: .env > DB > hardcoded defaults
+//   4. Resolve per-function requirements
+//   5. Inject ONLY needed env vars into each function's child process
+//   6. Fail fast on missing required secrets, warn on optional ones
+//
 // Usage:
 //   node --experimental-strip-types scripts/dev-compute.ts
 //   node --experimental-strip-types scripts/dev-compute.ts --only=send-verification-link
@@ -54,7 +62,6 @@ function loadDotEnv(): Record<string, string> {
     if (eqIdx === -1) continue;
     const key = trimmed.slice(0, eqIdx).trim();
     let val = trimmed.slice(eqIdx + 1).trim();
-    // Strip surrounding quotes
     if ((val.startsWith('"') && val.endsWith('"')) ||
         (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1);
@@ -64,12 +71,35 @@ function loadDotEnv(): Record<string, string> {
   return envVars;
 }
 
-// --- Query DB for function secret/config requirements ---
+// --- Query DB for configured secret values ---
+
+function loadDbSecretValues(dbName: string): Record<string, string> {
+  try {
+    const sql = `SELECT secret_name, configured_value FROM constructive_infra_public.platform_secret_values WHERE configured_value IS NOT NULL AND configured_value != ''`;
+    const output = execSync(
+      `psql -d "${dbName}" -t -A -F '|' -c "${sql}"`,
+      { encoding: 'utf-8', timeout: 5000 }
+    ).trim();
+
+    if (!output) return {};
+    const vars: Record<string, string> = {};
+    for (const line of output.split('\n')) {
+      const [name, value] = line.split('|');
+      if (name && value) vars[name] = value;
+    }
+    return vars;
+  } catch {
+    console.log('  (DB secret values not available — table may not exist yet)');
+    return {};
+  }
+}
+
+// --- Query DB for function secret/config requirements (with required flag) ---
 
 interface FnRequirement {
   fnName: string;
-  secrets: string[];
-  configs: string[];
+  secrets: Array<{ name: string; required: boolean }>;
+  configs: Array<{ name: string; required: boolean }>;
 }
 
 function loadFunctionRequirements(dbName: string): FnRequirement[] {
@@ -78,10 +108,10 @@ function loadFunctionRequirements(dbName: string): FnRequirement[] {
       SELECT
         name,
         COALESCE(array_to_string(
-          ARRAY(SELECT (r).name FROM unnest(required_secrets) AS r), ','
+          ARRAY(SELECT (r).name || ':' || CASE WHEN (r).required THEN 't' ELSE 'f' END FROM unnest(required_secrets) AS r), ','
         ), '') AS secrets,
         COALESCE(array_to_string(
-          ARRAY(SELECT (r).name FROM unnest(required_configs) AS r), ','
+          ARRAY(SELECT (r).name || ':' || CASE WHEN (r).required THEN 't' ELSE 'f' END FROM unnest(required_configs) AS r), ','
         ), '') AS configs
       FROM constructive_infra_public.platform_function_definitions
       WHERE is_invocable = true
@@ -94,11 +124,18 @@ function loadFunctionRequirements(dbName: string): FnRequirement[] {
 
     if (!output) return [];
     return output.split('\n').map((line: string) => {
-      const [fnName, secrets, configs] = line.split('|');
+      const [fnName, secretsRaw, configsRaw] = line.split('|');
+      const parseReqs = (raw: string): Array<{ name: string; required: boolean }> => {
+        if (!raw) return [];
+        return raw.split(',').map((item) => {
+          const [name, flag] = item.split(':');
+          return { name, required: flag === 't' };
+        });
+      };
       return {
         fnName,
-        secrets: secrets ? secrets.split(',') : [],
-        configs: configs ? configs.split(',') : [],
+        secrets: parseReqs(secretsRaw),
+        configs: parseReqs(configsRaw),
       };
     });
   } catch {
@@ -108,9 +145,11 @@ function loadFunctionRequirements(dbName: string): FnRequirement[] {
 
 const dotEnv = loadDotEnv();
 const dbName = process.env.PGDATABASE || 'constructive-functions-db1';
+const dbSecrets = loadDbSecretValues(dbName);
 const fnReqs = loadFunctionRequirements(dbName);
 
-// Merge: process.env (lowest) → .env file → hardcoded defaults (for known dev values)
+// --- Merge with priority: .env > DB > hardcoded defaults ---
+
 const DEFAULTS: Record<string, string> = {
   MAILGUN_API_KEY: 'test-key',
   MAILGUN_KEY: 'test-key',
@@ -120,30 +159,84 @@ const DEFAULTS: Record<string, string> = {
   LOCAL_APP_PORT: '3000',
 };
 
-// --- Shared env vars for all processes ---
-
-const sharedEnv: Record<string, string> = {
-  ...process.env as Record<string, string>,
+const mergedSecrets: Record<string, string> = {
   ...DEFAULTS,
+  ...dbSecrets,
   ...dotEnv,
+};
+
+// System env vars (always injected into every process)
+const systemEnv: Record<string, string> = {
   NODE_ENV: 'development',
   LOG_LEVEL: 'info',
-  PGHOST: dotEnv.PGHOST || process.env.PGHOST || 'localhost',
-  PGPORT: dotEnv.PGPORT || process.env.PGPORT || '5432',
-  PGUSER: dotEnv.PGUSER || process.env.PGUSER || 'postgres',
-  PGPASSWORD: dotEnv.PGPASSWORD || process.env.PGPASSWORD || 'password',
-  PGDATABASE: dotEnv.PGDATABASE || process.env.PGDATABASE || dbName,
-  GRAPHQL_URL: dotEnv.GRAPHQL_URL || process.env.GRAPHQL_URL || 'http://localhost:3002/graphql',
-  META_GRAPHQL_URL: dotEnv.META_GRAPHQL_URL || process.env.META_GRAPHQL_URL || 'http://localhost:3002/graphql',
+  PGHOST: mergedSecrets.PGHOST || process.env.PGHOST || 'localhost',
+  PGPORT: mergedSecrets.PGPORT || process.env.PGPORT || '5432',
+  PGUSER: mergedSecrets.PGUSER || process.env.PGUSER || 'postgres',
+  PGPASSWORD: mergedSecrets.PGPASSWORD || process.env.PGPASSWORD || 'password',
+  PGDATABASE: mergedSecrets.PGDATABASE || process.env.PGDATABASE || dbName,
+  GRAPHQL_URL: mergedSecrets.GRAPHQL_URL || process.env.GRAPHQL_URL || 'http://localhost:3002/graphql',
+  META_GRAPHQL_URL: mergedSecrets.META_GRAPHQL_URL || process.env.META_GRAPHQL_URL || 'http://localhost:3002/graphql',
   GRAPHQL_API_NAME: 'private',
   DEFAULT_DATABASE_ID: 'dbe',
-  SMTP_HOST: dotEnv.SMTP_HOST || process.env.SMTP_HOST || 'localhost',
-  SMTP_PORT: dotEnv.SMTP_PORT || process.env.SMTP_PORT || '1025',
-  SMTP_FROM: dotEnv.SMTP_FROM || process.env.SMTP_FROM || 'test@localhost',
-  SEND_VERIFICATION_LINK_DRY_RUN: dotEnv.SEND_VERIFICATION_LINK_DRY_RUN || process.env.SEND_VERIFICATION_LINK_DRY_RUN || 'true',
-  SEND_EMAIL_DRY_RUN: dotEnv.SEND_EMAIL_DRY_RUN || process.env.SEND_EMAIL_DRY_RUN || 'true',
-  EMAIL_SEND_USE_SMTP: dotEnv.EMAIL_SEND_USE_SMTP || process.env.EMAIL_SEND_USE_SMTP || '',
+  SMTP_HOST: mergedSecrets.SMTP_HOST || process.env.SMTP_HOST || 'localhost',
+  SMTP_PORT: mergedSecrets.SMTP_PORT || process.env.SMTP_PORT || '1025',
+  SMTP_FROM: mergedSecrets.SMTP_FROM || process.env.SMTP_FROM || 'test@localhost',
+  SEND_VERIFICATION_LINK_DRY_RUN: mergedSecrets.SEND_VERIFICATION_LINK_DRY_RUN || process.env.SEND_VERIFICATION_LINK_DRY_RUN || 'true',
+  SEND_EMAIL_DRY_RUN: mergedSecrets.SEND_EMAIL_DRY_RUN || process.env.SEND_EMAIL_DRY_RUN || 'true',
+  EMAIL_SEND_USE_SMTP: mergedSecrets.EMAIL_SEND_USE_SMTP || process.env.EMAIL_SEND_USE_SMTP || '',
+  PATH: process.env.PATH || '',
+  HOME: process.env.HOME || '',
 };
+
+// --- Build per-function env: system + only the needed secrets/configs ---
+
+function buildFunctionEnv(fnName: string): Record<string, string> {
+  const req = fnReqs.find((r) => r.fnName === fnName);
+  const env: Record<string, string> = { ...systemEnv };
+
+  if (!req) return { ...env, ...mergedSecrets };
+
+  const allReqs = [...req.secrets, ...req.configs];
+  for (const { name } of allReqs) {
+    const val = mergedSecrets[name] || process.env[name] || '';
+    if (val) env[name] = val;
+  }
+
+  return env;
+}
+
+// --- Validate per-function requirements (fail fast on required, warn optional) ---
+
+function validateRequirements(): boolean {
+  let hasFatal = false;
+
+  for (const req of fnReqs) {
+    const allReqs = [...req.secrets, ...req.configs];
+    const missingRequired: string[] = [];
+    const missingOptional: string[] = [];
+
+    for (const { name, required } of allReqs) {
+      const val = mergedSecrets[name] || process.env[name] || '';
+      if (!val) {
+        if (required) {
+          missingRequired.push(name);
+        } else {
+          missingOptional.push(name);
+        }
+      }
+    }
+
+    if (missingRequired.length > 0) {
+      console.error(`  FATAL: ${req.fnName} missing REQUIRED secrets: ${missingRequired.join(', ')}`);
+      hasFatal = true;
+    }
+    if (missingOptional.length > 0) {
+      console.log(`  WARN:  ${req.fnName} missing optional secrets: ${missingOptional.join(', ')}`);
+    }
+  }
+
+  return hasFatal;
+}
 
 // --- Process definitions (built from manifest) ---
 
@@ -206,12 +299,14 @@ const onlyName: string | undefined = onlyArg?.split('=')[1];
 const children: ReturnType<typeof spawn>[] = [];
 
 function startProcess(def: ProcessDef): void {
-  const env = { ...sharedEnv, ...(def.extraEnv || {}), PORT: String(def.port) };
+  const fnEnv = def.name === 'compute-service'
+    ? { ...systemEnv, ...mergedSecrets, ...(def.extraEnv || {}), PORT: String(def.port) }
+    : { ...buildFunctionEnv(def.name), ...(def.extraEnv || {}), PORT: String(def.port) };
 
   console.log(`Starting ${def.name} on port ${def.port}...`);
 
   const child = spawn('node', [def.script], {
-    env,
+    env: fnEnv,
     stdio: ['ignore', 'pipe', 'pipe'],
     cwd: ROOT,
   });
@@ -265,40 +360,55 @@ for (const p of processes) {
   console.log(`    ${label.padEnd(40)} http://localhost:${p.port}`);
 }
 console.log('');
-console.log(`  Database: ${sharedEnv.PGDATABASE}`);
-if (sharedEnv.EMAIL_SEND_USE_SMTP === 'true') {
+console.log(`  Database: ${systemEnv.PGDATABASE}`);
+if (systemEnv.EMAIL_SEND_USE_SMTP === 'true') {
   console.log(`  Mailpit UI:                                http://localhost:8025`);
 }
 
-// Report secret/config coverage
+// Report secret/config coverage with required/optional distinction
 if (fnReqs.length > 0) {
   console.log('');
-  console.log('  Secrets/Configs:');
-  let totalMissing = 0;
+  console.log('  Secrets/Configs (priority: .env > DB > defaults):');
   for (const req of fnReqs) {
-    const allKeys = [...req.secrets, ...req.configs];
-    const missing = allKeys.filter((k) => !sharedEnv[k]);
-    const set = allKeys.length - missing.length;
+    const allReqs = [...req.secrets, ...req.configs];
+    const missing = allReqs.filter((r) => {
+      const val = mergedSecrets[r.name] || process.env[r.name] || '';
+      return !val;
+    });
+    const set = allReqs.length - missing.length;
     if (missing.length > 0) {
-      console.log(`    ● ${req.fnName}: ${set}/${allKeys.length} set (${missing.length} missing)`);
-      totalMissing += missing.length;
+      const requiredMissing = missing.filter((m) => m.required);
+      const optionalMissing = missing.filter((m) => !m.required);
+      let detail = `${set}/${allReqs.length} set`;
+      if (requiredMissing.length > 0) detail += `, ${requiredMissing.length} REQUIRED missing`;
+      if (optionalMissing.length > 0) detail += `, ${optionalMissing.length} optional missing`;
+      console.log(`    ${requiredMissing.length > 0 ? '✗' : '●'} ${req.fnName}: ${detail}`);
     } else {
       console.log(`    ✓ ${req.fnName}: all ${set} secrets/configs set`);
     }
   }
-  if (totalMissing > 0) {
-    console.log(`  ⚠ ${totalMissing} missing — create .env or run 'make check-env' for details`);
-  }
 }
 
-if (Object.keys(dotEnv).length > 0) {
-  console.log(`  .env: loaded ${Object.keys(dotEnv).length} variable(s)`);
-} else {
-  console.log('  .env: not found (using defaults)');
-}
+const envSources: string[] = [];
+if (Object.keys(dotEnv).length > 0) envSources.push(`.env (${Object.keys(dotEnv).length} vars)`);
+if (Object.keys(dbSecrets).length > 0) envSources.push(`DB (${Object.keys(dbSecrets).length} vars)`);
+envSources.push(`defaults (${Object.keys(DEFAULTS).length} vars)`);
+console.log(`  Sources: ${envSources.join(' > ')}`);
 
 console.log('════════════════════════════════════════════════════════════');
 console.log('');
+
+// Validate requirements — fail fast on missing required secrets
+const hasFatal = validateRequirements();
+if (hasFatal) {
+  console.error('');
+  console.error('Cannot start: required secrets are missing.');
+  console.error('Configure them via:');
+  console.error('  1. Add to .env file');
+  console.error('  2. Set in Platform UI → Secrets tab → Sync to DB');
+  console.error("  3. Run 'make check-env' for a full report");
+  process.exit(1);
+}
 
 for (const def of processes) {
   startProcess(def);

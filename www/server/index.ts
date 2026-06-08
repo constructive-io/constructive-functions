@@ -74,7 +74,7 @@ app.get('/api/secrets', async (_req, res) => {
   }
 });
 
-// ─── REST API — .env file (read / write) ─────────────────────────────────────
+// ─── .env helpers (must be declared before Secret Values endpoints) ────────
 
 const PROJECT_ROOT = process.env.PROJECT_ROOT || resolve(process.cwd(), '..');
 const ENV_PATH = resolve(PROJECT_ROOT, '.env');
@@ -145,6 +145,108 @@ function writeDotEnv(filePath: string, vars: Record<string, string>): void {
   writeFileSync(filePath, lines.join('\n'), 'utf-8');
 }
 
+// ─── REST API — Secret Values (DB storage) ─────────────────────────────────
+
+async function getDefaultDatabaseId(): Promise<string> {
+  const result = await pool.query(
+    `SELECT database_id FROM constructive_infra_public.platform_secret_definitions LIMIT 1`
+  );
+  if (result.rows.length > 0) return result.rows[0].database_id ?? 'default';
+  return 'default';
+}
+
+app.get('/api/secret-values', async (_req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT secret_name, configured_value, database_id,
+             created_at, updated_at
+      FROM constructive_infra_public.platform_secret_values
+      ORDER BY secret_name
+    `);
+    const vars: Record<string, string> = {};
+    for (const row of result.rows) {
+      if (row.configured_value != null) {
+        vars[row.secret_name] = row.configured_value;
+      }
+    }
+    res.json({ vars, rows: result.rows });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/secret-values', async (req, res) => {
+  try {
+    const { vars } = req.body as { vars: Record<string, string> };
+    if (!vars || typeof vars !== 'object') {
+      res.status(400).json({ error: 'Body must contain { vars: { KEY: "value", ... } }' });
+      return;
+    }
+    const dbId = await getDefaultDatabaseId();
+    let upserted = 0;
+    for (const [name, value] of Object.entries(vars)) {
+      if (value === '') continue;
+      await pool.query(
+        `INSERT INTO constructive_infra_public.platform_secret_values
+           (secret_name, configured_value, database_id)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (secret_name, database_id)
+         DO UPDATE SET configured_value = EXCLUDED.configured_value`,
+        [name, value, dbId]
+      );
+      upserted++;
+    }
+    res.json({ ok: true, upserted });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/secrets/sync-from-db', async (_req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT secret_name, configured_value
+      FROM constructive_infra_public.platform_secret_values
+      WHERE configured_value IS NOT NULL AND configured_value != ''
+    `);
+    const dbVars: Record<string, string> = {};
+    for (const row of result.rows) {
+      dbVars[row.secret_name] = row.configured_value;
+    }
+    const existing = parseDotEnv(ENV_PATH);
+    const merged = { ...existing, ...dbVars };
+    writeDotEnv(ENV_PATH, merged);
+    res.json({ ok: true, synced: Object.keys(dbVars).length, total: Object.keys(merged).length });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/secrets/sync-to-db', async (_req, res) => {
+  try {
+    const envVars = parseDotEnv(ENV_PATH);
+    const dbId = await getDefaultDatabaseId();
+    let upserted = 0;
+    for (const [name, value] of Object.entries(envVars)) {
+      if (value === '') continue;
+      await pool.query(
+        `INSERT INTO constructive_infra_public.platform_secret_values
+           (secret_name, configured_value, database_id)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (secret_name, database_id)
+         DO UPDATE SET configured_value = EXCLUDED.configured_value`,
+        [name, value, dbId]
+      );
+      upserted++;
+    }
+    res.json({ ok: true, synced: upserted });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── REST API — .env file (read / write) ─────────────────────────────────────
+
 app.get('/api/env', (_req, res) => {
   try {
     const vars = parseDotEnv(ENV_PATH);
@@ -154,7 +256,7 @@ app.get('/api/env', (_req, res) => {
   }
 });
 
-app.post('/api/env', (req, res) => {
+app.post('/api/env', async (req, res) => {
   try {
     const { vars } = req.body as { vars: Record<string, string> };
     if (!vars || typeof vars !== 'object') {
@@ -169,6 +271,25 @@ app.post('/api/env', (req, res) => {
       if (v === '' && !(k in existing)) delete merged[k];
     }
     writeDotEnv(ENV_PATH, merged);
+
+    // Also sync non-empty values to DB
+    try {
+      const dbId = await getDefaultDatabaseId();
+      for (const [name, value] of Object.entries(merged)) {
+        if (value === '') continue;
+        await pool.query(
+          `INSERT INTO constructive_infra_public.platform_secret_values
+             (secret_name, configured_value, database_id)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (secret_name, database_id)
+           DO UPDATE SET configured_value = EXCLUDED.configured_value`,
+          [name, value, dbId]
+        );
+      }
+    } catch {
+      // DB sync is best-effort; .env write already succeeded
+    }
+
     res.json({ ok: true, path: ENV_PATH, count: Object.keys(merged).length });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -384,7 +505,7 @@ wss.on('connection', (ws: WebSocket) => {
 server.listen(PORT, () => {
   console.log(`\n  Platform UI server: http://localhost:${PORT}`);
   console.log(`  Terminal WebSocket: ws://localhost:${PORT}/ws/terminal`);
-  console.log(`  API endpoints:     http://localhost:${PORT}/api/{status,functions,jobs,invocations,secrets,namespaces}`);
+  console.log(`  API endpoints:     http://localhost:${PORT}/api/{status,functions,jobs,invocations,secrets,secret-values,namespaces}`);
   console.log(`  K8s proxy:         http://localhost:${PORT}/api/k8s/* → ${K8S_API}`);
   console.log(`  Database:          ${process.env.PGDATABASE || 'constructive-functions-db1'}\n`);
 });
