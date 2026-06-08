@@ -1,0 +1,1 @@
+-- Verify: schemas/constructive_infra_public/tables/platform_secret_values/columns/secret_name/alterations/alt0000000147

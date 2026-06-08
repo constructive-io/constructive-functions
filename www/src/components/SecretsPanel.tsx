@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { api, type PlatformSecret, type PlatformFunction, type PlatformNamespace } from '../lib/api';
-import { RefreshCw, Key, Globe, Save, Eye, EyeOff, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
+import { RefreshCw, Key, Globe, Save, Eye, EyeOff, CheckCircle, AlertTriangle, FileText, Database, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 
 type SecretEdits = Record<string, string>;
 
@@ -15,6 +15,7 @@ export function SecretsPanel() {
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState<'from-db' | 'to-db' | null>(null);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const refresh = useCallback(() => {
@@ -111,6 +112,33 @@ export function SecretsPanel() {
     }
   };
 
+  const handleSyncFromDb = async () => {
+    setSyncing('from-db');
+    setSaveMsg(null);
+    try {
+      const result = await api.syncFromDb();
+      setSaveMsg({ ok: true, text: `Synced ${result.synced} DB values → .env (${result.total} total)` });
+      refresh();
+    } catch (err: any) {
+      setSaveMsg({ ok: false, text: err.message });
+    } finally {
+      setSyncing(null);
+    }
+  };
+
+  const handleSyncToDb = async () => {
+    setSyncing('to-db');
+    setSaveMsg(null);
+    try {
+      const result = await api.syncToDb();
+      setSaveMsg({ ok: true, text: `Synced ${result.synced} .env values → DB` });
+    } catch (err: any) {
+      setSaveMsg({ ok: false, text: err.message });
+    } finally {
+      setSyncing(null);
+    }
+  };
+
   const toggleReveal = (key: string) => {
     setRevealed((prev) => {
       const next = new Set(prev);
@@ -144,6 +172,24 @@ export function SecretsPanel() {
             </span>
           )}
           <button
+            onClick={handleSyncFromDb}
+            disabled={syncing !== null}
+            className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors bg-zinc-800 hover:bg-zinc-700 text-zinc-300 disabled:text-zinc-500 disabled:cursor-not-allowed"
+            title="Read configured values from DB and write them to .env"
+          >
+            <ArrowDownToLine size={12} />
+            {syncing === 'from-db' ? 'Syncing…' : 'Sync from DB'}
+          </button>
+          <button
+            onClick={handleSyncToDb}
+            disabled={syncing !== null}
+            className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors bg-zinc-800 hover:bg-zinc-700 text-zinc-300 disabled:text-zinc-500 disabled:cursor-not-allowed"
+            title="Read .env values and write them to DB"
+          >
+            <ArrowUpFromLine size={12} />
+            {syncing === 'to-db' ? 'Syncing…' : 'Sync to DB'}
+          </button>
+          <button
             onClick={handleSave}
             disabled={!isDirty || saving}
             className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors ${
@@ -166,14 +212,21 @@ export function SecretsPanel() {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {/* .env file status */}
-        <div className="flex items-center gap-2 text-xs text-zinc-500">
-          <FileText size={12} />
-          <span className="font-mono">{envPath || '.env'}</span>
-          {envExists ? (
-            <span className="px-1.5 py-0.5 rounded bg-emerald-900/50 text-emerald-400">exists</span>
-          ) : (
-            <span className="px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-400">will be created on save</span>
-          )}
+        <div className="flex items-center gap-4 text-xs text-zinc-500">
+          <div className="flex items-center gap-2">
+            <FileText size={12} />
+            <span className="font-mono">{envPath || '.env'}</span>
+            {envExists ? (
+              <span className="px-1.5 py-0.5 rounded bg-emerald-900/50 text-emerald-400">exists</span>
+            ) : (
+              <span className="px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-400">will be created on save</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Database size={12} />
+            <span>platform_secret_values</span>
+            <span className="px-1.5 py-0.5 rounded bg-blue-900/50 text-blue-400">bidirectional sync</span>
+          </div>
         </div>
 
         {/* Function coverage summary */}

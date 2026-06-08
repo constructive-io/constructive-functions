@@ -3,6 +3,7 @@
        up\:email-job down\:email-job \
        up\:www \
        dev dev-fn dev-compute dev-down dev-logs setup-dev setup-check \
+       secrets\:sync \
        skaffold-dev skaffold-dev-knative docker-build
 
 install:
@@ -103,6 +104,9 @@ setup-dev:
 
 setup-check:
 	./scripts/setup-dev.sh --check
+
+secrets\:sync:
+	./scripts/secrets-sync.sh $(ENV_FILE) $(DB_NAME)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Tier 3 — k8s-local
