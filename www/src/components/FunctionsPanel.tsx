@@ -1,24 +1,33 @@
 import { useState } from 'react';
 import { RefreshCw, Zap, Lock, Settings, Play, X, CheckCircle, AlertCircle, Loader, ExternalLink } from 'lucide-react';
-import { useAllPlatformFunctions, useCreateJob } from '../generated/hooks';
+import { usePlatformFunctionDefinitionsQuery, useAddJobMutation } from '../generated/hooks';
 import type { PlatformFunctionDefinition } from '../generated/types';
 
-function parseRequirements(raw: string): Array<{ name: string; required: boolean }> {
-  if (!raw || raw === '{}') return [];
-  const inner = raw.slice(1, -1);
-  const items: Array<{ name: string; required: boolean }> = [];
-  for (const match of inner.matchAll(/"?\(([^,]+),(t|f)\)"?/g)) {
-    items.push({ name: match[1], required: match[2] === 't' });
-  }
-  return items;
+interface Requirement { name: string; required: boolean }
+
+function toRequirements(raw: unknown): Requirement[] {
+  if (!Array.isArray(raw)) return [];
+  return raw as Requirement[];
 }
 
 type Tab = 'functions' | 'flows' | 'secrets' | 'jobs' | 'invocations' | 'k8s' | 'commands' | 'terminal';
 
 export function FunctionsPanel({ onNavigate }: { onNavigate?: (tab: Tab) => void }) {
-  const { data: functions = [], isLoading, refetch } = useAllPlatformFunctions({
+  const { data, isLoading, refetch } = usePlatformFunctionDefinitionsQuery({
+    selection: {
+      fields: {
+        id: true,
+        name: true,
+        taskIdentifier: true,
+        isInvocable: true,
+        scope: true,
+        description: true,
+      },
+    },
     refetchInterval: false,
   });
+
+  const functions = data?.platformFunctionDefinitions?.nodes ?? [];
 
   return (
     <div className="flex flex-col h-full">
@@ -33,7 +42,7 @@ export function FunctionsPanel({ onNavigate }: { onNavigate?: (tab: Tab) => void
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {functions.map((fn) => (
-          <FunctionCard key={fn.name} fn={fn} onNavigate={onNavigate} />
+          <FunctionCard key={fn.name} fn={fn as PlatformFunctionDefinition} onNavigate={onNavigate} />
         ))}
         {!isLoading && functions.length === 0 && (
           <p className="text-zinc-500 text-sm">No functions found. Run <code className="text-amber-400">make up</code> to deploy.</p>
@@ -64,16 +73,22 @@ interface TriggerResult {
 }
 
 function FunctionCard({ fn, onNavigate }: { fn: PlatformFunctionDefinition; onNavigate?: (tab: Tab) => void }) {
-  const secrets = parseRequirements(fn.requiredSecrets);
-  const configs = parseRequirements(fn.requiredConfigs);
+  const secrets = toRequirements((fn as any).requiredSecrets);
+  const configs = toRequirements((fn as any).requiredConfigs);
   const [showTrigger, setShowTrigger] = useState(false);
   const [payload, setPayload] = useState('');
   const [result, setResult] = useState<TriggerResult>({ status: 'idle' });
 
-  const createJob = useCreateJob();
+  const addJob = useAddJobMutation({
+    selection: {
+      fields: {
+        result: { select: { id: true } },
+      },
+    },
+  });
 
   const openTrigger = () => {
-    const defaultPayload = DEFAULT_PAYLOADS[fn.taskIdentifier] || { key: 'value' };
+    const defaultPayload = DEFAULT_PAYLOADS[fn.taskIdentifier ?? ''] || { key: 'value' };
     setPayload(JSON.stringify(defaultPayload, null, 2));
     setResult({ status: 'idle' });
     setShowTrigger(true);
@@ -88,11 +103,17 @@ function FunctionCard({ fn, onNavigate }: { fn: PlatformFunctionDefinition; onNa
     setResult({ status: 'sending' });
     try {
       const parsed = JSON.parse(payload);
-      const job = await createJob.mutateAsync({ taskIdentifier: fn.taskIdentifier, payload: parsed });
+      const resp = await addJob.mutateAsync({
+        input: {
+          identifier: fn.taskIdentifier ?? '',
+          payload: parsed,
+        },
+      });
+      const jobId = resp?.addJob?.result?.id ?? '';
       setResult({
         status: 'success',
-        message: `Job #${job.id.slice(0, 8)} created`,
-        jobId: job.id,
+        message: `Job #${jobId.slice(0, 8)} created`,
+        jobId,
       });
     } catch (err: any) {
       setResult({

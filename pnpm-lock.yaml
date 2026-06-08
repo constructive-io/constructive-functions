@@ -487,6 +487,9 @@ importers:
 
   www:
     dependencies:
+      '@constructive-io/graphql-query':
+        specifier: ^3.27.5
+        version: 3.27.5(@dataplan/json@1.0.0(grafast@1.0.2(graphql@16.13.0)))(@dataplan/pg@1.0.3(@dataplan/json@1.0.0(grafast@1.0.2(graphql@16.13.0)))(grafast@1.0.2(graphql@16.13.0))(graphile-config@1.0.1)(graphql@16.13.0)(pg-sql2@5.0.1)(pg@8.21.0))(@types/node@22.19.3)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(grafserv@1.0.0(@types/node@22.19.3)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(grafast@1.0.2(graphql@16.13.0))(graphile-config@1.0.1)(graphql@16.13.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))(ws@8.21.0))(graphile-build@5.0.2(grafast@1.0.2(graphql@16.13.0))(graphile-config@1.0.1)(graphql@16.13.0))(pg-sql2@5.0.1)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tamedevil@0.1.1)(use-sync-external-store@1.6.0(react@19.2.7))(ws@8.21.0)
       '@tanstack/react-query':
         specifier: ^5.90.0
         version: 5.101.0(react@19.2.7)
@@ -9470,7 +9473,7 @@ snapshots:
       '@one-ini/wasm': 0.1.1
       commander: 10.0.1
       minimatch: 9.0.1
-      semver: 7.7.3
+      semver: 7.8.2
 
   ee-first@1.1.1: {}
 
@@ -10130,7 +10133,7 @@ snapshots:
       chalk: 4.1.2
       debug: 4.4.3(supports-color@5.5.0)
       interpret: 3.1.1
-      semver: 7.7.3
+      semver: 7.8.2
       tslib: 2.8.1
       yargs: 17.7.2
     transitivePeerDependencies:
@@ -10586,7 +10589,7 @@ snapshots:
       '@babel/parser': 7.28.5
       '@istanbuljs/schema': 0.1.3
       istanbul-lib-coverage: 3.2.2
-      semver: 7.7.3
+      semver: 7.8.2
     transitivePeerDependencies:
       - supports-color
 
@@ -11120,7 +11123,7 @@ snapshots:
       jest-util: 29.7.0
       natural-compare: 1.4.0
       pretty-format: 29.7.0
-      semver: 7.7.3
+      semver: 7.8.2
     transitivePeerDependencies:
       - supports-color
 
@@ -11298,7 +11301,7 @@ snapshots:
       lodash.isstring: 4.0.1
       lodash.once: 4.1.1
       ms: 2.1.3
-      semver: 7.7.3
+      semver: 7.8.2
 
   juice@7.0.0:
     dependencies:
@@ -11468,7 +11471,7 @@ snapshots:
 
   make-dir@4.0.0:
     dependencies:
-      semver: 7.7.3
+      semver: 7.8.2
 
   make-error@1.3.6: {}
 

@@ -1,12 +1,27 @@
 import { useState } from 'react';
 import { RefreshCw, Plus, Send, Clock, AlertCircle } from 'lucide-react';
-import { useAllJobs, useCreateJob } from '../generated/hooks';
+import { useJobsQuery, useAddJobMutation } from '../generated/hooks';
 import type { Job } from '../generated/types';
 
 export function JobsPanel() {
-  const { data: jobs = [], isLoading, refetch } = useAllJobs({
+  const { data, isLoading, refetch } = useJobsQuery({
+    selection: {
+      fields: {
+        id: true,
+        taskIdentifier: true,
+        attempts: true,
+        maxAttempts: true,
+        lastError: true,
+        lockedBy: true,
+        createdAt: true,
+        payload: true,
+      },
+      orderBy: ['CREATED_AT_DESC'],
+      first: 50,
+    },
     refetchInterval: 3000,
   });
+  const jobs = (data?.jobs?.nodes ?? []) as Job[];
   const [showForm, setShowForm] = useState(false);
 
   return (
@@ -47,12 +62,17 @@ function NewJobForm({ onCreated }: { onCreated: () => void }) {
   const [subject, setSubject] = useState('Hello from Platform UI');
   const [html, setHtml] = useState('<p>Test email from the constructive platform UI</p>');
 
-  const createJob = useCreateJob({
+  const addJob = useAddJobMutation({
+    selection: {
+      fields: {
+        result: { select: { id: true } },
+      },
+    },
     onSuccess: () => onCreated(),
   });
 
   const submit = () => {
-    createJob.mutate({ taskIdentifier: taskId, payload: { to, subject, html } });
+    addJob.mutate({ input: { identifier: taskId, payload: { to, subject, html } } });
   };
 
   return (
@@ -97,11 +117,11 @@ function NewJobForm({ onCreated }: { onCreated: () => void }) {
       </div>
       <button
         onClick={submit}
-        disabled={createJob.isPending}
+        disabled={addJob.isPending}
         className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded text-sm text-white transition-colors"
       >
         <Send size={12} />
-        {createJob.isPending ? 'Sending...' : 'Create Job'}
+        {addJob.isPending ? 'Sending...' : 'Create Job'}
       </button>
     </div>
   );
@@ -110,7 +130,7 @@ function NewJobForm({ onCreated }: { onCreated: () => void }) {
 function JobRow({ job }: { job: Job }) {
   const isLocked = !!job.lockedBy;
   const hasError = !!job.lastError;
-  const age = timeSince(new Date(job.createdAt));
+  const age = timeSince(new Date(job.createdAt ?? ''));
 
   return (
     <div className="flex items-center gap-3 rounded border border-zinc-800 bg-zinc-900/30 px-3 py-2 text-sm">

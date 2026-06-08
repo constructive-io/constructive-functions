@@ -16,7 +16,7 @@ import {
   type NodeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useAllPlatformFunctions } from '../generated/hooks';
+import { usePlatformFunctionDefinitionsQuery } from '../generated/hooks';
 import type { PlatformFunctionDefinition } from '../generated/types';
 import { RefreshCw, Save, Trash2, Zap, Lock, Settings } from 'lucide-react';
 
@@ -93,14 +93,11 @@ const nodeTypes: NodeTypes = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function parseRequirements(raw: string): Array<{ name: string; required: boolean }> {
-  if (!raw || raw === '{}') return [];
-  const inner = raw.slice(1, -1);
-  const items: Array<{ name: string; required: boolean }> = [];
-  for (const match of inner.matchAll(/"?\(([^,]+),(t|f)\)"?/g)) {
-    items.push({ name: match[1], required: match[2] === 't' });
-  }
-  return items;
+interface Requirement { name: string; required: boolean }
+
+function toRequirements(raw: unknown): Requirement[] {
+  if (!Array.isArray(raw)) return [];
+  return raw as Requirement[];
 }
 
 function functionToNode(fn: PlatformFunctionDefinition, position: { x: number; y: number }): RFNode<FunctionNodeData> {
@@ -109,13 +106,13 @@ function functionToNode(fn: PlatformFunctionDefinition, position: { x: number; y
     type: 'functionNode',
     position,
     data: {
-      label: fn.name,
+      label: fn.name ?? '',
       description: fn.description || '',
-      taskIdentifier: fn.taskIdentifier,
+      taskIdentifier: fn.taskIdentifier ?? '',
       scope: fn.scope || 'default',
-      isInvocable: fn.isInvocable,
-      secretsCount: parseRequirements(fn.requiredSecrets).length,
-      configsCount: parseRequirements(fn.requiredConfigs).length,
+      isInvocable: fn.isInvocable ?? false,
+      secretsCount: toRequirements((fn as any).requiredSecrets).length,
+      configsCount: toRequirements((fn as any).requiredConfigs).length,
     },
   };
 }
@@ -136,7 +133,20 @@ function saveFlows(flows: FlowData[]) {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function FlowsPanel() {
-  const { data: functions = [], isLoading: loading } = useAllPlatformFunctions({ refetchInterval: false });
+  const { data, isLoading: loading } = usePlatformFunctionDefinitionsQuery({
+    selection: {
+      fields: {
+        id: true,
+        name: true,
+        taskIdentifier: true,
+        isInvocable: true,
+        scope: true,
+        description: true,
+      },
+    },
+    refetchInterval: false,
+  });
+  const functions = (data?.platformFunctionDefinitions?.nodes ?? []) as PlatformFunctionDefinition[];
   const [flows, setFlowsList] = useState<FlowData[]>(loadFlows);
   const [activeFlowIdx, setActiveFlowIdx] = useState<number | null>(
     loadFlows().length > 0 ? 0 : null
@@ -285,14 +295,14 @@ export function FlowsPanel() {
               key={fn.name}
               draggable
               onDragStart={(e) => {
-                e.dataTransfer.setData('application/constructive-function', fn.name);
+                e.dataTransfer.setData('application/constructive-function', fn.name ?? '');
                 e.dataTransfer.effectAllowed = 'move';
               }}
               className="rounded border border-zinc-800 bg-zinc-900/50 px-2 py-1.5 cursor-grab hover:border-zinc-700 transition-colors"
             >
               <div className="flex items-center gap-1.5">
                 <Zap size={10} className={fn.isInvocable ? 'text-emerald-400' : 'text-zinc-600'} />
-                <span className="font-mono text-[11px] text-zinc-300">{fn.name}</span>
+                <span className="font-mono text-[11px] text-zinc-300">{fn.name ?? ''}</span>
               </div>
               {fn.description && (
                 <p className="text-[9px] text-zinc-600 mt-0.5 leading-tight">{fn.description}</p>

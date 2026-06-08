@@ -1,27 +1,50 @@
 import { useState, useCallback, useMemo } from 'react';
 import { api } from '../lib/api';
-import { useAllPlatformSecrets, useAllPlatformFunctions, useAllPlatformNamespaces } from '../generated/hooks';
+import {
+  usePlatformSecretDefinitionsQuery,
+  usePlatformFunctionDefinitionsQuery,
+  usePlatformNamespacesQuery,
+} from '../generated/hooks';
 import type { PlatformSecretDefinition } from '../generated/types';
 import { RefreshCw, Key, Globe, Save, Eye, EyeOff, CheckCircle, AlertTriangle, FileText, Database, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 type SecretEdits = Record<string, string>;
 
-function parseRequirements(raw: string): Array<{ name: string; required: boolean }> {
-  if (!raw || raw === '{}') return [];
-  const inner = raw.slice(1, -1);
-  const items: Array<{ name: string; required: boolean }> = [];
-  for (const match of inner.matchAll(/"?\(([^,]+),(t|f)\)"?/g)) {
-    items.push({ name: match[1], required: match[2] === 't' });
-  }
-  return items;
+interface Requirement { name: string; required: boolean }
+
+function toRequirements(raw: unknown): Requirement[] {
+  if (!Array.isArray(raw)) return [];
+  return raw as Requirement[];
 }
 
 export function SecretsPanel() {
   const queryClient = useQueryClient();
-  const { data: secrets = [], isLoading: secretsLoading } = useAllPlatformSecrets();
-  const { data: functions = [], isLoading: functionsLoading } = useAllPlatformFunctions();
-  const { data: namespaces = [], isLoading: namespacesLoading } = useAllPlatformNamespaces();
+
+  const { data: secretsData, isLoading: secretsLoading } = usePlatformSecretDefinitionsQuery({
+    selection: {
+      fields: { id: true, name: true, description: true, isBuiltIn: true },
+    },
+  });
+  const secrets = (secretsData?.platformSecretDefinitions?.nodes ?? []) as PlatformSecretDefinition[];
+
+  const { data: functionsData, isLoading: functionsLoading } = usePlatformFunctionDefinitionsQuery({
+    selection: {
+      fields: {
+        id: true, name: true, taskIdentifier: true, isInvocable: true,
+      },
+    },
+  });
+  const functions = functionsData?.platformFunctionDefinitions?.nodes ?? [];
+
+  const { data: namespacesData, isLoading: namespacesLoading } = usePlatformNamespacesQuery({
+    selection: {
+      fields: {
+        id: true, name: true, namespaceName: true, description: true, isActive: true,
+      },
+    },
+  });
+  const namespaces = namespacesData?.platformNamespaces?.nodes ?? [];
   const { data: envData, isLoading: envLoading } = useQuery({
     queryKey: ['env'],
     queryFn: () => api.getEnv(),
@@ -48,13 +71,13 @@ export function SecretsPanel() {
   const secretUsage = useMemo(() => {
     const map: Record<string, string[]> = {};
     for (const fn of functions) {
-      for (const s of parseRequirements(fn.requiredSecrets)) {
+      for (const s of toRequirements((fn as any).requiredSecrets)) {
         if (!map[s.name]) map[s.name] = [];
-        map[s.name].push(fn.name);
+        map[s.name].push(fn.name ?? '');
       }
-      for (const c of parseRequirements(fn.requiredConfigs)) {
+      for (const c of toRequirements((fn as any).requiredConfigs)) {
         if (!map[c.name]) map[c.name] = [];
-        map[c.name].push(fn.name);
+        map[c.name].push(fn.name ?? '');
       }
     }
     return map;
@@ -62,10 +85,10 @@ export function SecretsPanel() {
 
   const allKeys = useMemo(() => {
     const keys = new Set<string>();
-    for (const s of secrets) keys.add(s.name);
+    for (const s of secrets) if (s.name) keys.add(s.name);
     for (const fn of functions) {
-      for (const s of parseRequirements(fn.requiredSecrets)) keys.add(s.name);
-      for (const c of parseRequirements(fn.requiredConfigs)) keys.add(c.name);
+      for (const s of toRequirements((fn as any).requiredSecrets)) keys.add(s.name);
+      for (const c of toRequirements((fn as any).requiredConfigs)) keys.add(c.name);
     }
     for (const k of Object.keys(envVars)) keys.add(k);
     return Array.from(keys).sort();
@@ -73,7 +96,7 @@ export function SecretsPanel() {
 
   const secretDefs = useMemo(() => {
     const map: Record<string, PlatformSecretDefinition> = {};
-    for (const s of secrets) map[s.name] = s;
+    for (const s of secrets) if (s.name) map[s.name] = s;
     return map;
   }, [secrets]);
 
@@ -149,10 +172,10 @@ export function SecretsPanel() {
     return functions
       .filter((fn) => fn.isInvocable)
       .map((fn) => {
-        const allReqs = [...parseRequirements(fn.requiredSecrets), ...parseRequirements(fn.requiredConfigs)];
+        const allReqs = [...toRequirements((fn as any).requiredSecrets), ...toRequirements((fn as any).requiredConfigs)];
         const vals = { ...envVars, ...edits };
         const set = allReqs.filter((r) => vals[r.name] && vals[r.name] !== '').length;
-        return { name: fn.name, total: allReqs.length, set, missing: allReqs.length - set };
+        return { name: fn.name ?? '', total: allReqs.length, set, missing: allReqs.length - set };
       });
   }, [functions, envVars, edits]);
 
