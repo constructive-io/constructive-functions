@@ -2,4 +2,4 @@
 comment = 'constructive-objects module'
 default_version = '0.0.1'
 relocatable = false
-requires = 'plpgsql,pgpm-inflection,pgpm-stamps'
+requires = 'plpgsql,uuid-ossp,pgpm-inflection,pgpm-stamps'

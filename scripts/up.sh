@@ -123,31 +123,40 @@ MODULES=(
   constructive-storage
 )
 
+DEPLOY_LOG="$ROOT_DIR/.deploy-log"
+
 for mod in "${MODULES[@]}"; do
   if [ -d "$mod" ]; then
-    DEPLOY_OUT=$(pgpm deploy --yes --database "$DB_NAME" --package "$mod" 2>&1) || true
-    if echo "$DEPLOY_OUT" | grep -qE "(SUCCESS|already)"; then
+    DEPLOY_RC=0
+    pgpm deploy --yes --database "$DB_NAME" --package "$mod" > "$DEPLOY_LOG" 2>&1 || DEPLOY_RC=$?
+    if [ $DEPLOY_RC -eq 0 ] && grep -q "Deployment complete" "$DEPLOY_LOG"; then
       ok "$mod"
+    elif grep -q "already" "$DEPLOY_LOG" && [ $DEPLOY_RC -eq 0 ]; then
+      ok "$mod (already deployed)"
     else
       fail "$mod — deploy output:"
-      echo "$DEPLOY_OUT" | sed 's/^/    /'
+      sed 's/^/    /' "$DEPLOY_LOG"
     fi
   else
     warn "$mod (not found, skipping)"
   fi
 done
 
+rm -f "$DEPLOY_LOG"
+
 # ─── Step 5: Deploy constructive-infra-seed ──────────────────────────────────
 
 step 5 "Deploying constructive-infra-seed (function + secret definitions)"
 
-SEED_OUT=$(pgpm deploy --yes --database "$DB_NAME" --package constructive-infra-seed 2>&1) || true
-if echo "$SEED_OUT" | grep -qE "(SUCCESS|already)"; then
+SEED_RC=0
+pgpm deploy --yes --database "$DB_NAME" --package constructive-infra-seed > "$DEPLOY_LOG" 2>&1 || SEED_RC=$?
+if [ $SEED_RC -eq 0 ]; then
   ok "constructive-infra-seed deployed"
 else
   fail "constructive-infra-seed — deploy output:"
-  echo "$SEED_OUT" | sed 's/^/    /'
+  sed 's/^/    /' "$DEPLOY_LOG"
 fi
+rm -f "$DEPLOY_LOG"
 
 cd "$ROOT_DIR"
 
