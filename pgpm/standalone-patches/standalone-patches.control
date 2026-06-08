@@ -1,0 +1,7 @@
+# standalone-patches extension
+comment = 'Hand-written patches for standalone mode compatibility'
+default_version = '0.0.1'
+module_pathname = '$libdir/standalone-patches'
+requires = 'constructive-infra-seed'
+relocatable = false
+superuser = false

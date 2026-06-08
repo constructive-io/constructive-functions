@@ -1,0 +1,5 @@
+%syntax-version=1.0.0
+%project=standalone-patches
+%uri=standalone-patches
+
+platform_secrets_compat [constructive-infra-seed:schemas/constructive_infra_public/tables/platform_namespaces/fixtures/seed_default_namespace] 2026-06-08T00:00:00Z Constructive <developers@constructive.io> # standalone compat: DEFAULT database_id from JWT + unique index for ON CONFLICT

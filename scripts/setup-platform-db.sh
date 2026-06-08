@@ -40,6 +40,10 @@ pgpm deploy --yes --database "$DB_NAME" --package constructive-infra
 echo "→ Deploying constructive-infra-seed..."
 pgpm deploy --yes --database "$DB_NAME" --package constructive-infra-seed
 
+# --- Deploy standalone-patches (hand-written compat patches) ---
+echo "→ Deploying standalone-patches..."
+pgpm deploy --yes --database "$DB_NAME" --package standalone-patches
+
 # --- Verify ---
 echo ""
 echo "→ Verifying..."
