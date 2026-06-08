@@ -1,6 +1,6 @@
 -- Revert: schemas/constructive_infra_public/types/function_requirement/type
 
 
-DROP "constructive_infra_public".function_requirement;
+DROP TYPE "constructive_infra_public".function_requirement;
 
 
