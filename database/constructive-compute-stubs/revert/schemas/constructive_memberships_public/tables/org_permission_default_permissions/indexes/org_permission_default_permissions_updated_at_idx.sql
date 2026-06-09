@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_memberships_public/tables/org_permission_default_permissions/indexes/org_permission_default_permissions_updated_at_idx
+
+
+DROP INDEX "constructive_memberships_public".org_permission_default_permissions_updated_at_idx;
+
+

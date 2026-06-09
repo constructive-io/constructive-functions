@@ -1,0 +1,6 @@
+-- Verify: schemas/constructive_memberships_public/tables/app_permission_default_permissions/indexes/app_permission_default_permissions_updated_at_idx
+
+
+SELECT verify_index('constructive_memberships_public.app_permission_default_permissions', 'app_permission_default_permissions_updated_at_idx');
+
+

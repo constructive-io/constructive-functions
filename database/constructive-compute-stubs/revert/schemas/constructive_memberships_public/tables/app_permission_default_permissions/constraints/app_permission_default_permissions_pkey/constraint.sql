@@ -1,0 +1,7 @@
+-- Revert: schemas/constructive_memberships_public/tables/app_permission_default_permissions/constraints/app_permission_default_permissions_pkey/constraint
+
+
+ALTER TABLE "constructive_memberships_public".app_permission_default_permissions 
+  DROP CONSTRAINT app_permission_default_permissions_pkey;
+
+

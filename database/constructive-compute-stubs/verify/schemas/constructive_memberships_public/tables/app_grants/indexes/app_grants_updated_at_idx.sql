@@ -1,0 +1,6 @@
+-- Verify: schemas/constructive_memberships_public/tables/app_grants/indexes/app_grants_updated_at_idx
+
+
+SELECT verify_index('constructive_memberships_public.app_grants', 'app_grants_updated_at_idx');
+
+

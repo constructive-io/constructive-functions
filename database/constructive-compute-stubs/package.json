@@ -1,0 +1,30 @@
+{
+  "name": "@constructive-io/constructive-compute-stubs",
+  "version": "0.0.1",
+  "description": "Schema-only stubs for user/auth/infra tables — structural DDL (tables, columns, constraints, indexes) with no policies, grants, triggers, or procedures. Provides FK targets for the compute packages.",
+  "author": "Constructive <developers@constructive.io>",
+  "keywords": [
+    "postgresql",
+    "pgpm",
+    "constructive-compute-stubs"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "bundle": "pgpm package",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "@pgpm/inflection": "*",
+    "@pgpm/stamps": "*"
+  },
+  "devDependencies": {
+    "pgpm": "^4.26.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/constructive-io/constructive-functions"
+  }
+}

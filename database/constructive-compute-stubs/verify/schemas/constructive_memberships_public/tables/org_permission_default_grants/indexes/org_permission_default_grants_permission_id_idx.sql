@@ -1,0 +1,6 @@
+-- Verify: schemas/constructive_memberships_public/tables/org_permission_default_grants/indexes/org_permission_default_grants_permission_id_idx
+
+
+SELECT verify_index('constructive_memberships_public.org_permission_default_grants', 'org_permission_default_grants_permission_id_idx');
+
+
