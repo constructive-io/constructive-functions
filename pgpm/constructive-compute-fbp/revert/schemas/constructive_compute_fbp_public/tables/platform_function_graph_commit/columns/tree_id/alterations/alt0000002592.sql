@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_compute_fbp_public/tables/platform_function_graph_commit/columns/tree_id/alterations/alt0000002592
+
+
+COMMENT ON COLUMN "constructive_compute_fbp_public".platform_function_graph_commit.tree_id IS NULL;
+
+

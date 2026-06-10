@@ -2,9 +2,9 @@
 %project=constructive-users
 %uri=constructive-users
 
+
 schemas/constructive_users_public/schema 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_schema
 schemas/constructive_users_public/tables/role_types/table [schemas/constructive_users_public/schema] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
-schemas/constructive_users_public/tables/role_types/alterations/alt0000000006 [schemas/constructive_users_public/schema schemas/constructive_users_public/tables/role_types/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add disable_row_level_security
 schemas/constructive_users_public/tables/role_types/columns/id/column [schemas/constructive_users_public/schema schemas/constructive_users_public/tables/role_types/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add alter_table_add_column
 schemas/constructive_users_public/tables/role_types/columns/id/alterations/alt0000000007 [schemas/constructive_users_public/schema schemas/constructive_users_public/tables/role_types/table schemas/constructive_users_public/tables/role_types/columns/id/column] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add alter_table_set_column_not_null
 schemas/constructive_users_public/tables/role_types/columns/name/column [schemas/constructive_users_public/schema schemas/constructive_users_public/tables/role_types/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add alter_table_add_column
@@ -12,7 +12,6 @@ schemas/constructive_users_public/tables/role_types/columns/name/alterations/alt
 schemas/constructive_users_public/tables/role_types/constraints/role_types_name_key/constraint [schemas/constructive_users_public/schema schemas/constructive_users_public/tables/role_types/table schemas/constructive_users_public/tables/role_types/columns/name/column] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add alter_table_add_unique_constraint
 schemas/constructive_users_public/tables/role_types/constraints/role_types_pkey/constraint [schemas/constructive_users_public/schema schemas/constructive_users_public/tables/role_types/table schemas/constructive_users_public/tables/role_types/columns/id/column] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add alter_table_add_primary_key
 schemas/constructive_users_public/tables/users/table [schemas/constructive_users_public/schema] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
-schemas/constructive_users_public/tables/users/alterations/alt0000000001 [schemas/constructive_users_public/schema schemas/constructive_users_public/tables/users/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add disable_row_level_security
 schemas/constructive_users_public/tables/users/columns/created_at/column [schemas/constructive_users_public/schema schemas/constructive_users_public/tables/users/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add alter_table_add_column
 schemas/constructive_users_public/tables/users/columns/created_at/alterations/alt0000000012 [schemas/constructive_users_public/schema schemas/constructive_users_public/tables/users/columns/created_at/column schemas/constructive_users_public/tables/users/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add alter_table_set_column_default
 schemas/constructive_users_public/tables/users/columns/display_name/column [schemas/constructive_users_public/schema schemas/constructive_users_public/tables/users/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add alter_table_add_column

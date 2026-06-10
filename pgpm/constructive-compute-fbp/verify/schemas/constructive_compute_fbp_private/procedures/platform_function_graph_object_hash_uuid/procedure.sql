@@ -1,0 +1,6 @@
+-- Verify: schemas/constructive_compute_fbp_private/procedures/platform_function_graph_object_hash_uuid/procedure
+
+
+SELECT verify_function('constructive_compute_fbp_private.platform_function_graph_object_hash_uuid');
+
+

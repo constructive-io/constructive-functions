@@ -2,6 +2,6 @@
 comment = 'Built-in function seed data for constructive-infra'
 default_version = '0.0.1'
 module_pathname = '$libdir/constructive-infra-seed'
-requires = 'constructive-infra'
+requires = 'constructive-infra,constructive-compute,constructive-compute-fbp,constructive-store'
 relocatable = false
 superuser = false

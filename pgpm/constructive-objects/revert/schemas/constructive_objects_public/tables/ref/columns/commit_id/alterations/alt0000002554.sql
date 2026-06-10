@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_objects_public/tables/ref/columns/commit_id/alterations/alt0000002554
+
+
+COMMENT ON COLUMN "constructive_objects_public".ref.commit_id IS NULL;
+
+

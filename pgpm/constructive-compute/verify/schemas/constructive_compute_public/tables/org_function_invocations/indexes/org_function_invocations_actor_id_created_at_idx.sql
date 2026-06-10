@@ -1,0 +1,6 @@
+-- Verify: schemas/constructive_compute_public/tables/org_function_invocations/indexes/org_function_invocations_actor_id_created_at_idx
+
+
+SELECT verify_index('constructive_compute_public.org_function_invocations', 'org_function_invocations_actor_id_created_at_idx');
+
+

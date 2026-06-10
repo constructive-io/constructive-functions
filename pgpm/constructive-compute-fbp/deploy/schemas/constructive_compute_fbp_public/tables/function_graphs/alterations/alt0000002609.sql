@@ -1,0 +1,9 @@
+-- Deploy: schemas/constructive_compute_fbp_public/tables/function_graphs/alterations/alt0000002609
+-- made with <3 @ constructive.io
+
+-- requires: schemas/constructive_compute_fbp_public/schema
+-- requires: schemas/constructive_compute_fbp_public/tables/function_graphs/table
+
+
+COMMENT ON TABLE "constructive_compute_fbp_public".function_graphs IS E'Flow graph definitions — FBP graphs stored in the dedicated graph Merkle store';
+
