@@ -1,0 +1,10 @@
+-- Deploy: schemas/constructive_platform_function_graph_public/tables/platform_function_graph_store/columns/created_at/column
+-- made with <3 @ constructive.io
+
+-- requires: schemas/constructive_platform_function_graph_public/schema
+-- requires: schemas/constructive_platform_function_graph_public/tables/platform_function_graph_store/table
+
+
+ALTER TABLE "constructive_platform_function_graph_public".platform_function_graph_store 
+  ADD COLUMN created_at timestamptz;
+

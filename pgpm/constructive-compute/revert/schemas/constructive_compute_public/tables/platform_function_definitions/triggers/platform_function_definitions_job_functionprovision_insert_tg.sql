@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_compute_public/tables/platform_function_definitions/triggers/platform_function_definitions_job_functionprovision_insert_tg
+
+
+DROP TRIGGER platform_function_definitions_job_functionprovision_insert_tg ON "constructive_compute_public".platform_function_definitions;
+
+

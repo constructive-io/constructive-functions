@@ -1,7 +1,7 @@
 {
   "name": "@constructive-io/constructive-compute",
   "version": "0.0.1",
-  "description": "Compute module — function definitions, invocations, execution logs, secrets (no RLS or auth)",
+  "description": "Compute module — function definitions, graph CRUD, invocations, execution logs, secrets (no RLS or auth)",
   "author": "Constructive <developers@constructive.io>",
   "keywords": [
     "postgresql",

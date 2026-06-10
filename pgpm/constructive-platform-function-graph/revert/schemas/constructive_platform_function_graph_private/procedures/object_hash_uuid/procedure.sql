@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_platform_function_graph_private/procedures/object_hash_uuid/procedure
+
+
+DROP FUNCTION "constructive_platform_function_graph_private".object_hash_uuid("constructive_platform_function_graph_public".platform_function_graph_object);
+
+
