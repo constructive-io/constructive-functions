@@ -18,7 +18,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -26,7 +26,7 @@ services:
       retries: 5
 
   db-setup:
-    image: ghcr.io/constructive-io/constructive:latest
+    image: ghcr.io/constructive-io/constructive-db-job:latest
     depends_on:
       postgres:
         condition: service_healthy
@@ -36,10 +36,13 @@ services:
       PGUSER: postgres
       PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}
       PGDATABASE: constructive
+      CONSTRUCTIVE_DOMAIN: "localhost"
     entrypoint: ["bash", "-c"]
     command:
       - |
+        set -eo pipefail
         cd /app
+
         echo "Creating database $$PGDATABASE"
         createdb -h "$$PGHOST" -U "$$PGUSER" "$$PGDATABASE" || true
 
@@ -47,25 +50,31 @@ services:
         pgpm admin-users bootstrap --yes
         pgpm admin-users add --test --yes
 
-        echo "Deploying packages"
-        pgpm deploy --yes --database "$$PGDATABASE" --package constructive
-        pgpm deploy --yes --database "$$PGDATABASE" --package constructive-services
-        pgpm deploy --yes --database "$$PGDATABASE" --package constructive-prod
+        echo "Deploying constructive-local (services + database record)"
+        pgpm deploy --yes --database "$$PGDATABASE" --package constructive-local
 
-        echo "Deploying metaschema and jobs"
+        echo "Deploying metaschema"
         pgpm deploy --yes --database "$$PGDATABASE" --package metaschema
+
+        echo "Deploying pgpm-database-jobs"
         pgpm deploy --yes --database "$$PGDATABASE" --package pgpm-database-jobs
 
         echo "Done"
 
   graphql-server:
     image: ghcr.io/constructive-io/constructive:latest
+    pull_policy: always
     depends_on:
       db-setup:
         condition: service_completed_successfully
-    entrypoint: ["constructive", "server", "--host", "0.0.0.0", "--port", "3000", "--origin", "*"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "localhost:host-gateway"
+    entrypoint: ["cnc", "server", "--host", "0.0.0.0", "--port", "3000", "--origin", "*", "--strictAuth", "false"]
     environment:
       NODE_ENV: development
+      LOG_LEVEL: debug
+      DEBUG: "graphile*"
       PORT: "3000"
       SERVER_HOST: "0.0.0.0"
       SERVER_TRUST_PROXY: "true"
@@ -78,12 +87,20 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}
       PGDATABASE: constructive
       # API configuration — header-based routing (X-Api-Name, X-Database-Id)
+      API_ENABLE_META: "true"
       API_ENABLE_SERVICES: "true"
-      API_EXPOSED_SCHEMAS: "metaschema_public,services_public,constructive_auth_public"
-      API_IS_PUBLIC: "false"
-      API_META_SCHEMAS: "metaschema_public,services_public,metaschema_modules_public,constructive_auth_public"
+      API_ENABLE_TENANT: "true"
+      API_EXPOSED_SCHEMAS: "collections_public,meta_public,storage_public,app_public"
       API_ANON_ROLE: "administrator"
       API_ROLE_NAME: "administrator"
+      API_DEFAULT_DATABASE_ID: "constructive"
+      # S3/MinIO configuration (extra_hosts makes localhost work from inside container)
+      CDN_ENDPOINT: "http://localhost:9000"
+      BUCKET_NAME: "test-bucket"
+      BUCKET_PROVIDER: "minio"
+      AWS_REGION: "us-east-1"
+      AWS_ACCESS_KEY: "minioadmin"
+      AWS_SECRET_KEY: "minioadmin"
     ports:
       - "3002:3000"
 
@@ -93,5 +110,25 @@ services:
       - "1025:1025"   # SMTP
       - "8025:8025"   # Web UI
 
+  minio:
+    image: quay.io/minio/minio:latest
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      # Enable CORS for browser uploads
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   pgdata:
+  minio-data:
