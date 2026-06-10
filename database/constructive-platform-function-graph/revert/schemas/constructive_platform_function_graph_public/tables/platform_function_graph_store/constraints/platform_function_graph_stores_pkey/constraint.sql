@@ -1,0 +1,7 @@
+-- Revert: schemas/constructive_platform_function_graph_public/tables/platform_function_graph_store/constraints/platform_function_graph_stores_pkey/constraint
+
+
+ALTER TABLE "constructive_platform_function_graph_public".platform_function_graph_store 
+  DROP CONSTRAINT platform_function_graph_stores_pkey;
+
+

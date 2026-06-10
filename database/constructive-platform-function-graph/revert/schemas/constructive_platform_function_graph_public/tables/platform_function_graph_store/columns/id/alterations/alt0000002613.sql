@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_platform_function_graph_public/tables/platform_function_graph_store/columns/id/alterations/alt0000002613
+
+
+COMMENT ON COLUMN "constructive_platform_function_graph_public".platform_function_graph_store.id IS NULL;
+
+

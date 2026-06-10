@@ -1,0 +1,6 @@
+-- Verify: schemas/services_public/tables/api_schemas/table
+
+
+
+
+

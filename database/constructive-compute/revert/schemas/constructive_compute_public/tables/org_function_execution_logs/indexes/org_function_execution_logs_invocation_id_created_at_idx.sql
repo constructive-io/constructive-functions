@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_compute_public/tables/org_function_execution_logs/indexes/org_function_execution_logs_invocation_id_created_at_idx
+
+
+DROP INDEX "constructive_compute_public".org_function_execution_logs_invocation_id_created_at_idx;
+
+

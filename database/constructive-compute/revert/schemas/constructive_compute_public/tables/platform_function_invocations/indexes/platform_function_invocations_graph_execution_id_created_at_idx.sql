@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_compute_public/tables/platform_function_invocations/indexes/platform_function_invocations_graph_execution_id_created_at_idx
+
+
+DROP INDEX "constructive_compute_public".platform_function_invocations_graph_execution_id_created_at_idx;
+
+
