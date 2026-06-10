@@ -1,6 +1,0 @@
--- Revert: schemas/constructive_infra_public/tables/platform_function_execution_logs/indexes/platform_function_execution_logs_invocation_id_created_at_idx
-
-
-DROP INDEX "constructive_infra_public".platform_function_execution_logs_invocation_id_created_at_idx;
-
-

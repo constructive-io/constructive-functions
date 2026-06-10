@@ -1,0 +1,11 @@
+-- Deploy: schemas/constructive_objects_public/tables/commit/columns/database_id/alterations/alt0000002532
+-- made with <3 @ constructive.io
+
+-- requires: schemas/constructive_objects_public/schema
+-- requires: schemas/constructive_objects_public/tables/commit/table
+-- requires: schemas/constructive_objects_public/tables/commit/columns/database_id/column
+
+
+ALTER TABLE "constructive_objects_public".commit 
+  ALTER COLUMN database_id SET NOT NULL;
+

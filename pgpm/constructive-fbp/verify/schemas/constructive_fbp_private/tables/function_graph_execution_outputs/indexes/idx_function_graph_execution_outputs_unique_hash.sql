@@ -1,6 +1,0 @@
--- Verify: schemas/constructive_fbp_private/tables/function_graph_execution_outputs/indexes/idx_function_graph_execution_outputs_unique_hash
-
-
-SELECT verify_index('constructive_fbp_private.function_graph_execution_outputs', 'idx_function_graph_execution_outputs_unique_hash');
-
-

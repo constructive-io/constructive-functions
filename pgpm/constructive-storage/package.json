@@ -1,7 +1,7 @@
 {
   "name": "@constructive-io/constructive-storage",
   "version": "0.0.1",
-  "description": "Storage module — file uploads, buckets, versioning, GC",
+  "description": "Storage module — file uploads, buckets, versioning",
   "author": "Constructive <developers@constructive.io>",
   "keywords": [
     "postgresql",

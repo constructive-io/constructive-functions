@@ -1,6 +1,0 @@
--- Verify: schemas/constructive_infra_public/tables/platform_function_invocations/indexes/platform_function_invocations_actor_id_created_at_idx
-
-
-SELECT verify_index('constructive_infra_public.platform_function_invocations', 'platform_function_invocations_actor_id_created_at_idx');
-
-

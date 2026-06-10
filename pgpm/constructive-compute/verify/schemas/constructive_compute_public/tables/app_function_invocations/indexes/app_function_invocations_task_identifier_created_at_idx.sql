@@ -1,0 +1,6 @@
+-- Verify: schemas/constructive_compute_public/tables/app_function_invocations/indexes/app_function_invocations_task_identifier_created_at_idx
+
+
+SELECT verify_index('constructive_compute_public.app_function_invocations', 'app_function_invocations_task_identifier_created_at_idx');
+
+

@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_compute_fbp_private/procedures/platform_function_graph_object_hash_uuid/procedure
+
+
+DROP FUNCTION "constructive_compute_fbp_private".platform_function_graph_object_hash_uuid("constructive_compute_fbp_public".platform_function_graph_object);
+
+

@@ -1,0 +1,17 @@
+{
+  "name": "@constructive-io/constructive-users",
+  "version": "0.0.1",
+  "description": "User identity stubs \u2014 users table and role_types",
+  "author": "Constructive <developers@constructive.io>",
+  "keywords": [
+    "postgresql",
+    "pgpm",
+    "constructive-users"
+  ],
+  "scripts": {
+    "bundle": "pgpm package"
+  },
+  "devDependencies": {
+    "pgpm": "^4.26.1"
+  }
+}
