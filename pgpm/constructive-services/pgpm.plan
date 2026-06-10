@@ -1,0 +1,20 @@
+%syntax-version=1.0.0
+%project=constructive-services
+%uri=constructive-services
+
+schemas/services_public/schema 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_schema
+schemas/services_public/tables/apis/table [schemas/services_public/schema] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
+schemas/services_public/tables/api_modules/table [schemas/services_public/schema schemas/services_public/tables/apis/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
+schemas/services_public/tables/api_schemas/table [schemas/services_public/schema] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
+schemas/services_public/tables/sites/table [schemas/services_public/schema] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
+schemas/services_public/tables/apps/table [schemas/services_public/schema schemas/services_public/tables/sites/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
+schemas/services_public/tables/domains/table [schemas/services_public/schema schemas/services_public/tables/apis/table schemas/services_public/tables/sites/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
+schemas/services_public/tables/site_metadata/table [schemas/services_public/schema schemas/services_public/tables/sites/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
+schemas/services_public/tables/site_modules/table [schemas/services_public/schema schemas/services_public/tables/sites/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
+schemas/services_public/tables/site_themes/table [schemas/services_public/schema schemas/services_public/tables/sites/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
+schemas/services_public/tables/database_settings/table [schemas/services_public/schema] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
+schemas/services_public/tables/api_settings/table [schemas/services_public/schema schemas/services_public/tables/apis/table schemas/services_public/tables/database_settings/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
+schemas/services_public/tables/rls_settings/table [schemas/services_public/schema] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
+schemas/services_public/tables/cors_settings/table [schemas/services_public/schema schemas/services_public/tables/apis/table] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
+schemas/services_public/tables/pubkey_settings/table [schemas/services_public/schema] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table
+schemas/services_public/tables/webauthn_settings/table [schemas/services_public/schema] 2017-08-11T08:11:51Z Constructive <developers@constructive.io> # add create_table

@@ -1,0 +1,20 @@
+{
+  "name": "@constructive-io/constructive-users",
+  "version": "0.0.1",
+  "description": "User identity stubs — users and role_types tables (structural DDL only, no RLS/grants/triggers)",
+  "author": "Constructive <developers@constructive.io>",
+  "keywords": ["postgresql", "pgpm", "constructive-users"],
+  "publishConfig": { "access": "public" },
+  "scripts": {
+    "bundle": "pgpm package",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "pgpm": "^4.26.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/constructive-io/constructive-functions"
+  }
+}

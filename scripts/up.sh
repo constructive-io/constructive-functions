@@ -109,6 +109,8 @@ cd "$ROOT_DIR/pgpm"
 
 # Deploy order matters: downstream modules depend on upstream ones.
 #
+#   constructive-services  (standalone — apps, apis, sites, domains stubs)
+#   constructive-users     (standalone — users, role_types stubs)
 #   constructive-infra     (standalone — namespaces, function defs, invocations)
 #   constructive-store     (depends on infra — encrypted secrets, config, user state)
 #   constructive-objects   (standalone — content-addressable merkle store)
@@ -116,6 +118,8 @@ cd "$ROOT_DIR/pgpm"
 #   constructive-storage   (standalone — file uploads, buckets, versioning)
 
 MODULES=(
+  constructive-services
+  constructive-users
   constructive-infra
   constructive-store
   constructive-objects
