@@ -63,6 +63,17 @@ const sharedEnv: Record<string, string> = {
   LOCAL_APP_PORT: '3000',
   SEND_VERIFICATION_LINK_DRY_RUN: 'true',
   SEND_EMAIL_DRY_RUN: 'true',
+  // MinIO/S3 (matches docker-compose minio service)
+  S3_ENDPOINT: 'http://localhost:9000',
+  AWS_ACCESS_KEY_ID: 'minioadmin',
+  AWS_SECRET_ACCESS_KEY: 'minioadmin',
+  BUCKET_PROVIDER: 'minio',
+  // Ollama embeddings (requires local ollama with nomic-embed-text model)
+  EMBEDDER_PROVIDER: 'ollama',
+  EMBEDDER_MODEL: 'nomic-embed-text',
+  EMBEDDER_BASE_URL: 'http://localhost:11434',
+  // Dry run by default for embedding function
+  PROCESS_FILE_EMBEDDING_DRY_RUN: 'false',
 };
 
 // --- Process definitions (built from manifest) ---
