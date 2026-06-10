@@ -89,7 +89,7 @@ profiles:
         resourceName: python-example
         namespace: constructive-functions
         port: 80
-        localPort: 8084
+        localPort: 8086
       - resourceType: service
         resourceName: knative-job-service
         namespace: constructive-functions
@@ -221,6 +221,50 @@ profiles:
         resourceName: sql-example
         namespace: constructive-functions
         port: 80
+        localPort: 8087
+      - resourceType: service
+        resourceName: knative-job-service
+        namespace: constructive-functions
+        port: 8080
+        localPort: 8080
+      - resourceType: service
+        resourceName: postgres
+        namespace: constructive-functions
+        port: 5432
+        localPort: 5432
+      - resourceType: service
+        resourceName: constructive-server
+        namespace: constructive-functions
+        port: 3000
+        localPort: 3002
+  - name: storage-confirm-upload
+    build:
+      artifacts:
+        - image: constructive-functions
+          context: .
+          docker:
+            dockerfile: Dockerfile.dev
+          sync:
+            manual:
+              - src: 'functions/**/*.ts'
+                dest: /usr/src/app
+      local:
+        push: false
+    manifests:
+      kustomize:
+        paths:
+          - k8s/overlays/local-simple
+      rawYaml:
+        - generated/storage-confirm-upload/k8s/local-deployment.yaml
+        - generated/storage-confirm-upload/k8s/functions-configmap.yaml
+    deploy:
+      kubectl:
+        defaultNamespace: constructive-functions
+    portForward:
+      - resourceType: service
+        resourceName: storage-confirm-upload
+        namespace: constructive-functions
+        port: 80
         localPort: 8085
       - resourceType: service
         resourceName: knative-job-service
@@ -272,6 +316,7 @@ profiles:
         - generated/send-email/k8s/local-deployment.yaml
         - generated/send-verification-link/k8s/local-deployment.yaml
         - generated/sql-example/k8s/local-deployment.yaml
+        - generated/storage-confirm-upload/k8s/local-deployment.yaml
         - generated/functions-configmap.yaml
     deploy:
       kubectl:
@@ -286,7 +331,7 @@ profiles:
         resourceName: python-example
         namespace: constructive-functions
         port: 80
-        localPort: 8084
+        localPort: 8086
       - resourceType: service
         resourceName: send-email
         namespace: constructive-functions
@@ -299,6 +344,11 @@ profiles:
         localPort: 8082
       - resourceType: service
         resourceName: sql-example
+        namespace: constructive-functions
+        port: 80
+        localPort: 8087
+      - resourceType: service
+        resourceName: storage-confirm-upload
         namespace: constructive-functions
         port: 80
         localPort: 8085
@@ -346,7 +396,7 @@ profiles:
         resourceName: python-example
         namespace: constructive-functions
         port: 80
-        localPort: 8084
+        localPort: 8086
       - resourceType: service
         resourceName: send-email
         namespace: constructive-functions
@@ -359,6 +409,11 @@ profiles:
         localPort: 8082
       - resourceType: service
         resourceName: sql-example
+        namespace: constructive-functions
+        port: 80
+        localPort: 8087
+      - resourceType: service
+        resourceName: storage-confirm-upload
         namespace: constructive-functions
         port: 80
         localPort: 8085
