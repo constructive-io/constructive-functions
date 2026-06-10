@@ -1,0 +1,8 @@
+-- Deploy: schemas/constructive_storage_private/grants/usage/authenticated
+-- made with <3 @ constructive.io
+
+-- requires: schemas/constructive_storage_private/schema
+
+
+GRANT USAGE ON SCHEMA "constructive_storage_private" TO authenticated;
+
