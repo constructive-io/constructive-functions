@@ -46,9 +46,9 @@ if ! psql -d "$DB_NAME" -c "SELECT 1" &>/dev/null; then
   exit 1
 fi
 
-HAS_INFRA=$(psql -d "$DB_NAME" -t -A -c "SELECT 1 FROM information_schema.schemata WHERE schema_name = 'constructive_infra_public'" 2>/dev/null)
-if [ "$HAS_INFRA" != "1" ]; then
-  fail "constructive-infra not deployed to '$DB_NAME'. Run 'make up' first."
+HAS_COMPUTE=$(psql -d "$DB_NAME" -t -A -c "SELECT 1 FROM information_schema.schemata WHERE schema_name = 'constructive_compute_public'" 2>/dev/null)
+if [ "$HAS_COMPUTE" != "1" ]; then
+  fail "constructive-compute not deployed to '$DB_NAME'. Run 'make up' first."
   exit 1
 fi
 
@@ -155,7 +155,7 @@ FN_REQS=$(psql -d "$DB_NAME" -t -A -F '|' -c "
     COALESCE(array_to_string(
       ARRAY(SELECT (r).name FROM unnest(required_configs) AS r), ','
     ), '') AS configs
-  FROM constructive_infra_public.platform_function_definitions
+  FROM constructive_compute_public.platform_function_definitions
   WHERE is_invocable = true
   ORDER BY name
 " 2>/dev/null) || true

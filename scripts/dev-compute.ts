@@ -144,7 +144,7 @@ function loadFunctionRequirements(dbName: string): FnRequirement[] {
         COALESCE(array_to_string(
           ARRAY(SELECT (r).name || ':' || CASE WHEN (r).required THEN 't' ELSE 'f' END FROM unnest(required_configs) AS r), ','
         ), '') AS configs
-      FROM constructive_infra_public.platform_function_definitions
+      FROM constructive_compute_public.platform_function_definitions
       WHERE is_invocable = true
       ORDER BY name
     `;
@@ -208,7 +208,7 @@ const systemEnv: Record<string, string> = {
   GRAPHQL_URL: mergedSecrets.GRAPHQL_URL || process.env.GRAPHQL_URL || 'http://localhost:3002/graphql',
   META_GRAPHQL_URL: mergedSecrets.META_GRAPHQL_URL || process.env.META_GRAPHQL_URL || 'http://localhost:3002/graphql',
   GRAPHQL_API_NAME: 'private',
-  DEFAULT_DATABASE_ID: 'dbe',
+  DEFAULT_DATABASE_ID: '00000000-0000-0000-0000-000000000000',
   SMTP_HOST: mergedSecrets.SMTP_HOST || process.env.SMTP_HOST || 'localhost',
   SMTP_PORT: mergedSecrets.SMTP_PORT || process.env.SMTP_PORT || '1025',
   SMTP_FROM: mergedSecrets.SMTP_FROM || process.env.SMTP_FROM || 'test@localhost',

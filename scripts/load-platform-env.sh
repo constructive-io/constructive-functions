@@ -111,7 +111,7 @@ FUNCTIONS=$(psql -d "$DB_NAME" -t -A -F '|' -c "
     COALESCE(array_to_string(
       ARRAY(SELECT (r).name FROM unnest(required_configs) AS r WHERE (r).required = true), ','
     ), '') AS required_configs
-  FROM constructive_infra_public.platform_function_definitions
+  FROM constructive_compute_public.platform_function_definitions
   WHERE is_invocable = true
   ORDER BY name
 " 2>/dev/null)
