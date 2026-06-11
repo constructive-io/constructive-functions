@@ -1,0 +1,51 @@
+{
+  "name": "@constructive-functions/constructive-functions-schema",
+  "version": "0.0.1",
+  "author": "Constructive <developers@constructive.io>",
+  "description": "Exported GraphQL schemas for all Constructive Functions APIs",
+  "main": "index.js",
+  "module": "esm/index.js",
+  "types": "index.d.ts",
+  "homepage": "https://github.com/constructive-io/constructive-functions",
+  "private": true,
+  "license": "All Rights Reserved. Interweb, Inc.",
+  "publishConfig": {
+    "access": "restricted",
+    "directory": "dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/constructive-io/constructive-functions"
+  },
+  "bugs": {
+    "url": "https://github.com/constructive-io/constructive-functions/issues"
+  },
+  "scripts": {
+    "clean": "makage clean",
+    "prepack": "pnpm run build",
+    "build": "makage build",
+    "build:dev": "makage build --dev",
+    "pregenerate": "rimraf schemas/*.graphql",
+    "generate": "pnpm run pregenerate && tsx scripts/generate-schemas.ts",
+    "lint": "eslint . --fix",
+    "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [
+    "graphql",
+    "schema",
+    "sdl",
+    "constructive",
+    "postgraphile"
+  ],
+  "dependencies": {
+    "graphql": "16.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.27",
+    "makage": "^0.3.0",
+    "rimraf": "^5.0.5",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,5441 @@
+"""The root query type which gives access points into the data universe."""
+type Query {
+  platformReadFunctionGraph(graphId: UUID): JSON
+
+  """Reads and enables pagination through a set of `GetAllRecord`."""
+  getAll(
+    sId: UUID
+    id: UUID
+
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+  ): GetAllConnection
+  getNodeAtPath(sId: UUID, id: UUID, path: [String]): PlatformFunctionGraphObject
+
+  """
+  Reads and enables pagination through a set of `PlatformFunctionGraphRef`.
+  """
+  platformFunctionGraphRefs(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformFunctionGraphRefFilter
+
+    """The method to use when ordering `PlatformFunctionGraphRef`."""
+    orderBy: [PlatformFunctionGraphRefOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphRefConnection
+
+  """
+  Reads and enables pagination through a set of `PlatformFunctionGraphStore`.
+  """
+  platformFunctionGraphStores(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformFunctionGraphStoreFilter
+
+    """The method to use when ordering `PlatformFunctionGraphStore`."""
+    orderBy: [PlatformFunctionGraphStoreOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphStoreConnection
+
+  """
+  Reads and enables pagination through a set of `PlatformFunctionGraphObject`.
+  """
+  platformFunctionGraphObjects(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformFunctionGraphObjectFilter
+
+    """The method to use when ordering `PlatformFunctionGraphObject`."""
+    orderBy: [PlatformFunctionGraphObjectOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphObjectConnection
+
+  """
+  Reads and enables pagination through a set of `OrgFunctionExecutionLog`.
+  """
+  orgFunctionExecutionLogs(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: OrgFunctionExecutionLogFilter
+
+    """The method to use when ordering `OrgFunctionExecutionLog`."""
+    orderBy: [OrgFunctionExecutionLogOrderBy!] = [PRIMARY_KEY_ASC]
+  ): OrgFunctionExecutionLogConnection
+
+  """
+  Reads and enables pagination through a set of `PlatformFunctionGraphCommit`.
+  """
+  platformFunctionGraphCommits(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformFunctionGraphCommitFilter
+
+    """The method to use when ordering `PlatformFunctionGraphCommit`."""
+    orderBy: [PlatformFunctionGraphCommitOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphCommitConnection
+
+  """
+  Reads and enables pagination through a set of `PlatformSecretDefinition`.
+  """
+  platformSecretDefinitions(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformSecretDefinitionFilter
+
+    """The method to use when ordering `PlatformSecretDefinition`."""
+    orderBy: [PlatformSecretDefinitionOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformSecretDefinitionConnection
+
+  """
+  Reads and enables pagination through a set of `PlatformFunctionExecutionLog`.
+  """
+  platformFunctionExecutionLogs(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformFunctionExecutionLogFilter
+
+    """The method to use when ordering `PlatformFunctionExecutionLog`."""
+    orderBy: [PlatformFunctionExecutionLogOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionExecutionLogConnection
+
+  """Reads and enables pagination through a set of `PlatformFunctionGraph`."""
+  platformFunctionGraphs(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformFunctionGraphFilter
+
+    """The method to use when ordering `PlatformFunctionGraph`."""
+    orderBy: [PlatformFunctionGraphOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphConnection
+
+  """Reads and enables pagination through a set of `OrgFunctionInvocation`."""
+  orgFunctionInvocations(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: OrgFunctionInvocationFilter
+
+    """The method to use when ordering `OrgFunctionInvocation`."""
+    orderBy: [OrgFunctionInvocationOrderBy!] = [PRIMARY_KEY_ASC]
+  ): OrgFunctionInvocationConnection
+
+  """
+  Reads and enables pagination through a set of `PlatformFunctionInvocation`.
+  """
+  platformFunctionInvocations(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformFunctionInvocationFilter
+
+    """The method to use when ordering `PlatformFunctionInvocation`."""
+    orderBy: [PlatformFunctionInvocationOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionInvocationConnection
+
+  """
+  Reads and enables pagination through a set of `PlatformFunctionDefinition`.
+  """
+  platformFunctionDefinitions(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformFunctionDefinitionFilter
+
+    """The method to use when ordering `PlatformFunctionDefinition`."""
+    orderBy: [PlatformFunctionDefinitionOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionDefinitionConnection
+
+  """
+  Metadata about the database schema, including tables, fields, indexes, and constraints. Useful for code generation tools.
+  """
+  _meta: MetaSchema
+}
+
+"""
+Represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+"""
+A universally unique identifier as defined by [RFC 4122](https://tools.ietf.org/html/rfc4122).
+"""
+scalar UUID
+
+"""A connection to a list of `GetAllRecord` values."""
+type GetAllConnection {
+  """A list of `GetAllRecord` objects."""
+  nodes: [GetAllRecord]!
+
+  """
+  A list of edges which contains the `GetAllRecord` and cursor to aid in pagination.
+  """
+  edges: [GetAllEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `GetAllRecord` you could get from the connection."""
+  totalCount: Int!
+}
+
+type GetAllRecord {
+  path: [String]
+  data: JSON
+}
+
+"""A `GetAllRecord` edge in the connection."""
+type GetAllEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `GetAllRecord` at the end of the edge."""
+  node: GetAllRecord
+}
+
+"""A location in a connection that can be used for resuming pagination."""
+scalar Cursor
+
+"""Information about pagination in a connection."""
+type PageInfo {
+  """When paginating forwards, are there more items?"""
+  hasNextPage: Boolean!
+
+  """When paginating backwards, are there more items?"""
+  hasPreviousPage: Boolean!
+
+  """When paginating backwards, the cursor to continue."""
+  startCursor: Cursor
+
+  """When paginating forwards, the cursor to continue."""
+  endCursor: Cursor
+}
+
+"""
+Content-addressed Merkle tree objects keyed by UUID v5 hash of data + children
+"""
+type PlatformFunctionGraphObject {
+  """Timestamp of object creation"""
+  createdAt: Datetime
+
+  """Payload data for this object node"""
+  data: JSON
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """Content-addressed UUID v5 — deterministic hash of (data, kids, ktree)"""
+  id: UUID!
+
+  """Ordered array of child object IDs"""
+  kids: [UUID]
+
+  """Ordered array of child path names (parallel to kids)"""
+  ktree: [String]
+}
+
+"""
+A point in time as described by the [ISO
+8601](https://en.wikipedia.org/wiki/ISO_8601) and, if it has a timezone, [RFC
+3339](https://datatracker.ietf.org/doc/html/rfc3339) standards. Input values
+that do not conform to both ISO 8601 and RFC 3339 may be coerced, which may lead
+to unexpected results.
+"""
+scalar Datetime
+
+"""A connection to a list of `PlatformFunctionGraphRef` values."""
+type PlatformFunctionGraphRefConnection {
+  """A list of `PlatformFunctionGraphRef` objects."""
+  nodes: [PlatformFunctionGraphRef]!
+
+  """
+  A list of edges which contains the `PlatformFunctionGraphRef` and cursor to aid in pagination.
+  """
+  edges: [PlatformFunctionGraphRefEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformFunctionGraphRef` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""Branch heads — mutable pointers into the commit chain"""
+type PlatformFunctionGraphRef {
+  """Commit this ref points to"""
+  commitId: UUID
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """Unique ref identifier"""
+  id: UUID!
+
+  """Ref name (e.g. HEAD, main)"""
+  name: String!
+
+  """Store this ref belongs to"""
+  storeId: UUID!
+}
+
+"""A `PlatformFunctionGraphRef` edge in the connection."""
+type PlatformFunctionGraphRefEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformFunctionGraphRef` at the end of the edge."""
+  node: PlatformFunctionGraphRef
+}
+
+"""
+A filter to be used against `PlatformFunctionGraphRef` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformFunctionGraphRefFilter {
+  """Filter by the object’s `commitId` field."""
+  commitId: UUIDFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `name` field."""
+  name: StringFilter
+
+  """Filter by the object’s `storeId` field."""
+  storeId: UUIDFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformFunctionGraphRefFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformFunctionGraphRefFilter!]
+
+  """Negates the expression."""
+  not: PlatformFunctionGraphRefFilter
+}
+
+"""
+A filter to be used against UUID fields. All fields are combined with a logical ‘and.’
+"""
+input UUIDFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: UUID
+
+  """Not equal to the specified value."""
+  notEqualTo: UUID
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: UUID
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: UUID
+
+  """Included in the specified list."""
+  in: [UUID!]
+
+  """Not included in the specified list."""
+  notIn: [UUID!]
+
+  """Less than the specified value."""
+  lessThan: UUID
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: UUID
+
+  """Greater than the specified value."""
+  greaterThan: UUID
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: UUID
+}
+
+"""
+A filter to be used against String fields. All fields are combined with a logical ‘and.’
+"""
+input StringFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: String
+
+  """Not equal to the specified value."""
+  notEqualTo: String
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: String
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: String
+
+  """Included in the specified list."""
+  in: [String!]
+
+  """Not included in the specified list."""
+  notIn: [String!]
+
+  """Less than the specified value."""
+  lessThan: String
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: String
+
+  """Greater than the specified value."""
+  greaterThan: String
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: String
+
+  """Contains the specified string (case-sensitive)."""
+  includes: String
+
+  """Does not contain the specified string (case-sensitive)."""
+  notIncludes: String
+
+  """Contains the specified string (case-insensitive)."""
+  includesInsensitive: String
+
+  """Does not contain the specified string (case-insensitive)."""
+  notIncludesInsensitive: String
+
+  """Starts with the specified string (case-sensitive)."""
+  startsWith: String
+
+  """Does not start with the specified string (case-sensitive)."""
+  notStartsWith: String
+
+  """Starts with the specified string (case-insensitive)."""
+  startsWithInsensitive: String
+
+  """Does not start with the specified string (case-insensitive)."""
+  notStartsWithInsensitive: String
+
+  """Ends with the specified string (case-sensitive)."""
+  endsWith: String
+
+  """Does not end with the specified string (case-sensitive)."""
+  notEndsWith: String
+
+  """Ends with the specified string (case-insensitive)."""
+  endsWithInsensitive: String
+
+  """Does not end with the specified string (case-insensitive)."""
+  notEndsWithInsensitive: String
+
+  """
+  Matches the specified pattern (case-sensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  like: String
+
+  """
+  Does not match the specified pattern (case-sensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  notLike: String
+
+  """
+  Matches the specified pattern (case-insensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  likeInsensitive: String
+
+  """
+  Does not match the specified pattern (case-insensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  notLikeInsensitive: String
+
+  """Equal to the specified value (case-insensitive)."""
+  equalToInsensitive: String
+
+  """Not equal to the specified value (case-insensitive)."""
+  notEqualToInsensitive: String
+
+  """
+  Not equal to the specified value, treating null like an ordinary value (case-insensitive).
+  """
+  distinctFromInsensitive: String
+
+  """
+  Equal to the specified value, treating null like an ordinary value (case-insensitive).
+  """
+  notDistinctFromInsensitive: String
+
+  """Included in the specified list (case-insensitive)."""
+  inInsensitive: [String!]
+
+  """Not included in the specified list (case-insensitive)."""
+  notInInsensitive: [String!]
+
+  """Less than the specified value (case-insensitive)."""
+  lessThanInsensitive: String
+
+  """Less than or equal to the specified value (case-insensitive)."""
+  lessThanOrEqualToInsensitive: String
+
+  """Greater than the specified value (case-insensitive)."""
+  greaterThanInsensitive: String
+
+  """Greater than or equal to the specified value (case-insensitive)."""
+  greaterThanOrEqualToInsensitive: String
+}
+
+"""Methods to use when ordering `PlatformFunctionGraphRef`."""
+enum PlatformFunctionGraphRefOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  COMMIT_ID_ASC
+  COMMIT_ID_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  ID_ASC
+  ID_DESC
+  NAME_ASC
+  NAME_DESC
+  STORE_ID_ASC
+  STORE_ID_DESC
+}
+
+"""A connection to a list of `PlatformFunctionGraphStore` values."""
+type PlatformFunctionGraphStoreConnection {
+  """A list of `PlatformFunctionGraphStore` objects."""
+  nodes: [PlatformFunctionGraphStore]!
+
+  """
+  A list of edges which contains the `PlatformFunctionGraphStore` and cursor to aid in pagination.
+  """
+  edges: [PlatformFunctionGraphStoreEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformFunctionGraphStore` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""
+Named stores — one per version-controlled tree (e.g. one graph, one definition set)
+"""
+type PlatformFunctionGraphStore {
+  """Timestamp of store creation"""
+  createdAt: Datetime
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """Current root object hash of this store"""
+  hash: UUID
+
+  """Unique store identifier"""
+  id: UUID!
+
+  """Human-readable store name"""
+  name: String!
+}
+
+"""A `PlatformFunctionGraphStore` edge in the connection."""
+type PlatformFunctionGraphStoreEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformFunctionGraphStore` at the end of the edge."""
+  node: PlatformFunctionGraphStore
+}
+
+"""
+A filter to be used against `PlatformFunctionGraphStore` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformFunctionGraphStoreFilter {
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `hash` field."""
+  hash: UUIDFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `name` field."""
+  name: StringFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformFunctionGraphStoreFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformFunctionGraphStoreFilter!]
+
+  """Negates the expression."""
+  not: PlatformFunctionGraphStoreFilter
+}
+
+"""
+A filter to be used against Datetime fields. All fields are combined with a logical ‘and.’
+"""
+input DatetimeFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: Datetime
+
+  """Not equal to the specified value."""
+  notEqualTo: Datetime
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: Datetime
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: Datetime
+
+  """Included in the specified list."""
+  in: [Datetime!]
+
+  """Not included in the specified list."""
+  notIn: [Datetime!]
+
+  """Less than the specified value."""
+  lessThan: Datetime
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: Datetime
+
+  """Greater than the specified value."""
+  greaterThan: Datetime
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: Datetime
+}
+
+"""Methods to use when ordering `PlatformFunctionGraphStore`."""
+enum PlatformFunctionGraphStoreOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  HASH_ASC
+  HASH_DESC
+  ID_ASC
+  ID_DESC
+  NAME_ASC
+  NAME_DESC
+}
+
+"""A connection to a list of `PlatformFunctionGraphObject` values."""
+type PlatformFunctionGraphObjectConnection {
+  """A list of `PlatformFunctionGraphObject` objects."""
+  nodes: [PlatformFunctionGraphObject]!
+
+  """
+  A list of edges which contains the `PlatformFunctionGraphObject` and cursor to aid in pagination.
+  """
+  edges: [PlatformFunctionGraphObjectEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformFunctionGraphObject` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""A `PlatformFunctionGraphObject` edge in the connection."""
+type PlatformFunctionGraphObjectEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformFunctionGraphObject` at the end of the edge."""
+  node: PlatformFunctionGraphObject
+}
+
+"""
+A filter to be used against `PlatformFunctionGraphObject` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformFunctionGraphObjectFilter {
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `data` field."""
+  data: JSONFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `kids` field."""
+  kids: UUIDListFilter
+
+  """Filter by the object’s `ktree` field."""
+  ktree: StringListFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformFunctionGraphObjectFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformFunctionGraphObjectFilter!]
+
+  """Negates the expression."""
+  not: PlatformFunctionGraphObjectFilter
+}
+
+"""
+A filter to be used against JSON fields. All fields are combined with a logical ‘and.’
+"""
+input JSONFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: JSON
+
+  """Not equal to the specified value."""
+  notEqualTo: JSON
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: JSON
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: JSON
+
+  """Included in the specified list."""
+  in: [JSON!]
+
+  """Not included in the specified list."""
+  notIn: [JSON!]
+
+  """Less than the specified value."""
+  lessThan: JSON
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: JSON
+
+  """Greater than the specified value."""
+  greaterThan: JSON
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: JSON
+
+  """Contains the specified JSON."""
+  contains: JSON
+
+  """Contains the specified key."""
+  containsKey: String
+
+  """Contains all of the specified keys."""
+  containsAllKeys: [String!]
+
+  """Contains any of the specified keys."""
+  containsAnyKeys: [String!]
+
+  """Contained by the specified JSON."""
+  containedBy: JSON
+}
+
+"""
+A filter to be used against UUID List fields. All fields are combined with a logical ‘and.’
+"""
+input UUIDListFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: [UUID]
+
+  """Not equal to the specified value."""
+  notEqualTo: [UUID]
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: [UUID]
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: [UUID]
+
+  """Less than the specified value."""
+  lessThan: [UUID]
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: [UUID]
+
+  """Greater than the specified value."""
+  greaterThan: [UUID]
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: [UUID]
+
+  """Contains the specified list of values."""
+  contains: [UUID]
+
+  """Contained by the specified list of values."""
+  containedBy: [UUID]
+
+  """Overlaps the specified list of values."""
+  overlaps: [UUID]
+
+  """Any array item is equal to the specified value."""
+  anyEqualTo: UUID
+
+  """Any array item is not equal to the specified value."""
+  anyNotEqualTo: UUID
+
+  """Any array item is less than the specified value."""
+  anyLessThan: UUID
+
+  """Any array item is less than or equal to the specified value."""
+  anyLessThanOrEqualTo: UUID
+
+  """Any array item is greater than the specified value."""
+  anyGreaterThan: UUID
+
+  """Any array item is greater than or equal to the specified value."""
+  anyGreaterThanOrEqualTo: UUID
+}
+
+"""
+A filter to be used against String List fields. All fields are combined with a logical ‘and.’
+"""
+input StringListFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: [String]
+
+  """Not equal to the specified value."""
+  notEqualTo: [String]
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: [String]
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: [String]
+
+  """Less than the specified value."""
+  lessThan: [String]
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: [String]
+
+  """Greater than the specified value."""
+  greaterThan: [String]
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: [String]
+
+  """Contains the specified list of values."""
+  contains: [String]
+
+  """Contained by the specified list of values."""
+  containedBy: [String]
+
+  """Overlaps the specified list of values."""
+  overlaps: [String]
+
+  """Any array item is equal to the specified value."""
+  anyEqualTo: String
+
+  """Any array item is not equal to the specified value."""
+  anyNotEqualTo: String
+
+  """Any array item is less than the specified value."""
+  anyLessThan: String
+
+  """Any array item is less than or equal to the specified value."""
+  anyLessThanOrEqualTo: String
+
+  """Any array item is greater than the specified value."""
+  anyGreaterThan: String
+
+  """Any array item is greater than or equal to the specified value."""
+  anyGreaterThanOrEqualTo: String
+}
+
+"""Methods to use when ordering `PlatformFunctionGraphObject`."""
+enum PlatformFunctionGraphObjectOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  DATA_ASC
+  DATA_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  ID_ASC
+  ID_DESC
+  KIDS_ASC
+  KIDS_DESC
+  KTREE_ASC
+  KTREE_DESC
+}
+
+"""A connection to a list of `OrgFunctionExecutionLog` values."""
+type OrgFunctionExecutionLogConnection {
+  """A list of `OrgFunctionExecutionLog` objects."""
+  nodes: [OrgFunctionExecutionLog]!
+
+  """
+  A list of edges which contains the `OrgFunctionExecutionLog` and cursor to aid in pagination.
+  """
+  edges: [OrgFunctionExecutionLogEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `OrgFunctionExecutionLog` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""Function execution logs — structured console output per invocation"""
+type OrgFunctionExecutionLog {
+  """Log entry timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """User who triggered the execution (NULL for system/cron)"""
+  actorId: UUID
+
+  """Unique log entry identifier"""
+  id: UUID!
+
+  """Invocation this log entry belongs to (NULL for standalone job logs)"""
+  invocationId: UUID
+
+  """Log severity: debug, info, warn, error"""
+  logLevel: String!
+
+  """Log message text"""
+  message: String!
+
+  """Structured context (labels, trace data, extra fields)"""
+  metadata: JSON
+
+  """Function routing key (NULL for generic job logs)"""
+  taskIdentifier: String
+}
+
+"""A `OrgFunctionExecutionLog` edge in the connection."""
+type OrgFunctionExecutionLogEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `OrgFunctionExecutionLog` at the end of the edge."""
+  node: OrgFunctionExecutionLog
+}
+
+"""
+A filter to be used against `OrgFunctionExecutionLog` object types. All fields are combined with a logical ‘and.’
+"""
+input OrgFunctionExecutionLogFilter {
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `actorId` field."""
+  actorId: UUIDFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `invocationId` field."""
+  invocationId: UUIDFilter
+
+  """Filter by the object’s `logLevel` field."""
+  logLevel: StringFilter
+
+  """Filter by the object’s `message` field."""
+  message: StringFilter
+
+  """Filter by the object’s `metadata` field."""
+  metadata: JSONFilter
+
+  """Filter by the object’s `taskIdentifier` field."""
+  taskIdentifier: StringFilter
+
+  """Checks for all expressions in this list."""
+  and: [OrgFunctionExecutionLogFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [OrgFunctionExecutionLogFilter!]
+
+  """Negates the expression."""
+  not: OrgFunctionExecutionLogFilter
+}
+
+"""Methods to use when ordering `OrgFunctionExecutionLog`."""
+enum OrgFunctionExecutionLogOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  ACTOR_ID_ASC
+  ACTOR_ID_DESC
+  ID_ASC
+  ID_DESC
+  INVOCATION_ID_ASC
+  INVOCATION_ID_DESC
+  LOG_LEVEL_ASC
+  LOG_LEVEL_DESC
+  MESSAGE_ASC
+  MESSAGE_DESC
+  METADATA_ASC
+  METADATA_DESC
+  TASK_IDENTIFIER_ASC
+  TASK_IDENTIFIER_DESC
+}
+
+"""A connection to a list of `PlatformFunctionGraphCommit` values."""
+type PlatformFunctionGraphCommitConnection {
+  """A list of `PlatformFunctionGraphCommit` objects."""
+  nodes: [PlatformFunctionGraphCommit]!
+
+  """
+  A list of edges which contains the `PlatformFunctionGraphCommit` and cursor to aid in pagination.
+  """
+  edges: [PlatformFunctionGraphCommitEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformFunctionGraphCommit` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""Commit history — each commit snapshots a tree root for a store"""
+type PlatformFunctionGraphCommit {
+  """User who authored the changes"""
+  authorId: UUID
+
+  """User who committed (may differ from author)"""
+  committerId: UUID
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """Commit timestamp"""
+  date: Datetime!
+
+  """Unique commit identifier"""
+  id: UUID!
+
+  """Optional commit message"""
+  message: String
+
+  """Parent commit IDs (supports merge commits)"""
+  parentIds: [UUID]
+
+  """Store this commit belongs to"""
+  storeId: UUID!
+
+  """Root object ID of the tree snapshot at this commit"""
+  treeId: UUID
+}
+
+"""A `PlatformFunctionGraphCommit` edge in the connection."""
+type PlatformFunctionGraphCommitEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformFunctionGraphCommit` at the end of the edge."""
+  node: PlatformFunctionGraphCommit
+}
+
+"""
+A filter to be used against `PlatformFunctionGraphCommit` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformFunctionGraphCommitFilter {
+  """Filter by the object’s `authorId` field."""
+  authorId: UUIDFilter
+
+  """Filter by the object’s `committerId` field."""
+  committerId: UUIDFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `date` field."""
+  date: DatetimeFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `message` field."""
+  message: StringFilter
+
+  """Filter by the object’s `parentIds` field."""
+  parentIds: UUIDListFilter
+
+  """Filter by the object’s `storeId` field."""
+  storeId: UUIDFilter
+
+  """Filter by the object’s `treeId` field."""
+  treeId: UUIDFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformFunctionGraphCommitFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformFunctionGraphCommitFilter!]
+
+  """Negates the expression."""
+  not: PlatformFunctionGraphCommitFilter
+}
+
+"""Methods to use when ordering `PlatformFunctionGraphCommit`."""
+enum PlatformFunctionGraphCommitOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  AUTHOR_ID_ASC
+  AUTHOR_ID_DESC
+  COMMITTER_ID_ASC
+  COMMITTER_ID_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  DATE_ASC
+  DATE_DESC
+  ID_ASC
+  ID_DESC
+  MESSAGE_ASC
+  MESSAGE_DESC
+  PARENT_IDS_ASC
+  PARENT_IDS_DESC
+  STORE_ID_ASC
+  STORE_ID_DESC
+  TREE_ID_ASC
+  TREE_ID_DESC
+}
+
+"""A connection to a list of `PlatformSecretDefinition` values."""
+type PlatformSecretDefinitionConnection {
+  """A list of `PlatformSecretDefinition` objects."""
+  nodes: [PlatformSecretDefinition]!
+
+  """
+  A list of edges which contains the `PlatformSecretDefinition` and cursor to aid in pagination.
+  """
+  edges: [PlatformSecretDefinitionEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformSecretDefinition` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""
+Global secret name registry — declares which secrets the platform recognizes. Actual values live in app_secrets.
+"""
+type PlatformSecretDefinition {
+  """Freeform metadata annotations for secret definitions"""
+  annotations: JSON!
+  createdAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID!
+
+  """Human-readable description of what this secret is used for"""
+  description: String
+  id: UUID!
+
+  """
+  Whether this row was seeded as a built-in secret definition. Built-in rows are immutable.
+  """
+  isBuiltIn: Boolean!
+
+  """Key-value metadata for filtering and grouping secret definitions"""
+  labels: JSON!
+
+  """Secret name (must match app_secrets.name for resolution)"""
+  name: String!
+  updatedAt: Datetime
+}
+
+"""A `PlatformSecretDefinition` edge in the connection."""
+type PlatformSecretDefinitionEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformSecretDefinition` at the end of the edge."""
+  node: PlatformSecretDefinition
+}
+
+"""
+A filter to be used against `PlatformSecretDefinition` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformSecretDefinitionFilter {
+  """Filter by the object’s `annotations` field."""
+  annotations: JSONFilter
+
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `description` field."""
+  description: StringFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `isBuiltIn` field."""
+  isBuiltIn: BooleanFilter
+
+  """Filter by the object’s `labels` field."""
+  labels: JSONFilter
+
+  """Filter by the object’s `name` field."""
+  name: StringFilter
+
+  """Filter by the object’s `updatedAt` field."""
+  updatedAt: DatetimeFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformSecretDefinitionFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformSecretDefinitionFilter!]
+
+  """Negates the expression."""
+  not: PlatformSecretDefinitionFilter
+}
+
+"""
+A filter to be used against Boolean fields. All fields are combined with a logical ‘and.’
+"""
+input BooleanFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: Boolean
+
+  """Not equal to the specified value."""
+  notEqualTo: Boolean
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: Boolean
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: Boolean
+
+  """Included in the specified list."""
+  in: [Boolean!]
+
+  """Not included in the specified list."""
+  notIn: [Boolean!]
+
+  """Less than the specified value."""
+  lessThan: Boolean
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: Boolean
+
+  """Greater than the specified value."""
+  greaterThan: Boolean
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: Boolean
+}
+
+"""Methods to use when ordering `PlatformSecretDefinition`."""
+enum PlatformSecretDefinitionOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  ANNOTATIONS_ASC
+  ANNOTATIONS_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  DESCRIPTION_ASC
+  DESCRIPTION_DESC
+  ID_ASC
+  ID_DESC
+  IS_BUILT_IN_ASC
+  IS_BUILT_IN_DESC
+  LABELS_ASC
+  LABELS_DESC
+  NAME_ASC
+  NAME_DESC
+  UPDATED_AT_ASC
+  UPDATED_AT_DESC
+}
+
+"""A connection to a list of `PlatformFunctionExecutionLog` values."""
+type PlatformFunctionExecutionLogConnection {
+  """A list of `PlatformFunctionExecutionLog` objects."""
+  nodes: [PlatformFunctionExecutionLog]!
+
+  """
+  A list of edges which contains the `PlatformFunctionExecutionLog` and cursor to aid in pagination.
+  """
+  edges: [PlatformFunctionExecutionLogEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformFunctionExecutionLog` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""Function execution logs — structured console output per invocation"""
+type PlatformFunctionExecutionLog {
+  """Log entry timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """User who triggered the execution (NULL for system/cron)"""
+  actorId: UUID
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID!
+
+  """Unique log entry identifier"""
+  id: UUID!
+
+  """Invocation this log entry belongs to (NULL for standalone job logs)"""
+  invocationId: UUID
+
+  """Log severity: debug, info, warn, error"""
+  logLevel: String!
+
+  """Log message text"""
+  message: String!
+
+  """Structured context (labels, trace data, extra fields)"""
+  metadata: JSON
+
+  """Function routing key (NULL for generic job logs)"""
+  taskIdentifier: String
+}
+
+"""A `PlatformFunctionExecutionLog` edge in the connection."""
+type PlatformFunctionExecutionLogEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformFunctionExecutionLog` at the end of the edge."""
+  node: PlatformFunctionExecutionLog
+}
+
+"""
+A filter to be used against `PlatformFunctionExecutionLog` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformFunctionExecutionLogFilter {
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `actorId` field."""
+  actorId: UUIDFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `invocationId` field."""
+  invocationId: UUIDFilter
+
+  """Filter by the object’s `logLevel` field."""
+  logLevel: StringFilter
+
+  """Filter by the object’s `message` field."""
+  message: StringFilter
+
+  """Filter by the object’s `metadata` field."""
+  metadata: JSONFilter
+
+  """Filter by the object’s `taskIdentifier` field."""
+  taskIdentifier: StringFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformFunctionExecutionLogFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformFunctionExecutionLogFilter!]
+
+  """Negates the expression."""
+  not: PlatformFunctionExecutionLogFilter
+}
+
+"""Methods to use when ordering `PlatformFunctionExecutionLog`."""
+enum PlatformFunctionExecutionLogOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  ACTOR_ID_ASC
+  ACTOR_ID_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  ID_ASC
+  ID_DESC
+  INVOCATION_ID_ASC
+  INVOCATION_ID_DESC
+  LOG_LEVEL_ASC
+  LOG_LEVEL_DESC
+  MESSAGE_ASC
+  MESSAGE_DESC
+  METADATA_ASC
+  METADATA_DESC
+  TASK_IDENTIFIER_ASC
+  TASK_IDENTIFIER_DESC
+}
+
+"""A connection to a list of `PlatformFunctionGraph` values."""
+type PlatformFunctionGraphConnection {
+  """A list of `PlatformFunctionGraph` objects."""
+  nodes: [PlatformFunctionGraph]!
+
+  """
+  A list of edges which contains the `PlatformFunctionGraph` and cursor to aid in pagination.
+  """
+  edges: [PlatformFunctionGraphEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformFunctionGraph` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""
+Flow graph definitions — FBP graphs stored in the dedicated graph Merkle store
+"""
+type PlatformFunctionGraph {
+  """Evaluator/runtime context (function, js, sql, system)"""
+  context: String!
+
+  """Timestamp of graph creation"""
+  createdAt: Datetime!
+
+  """Actor who created this graph"""
+  createdBy: UUID
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """Pinned definitions store commit for deterministic evaluation"""
+  definitionsCommitId: UUID
+
+  """Human-readable description of the graph"""
+  description: String
+
+  """Entity context (org/team) for scoped billing"""
+  entityId: UUID
+
+  """Unique graph identifier"""
+  id: UUID!
+
+  """Whether graph passes structural validation"""
+  isValid: Boolean!
+
+  """Graph name (unique per database)"""
+  name: String!
+
+  """Graph store (Merkle store) holding the graph definition"""
+  storeId: UUID!
+
+  """Timestamp of last modification"""
+  updatedAt: Datetime!
+
+  """Array of validation error objects when is_valid = false"""
+  validationErrors: JSON
+}
+
+"""A `PlatformFunctionGraph` edge in the connection."""
+type PlatformFunctionGraphEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformFunctionGraph` at the end of the edge."""
+  node: PlatformFunctionGraph
+}
+
+"""
+A filter to be used against `PlatformFunctionGraph` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformFunctionGraphFilter {
+  """Filter by the object’s `context` field."""
+  context: StringFilter
+
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `createdBy` field."""
+  createdBy: UUIDFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `definitionsCommitId` field."""
+  definitionsCommitId: UUIDFilter
+
+  """Filter by the object’s `description` field."""
+  description: StringFilter
+
+  """Filter by the object’s `entityId` field."""
+  entityId: UUIDFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `isValid` field."""
+  isValid: BooleanFilter
+
+  """Filter by the object’s `name` field."""
+  name: StringFilter
+
+  """Filter by the object’s `storeId` field."""
+  storeId: UUIDFilter
+
+  """Filter by the object’s `updatedAt` field."""
+  updatedAt: DatetimeFilter
+
+  """Filter by the object’s `validationErrors` field."""
+  validationErrors: JSONFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformFunctionGraphFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformFunctionGraphFilter!]
+
+  """Negates the expression."""
+  not: PlatformFunctionGraphFilter
+}
+
+"""Methods to use when ordering `PlatformFunctionGraph`."""
+enum PlatformFunctionGraphOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  CONTEXT_ASC
+  CONTEXT_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  CREATED_BY_ASC
+  CREATED_BY_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  DEFINITIONS_COMMIT_ID_ASC
+  DEFINITIONS_COMMIT_ID_DESC
+  DESCRIPTION_ASC
+  DESCRIPTION_DESC
+  ENTITY_ID_ASC
+  ENTITY_ID_DESC
+  ID_ASC
+  ID_DESC
+  IS_VALID_ASC
+  IS_VALID_DESC
+  NAME_ASC
+  NAME_DESC
+  STORE_ID_ASC
+  STORE_ID_DESC
+  UPDATED_AT_ASC
+  UPDATED_AT_DESC
+  VALIDATION_ERRORS_ASC
+  VALIDATION_ERRORS_DESC
+}
+
+"""A connection to a list of `OrgFunctionInvocation` values."""
+type OrgFunctionInvocationConnection {
+  """A list of `OrgFunctionInvocation` objects."""
+  nodes: [OrgFunctionInvocation]!
+
+  """
+  A list of edges which contains the `OrgFunctionInvocation` and cursor to aid in pagination.
+  """
+  edges: [OrgFunctionInvocationEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `OrgFunctionInvocation` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""
+Function invocation log — INSERT to call a function (business-layer, metered). Linked to definitions by task_identifier string.
+"""
+type OrgFunctionInvocation {
+  """Invocation creation timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """Who triggered the invocation (NULL for system/cron)"""
+  actorId: UUID
+
+  """When execution completed"""
+  completedAt: Datetime
+
+  """Wall-clock execution time in milliseconds"""
+  durationMs: Int
+
+  """Error message when status is failed"""
+  error: String
+
+  """Groups all node invocations from a single flow graph execution"""
+  graphExecutionId: UUID
+
+  """Unique invocation identifier"""
+  id: UUID!
+
+  """FK to app_jobs.jobs — the underlying transport"""
+  jobId: BigInt
+
+  """Parent invocation when this is a child node of a flow graph execution"""
+  parentInvocationId: UUID
+
+  """Function input payload"""
+  payload: JSON
+
+  """Function return value (success) or structured error (failure)"""
+  result: JSON
+
+  """When execution started"""
+  startedAt: Datetime
+
+  """Lifecycle: pending → running → completed/failed/cancelled"""
+  status: String!
+
+  """
+  Function routing slug (scope:name). Links to function_definitions.task_identifier by convention — no FK.
+  """
+  taskIdentifier: String!
+}
+
+"""
+A signed eight-byte integer. The upper big integer values are greater than the
+max value for a JavaScript number. Therefore all big integers will be output as
+strings and not numbers.
+"""
+scalar BigInt
+
+"""A `OrgFunctionInvocation` edge in the connection."""
+type OrgFunctionInvocationEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `OrgFunctionInvocation` at the end of the edge."""
+  node: OrgFunctionInvocation
+}
+
+"""
+A filter to be used against `OrgFunctionInvocation` object types. All fields are combined with a logical ‘and.’
+"""
+input OrgFunctionInvocationFilter {
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `actorId` field."""
+  actorId: UUIDFilter
+
+  """Filter by the object’s `completedAt` field."""
+  completedAt: DatetimeFilter
+
+  """Filter by the object’s `durationMs` field."""
+  durationMs: IntFilter
+
+  """Filter by the object’s `error` field."""
+  error: StringFilter
+
+  """Filter by the object’s `graphExecutionId` field."""
+  graphExecutionId: UUIDFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `jobId` field."""
+  jobId: BigIntFilter
+
+  """Filter by the object’s `parentInvocationId` field."""
+  parentInvocationId: UUIDFilter
+
+  """Filter by the object’s `payload` field."""
+  payload: JSONFilter
+
+  """Filter by the object’s `result` field."""
+  result: JSONFilter
+
+  """Filter by the object’s `startedAt` field."""
+  startedAt: DatetimeFilter
+
+  """Filter by the object’s `status` field."""
+  status: StringFilter
+
+  """Filter by the object’s `taskIdentifier` field."""
+  taskIdentifier: StringFilter
+
+  """Checks for all expressions in this list."""
+  and: [OrgFunctionInvocationFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [OrgFunctionInvocationFilter!]
+
+  """Negates the expression."""
+  not: OrgFunctionInvocationFilter
+}
+
+"""
+A filter to be used against Int fields. All fields are combined with a logical ‘and.’
+"""
+input IntFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: Int
+
+  """Not equal to the specified value."""
+  notEqualTo: Int
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: Int
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: Int
+
+  """Included in the specified list."""
+  in: [Int!]
+
+  """Not included in the specified list."""
+  notIn: [Int!]
+
+  """Less than the specified value."""
+  lessThan: Int
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: Int
+
+  """Greater than the specified value."""
+  greaterThan: Int
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: Int
+}
+
+"""
+A filter to be used against BigInt fields. All fields are combined with a logical ‘and.’
+"""
+input BigIntFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: BigInt
+
+  """Not equal to the specified value."""
+  notEqualTo: BigInt
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: BigInt
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: BigInt
+
+  """Included in the specified list."""
+  in: [BigInt!]
+
+  """Not included in the specified list."""
+  notIn: [BigInt!]
+
+  """Less than the specified value."""
+  lessThan: BigInt
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: BigInt
+
+  """Greater than the specified value."""
+  greaterThan: BigInt
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: BigInt
+}
+
+"""Methods to use when ordering `OrgFunctionInvocation`."""
+enum OrgFunctionInvocationOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  ACTOR_ID_ASC
+  ACTOR_ID_DESC
+  COMPLETED_AT_ASC
+  COMPLETED_AT_DESC
+  DURATION_MS_ASC
+  DURATION_MS_DESC
+  ERROR_ASC
+  ERROR_DESC
+  GRAPH_EXECUTION_ID_ASC
+  GRAPH_EXECUTION_ID_DESC
+  ID_ASC
+  ID_DESC
+  JOB_ID_ASC
+  JOB_ID_DESC
+  PARENT_INVOCATION_ID_ASC
+  PARENT_INVOCATION_ID_DESC
+  PAYLOAD_ASC
+  PAYLOAD_DESC
+  RESULT_ASC
+  RESULT_DESC
+  STARTED_AT_ASC
+  STARTED_AT_DESC
+  STATUS_ASC
+  STATUS_DESC
+  TASK_IDENTIFIER_ASC
+  TASK_IDENTIFIER_DESC
+}
+
+"""A connection to a list of `PlatformFunctionInvocation` values."""
+type PlatformFunctionInvocationConnection {
+  """A list of `PlatformFunctionInvocation` objects."""
+  nodes: [PlatformFunctionInvocation]!
+
+  """
+  A list of edges which contains the `PlatformFunctionInvocation` and cursor to aid in pagination.
+  """
+  edges: [PlatformFunctionInvocationEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformFunctionInvocation` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""
+Function invocation log — INSERT to call a function (business-layer, metered). Linked to definitions by task_identifier string.
+"""
+type PlatformFunctionInvocation {
+  """Invocation creation timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """Who triggered the invocation (NULL for system/cron)"""
+  actorId: UUID
+
+  """When execution completed"""
+  completedAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID!
+
+  """Wall-clock execution time in milliseconds"""
+  durationMs: Int
+
+  """Error message when status is failed"""
+  error: String
+
+  """Groups all node invocations from a single flow graph execution"""
+  graphExecutionId: UUID
+
+  """Unique invocation identifier"""
+  id: UUID!
+
+  """FK to app_jobs.jobs — the underlying transport"""
+  jobId: BigInt
+
+  """Parent invocation when this is a child node of a flow graph execution"""
+  parentInvocationId: UUID
+
+  """Function input payload"""
+  payload: JSON
+
+  """Function return value (success) or structured error (failure)"""
+  result: JSON
+
+  """When execution started"""
+  startedAt: Datetime
+
+  """Lifecycle: pending → running → completed/failed/cancelled"""
+  status: String!
+
+  """
+  Function routing slug (scope:name). Links to function_definitions.task_identifier by convention — no FK.
+  """
+  taskIdentifier: String!
+}
+
+"""A `PlatformFunctionInvocation` edge in the connection."""
+type PlatformFunctionInvocationEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformFunctionInvocation` at the end of the edge."""
+  node: PlatformFunctionInvocation
+}
+
+"""
+A filter to be used against `PlatformFunctionInvocation` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformFunctionInvocationFilter {
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `actorId` field."""
+  actorId: UUIDFilter
+
+  """Filter by the object’s `completedAt` field."""
+  completedAt: DatetimeFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `durationMs` field."""
+  durationMs: IntFilter
+
+  """Filter by the object’s `error` field."""
+  error: StringFilter
+
+  """Filter by the object’s `graphExecutionId` field."""
+  graphExecutionId: UUIDFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `jobId` field."""
+  jobId: BigIntFilter
+
+  """Filter by the object’s `parentInvocationId` field."""
+  parentInvocationId: UUIDFilter
+
+  """Filter by the object’s `payload` field."""
+  payload: JSONFilter
+
+  """Filter by the object’s `result` field."""
+  result: JSONFilter
+
+  """Filter by the object’s `startedAt` field."""
+  startedAt: DatetimeFilter
+
+  """Filter by the object’s `status` field."""
+  status: StringFilter
+
+  """Filter by the object’s `taskIdentifier` field."""
+  taskIdentifier: StringFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformFunctionInvocationFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformFunctionInvocationFilter!]
+
+  """Negates the expression."""
+  not: PlatformFunctionInvocationFilter
+}
+
+"""Methods to use when ordering `PlatformFunctionInvocation`."""
+enum PlatformFunctionInvocationOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  ACTOR_ID_ASC
+  ACTOR_ID_DESC
+  COMPLETED_AT_ASC
+  COMPLETED_AT_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  DURATION_MS_ASC
+  DURATION_MS_DESC
+  ERROR_ASC
+  ERROR_DESC
+  GRAPH_EXECUTION_ID_ASC
+  GRAPH_EXECUTION_ID_DESC
+  ID_ASC
+  ID_DESC
+  JOB_ID_ASC
+  JOB_ID_DESC
+  PARENT_INVOCATION_ID_ASC
+  PARENT_INVOCATION_ID_DESC
+  PAYLOAD_ASC
+  PAYLOAD_DESC
+  RESULT_ASC
+  RESULT_DESC
+  STARTED_AT_ASC
+  STARTED_AT_DESC
+  STATUS_ASC
+  STATUS_DESC
+  TASK_IDENTIFIER_ASC
+  TASK_IDENTIFIER_DESC
+}
+
+"""A connection to a list of `PlatformFunctionDefinition` values."""
+type PlatformFunctionDefinitionConnection {
+  """A list of `PlatformFunctionDefinition` objects."""
+  nodes: [PlatformFunctionDefinition]!
+
+  """
+  A list of edges which contains the `PlatformFunctionDefinition` and cursor to aid in pagination.
+  """
+  edges: [PlatformFunctionDefinitionEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformFunctionDefinition` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""
+Function definitions — registered cloud functions with routing, queue, and retry configuration
+"""
+type PlatformFunctionDefinition {
+  createdAt: Datetime
+
+  """Human-readable description of what this function does"""
+  description: String
+  id: UUID!
+
+  """
+  Whether this function is a built-in platform function (synced from platform) vs user-created
+  """
+  isBuiltIn: Boolean!
+
+  """
+  Whether this function can be called via function_invocations (public API). Default false = internal-only via add_job()
+  """
+  isInvocable: Boolean!
+
+  """Maximum retry attempts for the underlying job"""
+  maxAttempts: Int!
+
+  """
+  Function name within scope (e.g. send_verification_link, process_file_embedding)
+  """
+  name: String!
+
+  """Namespace this function belongs to (FK to namespaces table)"""
+  namespaceId: UUID
+
+  """Job priority (lower = higher priority)"""
+  priority: Int!
+
+  """Job queue name for serialization (e.g. email, ai, default)"""
+  queueName: String!
+
+  """Function grouping scope (e.g. email, embed, chunk, custom)"""
+  scope: String!
+
+  """
+  Optional service URL override for function dispatch. NULL = use gateway convention (gatewayUrl/task_identifier). Set for customer-deployed functions or external endpoints.
+  """
+  serviceUrl: String
+
+  """
+  Computed routing slug: scope:name (used by Knative job worker for dispatch)
+  """
+  taskIdentifier: String!
+  updatedAt: Datetime
+
+  """Embedded config requirements: array of (name, required) tuples"""
+  requiredConfigs: [FunctionRequirement]!
+
+  """Embedded secret requirements: array of (name, required) tuples"""
+  requiredSecrets: [FunctionRequirement]!
+}
+
+type FunctionRequirement {
+  name: String
+  required: Boolean
+}
+
+"""A `PlatformFunctionDefinition` edge in the connection."""
+type PlatformFunctionDefinitionEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformFunctionDefinition` at the end of the edge."""
+  node: PlatformFunctionDefinition
+}
+
+"""
+A filter to be used against `PlatformFunctionDefinition` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformFunctionDefinitionFilter {
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `description` field."""
+  description: StringFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `isBuiltIn` field."""
+  isBuiltIn: BooleanFilter
+
+  """Filter by the object’s `isInvocable` field."""
+  isInvocable: BooleanFilter
+
+  """Filter by the object’s `maxAttempts` field."""
+  maxAttempts: IntFilter
+
+  """Filter by the object’s `name` field."""
+  name: StringFilter
+
+  """Filter by the object’s `namespaceId` field."""
+  namespaceId: UUIDFilter
+
+  """Filter by the object’s `priority` field."""
+  priority: IntFilter
+
+  """Filter by the object’s `queueName` field."""
+  queueName: StringFilter
+
+  """Filter by the object’s `scope` field."""
+  scope: StringFilter
+
+  """Filter by the object’s `serviceUrl` field."""
+  serviceUrl: StringFilter
+
+  """Filter by the object’s `taskIdentifier` field."""
+  taskIdentifier: StringFilter
+
+  """Filter by the object’s `updatedAt` field."""
+  updatedAt: DatetimeFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformFunctionDefinitionFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformFunctionDefinitionFilter!]
+
+  """Negates the expression."""
+  not: PlatformFunctionDefinitionFilter
+}
+
+"""Methods to use when ordering `PlatformFunctionDefinition`."""
+enum PlatformFunctionDefinitionOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  DESCRIPTION_ASC
+  DESCRIPTION_DESC
+  ID_ASC
+  ID_DESC
+  IS_BUILT_IN_ASC
+  IS_BUILT_IN_DESC
+  IS_INVOCABLE_ASC
+  IS_INVOCABLE_DESC
+  MAX_ATTEMPTS_ASC
+  MAX_ATTEMPTS_DESC
+  NAME_ASC
+  NAME_DESC
+  NAMESPACE_ID_ASC
+  NAMESPACE_ID_DESC
+  PRIORITY_ASC
+  PRIORITY_DESC
+  QUEUE_NAME_ASC
+  QUEUE_NAME_DESC
+  SCOPE_ASC
+  SCOPE_DESC
+  SERVICE_URL_ASC
+  SERVICE_URL_DESC
+  TASK_IDENTIFIER_ASC
+  TASK_IDENTIFIER_DESC
+  UPDATED_AT_ASC
+  UPDATED_AT_DESC
+  REQUIRED_CONFIGS_ASC
+  REQUIRED_CONFIGS_DESC
+  REQUIRED_SECRETS_ASC
+  REQUIRED_SECRETS_DESC
+}
+
+"""Root meta schema type"""
+type MetaSchema {
+  tables: [MetaTable!]!
+}
+
+"""Information about a database table"""
+type MetaTable {
+  name: String!
+  schemaName: String!
+  fields: [MetaField!]!
+  indexes: [MetaIndex!]!
+  constraints: MetaConstraints!
+  foreignKeyConstraints: [MetaForeignKeyConstraint!]!
+  primaryKeyConstraints: [MetaPrimaryKeyConstraint!]!
+  uniqueConstraints: [MetaUniqueConstraint!]!
+  relations: MetaRelations!
+  inflection: MetaInflection!
+  query: MetaQuery!
+}
+
+"""Information about a table field/column"""
+type MetaField {
+  name: String!
+  type: MetaType!
+  isNotNull: Boolean!
+  hasDefault: Boolean!
+  isPrimaryKey: Boolean!
+  isForeignKey: Boolean!
+  description: String
+}
+
+"""Information about a PostgreSQL type"""
+type MetaType {
+  pgType: String!
+  gqlType: String!
+  isArray: Boolean!
+  isNotNull: Boolean
+  hasDefault: Boolean
+  subtype: String
+}
+
+"""Information about a database index"""
+type MetaIndex {
+  name: String!
+  isUnique: Boolean!
+  isPrimary: Boolean!
+  columns: [String!]!
+  fields: [MetaField!]
+}
+
+"""Table constraints"""
+type MetaConstraints {
+  primaryKey: MetaPrimaryKeyConstraint
+  unique: [MetaUniqueConstraint!]!
+  foreignKey: [MetaForeignKeyConstraint!]!
+}
+
+"""Information about a primary key constraint"""
+type MetaPrimaryKeyConstraint {
+  name: String!
+  fields: [MetaField!]!
+}
+
+"""Information about a unique constraint"""
+type MetaUniqueConstraint {
+  name: String!
+  fields: [MetaField!]!
+}
+
+"""Information about a foreign key constraint"""
+type MetaForeignKeyConstraint {
+  name: String!
+  fields: [MetaField!]!
+  referencedTable: String!
+  referencedFields: [String!]!
+  refFields: [MetaField!]
+  refTable: MetaRefTable
+}
+
+"""Reference to a related table"""
+type MetaRefTable {
+  name: String!
+}
+
+"""Table relations"""
+type MetaRelations {
+  belongsTo: [MetaBelongsToRelation!]!
+  has: [MetaHasRelation!]!
+  hasOne: [MetaHasRelation!]!
+  hasMany: [MetaHasRelation!]!
+  manyToMany: [MetaManyToManyRelation!]!
+}
+
+"""A belongs-to (forward FK) relation"""
+type MetaBelongsToRelation {
+  fieldName: String
+  isUnique: Boolean!
+  type: String
+  keys: [MetaField!]!
+  references: MetaRefTable!
+}
+
+"""A has-one or has-many (reverse FK) relation"""
+type MetaHasRelation {
+  fieldName: String
+  isUnique: Boolean!
+  type: String
+  keys: [MetaField!]!
+  referencedBy: MetaRefTable!
+}
+
+"""A many-to-many relation via junction table"""
+type MetaManyToManyRelation {
+  fieldName: String
+  type: String
+  junctionTable: MetaRefTable!
+  junctionLeftConstraint: MetaForeignKeyConstraint!
+  junctionLeftKeyAttributes: [MetaField!]!
+  junctionRightConstraint: MetaForeignKeyConstraint!
+  junctionRightKeyAttributes: [MetaField!]!
+  leftKeyAttributes: [MetaField!]!
+  rightKeyAttributes: [MetaField!]!
+  rightTable: MetaRefTable!
+}
+
+"""Table inflection names"""
+type MetaInflection {
+  tableType: String!
+  allRows: String!
+  connection: String!
+  edge: String!
+  filterType: String
+  orderByType: String!
+  conditionType: String!
+  patchType: String
+  createInputType: String!
+  createPayloadType: String!
+  updatePayloadType: String
+  deletePayloadType: String!
+}
+
+"""Table query/mutation names"""
+type MetaQuery {
+  all: String!
+  one: String
+  create: String
+  update: String
+  delete: String
+}
+
+"""
+The root mutation type which contains root level fields which mutate data.
+"""
+type Mutation {
+  platformValidateFunctionGraph(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: PlatformValidateFunctionGraphInput!
+  ): PlatformValidateFunctionGraphPayload
+  initEmptyRepo(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: InitEmptyRepoInput!
+  ): InitEmptyRepoPayload
+  platformImportDefinitions(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: PlatformImportDefinitionsInput!
+  ): PlatformImportDefinitionsPayload
+  setDataAtPath(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: SetDataAtPathInput!
+  ): SetDataAtPathPayload
+  platformCopyGraph(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: PlatformCopyGraphInput!
+  ): PlatformCopyGraphPayload
+  platformSaveGraph(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: PlatformSaveGraphInput!
+  ): PlatformSaveGraphPayload
+  platformAddEdgeAndSave(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: PlatformAddEdgeAndSaveInput!
+  ): PlatformAddEdgeAndSavePayload
+  platformAddNodeAndSave(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: PlatformAddNodeAndSaveInput!
+  ): PlatformAddNodeAndSavePayload
+  platformCreateFunctionGraph(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: PlatformCreateFunctionGraphInput!
+  ): PlatformCreateFunctionGraphPayload
+  platformAddEdge(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: PlatformAddEdgeInput!
+  ): PlatformAddEdgePayload
+  platformAddNode(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: PlatformAddNodeInput!
+  ): PlatformAddNodePayload
+  platformImportGraphJson(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: PlatformImportGraphJsonInput!
+  ): PlatformImportGraphJsonPayload
+  insertNodeAtPath(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: InsertNodeAtPathInput!
+  ): InsertNodeAtPathPayload
+  platformStartExecution(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: PlatformStartExecutionInput!
+  ): PlatformStartExecutionPayload
+
+  """Creates a single `PlatformFunctionGraphRef`."""
+  createPlatformFunctionGraphRef(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformFunctionGraphRefInput!
+  ): CreatePlatformFunctionGraphRefPayload
+
+  """Creates a single `PlatformFunctionGraphStore`."""
+  createPlatformFunctionGraphStore(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformFunctionGraphStoreInput!
+  ): CreatePlatformFunctionGraphStorePayload
+
+  """Creates a single `PlatformFunctionGraphObject`."""
+  createPlatformFunctionGraphObject(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformFunctionGraphObjectInput!
+  ): CreatePlatformFunctionGraphObjectPayload
+
+  """Creates a single `OrgFunctionExecutionLog`."""
+  createOrgFunctionExecutionLog(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreateOrgFunctionExecutionLogInput!
+  ): CreateOrgFunctionExecutionLogPayload
+
+  """Creates a single `PlatformFunctionGraphCommit`."""
+  createPlatformFunctionGraphCommit(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformFunctionGraphCommitInput!
+  ): CreatePlatformFunctionGraphCommitPayload
+
+  """Creates a single `PlatformSecretDefinition`."""
+  createPlatformSecretDefinition(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformSecretDefinitionInput!
+  ): CreatePlatformSecretDefinitionPayload
+
+  """Creates a single `PlatformFunctionExecutionLog`."""
+  createPlatformFunctionExecutionLog(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformFunctionExecutionLogInput!
+  ): CreatePlatformFunctionExecutionLogPayload
+
+  """Creates a single `PlatformFunctionGraph`."""
+  createPlatformFunctionGraph(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformFunctionGraphInput!
+  ): CreatePlatformFunctionGraphPayload
+
+  """Creates a single `OrgFunctionInvocation`."""
+  createOrgFunctionInvocation(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreateOrgFunctionInvocationInput!
+  ): CreateOrgFunctionInvocationPayload
+
+  """Creates a single `PlatformFunctionInvocation`."""
+  createPlatformFunctionInvocation(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformFunctionInvocationInput!
+  ): CreatePlatformFunctionInvocationPayload
+
+  """Creates a single `PlatformFunctionDefinition`."""
+  createPlatformFunctionDefinition(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformFunctionDefinitionInput!
+  ): CreatePlatformFunctionDefinitionPayload
+
+  """
+  Updates a single `PlatformFunctionGraphRef` using a unique key and a patch.
+  """
+  updatePlatformFunctionGraphRef(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformFunctionGraphRefInput!
+  ): UpdatePlatformFunctionGraphRefPayload
+
+  """
+  Updates a single `PlatformFunctionGraphStore` using a unique key and a patch.
+  """
+  updatePlatformFunctionGraphStore(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformFunctionGraphStoreInput!
+  ): UpdatePlatformFunctionGraphStorePayload
+
+  """
+  Updates a single `PlatformFunctionGraphObject` using a unique key and a patch.
+  """
+  updatePlatformFunctionGraphObject(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformFunctionGraphObjectInput!
+  ): UpdatePlatformFunctionGraphObjectPayload
+
+  """
+  Updates a single `OrgFunctionExecutionLog` using a unique key and a patch.
+  """
+  updateOrgFunctionExecutionLog(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdateOrgFunctionExecutionLogInput!
+  ): UpdateOrgFunctionExecutionLogPayload
+
+  """
+  Updates a single `PlatformFunctionGraphCommit` using a unique key and a patch.
+  """
+  updatePlatformFunctionGraphCommit(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformFunctionGraphCommitInput!
+  ): UpdatePlatformFunctionGraphCommitPayload
+
+  """
+  Updates a single `PlatformSecretDefinition` using a unique key and a patch.
+  """
+  updatePlatformSecretDefinition(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformSecretDefinitionInput!
+  ): UpdatePlatformSecretDefinitionPayload
+
+  """
+  Updates a single `PlatformFunctionExecutionLog` using a unique key and a patch.
+  """
+  updatePlatformFunctionExecutionLog(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformFunctionExecutionLogInput!
+  ): UpdatePlatformFunctionExecutionLogPayload
+
+  """
+  Updates a single `PlatformFunctionGraph` using a unique key and a patch.
+  """
+  updatePlatformFunctionGraph(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformFunctionGraphInput!
+  ): UpdatePlatformFunctionGraphPayload
+
+  """
+  Updates a single `OrgFunctionInvocation` using a unique key and a patch.
+  """
+  updateOrgFunctionInvocation(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdateOrgFunctionInvocationInput!
+  ): UpdateOrgFunctionInvocationPayload
+
+  """
+  Updates a single `PlatformFunctionInvocation` using a unique key and a patch.
+  """
+  updatePlatformFunctionInvocation(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformFunctionInvocationInput!
+  ): UpdatePlatformFunctionInvocationPayload
+
+  """
+  Updates a single `PlatformFunctionDefinition` using a unique key and a patch.
+  """
+  updatePlatformFunctionDefinition(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformFunctionDefinitionInput!
+  ): UpdatePlatformFunctionDefinitionPayload
+
+  """Deletes a single `PlatformFunctionGraphRef` using a unique key."""
+  deletePlatformFunctionGraphRef(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformFunctionGraphRefInput!
+  ): DeletePlatformFunctionGraphRefPayload
+
+  """Deletes a single `PlatformFunctionGraphStore` using a unique key."""
+  deletePlatformFunctionGraphStore(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformFunctionGraphStoreInput!
+  ): DeletePlatformFunctionGraphStorePayload
+
+  """Deletes a single `PlatformFunctionGraphObject` using a unique key."""
+  deletePlatformFunctionGraphObject(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformFunctionGraphObjectInput!
+  ): DeletePlatformFunctionGraphObjectPayload
+
+  """Deletes a single `OrgFunctionExecutionLog` using a unique key."""
+  deleteOrgFunctionExecutionLog(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeleteOrgFunctionExecutionLogInput!
+  ): DeleteOrgFunctionExecutionLogPayload
+
+  """Deletes a single `PlatformFunctionGraphCommit` using a unique key."""
+  deletePlatformFunctionGraphCommit(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformFunctionGraphCommitInput!
+  ): DeletePlatformFunctionGraphCommitPayload
+
+  """Deletes a single `PlatformSecretDefinition` using a unique key."""
+  deletePlatformSecretDefinition(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformSecretDefinitionInput!
+  ): DeletePlatformSecretDefinitionPayload
+
+  """Deletes a single `PlatformFunctionExecutionLog` using a unique key."""
+  deletePlatformFunctionExecutionLog(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformFunctionExecutionLogInput!
+  ): DeletePlatformFunctionExecutionLogPayload
+
+  """Deletes a single `PlatformFunctionGraph` using a unique key."""
+  deletePlatformFunctionGraph(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformFunctionGraphInput!
+  ): DeletePlatformFunctionGraphPayload
+
+  """Deletes a single `OrgFunctionInvocation` using a unique key."""
+  deleteOrgFunctionInvocation(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeleteOrgFunctionInvocationInput!
+  ): DeleteOrgFunctionInvocationPayload
+
+  """Deletes a single `PlatformFunctionInvocation` using a unique key."""
+  deletePlatformFunctionInvocation(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformFunctionInvocationInput!
+  ): DeletePlatformFunctionInvocationPayload
+
+  """Deletes a single `PlatformFunctionDefinition` using a unique key."""
+  deletePlatformFunctionDefinition(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformFunctionDefinitionInput!
+  ): DeletePlatformFunctionDefinitionPayload
+
+  """
+  Provision an S3 bucket for a logical bucket in the database.
+  Reads the bucket config via RLS, then creates and configures
+  the S3 bucket with the appropriate privacy policies, CORS rules,
+  and lifecycle settings.
+  """
+  provisionBucket(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: ProvisionBucketInput!
+  ): ProvisionBucketPayload
+}
+
+"""The output of our `platformValidateFunctionGraph` mutation."""
+type PlatformValidateFunctionGraphPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: Boolean
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `platformValidateFunctionGraph` mutation."""
+input PlatformValidateFunctionGraphInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  graphId: UUID
+}
+
+"""The output of our `initEmptyRepo` mutation."""
+type InitEmptyRepoPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `initEmptyRepo` mutation."""
+input InitEmptyRepoInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  sId: UUID
+  storeId: UUID
+}
+
+"""The output of our `platformImportDefinitions` mutation."""
+type PlatformImportDefinitionsPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `platformImportDefinitions` mutation."""
+input PlatformImportDefinitionsInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  graphId: UUID
+  sourceScopeId: UUID
+  sourceCommitId: UUID
+  contexts: [String]
+}
+
+"""The output of our `setDataAtPath` mutation."""
+type SetDataAtPathPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: UUID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `setDataAtPath` mutation."""
+input SetDataAtPathInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  sId: UUID
+  root: UUID
+  path: [String]
+  data: JSON
+}
+
+"""The output of our `platformCopyGraph` mutation."""
+type PlatformCopyGraphPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: UUID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `platformCopyGraph` mutation."""
+input PlatformCopyGraphInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  databaseId: UUID
+  graphId: UUID
+  name: String
+}
+
+"""The output of our `platformSaveGraph` mutation."""
+type PlatformSaveGraphPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: UUID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `platformSaveGraph` mutation."""
+input PlatformSaveGraphInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  graphId: UUID
+  rootHash: UUID
+  message: String
+}
+
+"""The output of our `platformAddEdgeAndSave` mutation."""
+type PlatformAddEdgeAndSavePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: UUID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `platformAddEdgeAndSave` mutation."""
+input PlatformAddEdgeAndSaveInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  graphId: UUID
+  srcNode: String
+  srcPort: String
+  dstNode: String
+  dstPort: String
+  message: String
+}
+
+"""The output of our `platformAddNodeAndSave` mutation."""
+type PlatformAddNodeAndSavePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: UUID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `platformAddNodeAndSave` mutation."""
+input PlatformAddNodeAndSaveInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  graphId: UUID
+  nodeName: String
+  nodeType: String
+  props: JSON
+  meta: JSON
+  message: String
+}
+
+"""The output of our `platformCreateFunctionGraph` mutation."""
+type PlatformCreateFunctionGraphPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: UUID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `platformCreateFunctionGraph` mutation."""
+input PlatformCreateFunctionGraphInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  databaseId: UUID
+  name: String
+  context: String
+  description: String
+  entityId: UUID
+  createdBy: UUID
+  definitionsCommitId: UUID
+}
+
+"""The output of our `platformAddEdge` mutation."""
+type PlatformAddEdgePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: UUID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `platformAddEdge` mutation."""
+input PlatformAddEdgeInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  databaseId: UUID
+  rootHash: UUID
+  srcNode: String
+  srcPort: String
+  dstNode: String
+  dstPort: String
+  context: String
+  graphName: String
+}
+
+"""The output of our `platformAddNode` mutation."""
+type PlatformAddNodePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: UUID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `platformAddNode` mutation."""
+input PlatformAddNodeInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  databaseId: UUID
+  rootHash: UUID
+  nodeName: String
+  nodeType: String
+  context: String
+  graphName: String
+  props: JSON
+  meta: JSON
+}
+
+"""The output of our `platformImportGraphJson` mutation."""
+type PlatformImportGraphJsonPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: UUID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `platformImportGraphJson` mutation."""
+input PlatformImportGraphJsonInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  databaseId: UUID
+  name: String
+  graphJson: JSON
+  context: String
+  description: String
+  entityId: UUID
+  createdBy: UUID
+  definitionsCommitId: UUID
+}
+
+"""The output of our `insertNodeAtPath` mutation."""
+type InsertNodeAtPathPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: UUID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `insertNodeAtPath` mutation."""
+input InsertNodeAtPathInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  sId: UUID
+  root: UUID
+  path: [String]
+  data: JSON
+  kids: [UUID]
+  ktree: [String]
+}
+
+"""The output of our `platformStartExecution` mutation."""
+type PlatformStartExecutionPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: UUID
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `platformStartExecution` mutation."""
+input PlatformStartExecutionInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  graphId: UUID
+  inputPayload: JSON
+  outputNode: String
+  outputPort: String
+  maxTicks: Int
+  maxPendingJobs: Int
+  timeoutInterval: IntervalInput
+  parentExecutionId: UUID
+  parentNodeName: String
+}
+
+"""
+An interval of time that has passed where the smallest distinct unit is a second.
+"""
+input IntervalInput {
+  """
+  A quantity of seconds. This is the only non-integer field, as all the other
+  fields will dump their overflow into a smaller unit of time. Intervals don’t
+  have a smaller unit than seconds.
+  """
+  seconds: Float
+
+  """A quantity of minutes."""
+  minutes: Int
+
+  """A quantity of hours."""
+  hours: Int
+
+  """A quantity of days."""
+  days: Int
+
+  """A quantity of months."""
+  months: Int
+
+  """A quantity of years."""
+  years: Int
+}
+
+"""The output of our create `PlatformFunctionGraphRef` mutation."""
+type CreatePlatformFunctionGraphRefPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphRef` that was created by this mutation."""
+  platformFunctionGraphRef: PlatformFunctionGraphRef
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraphRef`. May be used by Relay 1."""
+  platformFunctionGraphRefEdge(
+    """The method to use when ordering `PlatformFunctionGraphRef`."""
+    orderBy: [PlatformFunctionGraphRefOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphRefEdge
+}
+
+"""All input for the create `PlatformFunctionGraphRef` mutation."""
+input CreatePlatformFunctionGraphRefInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphRef` to be created by this mutation."""
+  platformFunctionGraphRef: PlatformFunctionGraphRefInput!
+}
+
+"""An input for mutations affecting `PlatformFunctionGraphRef`"""
+input PlatformFunctionGraphRefInput {
+  """Commit this ref points to"""
+  commitId: UUID
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """Unique ref identifier"""
+  id: UUID
+
+  """Ref name (e.g. HEAD, main)"""
+  name: String!
+
+  """Store this ref belongs to"""
+  storeId: UUID!
+}
+
+"""The output of our create `PlatformFunctionGraphStore` mutation."""
+type CreatePlatformFunctionGraphStorePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphStore` that was created by this mutation."""
+  platformFunctionGraphStore: PlatformFunctionGraphStore
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraphStore`. May be used by Relay 1."""
+  platformFunctionGraphStoreEdge(
+    """The method to use when ordering `PlatformFunctionGraphStore`."""
+    orderBy: [PlatformFunctionGraphStoreOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphStoreEdge
+}
+
+"""All input for the create `PlatformFunctionGraphStore` mutation."""
+input CreatePlatformFunctionGraphStoreInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphStore` to be created by this mutation."""
+  platformFunctionGraphStore: PlatformFunctionGraphStoreInput!
+}
+
+"""An input for mutations affecting `PlatformFunctionGraphStore`"""
+input PlatformFunctionGraphStoreInput {
+  """Timestamp of store creation"""
+  createdAt: Datetime
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """Current root object hash of this store"""
+  hash: UUID
+
+  """Unique store identifier"""
+  id: UUID
+
+  """Human-readable store name"""
+  name: String!
+}
+
+"""The output of our create `PlatformFunctionGraphObject` mutation."""
+type CreatePlatformFunctionGraphObjectPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphObject` that was created by this mutation."""
+  platformFunctionGraphObject: PlatformFunctionGraphObject
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraphObject`. May be used by Relay 1."""
+  platformFunctionGraphObjectEdge(
+    """The method to use when ordering `PlatformFunctionGraphObject`."""
+    orderBy: [PlatformFunctionGraphObjectOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphObjectEdge
+}
+
+"""All input for the create `PlatformFunctionGraphObject` mutation."""
+input CreatePlatformFunctionGraphObjectInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphObject` to be created by this mutation."""
+  platformFunctionGraphObject: PlatformFunctionGraphObjectInput!
+}
+
+"""An input for mutations affecting `PlatformFunctionGraphObject`"""
+input PlatformFunctionGraphObjectInput {
+  """Timestamp of object creation"""
+  createdAt: Datetime
+
+  """Payload data for this object node"""
+  data: JSON
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """Content-addressed UUID v5 — deterministic hash of (data, kids, ktree)"""
+  id: UUID!
+
+  """Ordered array of child object IDs"""
+  kids: [UUID]
+
+  """Ordered array of child path names (parallel to kids)"""
+  ktree: [String]
+}
+
+"""The output of our create `OrgFunctionExecutionLog` mutation."""
+type CreateOrgFunctionExecutionLogPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `OrgFunctionExecutionLog` that was created by this mutation."""
+  orgFunctionExecutionLog: OrgFunctionExecutionLog
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `OrgFunctionExecutionLog`. May be used by Relay 1."""
+  orgFunctionExecutionLogEdge(
+    """The method to use when ordering `OrgFunctionExecutionLog`."""
+    orderBy: [OrgFunctionExecutionLogOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): OrgFunctionExecutionLogEdge
+}
+
+"""All input for the create `OrgFunctionExecutionLog` mutation."""
+input CreateOrgFunctionExecutionLogInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `OrgFunctionExecutionLog` to be created by this mutation."""
+  orgFunctionExecutionLog: OrgFunctionExecutionLogInput!
+}
+
+"""An input for mutations affecting `OrgFunctionExecutionLog`"""
+input OrgFunctionExecutionLogInput {
+  """Log entry timestamp (partition key)"""
+  createdAt: Datetime
+
+  """User who triggered the execution (NULL for system/cron)"""
+  actorId: UUID
+
+  """Unique log entry identifier"""
+  id: UUID
+
+  """Invocation this log entry belongs to (NULL for standalone job logs)"""
+  invocationId: UUID
+
+  """Log severity: debug, info, warn, error"""
+  logLevel: String
+
+  """Log message text"""
+  message: String!
+
+  """Structured context (labels, trace data, extra fields)"""
+  metadata: JSON
+
+  """Function routing key (NULL for generic job logs)"""
+  taskIdentifier: String
+}
+
+"""The output of our create `PlatformFunctionGraphCommit` mutation."""
+type CreatePlatformFunctionGraphCommitPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphCommit` that was created by this mutation."""
+  platformFunctionGraphCommit: PlatformFunctionGraphCommit
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraphCommit`. May be used by Relay 1."""
+  platformFunctionGraphCommitEdge(
+    """The method to use when ordering `PlatformFunctionGraphCommit`."""
+    orderBy: [PlatformFunctionGraphCommitOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphCommitEdge
+}
+
+"""All input for the create `PlatformFunctionGraphCommit` mutation."""
+input CreatePlatformFunctionGraphCommitInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphCommit` to be created by this mutation."""
+  platformFunctionGraphCommit: PlatformFunctionGraphCommitInput!
+}
+
+"""An input for mutations affecting `PlatformFunctionGraphCommit`"""
+input PlatformFunctionGraphCommitInput {
+  """User who authored the changes"""
+  authorId: UUID
+
+  """User who committed (may differ from author)"""
+  committerId: UUID
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """Commit timestamp"""
+  date: Datetime
+
+  """Unique commit identifier"""
+  id: UUID
+
+  """Optional commit message"""
+  message: String
+
+  """Parent commit IDs (supports merge commits)"""
+  parentIds: [UUID]
+
+  """Store this commit belongs to"""
+  storeId: UUID!
+
+  """Root object ID of the tree snapshot at this commit"""
+  treeId: UUID
+}
+
+"""The output of our create `PlatformSecretDefinition` mutation."""
+type CreatePlatformSecretDefinitionPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformSecretDefinition` that was created by this mutation."""
+  platformSecretDefinition: PlatformSecretDefinition
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformSecretDefinition`. May be used by Relay 1."""
+  platformSecretDefinitionEdge(
+    """The method to use when ordering `PlatformSecretDefinition`."""
+    orderBy: [PlatformSecretDefinitionOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformSecretDefinitionEdge
+}
+
+"""All input for the create `PlatformSecretDefinition` mutation."""
+input CreatePlatformSecretDefinitionInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformSecretDefinition` to be created by this mutation."""
+  platformSecretDefinition: PlatformSecretDefinitionInput!
+}
+
+"""An input for mutations affecting `PlatformSecretDefinition`"""
+input PlatformSecretDefinitionInput {
+  """Freeform metadata annotations for secret definitions"""
+  annotations: JSON
+  createdAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID!
+
+  """Human-readable description of what this secret is used for"""
+  description: String
+  id: UUID
+
+  """
+  Whether this row was seeded as a built-in secret definition. Built-in rows are immutable.
+  """
+  isBuiltIn: Boolean
+
+  """Key-value metadata for filtering and grouping secret definitions"""
+  labels: JSON
+
+  """Secret name (must match app_secrets.name for resolution)"""
+  name: String!
+  updatedAt: Datetime
+}
+
+"""The output of our create `PlatformFunctionExecutionLog` mutation."""
+type CreatePlatformFunctionExecutionLogPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionExecutionLog` that was created by this mutation."""
+  platformFunctionExecutionLog: PlatformFunctionExecutionLog
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """
+  An edge for our `PlatformFunctionExecutionLog`. May be used by Relay 1.
+  """
+  platformFunctionExecutionLogEdge(
+    """The method to use when ordering `PlatformFunctionExecutionLog`."""
+    orderBy: [PlatformFunctionExecutionLogOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionExecutionLogEdge
+}
+
+"""All input for the create `PlatformFunctionExecutionLog` mutation."""
+input CreatePlatformFunctionExecutionLogInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionExecutionLog` to be created by this mutation."""
+  platformFunctionExecutionLog: PlatformFunctionExecutionLogInput!
+}
+
+"""An input for mutations affecting `PlatformFunctionExecutionLog`"""
+input PlatformFunctionExecutionLogInput {
+  """Log entry timestamp (partition key)"""
+  createdAt: Datetime
+
+  """User who triggered the execution (NULL for system/cron)"""
+  actorId: UUID
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID!
+
+  """Unique log entry identifier"""
+  id: UUID
+
+  """Invocation this log entry belongs to (NULL for standalone job logs)"""
+  invocationId: UUID
+
+  """Log severity: debug, info, warn, error"""
+  logLevel: String
+
+  """Log message text"""
+  message: String!
+
+  """Structured context (labels, trace data, extra fields)"""
+  metadata: JSON
+
+  """Function routing key (NULL for generic job logs)"""
+  taskIdentifier: String
+}
+
+"""The output of our create `PlatformFunctionGraph` mutation."""
+type CreatePlatformFunctionGraphPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraph` that was created by this mutation."""
+  platformFunctionGraph: PlatformFunctionGraph
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraph`. May be used by Relay 1."""
+  platformFunctionGraphEdge(
+    """The method to use when ordering `PlatformFunctionGraph`."""
+    orderBy: [PlatformFunctionGraphOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphEdge
+}
+
+"""All input for the create `PlatformFunctionGraph` mutation."""
+input CreatePlatformFunctionGraphInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraph` to be created by this mutation."""
+  platformFunctionGraph: PlatformFunctionGraphInput!
+}
+
+"""An input for mutations affecting `PlatformFunctionGraph`"""
+input PlatformFunctionGraphInput {
+  """Evaluator/runtime context (function, js, sql, system)"""
+  context: String
+
+  """Timestamp of graph creation"""
+  createdAt: Datetime
+
+  """Actor who created this graph"""
+  createdBy: UUID
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """Pinned definitions store commit for deterministic evaluation"""
+  definitionsCommitId: UUID
+
+  """Human-readable description of the graph"""
+  description: String
+
+  """Entity context (org/team) for scoped billing"""
+  entityId: UUID
+
+  """Unique graph identifier"""
+  id: UUID
+
+  """Whether graph passes structural validation"""
+  isValid: Boolean
+
+  """Graph name (unique per database)"""
+  name: String!
+
+  """Graph store (Merkle store) holding the graph definition"""
+  storeId: UUID!
+
+  """Timestamp of last modification"""
+  updatedAt: Datetime
+
+  """Array of validation error objects when is_valid = false"""
+  validationErrors: JSON
+}
+
+"""The output of our create `OrgFunctionInvocation` mutation."""
+type CreateOrgFunctionInvocationPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `OrgFunctionInvocation` that was created by this mutation."""
+  orgFunctionInvocation: OrgFunctionInvocation
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `OrgFunctionInvocation`. May be used by Relay 1."""
+  orgFunctionInvocationEdge(
+    """The method to use when ordering `OrgFunctionInvocation`."""
+    orderBy: [OrgFunctionInvocationOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): OrgFunctionInvocationEdge
+}
+
+"""All input for the create `OrgFunctionInvocation` mutation."""
+input CreateOrgFunctionInvocationInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `OrgFunctionInvocation` to be created by this mutation."""
+  orgFunctionInvocation: OrgFunctionInvocationInput!
+}
+
+"""An input for mutations affecting `OrgFunctionInvocation`"""
+input OrgFunctionInvocationInput {
+  """Invocation creation timestamp (partition key)"""
+  createdAt: Datetime
+
+  """Who triggered the invocation (NULL for system/cron)"""
+  actorId: UUID
+
+  """When execution completed"""
+  completedAt: Datetime
+
+  """Wall-clock execution time in milliseconds"""
+  durationMs: Int
+
+  """Error message when status is failed"""
+  error: String
+
+  """Groups all node invocations from a single flow graph execution"""
+  graphExecutionId: UUID
+
+  """Unique invocation identifier"""
+  id: UUID
+
+  """FK to app_jobs.jobs — the underlying transport"""
+  jobId: BigInt
+
+  """Parent invocation when this is a child node of a flow graph execution"""
+  parentInvocationId: UUID
+
+  """Function input payload"""
+  payload: JSON
+
+  """Function return value (success) or structured error (failure)"""
+  result: JSON
+
+  """When execution started"""
+  startedAt: Datetime
+
+  """Lifecycle: pending → running → completed/failed/cancelled"""
+  status: String
+
+  """
+  Function routing slug (scope:name). Links to function_definitions.task_identifier by convention — no FK.
+  """
+  taskIdentifier: String!
+}
+
+"""The output of our create `PlatformFunctionInvocation` mutation."""
+type CreatePlatformFunctionInvocationPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionInvocation` that was created by this mutation."""
+  platformFunctionInvocation: PlatformFunctionInvocation
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionInvocation`. May be used by Relay 1."""
+  platformFunctionInvocationEdge(
+    """The method to use when ordering `PlatformFunctionInvocation`."""
+    orderBy: [PlatformFunctionInvocationOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionInvocationEdge
+}
+
+"""All input for the create `PlatformFunctionInvocation` mutation."""
+input CreatePlatformFunctionInvocationInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionInvocation` to be created by this mutation."""
+  platformFunctionInvocation: PlatformFunctionInvocationInput!
+}
+
+"""An input for mutations affecting `PlatformFunctionInvocation`"""
+input PlatformFunctionInvocationInput {
+  """Invocation creation timestamp (partition key)"""
+  createdAt: Datetime
+
+  """Who triggered the invocation (NULL for system/cron)"""
+  actorId: UUID
+
+  """When execution completed"""
+  completedAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID!
+
+  """Wall-clock execution time in milliseconds"""
+  durationMs: Int
+
+  """Error message when status is failed"""
+  error: String
+
+  """Groups all node invocations from a single flow graph execution"""
+  graphExecutionId: UUID
+
+  """Unique invocation identifier"""
+  id: UUID
+
+  """FK to app_jobs.jobs — the underlying transport"""
+  jobId: BigInt
+
+  """Parent invocation when this is a child node of a flow graph execution"""
+  parentInvocationId: UUID
+
+  """Function input payload"""
+  payload: JSON
+
+  """Function return value (success) or structured error (failure)"""
+  result: JSON
+
+  """When execution started"""
+  startedAt: Datetime
+
+  """Lifecycle: pending → running → completed/failed/cancelled"""
+  status: String
+
+  """
+  Function routing slug (scope:name). Links to function_definitions.task_identifier by convention — no FK.
+  """
+  taskIdentifier: String!
+}
+
+"""The output of our create `PlatformFunctionDefinition` mutation."""
+type CreatePlatformFunctionDefinitionPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionDefinition` that was created by this mutation."""
+  platformFunctionDefinition: PlatformFunctionDefinition
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionDefinition`. May be used by Relay 1."""
+  platformFunctionDefinitionEdge(
+    """The method to use when ordering `PlatformFunctionDefinition`."""
+    orderBy: [PlatformFunctionDefinitionOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionDefinitionEdge
+}
+
+"""All input for the create `PlatformFunctionDefinition` mutation."""
+input CreatePlatformFunctionDefinitionInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionDefinition` to be created by this mutation."""
+  platformFunctionDefinition: PlatformFunctionDefinitionInput!
+}
+
+"""An input for mutations affecting `PlatformFunctionDefinition`"""
+input PlatformFunctionDefinitionInput {
+  createdAt: Datetime
+
+  """Human-readable description of what this function does"""
+  description: String
+  id: UUID
+
+  """
+  Whether this function is a built-in platform function (synced from platform) vs user-created
+  """
+  isBuiltIn: Boolean
+
+  """
+  Whether this function can be called via function_invocations (public API). Default false = internal-only via add_job()
+  """
+  isInvocable: Boolean
+
+  """Maximum retry attempts for the underlying job"""
+  maxAttempts: Int
+
+  """
+  Function name within scope (e.g. send_verification_link, process_file_embedding)
+  """
+  name: String!
+
+  """Namespace this function belongs to (FK to namespaces table)"""
+  namespaceId: UUID
+
+  """Job priority (lower = higher priority)"""
+  priority: Int
+
+  """Job queue name for serialization (e.g. email, ai, default)"""
+  queueName: String
+
+  """Function grouping scope (e.g. email, embed, chunk, custom)"""
+  scope: String!
+
+  """
+  Optional service URL override for function dispatch. NULL = use gateway convention (gatewayUrl/task_identifier). Set for customer-deployed functions or external endpoints.
+  """
+  serviceUrl: String
+
+  """
+  Computed routing slug: scope:name (used by Knative job worker for dispatch)
+  """
+  taskIdentifier: String!
+  updatedAt: Datetime
+
+  """Embedded config requirements: array of (name, required) tuples"""
+  requiredConfigs: [FunctionRequirementInput]
+
+  """Embedded secret requirements: array of (name, required) tuples"""
+  requiredSecrets: [FunctionRequirementInput]
+}
+
+"""An input for mutations affecting `FunctionRequirement`"""
+input FunctionRequirementInput {
+  name: String
+  required: Boolean
+}
+
+"""The output of our update `PlatformFunctionGraphRef` mutation."""
+type UpdatePlatformFunctionGraphRefPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphRef` that was updated by this mutation."""
+  platformFunctionGraphRef: PlatformFunctionGraphRef
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraphRef`. May be used by Relay 1."""
+  platformFunctionGraphRefEdge(
+    """The method to use when ordering `PlatformFunctionGraphRef`."""
+    orderBy: [PlatformFunctionGraphRefOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphRefEdge
+}
+
+"""All input for the `updatePlatformFunctionGraphRef` mutation."""
+input UpdatePlatformFunctionGraphRefInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Unique ref identifier"""
+  id: UUID!
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformFunctionGraphRef` being updated.
+  """
+  platformFunctionGraphRefPatch: PlatformFunctionGraphRefPatch!
+}
+
+"""
+Represents an update to a `PlatformFunctionGraphRef`. Fields that are set will be updated.
+"""
+input PlatformFunctionGraphRefPatch {
+  """Commit this ref points to"""
+  commitId: UUID
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID
+
+  """Unique ref identifier"""
+  id: UUID
+
+  """Ref name (e.g. HEAD, main)"""
+  name: String
+
+  """Store this ref belongs to"""
+  storeId: UUID
+}
+
+"""The output of our update `PlatformFunctionGraphStore` mutation."""
+type UpdatePlatformFunctionGraphStorePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphStore` that was updated by this mutation."""
+  platformFunctionGraphStore: PlatformFunctionGraphStore
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraphStore`. May be used by Relay 1."""
+  platformFunctionGraphStoreEdge(
+    """The method to use when ordering `PlatformFunctionGraphStore`."""
+    orderBy: [PlatformFunctionGraphStoreOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphStoreEdge
+}
+
+"""All input for the `updatePlatformFunctionGraphStore` mutation."""
+input UpdatePlatformFunctionGraphStoreInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Unique store identifier"""
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformFunctionGraphStore` being updated.
+  """
+  platformFunctionGraphStorePatch: PlatformFunctionGraphStorePatch!
+}
+
+"""
+Represents an update to a `PlatformFunctionGraphStore`. Fields that are set will be updated.
+"""
+input PlatformFunctionGraphStorePatch {
+  """Timestamp of store creation"""
+  createdAt: Datetime
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID
+
+  """Current root object hash of this store"""
+  hash: UUID
+
+  """Unique store identifier"""
+  id: UUID
+
+  """Human-readable store name"""
+  name: String
+}
+
+"""The output of our update `PlatformFunctionGraphObject` mutation."""
+type UpdatePlatformFunctionGraphObjectPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphObject` that was updated by this mutation."""
+  platformFunctionGraphObject: PlatformFunctionGraphObject
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraphObject`. May be used by Relay 1."""
+  platformFunctionGraphObjectEdge(
+    """The method to use when ordering `PlatformFunctionGraphObject`."""
+    orderBy: [PlatformFunctionGraphObjectOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphObjectEdge
+}
+
+"""All input for the `updatePlatformFunctionGraphObject` mutation."""
+input UpdatePlatformFunctionGraphObjectInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Content-addressed UUID v5 — deterministic hash of (data, kids, ktree)"""
+  id: UUID!
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformFunctionGraphObject` being updated.
+  """
+  platformFunctionGraphObjectPatch: PlatformFunctionGraphObjectPatch!
+}
+
+"""
+Represents an update to a `PlatformFunctionGraphObject`. Fields that are set will be updated.
+"""
+input PlatformFunctionGraphObjectPatch {
+  """Timestamp of object creation"""
+  createdAt: Datetime
+
+  """Payload data for this object node"""
+  data: JSON
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID
+
+  """Content-addressed UUID v5 — deterministic hash of (data, kids, ktree)"""
+  id: UUID
+
+  """Ordered array of child object IDs"""
+  kids: [UUID]
+
+  """Ordered array of child path names (parallel to kids)"""
+  ktree: [String]
+}
+
+"""The output of our update `OrgFunctionExecutionLog` mutation."""
+type UpdateOrgFunctionExecutionLogPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `OrgFunctionExecutionLog` that was updated by this mutation."""
+  orgFunctionExecutionLog: OrgFunctionExecutionLog
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `OrgFunctionExecutionLog`. May be used by Relay 1."""
+  orgFunctionExecutionLogEdge(
+    """The method to use when ordering `OrgFunctionExecutionLog`."""
+    orderBy: [OrgFunctionExecutionLogOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): OrgFunctionExecutionLogEdge
+}
+
+"""All input for the `updateOrgFunctionExecutionLog` mutation."""
+input UpdateOrgFunctionExecutionLogInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Log entry timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """Unique log entry identifier"""
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `OrgFunctionExecutionLog` being updated.
+  """
+  orgFunctionExecutionLogPatch: OrgFunctionExecutionLogPatch!
+}
+
+"""
+Represents an update to a `OrgFunctionExecutionLog`. Fields that are set will be updated.
+"""
+input OrgFunctionExecutionLogPatch {
+  """Log entry timestamp (partition key)"""
+  createdAt: Datetime
+
+  """User who triggered the execution (NULL for system/cron)"""
+  actorId: UUID
+
+  """Unique log entry identifier"""
+  id: UUID
+
+  """Invocation this log entry belongs to (NULL for standalone job logs)"""
+  invocationId: UUID
+
+  """Log severity: debug, info, warn, error"""
+  logLevel: String
+
+  """Log message text"""
+  message: String
+
+  """Structured context (labels, trace data, extra fields)"""
+  metadata: JSON
+
+  """Function routing key (NULL for generic job logs)"""
+  taskIdentifier: String
+}
+
+"""The output of our update `PlatformFunctionGraphCommit` mutation."""
+type UpdatePlatformFunctionGraphCommitPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphCommit` that was updated by this mutation."""
+  platformFunctionGraphCommit: PlatformFunctionGraphCommit
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraphCommit`. May be used by Relay 1."""
+  platformFunctionGraphCommitEdge(
+    """The method to use when ordering `PlatformFunctionGraphCommit`."""
+    orderBy: [PlatformFunctionGraphCommitOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphCommitEdge
+}
+
+"""All input for the `updatePlatformFunctionGraphCommit` mutation."""
+input UpdatePlatformFunctionGraphCommitInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Unique commit identifier"""
+  id: UUID!
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformFunctionGraphCommit` being updated.
+  """
+  platformFunctionGraphCommitPatch: PlatformFunctionGraphCommitPatch!
+}
+
+"""
+Represents an update to a `PlatformFunctionGraphCommit`. Fields that are set will be updated.
+"""
+input PlatformFunctionGraphCommitPatch {
+  """User who authored the changes"""
+  authorId: UUID
+
+  """User who committed (may differ from author)"""
+  committerId: UUID
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID
+
+  """Commit timestamp"""
+  date: Datetime
+
+  """Unique commit identifier"""
+  id: UUID
+
+  """Optional commit message"""
+  message: String
+
+  """Parent commit IDs (supports merge commits)"""
+  parentIds: [UUID]
+
+  """Store this commit belongs to"""
+  storeId: UUID
+
+  """Root object ID of the tree snapshot at this commit"""
+  treeId: UUID
+}
+
+"""The output of our update `PlatformSecretDefinition` mutation."""
+type UpdatePlatformSecretDefinitionPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformSecretDefinition` that was updated by this mutation."""
+  platformSecretDefinition: PlatformSecretDefinition
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformSecretDefinition`. May be used by Relay 1."""
+  platformSecretDefinitionEdge(
+    """The method to use when ordering `PlatformSecretDefinition`."""
+    orderBy: [PlatformSecretDefinitionOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformSecretDefinitionEdge
+}
+
+"""All input for the `updatePlatformSecretDefinition` mutation."""
+input UpdatePlatformSecretDefinitionInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformSecretDefinition` being updated.
+  """
+  platformSecretDefinitionPatch: PlatformSecretDefinitionPatch!
+}
+
+"""
+Represents an update to a `PlatformSecretDefinition`. Fields that are set will be updated.
+"""
+input PlatformSecretDefinitionPatch {
+  """Freeform metadata annotations for secret definitions"""
+  annotations: JSON
+  createdAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID
+
+  """Human-readable description of what this secret is used for"""
+  description: String
+  id: UUID
+
+  """
+  Whether this row was seeded as a built-in secret definition. Built-in rows are immutable.
+  """
+  isBuiltIn: Boolean
+
+  """Key-value metadata for filtering and grouping secret definitions"""
+  labels: JSON
+
+  """Secret name (must match app_secrets.name for resolution)"""
+  name: String
+  updatedAt: Datetime
+}
+
+"""The output of our update `PlatformFunctionExecutionLog` mutation."""
+type UpdatePlatformFunctionExecutionLogPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionExecutionLog` that was updated by this mutation."""
+  platformFunctionExecutionLog: PlatformFunctionExecutionLog
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """
+  An edge for our `PlatformFunctionExecutionLog`. May be used by Relay 1.
+  """
+  platformFunctionExecutionLogEdge(
+    """The method to use when ordering `PlatformFunctionExecutionLog`."""
+    orderBy: [PlatformFunctionExecutionLogOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionExecutionLogEdge
+}
+
+"""All input for the `updatePlatformFunctionExecutionLog` mutation."""
+input UpdatePlatformFunctionExecutionLogInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Log entry timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """Unique log entry identifier"""
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformFunctionExecutionLog` being updated.
+  """
+  platformFunctionExecutionLogPatch: PlatformFunctionExecutionLogPatch!
+}
+
+"""
+Represents an update to a `PlatformFunctionExecutionLog`. Fields that are set will be updated.
+"""
+input PlatformFunctionExecutionLogPatch {
+  """Log entry timestamp (partition key)"""
+  createdAt: Datetime
+
+  """User who triggered the execution (NULL for system/cron)"""
+  actorId: UUID
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID
+
+  """Unique log entry identifier"""
+  id: UUID
+
+  """Invocation this log entry belongs to (NULL for standalone job logs)"""
+  invocationId: UUID
+
+  """Log severity: debug, info, warn, error"""
+  logLevel: String
+
+  """Log message text"""
+  message: String
+
+  """Structured context (labels, trace data, extra fields)"""
+  metadata: JSON
+
+  """Function routing key (NULL for generic job logs)"""
+  taskIdentifier: String
+}
+
+"""The output of our update `PlatformFunctionGraph` mutation."""
+type UpdatePlatformFunctionGraphPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraph` that was updated by this mutation."""
+  platformFunctionGraph: PlatformFunctionGraph
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraph`. May be used by Relay 1."""
+  platformFunctionGraphEdge(
+    """The method to use when ordering `PlatformFunctionGraph`."""
+    orderBy: [PlatformFunctionGraphOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphEdge
+}
+
+"""All input for the `updatePlatformFunctionGraph` mutation."""
+input UpdatePlatformFunctionGraphInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Unique graph identifier"""
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformFunctionGraph` being updated.
+  """
+  platformFunctionGraphPatch: PlatformFunctionGraphPatch!
+}
+
+"""
+Represents an update to a `PlatformFunctionGraph`. Fields that are set will be updated.
+"""
+input PlatformFunctionGraphPatch {
+  """Evaluator/runtime context (function, js, sql, system)"""
+  context: String
+
+  """Timestamp of graph creation"""
+  createdAt: Datetime
+
+  """Actor who created this graph"""
+  createdBy: UUID
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID
+
+  """Pinned definitions store commit for deterministic evaluation"""
+  definitionsCommitId: UUID
+
+  """Human-readable description of the graph"""
+  description: String
+
+  """Entity context (org/team) for scoped billing"""
+  entityId: UUID
+
+  """Unique graph identifier"""
+  id: UUID
+
+  """Whether graph passes structural validation"""
+  isValid: Boolean
+
+  """Graph name (unique per database)"""
+  name: String
+
+  """Graph store (Merkle store) holding the graph definition"""
+  storeId: UUID
+
+  """Timestamp of last modification"""
+  updatedAt: Datetime
+
+  """Array of validation error objects when is_valid = false"""
+  validationErrors: JSON
+}
+
+"""The output of our update `OrgFunctionInvocation` mutation."""
+type UpdateOrgFunctionInvocationPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `OrgFunctionInvocation` that was updated by this mutation."""
+  orgFunctionInvocation: OrgFunctionInvocation
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `OrgFunctionInvocation`. May be used by Relay 1."""
+  orgFunctionInvocationEdge(
+    """The method to use when ordering `OrgFunctionInvocation`."""
+    orderBy: [OrgFunctionInvocationOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): OrgFunctionInvocationEdge
+}
+
+"""All input for the `updateOrgFunctionInvocation` mutation."""
+input UpdateOrgFunctionInvocationInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Invocation creation timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """Unique invocation identifier"""
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `OrgFunctionInvocation` being updated.
+  """
+  orgFunctionInvocationPatch: OrgFunctionInvocationPatch!
+}
+
+"""
+Represents an update to a `OrgFunctionInvocation`. Fields that are set will be updated.
+"""
+input OrgFunctionInvocationPatch {
+  """Invocation creation timestamp (partition key)"""
+  createdAt: Datetime
+
+  """Who triggered the invocation (NULL for system/cron)"""
+  actorId: UUID
+
+  """When execution completed"""
+  completedAt: Datetime
+
+  """Wall-clock execution time in milliseconds"""
+  durationMs: Int
+
+  """Error message when status is failed"""
+  error: String
+
+  """Groups all node invocations from a single flow graph execution"""
+  graphExecutionId: UUID
+
+  """Unique invocation identifier"""
+  id: UUID
+
+  """FK to app_jobs.jobs — the underlying transport"""
+  jobId: BigInt
+
+  """Parent invocation when this is a child node of a flow graph execution"""
+  parentInvocationId: UUID
+
+  """Function input payload"""
+  payload: JSON
+
+  """Function return value (success) or structured error (failure)"""
+  result: JSON
+
+  """When execution started"""
+  startedAt: Datetime
+
+  """Lifecycle: pending → running → completed/failed/cancelled"""
+  status: String
+
+  """
+  Function routing slug (scope:name). Links to function_definitions.task_identifier by convention — no FK.
+  """
+  taskIdentifier: String
+}
+
+"""The output of our update `PlatformFunctionInvocation` mutation."""
+type UpdatePlatformFunctionInvocationPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionInvocation` that was updated by this mutation."""
+  platformFunctionInvocation: PlatformFunctionInvocation
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionInvocation`. May be used by Relay 1."""
+  platformFunctionInvocationEdge(
+    """The method to use when ordering `PlatformFunctionInvocation`."""
+    orderBy: [PlatformFunctionInvocationOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionInvocationEdge
+}
+
+"""All input for the `updatePlatformFunctionInvocation` mutation."""
+input UpdatePlatformFunctionInvocationInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Invocation creation timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """Unique invocation identifier"""
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformFunctionInvocation` being updated.
+  """
+  platformFunctionInvocationPatch: PlatformFunctionInvocationPatch!
+}
+
+"""
+Represents an update to a `PlatformFunctionInvocation`. Fields that are set will be updated.
+"""
+input PlatformFunctionInvocationPatch {
+  """Invocation creation timestamp (partition key)"""
+  createdAt: Datetime
+
+  """Who triggered the invocation (NULL for system/cron)"""
+  actorId: UUID
+
+  """When execution completed"""
+  completedAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID
+
+  """Wall-clock execution time in milliseconds"""
+  durationMs: Int
+
+  """Error message when status is failed"""
+  error: String
+
+  """Groups all node invocations from a single flow graph execution"""
+  graphExecutionId: UUID
+
+  """Unique invocation identifier"""
+  id: UUID
+
+  """FK to app_jobs.jobs — the underlying transport"""
+  jobId: BigInt
+
+  """Parent invocation when this is a child node of a flow graph execution"""
+  parentInvocationId: UUID
+
+  """Function input payload"""
+  payload: JSON
+
+  """Function return value (success) or structured error (failure)"""
+  result: JSON
+
+  """When execution started"""
+  startedAt: Datetime
+
+  """Lifecycle: pending → running → completed/failed/cancelled"""
+  status: String
+
+  """
+  Function routing slug (scope:name). Links to function_definitions.task_identifier by convention — no FK.
+  """
+  taskIdentifier: String
+}
+
+"""The output of our update `PlatformFunctionDefinition` mutation."""
+type UpdatePlatformFunctionDefinitionPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionDefinition` that was updated by this mutation."""
+  platformFunctionDefinition: PlatformFunctionDefinition
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionDefinition`. May be used by Relay 1."""
+  platformFunctionDefinitionEdge(
+    """The method to use when ordering `PlatformFunctionDefinition`."""
+    orderBy: [PlatformFunctionDefinitionOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionDefinitionEdge
+}
+
+"""All input for the `updatePlatformFunctionDefinition` mutation."""
+input UpdatePlatformFunctionDefinitionInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformFunctionDefinition` being updated.
+  """
+  platformFunctionDefinitionPatch: PlatformFunctionDefinitionPatch!
+}
+
+"""
+Represents an update to a `PlatformFunctionDefinition`. Fields that are set will be updated.
+"""
+input PlatformFunctionDefinitionPatch {
+  createdAt: Datetime
+
+  """Human-readable description of what this function does"""
+  description: String
+  id: UUID
+
+  """
+  Whether this function is a built-in platform function (synced from platform) vs user-created
+  """
+  isBuiltIn: Boolean
+
+  """
+  Whether this function can be called via function_invocations (public API). Default false = internal-only via add_job()
+  """
+  isInvocable: Boolean
+
+  """Maximum retry attempts for the underlying job"""
+  maxAttempts: Int
+
+  """
+  Function name within scope (e.g. send_verification_link, process_file_embedding)
+  """
+  name: String
+
+  """Namespace this function belongs to (FK to namespaces table)"""
+  namespaceId: UUID
+
+  """Job priority (lower = higher priority)"""
+  priority: Int
+
+  """Job queue name for serialization (e.g. email, ai, default)"""
+  queueName: String
+
+  """Function grouping scope (e.g. email, embed, chunk, custom)"""
+  scope: String
+
+  """
+  Optional service URL override for function dispatch. NULL = use gateway convention (gatewayUrl/task_identifier). Set for customer-deployed functions or external endpoints.
+  """
+  serviceUrl: String
+
+  """
+  Computed routing slug: scope:name (used by Knative job worker for dispatch)
+  """
+  taskIdentifier: String
+  updatedAt: Datetime
+
+  """Embedded config requirements: array of (name, required) tuples"""
+  requiredConfigs: [FunctionRequirementInput]
+
+  """Embedded secret requirements: array of (name, required) tuples"""
+  requiredSecrets: [FunctionRequirementInput]
+}
+
+"""The output of our delete `PlatformFunctionGraphRef` mutation."""
+type DeletePlatformFunctionGraphRefPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphRef` that was deleted by this mutation."""
+  platformFunctionGraphRef: PlatformFunctionGraphRef
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraphRef`. May be used by Relay 1."""
+  platformFunctionGraphRefEdge(
+    """The method to use when ordering `PlatformFunctionGraphRef`."""
+    orderBy: [PlatformFunctionGraphRefOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphRefEdge
+}
+
+"""All input for the `deletePlatformFunctionGraphRef` mutation."""
+input DeletePlatformFunctionGraphRefInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Unique ref identifier"""
+  id: UUID!
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+}
+
+"""The output of our delete `PlatformFunctionGraphStore` mutation."""
+type DeletePlatformFunctionGraphStorePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphStore` that was deleted by this mutation."""
+  platformFunctionGraphStore: PlatformFunctionGraphStore
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraphStore`. May be used by Relay 1."""
+  platformFunctionGraphStoreEdge(
+    """The method to use when ordering `PlatformFunctionGraphStore`."""
+    orderBy: [PlatformFunctionGraphStoreOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphStoreEdge
+}
+
+"""All input for the `deletePlatformFunctionGraphStore` mutation."""
+input DeletePlatformFunctionGraphStoreInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Unique store identifier"""
+  id: UUID!
+}
+
+"""The output of our delete `PlatformFunctionGraphObject` mutation."""
+type DeletePlatformFunctionGraphObjectPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphObject` that was deleted by this mutation."""
+  platformFunctionGraphObject: PlatformFunctionGraphObject
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraphObject`. May be used by Relay 1."""
+  platformFunctionGraphObjectEdge(
+    """The method to use when ordering `PlatformFunctionGraphObject`."""
+    orderBy: [PlatformFunctionGraphObjectOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphObjectEdge
+}
+
+"""All input for the `deletePlatformFunctionGraphObject` mutation."""
+input DeletePlatformFunctionGraphObjectInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Content-addressed UUID v5 — deterministic hash of (data, kids, ktree)"""
+  id: UUID!
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+}
+
+"""The output of our delete `OrgFunctionExecutionLog` mutation."""
+type DeleteOrgFunctionExecutionLogPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `OrgFunctionExecutionLog` that was deleted by this mutation."""
+  orgFunctionExecutionLog: OrgFunctionExecutionLog
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `OrgFunctionExecutionLog`. May be used by Relay 1."""
+  orgFunctionExecutionLogEdge(
+    """The method to use when ordering `OrgFunctionExecutionLog`."""
+    orderBy: [OrgFunctionExecutionLogOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): OrgFunctionExecutionLogEdge
+}
+
+"""All input for the `deleteOrgFunctionExecutionLog` mutation."""
+input DeleteOrgFunctionExecutionLogInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Log entry timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """Unique log entry identifier"""
+  id: UUID!
+}
+
+"""The output of our delete `PlatformFunctionGraphCommit` mutation."""
+type DeletePlatformFunctionGraphCommitPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphCommit` that was deleted by this mutation."""
+  platformFunctionGraphCommit: PlatformFunctionGraphCommit
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraphCommit`. May be used by Relay 1."""
+  platformFunctionGraphCommitEdge(
+    """The method to use when ordering `PlatformFunctionGraphCommit`."""
+    orderBy: [PlatformFunctionGraphCommitOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphCommitEdge
+}
+
+"""All input for the `deletePlatformFunctionGraphCommit` mutation."""
+input DeletePlatformFunctionGraphCommitInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Unique commit identifier"""
+  id: UUID!
+
+  """Database scope for multi-tenant isolation"""
+  databaseId: UUID!
+}
+
+"""The output of our delete `PlatformSecretDefinition` mutation."""
+type DeletePlatformSecretDefinitionPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformSecretDefinition` that was deleted by this mutation."""
+  platformSecretDefinition: PlatformSecretDefinition
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformSecretDefinition`. May be used by Relay 1."""
+  platformSecretDefinitionEdge(
+    """The method to use when ordering `PlatformSecretDefinition`."""
+    orderBy: [PlatformSecretDefinitionOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformSecretDefinitionEdge
+}
+
+"""All input for the `deletePlatformSecretDefinition` mutation."""
+input DeletePlatformSecretDefinitionInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: UUID!
+}
+
+"""The output of our delete `PlatformFunctionExecutionLog` mutation."""
+type DeletePlatformFunctionExecutionLogPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionExecutionLog` that was deleted by this mutation."""
+  platformFunctionExecutionLog: PlatformFunctionExecutionLog
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """
+  An edge for our `PlatformFunctionExecutionLog`. May be used by Relay 1.
+  """
+  platformFunctionExecutionLogEdge(
+    """The method to use when ordering `PlatformFunctionExecutionLog`."""
+    orderBy: [PlatformFunctionExecutionLogOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionExecutionLogEdge
+}
+
+"""All input for the `deletePlatformFunctionExecutionLog` mutation."""
+input DeletePlatformFunctionExecutionLogInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Log entry timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """Unique log entry identifier"""
+  id: UUID!
+}
+
+"""The output of our delete `PlatformFunctionGraph` mutation."""
+type DeletePlatformFunctionGraphPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraph` that was deleted by this mutation."""
+  platformFunctionGraph: PlatformFunctionGraph
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionGraph`. May be used by Relay 1."""
+  platformFunctionGraphEdge(
+    """The method to use when ordering `PlatformFunctionGraph`."""
+    orderBy: [PlatformFunctionGraphOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphEdge
+}
+
+"""All input for the `deletePlatformFunctionGraph` mutation."""
+input DeletePlatformFunctionGraphInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Unique graph identifier"""
+  id: UUID!
+}
+
+"""The output of our delete `OrgFunctionInvocation` mutation."""
+type DeleteOrgFunctionInvocationPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `OrgFunctionInvocation` that was deleted by this mutation."""
+  orgFunctionInvocation: OrgFunctionInvocation
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `OrgFunctionInvocation`. May be used by Relay 1."""
+  orgFunctionInvocationEdge(
+    """The method to use when ordering `OrgFunctionInvocation`."""
+    orderBy: [OrgFunctionInvocationOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): OrgFunctionInvocationEdge
+}
+
+"""All input for the `deleteOrgFunctionInvocation` mutation."""
+input DeleteOrgFunctionInvocationInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Invocation creation timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """Unique invocation identifier"""
+  id: UUID!
+}
+
+"""The output of our delete `PlatformFunctionInvocation` mutation."""
+type DeletePlatformFunctionInvocationPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionInvocation` that was deleted by this mutation."""
+  platformFunctionInvocation: PlatformFunctionInvocation
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionInvocation`. May be used by Relay 1."""
+  platformFunctionInvocationEdge(
+    """The method to use when ordering `PlatformFunctionInvocation`."""
+    orderBy: [PlatformFunctionInvocationOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionInvocationEdge
+}
+
+"""All input for the `deletePlatformFunctionInvocation` mutation."""
+input DeletePlatformFunctionInvocationInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Invocation creation timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """Unique invocation identifier"""
+  id: UUID!
+}
+
+"""The output of our delete `PlatformFunctionDefinition` mutation."""
+type DeletePlatformFunctionDefinitionPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionDefinition` that was deleted by this mutation."""
+  platformFunctionDefinition: PlatformFunctionDefinition
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFunctionDefinition`. May be used by Relay 1."""
+  platformFunctionDefinitionEdge(
+    """The method to use when ordering `PlatformFunctionDefinition`."""
+    orderBy: [PlatformFunctionDefinitionOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionDefinitionEdge
+}
+
+"""All input for the `deletePlatformFunctionDefinition` mutation."""
+input DeletePlatformFunctionDefinitionInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: UUID!
+}
+
+input ProvisionBucketInput {
+  """The logical bucket key (e.g., "public", "private")"""
+  bucketKey: String!
+
+  """
+  Owner entity ID for entity-scoped bucket provisioning.
+  Omit for app-level (database-wide) storage.
+  """
+  ownerId: UUID
+}
+
+type ProvisionBucketPayload {
+  """Whether provisioning succeeded"""
+  success: Boolean!
+
+  """The S3 bucket name that was provisioned"""
+  bucketName: String!
+
+  """The access type applied"""
+  accessType: String!
+
+  """The storage provider used"""
+  provider: String!
+
+  """The S3 endpoint (null for AWS S3 default)"""
+  endpoint: String
+
+  """Error message if provisioning failed"""
+  error: String
+}

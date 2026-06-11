@@ -1,0 +1,4449 @@
+"""The root query type which gives access points into the data universe."""
+type Query {
+  """Reads and enables pagination through a set of `RoleType`."""
+  roleTypes(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: RoleTypeFilter
+
+    """The method to use when ordering `RoleType`."""
+    orderBy: [RoleTypeOrderBy!] = [PRIMARY_KEY_ASC]
+  ): RoleTypeConnection
+
+  """
+  Reads and enables pagination through a set of `PlatformConfigDefinition`.
+  """
+  platformConfigDefinitions(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformConfigDefinitionFilter
+
+    """The method to use when ordering `PlatformConfigDefinition`."""
+    orderBy: [PlatformConfigDefinitionOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformConfigDefinitionConnection
+
+  """Reads and enables pagination through a set of `PlatformNamespace`."""
+  platformNamespaces(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformNamespaceFilter
+
+    """The method to use when ordering `PlatformNamespace`."""
+    orderBy: [PlatformNamespaceOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformNamespaceConnection
+
+  """Reads and enables pagination through a set of `PlatformConfig`."""
+  platformConfigs(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformConfigFilter
+
+    """The method to use when ordering `PlatformConfig`."""
+    orderBy: [PlatformConfigOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformConfigConnection
+
+  """Reads and enables pagination through a set of `PlatformBucket`."""
+  platformBuckets(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformBucketFilter
+
+    """The method to use when ordering `PlatformBucket`."""
+    orderBy: [PlatformBucketOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformBucketConnection
+
+  """Reads and enables pagination through a set of `User`."""
+  users(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: UserFilter
+
+    """The method to use when ordering `User`."""
+    orderBy: [UserOrderBy!] = [PRIMARY_KEY_ASC]
+  ): UserConnection
+
+  """
+  Reads and enables pagination through a set of `PlatformNamespaceEvent`.
+  """
+  platformNamespaceEvents(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformNamespaceEventFilter
+
+    """The method to use when ordering `PlatformNamespaceEvent`."""
+    orderBy: [PlatformNamespaceEventOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformNamespaceEventConnection
+
+  """Reads and enables pagination through a set of `PlatformFile`."""
+  platformFiles(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformFileFilter
+
+    """The method to use when ordering `PlatformFile`."""
+    orderBy: [PlatformFileOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformFileConnection
+
+  """
+  Metadata about the database schema, including tables, fields, indexes, and constraints. Useful for code generation tools.
+  """
+  _meta: MetaSchema
+}
+
+"""A connection to a list of `RoleType` values."""
+type RoleTypeConnection {
+  """A list of `RoleType` objects."""
+  nodes: [RoleType]!
+
+  """
+  A list of edges which contains the `RoleType` and cursor to aid in pagination.
+  """
+  edges: [RoleTypeEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `RoleType` you could get from the connection."""
+  totalCount: Int!
+}
+
+type RoleType {
+  id: Int!
+  name: String!
+}
+
+"""A `RoleType` edge in the connection."""
+type RoleTypeEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `RoleType` at the end of the edge."""
+  node: RoleType
+}
+
+"""A location in a connection that can be used for resuming pagination."""
+scalar Cursor
+
+"""Information about pagination in a connection."""
+type PageInfo {
+  """When paginating forwards, are there more items?"""
+  hasNextPage: Boolean!
+
+  """When paginating backwards, are there more items?"""
+  hasPreviousPage: Boolean!
+
+  """When paginating backwards, the cursor to continue."""
+  startCursor: Cursor
+
+  """When paginating forwards, the cursor to continue."""
+  endCursor: Cursor
+}
+
+"""
+A filter to be used against `RoleType` object types. All fields are combined with a logical ‘and.’
+"""
+input RoleTypeFilter {
+  """Filter by the object’s `id` field."""
+  id: IntFilter
+
+  """Filter by the object’s `name` field."""
+  name: StringFilter
+
+  """Checks for all expressions in this list."""
+  and: [RoleTypeFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [RoleTypeFilter!]
+
+  """Negates the expression."""
+  not: RoleTypeFilter
+}
+
+"""
+A filter to be used against Int fields. All fields are combined with a logical ‘and.’
+"""
+input IntFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: Int
+
+  """Not equal to the specified value."""
+  notEqualTo: Int
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: Int
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: Int
+
+  """Included in the specified list."""
+  in: [Int!]
+
+  """Not included in the specified list."""
+  notIn: [Int!]
+
+  """Less than the specified value."""
+  lessThan: Int
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: Int
+
+  """Greater than the specified value."""
+  greaterThan: Int
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: Int
+}
+
+"""
+A filter to be used against String fields. All fields are combined with a logical ‘and.’
+"""
+input StringFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: String
+
+  """Not equal to the specified value."""
+  notEqualTo: String
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: String
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: String
+
+  """Included in the specified list."""
+  in: [String!]
+
+  """Not included in the specified list."""
+  notIn: [String!]
+
+  """Less than the specified value."""
+  lessThan: String
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: String
+
+  """Greater than the specified value."""
+  greaterThan: String
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: String
+
+  """Contains the specified string (case-sensitive)."""
+  includes: String
+
+  """Does not contain the specified string (case-sensitive)."""
+  notIncludes: String
+
+  """Contains the specified string (case-insensitive)."""
+  includesInsensitive: String
+
+  """Does not contain the specified string (case-insensitive)."""
+  notIncludesInsensitive: String
+
+  """Starts with the specified string (case-sensitive)."""
+  startsWith: String
+
+  """Does not start with the specified string (case-sensitive)."""
+  notStartsWith: String
+
+  """Starts with the specified string (case-insensitive)."""
+  startsWithInsensitive: String
+
+  """Does not start with the specified string (case-insensitive)."""
+  notStartsWithInsensitive: String
+
+  """Ends with the specified string (case-sensitive)."""
+  endsWith: String
+
+  """Does not end with the specified string (case-sensitive)."""
+  notEndsWith: String
+
+  """Ends with the specified string (case-insensitive)."""
+  endsWithInsensitive: String
+
+  """Does not end with the specified string (case-insensitive)."""
+  notEndsWithInsensitive: String
+
+  """
+  Matches the specified pattern (case-sensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  like: String
+
+  """
+  Does not match the specified pattern (case-sensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  notLike: String
+
+  """
+  Matches the specified pattern (case-insensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  likeInsensitive: String
+
+  """
+  Does not match the specified pattern (case-insensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  notLikeInsensitive: String
+
+  """Equal to the specified value (case-insensitive)."""
+  equalToInsensitive: String
+
+  """Not equal to the specified value (case-insensitive)."""
+  notEqualToInsensitive: String
+
+  """
+  Not equal to the specified value, treating null like an ordinary value (case-insensitive).
+  """
+  distinctFromInsensitive: String
+
+  """
+  Equal to the specified value, treating null like an ordinary value (case-insensitive).
+  """
+  notDistinctFromInsensitive: String
+
+  """Included in the specified list (case-insensitive)."""
+  inInsensitive: [String!]
+
+  """Not included in the specified list (case-insensitive)."""
+  notInInsensitive: [String!]
+
+  """Less than the specified value (case-insensitive)."""
+  lessThanInsensitive: String
+
+  """Less than or equal to the specified value (case-insensitive)."""
+  lessThanOrEqualToInsensitive: String
+
+  """Greater than the specified value (case-insensitive)."""
+  greaterThanInsensitive: String
+
+  """Greater than or equal to the specified value (case-insensitive)."""
+  greaterThanOrEqualToInsensitive: String
+}
+
+"""Methods to use when ordering `RoleType`."""
+enum RoleTypeOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  ID_ASC
+  ID_DESC
+  NAME_ASC
+  NAME_DESC
+}
+
+"""A connection to a list of `PlatformConfigDefinition` values."""
+type PlatformConfigDefinitionConnection {
+  """A list of `PlatformConfigDefinition` objects."""
+  nodes: [PlatformConfigDefinition]!
+
+  """
+  A list of edges which contains the `PlatformConfigDefinition` and cursor to aid in pagination.
+  """
+  edges: [PlatformConfigDefinitionEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformConfigDefinition` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""
+Registry of valid config keys — declares which config entries the platform recognizes
+"""
+type PlatformConfigDefinition {
+  """Freeform metadata annotations for config definitions"""
+  annotations: JSON!
+  createdAt: Datetime
+
+  """Default value used when no config entry exists for a namespace"""
+  defaultValue: String
+
+  """Human-readable description of what this config key controls"""
+  description: String
+
+  """Unique identifier for this config definition"""
+  id: UUID!
+
+  """Whether this row was seeded as a built-in config definition"""
+  isBuiltIn: Boolean!
+
+  """Key-value metadata for filtering and grouping config definitions"""
+  labels: JSON!
+
+  """Config key name (must match config table name for resolution)"""
+  name: String!
+  updatedAt: Datetime
+}
+
+"""
+Represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+"""
+A point in time as described by the [ISO
+8601](https://en.wikipedia.org/wiki/ISO_8601) and, if it has a timezone, [RFC
+3339](https://datatracker.ietf.org/doc/html/rfc3339) standards. Input values
+that do not conform to both ISO 8601 and RFC 3339 may be coerced, which may lead
+to unexpected results.
+"""
+scalar Datetime
+
+"""
+A universally unique identifier as defined by [RFC 4122](https://tools.ietf.org/html/rfc4122).
+"""
+scalar UUID
+
+"""A `PlatformConfigDefinition` edge in the connection."""
+type PlatformConfigDefinitionEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformConfigDefinition` at the end of the edge."""
+  node: PlatformConfigDefinition
+}
+
+"""
+A filter to be used against `PlatformConfigDefinition` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformConfigDefinitionFilter {
+  """Filter by the object’s `annotations` field."""
+  annotations: JSONFilter
+
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `defaultValue` field."""
+  defaultValue: StringFilter
+
+  """Filter by the object’s `description` field."""
+  description: StringFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `isBuiltIn` field."""
+  isBuiltIn: BooleanFilter
+
+  """Filter by the object’s `labels` field."""
+  labels: JSONFilter
+
+  """Filter by the object’s `name` field."""
+  name: StringFilter
+
+  """Filter by the object’s `updatedAt` field."""
+  updatedAt: DatetimeFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformConfigDefinitionFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformConfigDefinitionFilter!]
+
+  """Negates the expression."""
+  not: PlatformConfigDefinitionFilter
+}
+
+"""
+A filter to be used against JSON fields. All fields are combined with a logical ‘and.’
+"""
+input JSONFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: JSON
+
+  """Not equal to the specified value."""
+  notEqualTo: JSON
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: JSON
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: JSON
+
+  """Included in the specified list."""
+  in: [JSON!]
+
+  """Not included in the specified list."""
+  notIn: [JSON!]
+
+  """Less than the specified value."""
+  lessThan: JSON
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: JSON
+
+  """Greater than the specified value."""
+  greaterThan: JSON
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: JSON
+
+  """Contains the specified JSON."""
+  contains: JSON
+
+  """Contains the specified key."""
+  containsKey: String
+
+  """Contains all of the specified keys."""
+  containsAllKeys: [String!]
+
+  """Contains any of the specified keys."""
+  containsAnyKeys: [String!]
+
+  """Contained by the specified JSON."""
+  containedBy: JSON
+}
+
+"""
+A filter to be used against Datetime fields. All fields are combined with a logical ‘and.’
+"""
+input DatetimeFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: Datetime
+
+  """Not equal to the specified value."""
+  notEqualTo: Datetime
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: Datetime
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: Datetime
+
+  """Included in the specified list."""
+  in: [Datetime!]
+
+  """Not included in the specified list."""
+  notIn: [Datetime!]
+
+  """Less than the specified value."""
+  lessThan: Datetime
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: Datetime
+
+  """Greater than the specified value."""
+  greaterThan: Datetime
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: Datetime
+}
+
+"""
+A filter to be used against UUID fields. All fields are combined with a logical ‘and.’
+"""
+input UUIDFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: UUID
+
+  """Not equal to the specified value."""
+  notEqualTo: UUID
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: UUID
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: UUID
+
+  """Included in the specified list."""
+  in: [UUID!]
+
+  """Not included in the specified list."""
+  notIn: [UUID!]
+
+  """Less than the specified value."""
+  lessThan: UUID
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: UUID
+
+  """Greater than the specified value."""
+  greaterThan: UUID
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: UUID
+}
+
+"""
+A filter to be used against Boolean fields. All fields are combined with a logical ‘and.’
+"""
+input BooleanFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: Boolean
+
+  """Not equal to the specified value."""
+  notEqualTo: Boolean
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: Boolean
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: Boolean
+
+  """Included in the specified list."""
+  in: [Boolean!]
+
+  """Not included in the specified list."""
+  notIn: [Boolean!]
+
+  """Less than the specified value."""
+  lessThan: Boolean
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: Boolean
+
+  """Greater than the specified value."""
+  greaterThan: Boolean
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: Boolean
+}
+
+"""Methods to use when ordering `PlatformConfigDefinition`."""
+enum PlatformConfigDefinitionOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  ANNOTATIONS_ASC
+  ANNOTATIONS_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  DEFAULT_VALUE_ASC
+  DEFAULT_VALUE_DESC
+  DESCRIPTION_ASC
+  DESCRIPTION_DESC
+  ID_ASC
+  ID_DESC
+  IS_BUILT_IN_ASC
+  IS_BUILT_IN_DESC
+  LABELS_ASC
+  LABELS_DESC
+  NAME_ASC
+  NAME_DESC
+  UPDATED_AT_ASC
+  UPDATED_AT_DESC
+}
+
+"""A connection to a list of `PlatformNamespace` values."""
+type PlatformNamespaceConnection {
+  """A list of `PlatformNamespace` objects."""
+  nodes: [PlatformNamespace]!
+
+  """
+  A list of edges which contains the `PlatformNamespace` and cursor to aid in pagination.
+  """
+  edges: [PlatformNamespaceEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformNamespace` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""
+Logical namespace containers for grouping secrets, config, functions, and other resources
+"""
+type PlatformNamespace {
+  """Freeform metadata for tooling and operational notes"""
+  annotations: JSON!
+  createdAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID!
+
+  """Optional human-readable description of this namespace"""
+  description: String
+  id: UUID!
+
+  """Whether this namespace is active (soft-disable for filtering)"""
+  isActive: Boolean!
+
+  """Key/value pairs for selecting and filtering namespaces"""
+  labels: JSON!
+
+  """Human-readable namespace name (e.g. default, production, oauth)"""
+  name: String!
+
+  """
+  Globally unique computed namespace identifier via inflection.underscore
+  """
+  namespaceName: String!
+  updatedAt: Datetime
+
+  """Reads and enables pagination through a set of `PlatformConfig`."""
+  platformConfigsByNamespaceId(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformConfigFilter
+
+    """The method to use when ordering `PlatformConfig`."""
+    orderBy: [PlatformConfigOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformConfigConnection!
+}
+
+"""A connection to a list of `PlatformConfig` values."""
+type PlatformConfigConnection {
+  """A list of `PlatformConfig` objects."""
+  nodes: [PlatformConfig]!
+
+  """
+  A list of edges which contains the `PlatformConfig` and cursor to aid in pagination.
+  """
+  edges: [PlatformConfigEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `PlatformConfig` you could get from the connection."""
+  totalCount: Int!
+}
+
+"""
+App-level plaintext key-value config store (like a k8s ConfigMap); admin-only, fully CRUD-exposed
+"""
+type PlatformConfig {
+  """Freeform metadata for tooling and operational notes"""
+  annotations: JSON!
+  createdAt: Datetime
+
+  """Human-readable note about this config entry"""
+  description: String
+
+  """Optional expiration timestamp for time-limited config entries"""
+  expiresAt: Datetime
+
+  """Unique identifier for this config entry"""
+  id: UUID!
+
+  """Key/value pairs for selecting/filtering config entries"""
+  labels: JSON!
+
+  """Key name identifying the config entry"""
+  name: String!
+
+  """FK to namespaces — logical grouping for config entries"""
+  namespaceId: UUID!
+  updatedAt: Datetime
+
+  """Plaintext config value"""
+  value: String
+
+  """
+  Reads a single `PlatformNamespace` that is related to this `PlatformConfig`.
+  """
+  namespace: PlatformNamespace
+}
+
+"""A `PlatformConfig` edge in the connection."""
+type PlatformConfigEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformConfig` at the end of the edge."""
+  node: PlatformConfig
+}
+
+"""
+A filter to be used against `PlatformConfig` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformConfigFilter {
+  """Filter by the object’s `annotations` field."""
+  annotations: JSONFilter
+
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `description` field."""
+  description: StringFilter
+
+  """Filter by the object’s `expiresAt` field."""
+  expiresAt: DatetimeFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `labels` field."""
+  labels: JSONFilter
+
+  """Filter by the object’s `name` field."""
+  name: StringFilter
+
+  """Filter by the object’s `namespaceId` field."""
+  namespaceId: UUIDFilter
+
+  """Filter by the object’s `updatedAt` field."""
+  updatedAt: DatetimeFilter
+
+  """Filter by the object’s `value` field."""
+  value: StringFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformConfigFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformConfigFilter!]
+
+  """Negates the expression."""
+  not: PlatformConfigFilter
+
+  """Filter by the object’s `namespace` relation."""
+  namespace: PlatformNamespaceFilter
+}
+
+"""
+A filter to be used against `PlatformNamespace` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformNamespaceFilter {
+  """Filter by the object’s `annotations` field."""
+  annotations: JSONFilter
+
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `description` field."""
+  description: StringFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `isActive` field."""
+  isActive: BooleanFilter
+
+  """Filter by the object’s `labels` field."""
+  labels: JSONFilter
+
+  """Filter by the object’s `name` field."""
+  name: StringFilter
+
+  """Filter by the object’s `namespaceName` field."""
+  namespaceName: StringFilter
+
+  """Filter by the object’s `updatedAt` field."""
+  updatedAt: DatetimeFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformNamespaceFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformNamespaceFilter!]
+
+  """Negates the expression."""
+  not: PlatformNamespaceFilter
+
+  """Filter by the object’s `platformConfigsByNamespaceId` relation."""
+  platformConfigsByNamespaceId: PlatformNamespaceToManyPlatformConfigFilter
+
+  """`platformConfigsByNamespaceId` exist."""
+  platformConfigsByNamespaceIdExist: Boolean
+}
+
+"""
+A filter to be used against many `PlatformConfig` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformNamespaceToManyPlatformConfigFilter {
+  """Filters to entities where at least one related entity matches."""
+  some: PlatformConfigFilter
+
+  """Filters to entities where every related entity matches."""
+  every: PlatformConfigFilter
+
+  """Filters to entities where no related entity matches."""
+  none: PlatformConfigFilter
+}
+
+"""Methods to use when ordering `PlatformConfig`."""
+enum PlatformConfigOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  ANNOTATIONS_ASC
+  ANNOTATIONS_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  DESCRIPTION_ASC
+  DESCRIPTION_DESC
+  EXPIRES_AT_ASC
+  EXPIRES_AT_DESC
+  ID_ASC
+  ID_DESC
+  LABELS_ASC
+  LABELS_DESC
+  NAME_ASC
+  NAME_DESC
+  NAMESPACE_ID_ASC
+  NAMESPACE_ID_DESC
+  UPDATED_AT_ASC
+  UPDATED_AT_DESC
+  VALUE_ASC
+  VALUE_DESC
+}
+
+"""A `PlatformNamespace` edge in the connection."""
+type PlatformNamespaceEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformNamespace` at the end of the edge."""
+  node: PlatformNamespace
+}
+
+"""Methods to use when ordering `PlatformNamespace`."""
+enum PlatformNamespaceOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  ANNOTATIONS_ASC
+  ANNOTATIONS_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  DESCRIPTION_ASC
+  DESCRIPTION_DESC
+  ID_ASC
+  ID_DESC
+  IS_ACTIVE_ASC
+  IS_ACTIVE_DESC
+  LABELS_ASC
+  LABELS_DESC
+  NAME_ASC
+  NAME_DESC
+  NAMESPACE_NAME_ASC
+  NAMESPACE_NAME_DESC
+  UPDATED_AT_ASC
+  UPDATED_AT_DESC
+}
+
+"""A connection to a list of `PlatformBucket` values."""
+type PlatformBucketConnection {
+  """A list of `PlatformBucket` objects."""
+  nodes: [PlatformBucket]!
+
+  """
+  A list of edges which contains the `PlatformBucket` and cursor to aid in pagination.
+  """
+  edges: [PlatformBucketEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `PlatformBucket` you could get from the connection."""
+  totalCount: Int!
+}
+
+"""
+Logical storage containers that group files with shared access policies and CDN behavior
+"""
+type PlatformBucket {
+  """User who created this bucket. Forced to current_user_id() on INSERT."""
+  actorId: UUID!
+
+  """
+  When true, clients can provide custom S3 keys (e.g. reports/2024/Q1.pdf). When false (default), S3 key = content hash (automatic dedup). contentHash always required for integrity.
+  """
+  allowCustomKeys: Boolean!
+
+  """
+  Whitelist of allowed MIME types for files in this bucket (NULL = all allowed, enforcement deferred)
+  """
+  allowedMimeTypes: [String]
+
+  """
+  Per-bucket CORS allowed origins override (NULL = inherit from storage_module/plugin defaults). Use ARRAY['*'] for open/CDN mode.
+  """
+  allowedOrigins: [String]
+  createdAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID!
+
+  """Human-readable description of the bucket purpose"""
+  description: String
+  id: UUID!
+
+  """
+  Whether bucket contents are publicly readable. Set to true when type is public.
+  """
+  isPublic: Boolean!
+
+  """
+  Unique bucket identifier used in S3 key paths (e.g. avatars, documents, temp)
+  """
+  key: String!
+
+  """
+  Maximum file size in bytes allowed in this bucket (NULL = no limit, enforcement deferred)
+  """
+  maxFileSize: BigInt
+
+  """
+  Bucket CDN access type: public (CDN-served), private (presigned GET), temp (staging uploads)
+  """
+  type: String!
+  updatedAt: Datetime
+
+  """Reads and enables pagination through a set of `PlatformFile`."""
+  platformFilesByBucketId(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformFileFilter
+
+    """The method to use when ordering `PlatformFile`."""
+    orderBy: [PlatformFileOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformFileConnection!
+}
+
+"""
+A signed eight-byte integer. The upper big integer values are greater than the
+max value for a JavaScript number. Therefore all big integers will be output as
+strings and not numbers.
+"""
+scalar BigInt
+
+"""A connection to a list of `PlatformFile` values."""
+type PlatformFileConnection {
+  """A list of `PlatformFile` objects."""
+  nodes: [PlatformFile]!
+
+  """
+  A list of edges which contains the `PlatformFile` and cursor to aid in pagination.
+  """
+  edges: [PlatformFileEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `PlatformFile` you could get from the connection."""
+  totalCount: Int!
+}
+
+"""
+Individual file records within buckets, with immutable identity fields and mutable metadata
+"""
+type PlatformFile {
+  filePath: String
+
+  """
+  User who uploaded this file. Forced to current_user_id() on INSERT. Used for UPDATE/DELETE authorization.
+  """
+  actorId: UUID!
+
+  """
+  Bucket this file belongs to. Determines owner_id and is_public via inheritance trigger.
+  """
+  bucketId: UUID!
+
+  """
+  SHA-256 content hash for integrity verification and dedup. In default mode, equals the S3 key. In custom key mode, stored separately.
+  """
+  contentHash: String
+  createdAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID!
+
+  """Human-readable description or alt text for the file (mutable)"""
+  description: String
+
+  """
+  Original filename provided by the uploader. Used for display and Content-Disposition header on download.
+  """
+  filename: String
+  id: UUID!
+
+  """
+  Whether this file is publicly readable. Inherited from bucket on INSERT.
+  """
+  isPublic: Boolean!
+
+  """S3 object key for this file, unique within its bucket"""
+  key: String!
+
+  """
+  MIME type of the file (e.g. image/png, application/pdf). Immutable after INSERT.
+  """
+  mimeType: String!
+
+  """File size in bytes. Immutable after INSERT."""
+  size: BigInt!
+
+  """User-defined tags for categorization and search (mutable)"""
+  tags: [String]
+  updatedAt: Datetime
+
+  """
+  Processed file reference (upload domain). Populated by processing jobs after file is uploaded. Copy this value to other tables to reference the file.
+  """
+  upload: ConstructiveInternalTypeUpload
+
+  """
+  File lifecycle status: requested (presigned URL generated, not yet in S3), uploaded (file in S3, ready for basic use), processed (MIME verified, image resized, embedding computed).
+  """
+  status: FileStatus!
+
+  """
+  URL to download this file. For public files, returns the public URL. For private files, returns a time-limited presigned URL.
+  """
+  downloadUrl: String
+
+  """
+  Reads a single `PlatformBucket` that is related to this `PlatformFile`.
+  """
+  bucket: PlatformBucket
+}
+
+scalar ConstructiveInternalTypeUpload
+
+enum FileStatus {
+  REQUESTED
+  UPLOADED
+  PROCESSED
+}
+
+"""A `PlatformFile` edge in the connection."""
+type PlatformFileEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformFile` at the end of the edge."""
+  node: PlatformFile
+}
+
+"""
+A filter to be used against `PlatformFile` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformFileFilter {
+  """Filter by the object’s `actorId` field."""
+  actorId: UUIDFilter
+
+  """Filter by the object’s `bucketId` field."""
+  bucketId: UUIDFilter
+
+  """Filter by the object’s `contentHash` field."""
+  contentHash: StringFilter
+
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `description` field."""
+  description: StringFilter
+
+  """Filter by the object’s `filename` field."""
+  filename: StringFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `isPublic` field."""
+  isPublic: BooleanFilter
+
+  """Filter by the object’s `key` field."""
+  key: StringFilter
+
+  """Filter by the object’s `mimeType` field."""
+  mimeType: StringFilter
+
+  """Filter by the object’s `size` field."""
+  size: BigIntFilter
+
+  """Filter by the object’s `tags` field."""
+  tags: StringListFilter
+
+  """Filter by the object’s `updatedAt` field."""
+  updatedAt: DatetimeFilter
+
+  """Filter by the object’s `upload` field."""
+  upload: ConstructiveInternalTypeUploadFilter
+
+  """Filter by the object’s `status` field."""
+  status: FileStatusFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformFileFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformFileFilter!]
+
+  """Negates the expression."""
+  not: PlatformFileFilter
+
+  """Filter by the object’s `bucket` relation."""
+  bucket: PlatformBucketFilter
+}
+
+"""
+A filter to be used against BigInt fields. All fields are combined with a logical ‘and.’
+"""
+input BigIntFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: BigInt
+
+  """Not equal to the specified value."""
+  notEqualTo: BigInt
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: BigInt
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: BigInt
+
+  """Included in the specified list."""
+  in: [BigInt!]
+
+  """Not included in the specified list."""
+  notIn: [BigInt!]
+
+  """Less than the specified value."""
+  lessThan: BigInt
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: BigInt
+
+  """Greater than the specified value."""
+  greaterThan: BigInt
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: BigInt
+}
+
+"""
+A filter to be used against String List fields. All fields are combined with a logical ‘and.’
+"""
+input StringListFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: [String]
+
+  """Not equal to the specified value."""
+  notEqualTo: [String]
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: [String]
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: [String]
+
+  """Less than the specified value."""
+  lessThan: [String]
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: [String]
+
+  """Greater than the specified value."""
+  greaterThan: [String]
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: [String]
+
+  """Contains the specified list of values."""
+  contains: [String]
+
+  """Contained by the specified list of values."""
+  containedBy: [String]
+
+  """Overlaps the specified list of values."""
+  overlaps: [String]
+
+  """Any array item is equal to the specified value."""
+  anyEqualTo: String
+
+  """Any array item is not equal to the specified value."""
+  anyNotEqualTo: String
+
+  """Any array item is less than the specified value."""
+  anyLessThan: String
+
+  """Any array item is less than or equal to the specified value."""
+  anyLessThanOrEqualTo: String
+
+  """Any array item is greater than the specified value."""
+  anyGreaterThan: String
+
+  """Any array item is greater than or equal to the specified value."""
+  anyGreaterThanOrEqualTo: String
+}
+
+"""
+A filter to be used against ConstructiveInternalTypeUpload fields. All fields are combined with a logical ‘and.’
+"""
+input ConstructiveInternalTypeUploadFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: ConstructiveInternalTypeUpload
+
+  """Not equal to the specified value."""
+  notEqualTo: ConstructiveInternalTypeUpload
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: ConstructiveInternalTypeUpload
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: ConstructiveInternalTypeUpload
+
+  """Included in the specified list."""
+  in: [ConstructiveInternalTypeUpload!]
+
+  """Not included in the specified list."""
+  notIn: [ConstructiveInternalTypeUpload!]
+
+  """Less than the specified value."""
+  lessThan: ConstructiveInternalTypeUpload
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: ConstructiveInternalTypeUpload
+
+  """Greater than the specified value."""
+  greaterThan: ConstructiveInternalTypeUpload
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: ConstructiveInternalTypeUpload
+
+  """Contains the specified JSON."""
+  contains: ConstructiveInternalTypeUpload
+
+  """Contains the specified key."""
+  containsKey: String
+
+  """Contains all of the specified keys."""
+  containsAllKeys: [String!]
+
+  """Contains any of the specified keys."""
+  containsAnyKeys: [String!]
+
+  """Contained by the specified JSON."""
+  containedBy: ConstructiveInternalTypeUpload
+}
+
+"""
+A filter to be used against FileStatus fields. All fields are combined with a logical ‘and.’
+"""
+input FileStatusFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: FileStatus
+
+  """Not equal to the specified value."""
+  notEqualTo: FileStatus
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: FileStatus
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: FileStatus
+
+  """Included in the specified list."""
+  in: [FileStatus!]
+
+  """Not included in the specified list."""
+  notIn: [FileStatus!]
+
+  """Less than the specified value."""
+  lessThan: FileStatus
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: FileStatus
+
+  """Greater than the specified value."""
+  greaterThan: FileStatus
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: FileStatus
+}
+
+"""
+A filter to be used against `PlatformBucket` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformBucketFilter {
+  """Filter by the object’s `actorId` field."""
+  actorId: UUIDFilter
+
+  """Filter by the object’s `allowCustomKeys` field."""
+  allowCustomKeys: BooleanFilter
+
+  """Filter by the object’s `allowedMimeTypes` field."""
+  allowedMimeTypes: StringListFilter
+
+  """Filter by the object’s `allowedOrigins` field."""
+  allowedOrigins: StringListFilter
+
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `description` field."""
+  description: StringFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `isPublic` field."""
+  isPublic: BooleanFilter
+
+  """Filter by the object’s `key` field."""
+  key: StringFilter
+
+  """Filter by the object’s `maxFileSize` field."""
+  maxFileSize: BigIntFilter
+
+  """Filter by the object’s `type` field."""
+  type: StringFilter
+
+  """Filter by the object’s `updatedAt` field."""
+  updatedAt: DatetimeFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformBucketFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformBucketFilter!]
+
+  """Negates the expression."""
+  not: PlatformBucketFilter
+
+  """Filter by the object’s `platformFilesByBucketId` relation."""
+  platformFilesByBucketId: PlatformBucketToManyPlatformFileFilter
+
+  """`platformFilesByBucketId` exist."""
+  platformFilesByBucketIdExist: Boolean
+}
+
+"""
+A filter to be used against many `PlatformFile` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformBucketToManyPlatformFileFilter {
+  """Filters to entities where at least one related entity matches."""
+  some: PlatformFileFilter
+
+  """Filters to entities where every related entity matches."""
+  every: PlatformFileFilter
+
+  """Filters to entities where no related entity matches."""
+  none: PlatformFileFilter
+}
+
+"""Methods to use when ordering `PlatformFile`."""
+enum PlatformFileOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  ACTOR_ID_ASC
+  ACTOR_ID_DESC
+  BUCKET_ID_ASC
+  BUCKET_ID_DESC
+  CONTENT_HASH_ASC
+  CONTENT_HASH_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  DESCRIPTION_ASC
+  DESCRIPTION_DESC
+  FILENAME_ASC
+  FILENAME_DESC
+  ID_ASC
+  ID_DESC
+  IS_PUBLIC_ASC
+  IS_PUBLIC_DESC
+  KEY_ASC
+  KEY_DESC
+  MIME_TYPE_ASC
+  MIME_TYPE_DESC
+  SIZE_ASC
+  SIZE_DESC
+  TAGS_ASC
+  TAGS_DESC
+  UPDATED_AT_ASC
+  UPDATED_AT_DESC
+  UPLOAD_ASC
+  UPLOAD_DESC
+  STATUS_ASC
+  STATUS_DESC
+}
+
+"""A `PlatformBucket` edge in the connection."""
+type PlatformBucketEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformBucket` at the end of the edge."""
+  node: PlatformBucket
+}
+
+"""Methods to use when ordering `PlatformBucket`."""
+enum PlatformBucketOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  ACTOR_ID_ASC
+  ACTOR_ID_DESC
+  ALLOW_CUSTOM_KEYS_ASC
+  ALLOW_CUSTOM_KEYS_DESC
+  ALLOWED_MIME_TYPES_ASC
+  ALLOWED_MIME_TYPES_DESC
+  ALLOWED_ORIGINS_ASC
+  ALLOWED_ORIGINS_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  DESCRIPTION_ASC
+  DESCRIPTION_DESC
+  ID_ASC
+  ID_DESC
+  IS_PUBLIC_ASC
+  IS_PUBLIC_DESC
+  KEY_ASC
+  KEY_DESC
+  MAX_FILE_SIZE_ASC
+  MAX_FILE_SIZE_DESC
+  TYPE_ASC
+  TYPE_DESC
+  UPDATED_AT_ASC
+  UPDATED_AT_DESC
+}
+
+"""A connection to a list of `User` values."""
+type UserConnection {
+  """A list of `User` objects."""
+  nodes: [User]!
+
+  """
+  A list of edges which contains the `User` and cursor to aid in pagination.
+  """
+  edges: [UserEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """The count of *all* `User` you could get from the connection."""
+  totalCount: Int!
+}
+
+type User {
+  createdAt: Datetime
+  displayName: String
+  id: UUID!
+  profilePicture: ConstructiveInternalTypeImage
+  searchTsv: FullText
+  type: Int!
+  updatedAt: Datetime
+  username: String
+
+  """Reads a single `RoleType` that is related to this `User`."""
+  roleType: RoleType
+
+  """
+  TSV rank when searching `searchTsv`. Returns null when no tsv search filter is active.
+  """
+  searchTsvRank: Float
+
+  """
+  TRGM similarity when searching `displayName`. Returns null when no trgm search filter is active.
+  """
+  displayNameTrgmSimilarity: Float
+
+  """
+  Composite search relevance score (0..1, higher = more relevant). Computed by normalizing and averaging all active search signals. Supports per-table weight customization via @searchConfig smart tag. Returns null when no search filters are active.
+  """
+  searchScore: Float
+}
+
+scalar ConstructiveInternalTypeImage
+
+"""A full-text search tsvector value represented as a string."""
+scalar FullText
+
+"""A `User` edge in the connection."""
+type UserEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `User` at the end of the edge."""
+  node: User
+}
+
+"""
+A filter to be used against `User` object types. All fields are combined with a logical ‘and.’
+"""
+input UserFilter {
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `displayName` field."""
+  displayName: StringTrgmFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `profilePicture` field."""
+  profilePicture: ConstructiveInternalTypeImageFilter
+
+  """Filter by the object’s `searchTsv` field."""
+  searchTsv: FullTextFilter
+
+  """Filter by the object’s `type` field."""
+  type: IntFilter
+
+  """Filter by the object’s `updatedAt` field."""
+  updatedAt: DatetimeFilter
+
+  """Filter by the object’s `username` field."""
+  username: StringTrgmFilter
+
+  """Checks for all expressions in this list."""
+  and: [UserFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [UserFilter!]
+
+  """Negates the expression."""
+  not: UserFilter
+
+  """Filter by the object’s `roleType` relation."""
+  roleType: RoleTypeFilter
+
+  """TSV search on the `search_tsv` column."""
+  tsvSearchTsv: String
+
+  """TRGM search on the `display_name` column."""
+  trgmDisplayName: TrgmSearchInput
+
+  """
+  Composite unified search. Provide a search string and it will be dispatched to
+  all text-compatible search algorithms (tsvector, BM25, pg_trgm)
+  simultaneously. Rows matching ANY algorithm are returned. All matching score
+  fields are populated.
+  """
+  unifiedSearch: String
+}
+
+"""
+A filter to be used against String fields with pg_trgm support. All fields are combined with a logical ‘and.’
+"""
+input StringTrgmFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: String
+
+  """Not equal to the specified value."""
+  notEqualTo: String
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: String
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: String
+
+  """Included in the specified list."""
+  in: [String!]
+
+  """Not included in the specified list."""
+  notIn: [String!]
+
+  """Less than the specified value."""
+  lessThan: String
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: String
+
+  """Greater than the specified value."""
+  greaterThan: String
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: String
+
+  """Contains the specified string (case-sensitive)."""
+  includes: String
+
+  """Does not contain the specified string (case-sensitive)."""
+  notIncludes: String
+
+  """Contains the specified string (case-insensitive)."""
+  includesInsensitive: String
+
+  """Does not contain the specified string (case-insensitive)."""
+  notIncludesInsensitive: String
+
+  """Starts with the specified string (case-sensitive)."""
+  startsWith: String
+
+  """Does not start with the specified string (case-sensitive)."""
+  notStartsWith: String
+
+  """Starts with the specified string (case-insensitive)."""
+  startsWithInsensitive: String
+
+  """Does not start with the specified string (case-insensitive)."""
+  notStartsWithInsensitive: String
+
+  """Ends with the specified string (case-sensitive)."""
+  endsWith: String
+
+  """Does not end with the specified string (case-sensitive)."""
+  notEndsWith: String
+
+  """Ends with the specified string (case-insensitive)."""
+  endsWithInsensitive: String
+
+  """Does not end with the specified string (case-insensitive)."""
+  notEndsWithInsensitive: String
+
+  """
+  Matches the specified pattern (case-sensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  like: String
+
+  """
+  Does not match the specified pattern (case-sensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  notLike: String
+
+  """
+  Matches the specified pattern (case-insensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  likeInsensitive: String
+
+  """
+  Does not match the specified pattern (case-insensitive). An underscore (_) matches any single character; a percent sign (%) matches any sequence of zero or more characters.
+  """
+  notLikeInsensitive: String
+
+  """Equal to the specified value (case-insensitive)."""
+  equalToInsensitive: String
+
+  """Not equal to the specified value (case-insensitive)."""
+  notEqualToInsensitive: String
+
+  """
+  Not equal to the specified value, treating null like an ordinary value (case-insensitive).
+  """
+  distinctFromInsensitive: String
+
+  """
+  Equal to the specified value, treating null like an ordinary value (case-insensitive).
+  """
+  notDistinctFromInsensitive: String
+
+  """Included in the specified list (case-insensitive)."""
+  inInsensitive: [String!]
+
+  """Not included in the specified list (case-insensitive)."""
+  notInInsensitive: [String!]
+
+  """Less than the specified value (case-insensitive)."""
+  lessThanInsensitive: String
+
+  """Less than or equal to the specified value (case-insensitive)."""
+  lessThanOrEqualToInsensitive: String
+
+  """Greater than the specified value (case-insensitive)."""
+  greaterThanInsensitive: String
+
+  """Greater than or equal to the specified value (case-insensitive)."""
+  greaterThanOrEqualToInsensitive: String
+
+  """
+  Fuzzy matches using pg_trgm trigram similarity. Tolerates typos and misspellings.
+  """
+  similarTo: TrgmSearchInput
+
+  """
+  Fuzzy matches using pg_trgm word_similarity. Finds the best matching substring within the column value.
+  """
+  wordSimilarTo: TrgmSearchInput
+}
+
+"""
+Input for pg_trgm fuzzy text matching. Provide a search value and optional similarity threshold.
+"""
+input TrgmSearchInput {
+  """The text to fuzzy-match against. Typos and misspellings are tolerated."""
+  value: String!
+
+  """
+  Minimum similarity threshold (0.0 to 1.0). Higher = stricter matching. Default is 0.3.
+  """
+  threshold: Float
+}
+
+"""
+A filter to be used against ConstructiveInternalTypeImage fields. All fields are combined with a logical ‘and.’
+"""
+input ConstructiveInternalTypeImageFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: ConstructiveInternalTypeImage
+
+  """Not equal to the specified value."""
+  notEqualTo: ConstructiveInternalTypeImage
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: ConstructiveInternalTypeImage
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: ConstructiveInternalTypeImage
+
+  """Included in the specified list."""
+  in: [ConstructiveInternalTypeImage!]
+
+  """Not included in the specified list."""
+  notIn: [ConstructiveInternalTypeImage!]
+
+  """Less than the specified value."""
+  lessThan: ConstructiveInternalTypeImage
+
+  """Less than or equal to the specified value."""
+  lessThanOrEqualTo: ConstructiveInternalTypeImage
+
+  """Greater than the specified value."""
+  greaterThan: ConstructiveInternalTypeImage
+
+  """Greater than or equal to the specified value."""
+  greaterThanOrEqualTo: ConstructiveInternalTypeImage
+
+  """Contains the specified JSON."""
+  contains: ConstructiveInternalTypeImage
+
+  """Contains the specified key."""
+  containsKey: String
+
+  """Contains all of the specified keys."""
+  containsAllKeys: [String!]
+
+  """Contains any of the specified keys."""
+  containsAnyKeys: [String!]
+
+  """Contained by the specified JSON."""
+  containedBy: ConstructiveInternalTypeImage
+}
+
+"""
+A filter to be used against FullText fields. All fields are combined with a logical ‘and.’
+"""
+input FullTextFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: FullText
+
+  """Not equal to the specified value."""
+  notEqualTo: FullText
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: FullText
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: FullText
+
+  """Included in the specified list."""
+  in: [FullText!]
+
+  """Not included in the specified list."""
+  notIn: [FullText!]
+
+  """Performs a full text search on the field."""
+  matches: String
+}
+
+"""Methods to use when ordering `User`."""
+enum UserOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  DISPLAY_NAME_ASC
+  DISPLAY_NAME_DESC
+  ID_ASC
+  ID_DESC
+  PROFILE_PICTURE_ASC
+  PROFILE_PICTURE_DESC
+  SEARCH_TSV_ASC
+  SEARCH_TSV_DESC
+  TYPE_ASC
+  TYPE_DESC
+  UPDATED_AT_ASC
+  UPDATED_AT_DESC
+  USERNAME_ASC
+  USERNAME_DESC
+  SEARCH_TSV_RANK_ASC
+  SEARCH_TSV_RANK_DESC
+  DISPLAY_NAME_TRGM_SIMILARITY_ASC
+  DISPLAY_NAME_TRGM_SIMILARITY_DESC
+  SEARCH_SCORE_ASC
+  SEARCH_SCORE_DESC
+}
+
+"""A connection to a list of `PlatformNamespaceEvent` values."""
+type PlatformNamespaceEventConnection {
+  """A list of `PlatformNamespaceEvent` objects."""
+  nodes: [PlatformNamespaceEvent]!
+
+  """
+  A list of edges which contains the `PlatformNamespaceEvent` and cursor to aid in pagination.
+  """
+  edges: [PlatformNamespaceEventEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformNamespaceEvent` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""
+Namespace lifecycle events — audit log of creation, activation, deactivation, label changes
+"""
+type PlatformNamespaceEvent {
+  """Event timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """User who triggered this event (NULL for system/automated)"""
+  actorId: UUID
+
+  """CPU usage in millicores at time of event"""
+  cpuMillicores: Int
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID!
+
+  """
+  Event type: created, activated, deactivated, labels_updated, annotations_updated, renamed
+  """
+  eventType: String!
+
+  """Unique event identifier"""
+  id: UUID!
+
+  """Memory usage in bytes at time of event"""
+  memoryBytes: BigInt
+
+  """Human-readable description of the event"""
+  message: String
+
+  """Structured context (old/new values, labels diff, etc.)"""
+  metadata: JSON
+
+  """Additional resource metrics (gpu, replicas, quotas, etc.)"""
+  metrics: JSON
+
+  """Namespace this event belongs to"""
+  namespaceId: UUID!
+
+  """Network egress in bytes during event window"""
+  networkEgressBytes: BigInt
+
+  """Network ingress in bytes during event window"""
+  networkIngressBytes: BigInt
+
+  """Number of active pods in the namespace at time of event"""
+  podCount: Int
+
+  """Storage usage in bytes at time of event"""
+  storageBytes: BigInt
+}
+
+"""A `PlatformNamespaceEvent` edge in the connection."""
+type PlatformNamespaceEventEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformNamespaceEvent` at the end of the edge."""
+  node: PlatformNamespaceEvent
+}
+
+"""
+A filter to be used against `PlatformNamespaceEvent` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformNamespaceEventFilter {
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `actorId` field."""
+  actorId: UUIDFilter
+
+  """Filter by the object’s `cpuMillicores` field."""
+  cpuMillicores: IntFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `eventType` field."""
+  eventType: StringFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `memoryBytes` field."""
+  memoryBytes: BigIntFilter
+
+  """Filter by the object’s `message` field."""
+  message: StringFilter
+
+  """Filter by the object’s `metadata` field."""
+  metadata: JSONFilter
+
+  """Filter by the object’s `metrics` field."""
+  metrics: JSONFilter
+
+  """Filter by the object’s `namespaceId` field."""
+  namespaceId: UUIDFilter
+
+  """Filter by the object’s `networkEgressBytes` field."""
+  networkEgressBytes: BigIntFilter
+
+  """Filter by the object’s `networkIngressBytes` field."""
+  networkIngressBytes: BigIntFilter
+
+  """Filter by the object’s `podCount` field."""
+  podCount: IntFilter
+
+  """Filter by the object’s `storageBytes` field."""
+  storageBytes: BigIntFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformNamespaceEventFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformNamespaceEventFilter!]
+
+  """Negates the expression."""
+  not: PlatformNamespaceEventFilter
+}
+
+"""Methods to use when ordering `PlatformNamespaceEvent`."""
+enum PlatformNamespaceEventOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  ACTOR_ID_ASC
+  ACTOR_ID_DESC
+  CPU_MILLICORES_ASC
+  CPU_MILLICORES_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  EVENT_TYPE_ASC
+  EVENT_TYPE_DESC
+  ID_ASC
+  ID_DESC
+  MEMORY_BYTES_ASC
+  MEMORY_BYTES_DESC
+  MESSAGE_ASC
+  MESSAGE_DESC
+  METADATA_ASC
+  METADATA_DESC
+  METRICS_ASC
+  METRICS_DESC
+  NAMESPACE_ID_ASC
+  NAMESPACE_ID_DESC
+  NETWORK_EGRESS_BYTES_ASC
+  NETWORK_EGRESS_BYTES_DESC
+  NETWORK_INGRESS_BYTES_ASC
+  NETWORK_INGRESS_BYTES_DESC
+  POD_COUNT_ASC
+  POD_COUNT_DESC
+  STORAGE_BYTES_ASC
+  STORAGE_BYTES_DESC
+}
+
+"""Root meta schema type"""
+type MetaSchema {
+  tables: [MetaTable!]!
+}
+
+"""Information about a database table"""
+type MetaTable {
+  name: String!
+  schemaName: String!
+  fields: [MetaField!]!
+  indexes: [MetaIndex!]!
+  constraints: MetaConstraints!
+  foreignKeyConstraints: [MetaForeignKeyConstraint!]!
+  primaryKeyConstraints: [MetaPrimaryKeyConstraint!]!
+  uniqueConstraints: [MetaUniqueConstraint!]!
+  relations: MetaRelations!
+  inflection: MetaInflection!
+  query: MetaQuery!
+}
+
+"""Information about a table field/column"""
+type MetaField {
+  name: String!
+  type: MetaType!
+  isNotNull: Boolean!
+  hasDefault: Boolean!
+  isPrimaryKey: Boolean!
+  isForeignKey: Boolean!
+  description: String
+}
+
+"""Information about a PostgreSQL type"""
+type MetaType {
+  pgType: String!
+  gqlType: String!
+  isArray: Boolean!
+  isNotNull: Boolean
+  hasDefault: Boolean
+  subtype: String
+}
+
+"""Information about a database index"""
+type MetaIndex {
+  name: String!
+  isUnique: Boolean!
+  isPrimary: Boolean!
+  columns: [String!]!
+  fields: [MetaField!]
+}
+
+"""Table constraints"""
+type MetaConstraints {
+  primaryKey: MetaPrimaryKeyConstraint
+  unique: [MetaUniqueConstraint!]!
+  foreignKey: [MetaForeignKeyConstraint!]!
+}
+
+"""Information about a primary key constraint"""
+type MetaPrimaryKeyConstraint {
+  name: String!
+  fields: [MetaField!]!
+}
+
+"""Information about a unique constraint"""
+type MetaUniqueConstraint {
+  name: String!
+  fields: [MetaField!]!
+}
+
+"""Information about a foreign key constraint"""
+type MetaForeignKeyConstraint {
+  name: String!
+  fields: [MetaField!]!
+  referencedTable: String!
+  referencedFields: [String!]!
+  refFields: [MetaField!]
+  refTable: MetaRefTable
+}
+
+"""Reference to a related table"""
+type MetaRefTable {
+  name: String!
+}
+
+"""Table relations"""
+type MetaRelations {
+  belongsTo: [MetaBelongsToRelation!]!
+  has: [MetaHasRelation!]!
+  hasOne: [MetaHasRelation!]!
+  hasMany: [MetaHasRelation!]!
+  manyToMany: [MetaManyToManyRelation!]!
+}
+
+"""A belongs-to (forward FK) relation"""
+type MetaBelongsToRelation {
+  fieldName: String
+  isUnique: Boolean!
+  type: String
+  keys: [MetaField!]!
+  references: MetaRefTable!
+}
+
+"""A has-one or has-many (reverse FK) relation"""
+type MetaHasRelation {
+  fieldName: String
+  isUnique: Boolean!
+  type: String
+  keys: [MetaField!]!
+  referencedBy: MetaRefTable!
+}
+
+"""A many-to-many relation via junction table"""
+type MetaManyToManyRelation {
+  fieldName: String
+  type: String
+  junctionTable: MetaRefTable!
+  junctionLeftConstraint: MetaForeignKeyConstraint!
+  junctionLeftKeyAttributes: [MetaField!]!
+  junctionRightConstraint: MetaForeignKeyConstraint!
+  junctionRightKeyAttributes: [MetaField!]!
+  leftKeyAttributes: [MetaField!]!
+  rightKeyAttributes: [MetaField!]!
+  rightTable: MetaRefTable!
+}
+
+"""Table inflection names"""
+type MetaInflection {
+  tableType: String!
+  allRows: String!
+  connection: String!
+  edge: String!
+  filterType: String
+  orderByType: String!
+  conditionType: String!
+  patchType: String
+  createInputType: String!
+  createPayloadType: String!
+  updatePayloadType: String
+  deletePayloadType: String!
+}
+
+"""Table query/mutation names"""
+type MetaQuery {
+  all: String!
+  one: String
+  create: String
+  update: String
+  delete: String
+}
+
+"""
+The root mutation type which contains root level fields which mutate data.
+"""
+type Mutation {
+  platformSecretsDel(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: PlatformSecretsDelInput!
+  ): PlatformSecretsDelPayload
+  platformSecretsSet(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: PlatformSecretsSetInput!
+  ): PlatformSecretsSetPayload
+  orgSecretsDel(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: OrgSecretsDelInput!
+  ): OrgSecretsDelPayload
+  orgSecretsSet(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: OrgSecretsSetInput!
+  ): OrgSecretsSetPayload
+  orgSecretsRemoveArray(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: OrgSecretsRemoveArrayInput!
+  ): OrgSecretsRemoveArrayPayload
+  platformFilesRename(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: PlatformFilesRenameInput!
+  ): PlatformFilesRenamePayload
+
+  """Creates a single `RoleType`."""
+  createRoleType(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreateRoleTypeInput!
+  ): CreateRoleTypePayload
+
+  """Creates a single `PlatformConfigDefinition`."""
+  createPlatformConfigDefinition(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformConfigDefinitionInput!
+  ): CreatePlatformConfigDefinitionPayload
+
+  """Creates a single `PlatformNamespace`."""
+  createPlatformNamespace(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformNamespaceInput!
+  ): CreatePlatformNamespacePayload
+
+  """Creates a single `PlatformConfig`."""
+  createPlatformConfig(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformConfigInput!
+  ): CreatePlatformConfigPayload
+
+  """Creates a single `PlatformBucket`."""
+  createPlatformBucket(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformBucketInput!
+  ): CreatePlatformBucketPayload
+
+  """Creates a single `User`."""
+  createUser(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreateUserInput!
+  ): CreateUserPayload
+
+  """Creates a single `PlatformNamespaceEvent`."""
+  createPlatformNamespaceEvent(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformNamespaceEventInput!
+  ): CreatePlatformNamespaceEventPayload
+
+  """Creates a single `PlatformFile`."""
+  createPlatformFile(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformFileInput!
+  ): CreatePlatformFilePayload
+
+  """Updates a single `RoleType` using a unique key and a patch."""
+  updateRoleType(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdateRoleTypeInput!
+  ): UpdateRoleTypePayload
+
+  """
+  Updates a single `PlatformConfigDefinition` using a unique key and a patch.
+  """
+  updatePlatformConfigDefinition(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformConfigDefinitionInput!
+  ): UpdatePlatformConfigDefinitionPayload
+
+  """Updates a single `PlatformNamespace` using a unique key and a patch."""
+  updatePlatformNamespace(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformNamespaceInput!
+  ): UpdatePlatformNamespacePayload
+
+  """Updates a single `PlatformConfig` using a unique key and a patch."""
+  updatePlatformConfig(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformConfigInput!
+  ): UpdatePlatformConfigPayload
+
+  """Updates a single `PlatformBucket` using a unique key and a patch."""
+  updatePlatformBucket(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformBucketInput!
+  ): UpdatePlatformBucketPayload
+
+  """Updates a single `User` using a unique key and a patch."""
+  updateUser(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdateUserInput!
+  ): UpdateUserPayload
+
+  """
+  Updates a single `PlatformNamespaceEvent` using a unique key and a patch.
+  """
+  updatePlatformNamespaceEvent(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformNamespaceEventInput!
+  ): UpdatePlatformNamespaceEventPayload
+
+  """Updates a single `PlatformFile` using a unique key and a patch."""
+  updatePlatformFile(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformFileInput!
+  ): UpdatePlatformFilePayload
+
+  """Deletes a single `RoleType` using a unique key."""
+  deleteRoleType(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeleteRoleTypeInput!
+  ): DeleteRoleTypePayload
+
+  """Deletes a single `PlatformConfigDefinition` using a unique key."""
+  deletePlatformConfigDefinition(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformConfigDefinitionInput!
+  ): DeletePlatformConfigDefinitionPayload
+
+  """Deletes a single `PlatformNamespace` using a unique key."""
+  deletePlatformNamespace(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformNamespaceInput!
+  ): DeletePlatformNamespacePayload
+
+  """Deletes a single `PlatformConfig` using a unique key."""
+  deletePlatformConfig(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformConfigInput!
+  ): DeletePlatformConfigPayload
+
+  """Deletes a single `PlatformBucket` using a unique key."""
+  deletePlatformBucket(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformBucketInput!
+  ): DeletePlatformBucketPayload
+
+  """Deletes a single `User` using a unique key."""
+  deleteUser(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeleteUserInput!
+  ): DeleteUserPayload
+
+  """Deletes a single `PlatformNamespaceEvent` using a unique key."""
+  deletePlatformNamespaceEvent(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformNamespaceEventInput!
+  ): DeletePlatformNamespaceEventPayload
+
+  """Deletes a single `PlatformFile` using a unique key."""
+  deletePlatformFile(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformFileInput!
+  ): DeletePlatformFilePayload
+
+  """
+  Upload a file: resolves the bucket by key, creates the file row, and returns a presigned PUT URL.
+  """
+  uploadPlatformFile(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UploadPlatformFileInput!
+  ): UploadPlatformFilePayload
+
+  """
+  Upload multiple files: resolves the bucket by key, creates file rows, and returns presigned PUT URLs for each.
+  """
+  uploadPlatformFiles(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UploadPlatformFileBulkInput!
+  ): UploadPlatformFileBulkPayload
+
+  """
+  Provision an S3 bucket for a logical bucket in the database.
+  Reads the bucket config via RLS, then creates and configures
+  the S3 bucket with the appropriate privacy policies, CORS rules,
+  and lifecycle settings.
+  """
+  provisionBucket(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: ProvisionBucketInput!
+  ): ProvisionBucketPayload
+}
+
+"""The output of our `platformSecretsDel` mutation."""
+type PlatformSecretsDelPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `platformSecretsDel` mutation."""
+input PlatformSecretsDelInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  secretName: String
+  secretNamespace: String
+}
+
+"""The output of our `platformSecretsSet` mutation."""
+type PlatformSecretsSetPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: Boolean
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `platformSecretsSet` mutation."""
+input PlatformSecretsSetInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  secretName: String
+  secretValue: String
+  algo: String
+  secretNamespace: String
+}
+
+"""The output of our `orgSecretsDel` mutation."""
+type OrgSecretsDelPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `orgSecretsDel` mutation."""
+input OrgSecretsDelInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  ownerId: UUID
+  secretName: String
+  secretNamespace: String
+}
+
+"""The output of our `orgSecretsSet` mutation."""
+type OrgSecretsSetPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: Boolean
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `orgSecretsSet` mutation."""
+input OrgSecretsSetInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  ownerId: UUID
+  secretName: String
+  secretValue: String
+  algo: String
+  secretNamespace: String
+}
+
+"""The output of our `orgSecretsRemoveArray` mutation."""
+type OrgSecretsRemoveArrayPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+}
+
+"""All input for the `orgSecretsRemoveArray` mutation."""
+input OrgSecretsRemoveArrayInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  ownerId: UUID
+  secretNames: [String]
+  secretNamespace: String
+}
+
+"""The output of our `platformFilesRename` mutation."""
+type PlatformFilesRenamePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+  result: PlatformFile
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFile`. May be used by Relay 1."""
+  platformFileEdge(
+    """The method to use when ordering `PlatformFile`."""
+    orderBy: [PlatformFileOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFileEdge
+}
+
+"""All input for the `platformFilesRename` mutation."""
+input PlatformFilesRenameInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  pFileId: UUID
+  pNewFilename: String
+}
+
+"""The output of our create `RoleType` mutation."""
+type CreateRoleTypePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `RoleType` that was created by this mutation."""
+  roleType: RoleType
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `RoleType`. May be used by Relay 1."""
+  roleTypeEdge(
+    """The method to use when ordering `RoleType`."""
+    orderBy: [RoleTypeOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): RoleTypeEdge
+}
+
+"""All input for the create `RoleType` mutation."""
+input CreateRoleTypeInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `RoleType` to be created by this mutation."""
+  roleType: RoleTypeInput!
+}
+
+"""An input for mutations affecting `RoleType`"""
+input RoleTypeInput {
+  id: Int!
+  name: String!
+}
+
+"""The output of our create `PlatformConfigDefinition` mutation."""
+type CreatePlatformConfigDefinitionPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformConfigDefinition` that was created by this mutation."""
+  platformConfigDefinition: PlatformConfigDefinition
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformConfigDefinition`. May be used by Relay 1."""
+  platformConfigDefinitionEdge(
+    """The method to use when ordering `PlatformConfigDefinition`."""
+    orderBy: [PlatformConfigDefinitionOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformConfigDefinitionEdge
+}
+
+"""All input for the create `PlatformConfigDefinition` mutation."""
+input CreatePlatformConfigDefinitionInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformConfigDefinition` to be created by this mutation."""
+  platformConfigDefinition: PlatformConfigDefinitionInput!
+}
+
+"""An input for mutations affecting `PlatformConfigDefinition`"""
+input PlatformConfigDefinitionInput {
+  """Freeform metadata annotations for config definitions"""
+  annotations: JSON
+  createdAt: Datetime
+
+  """Default value used when no config entry exists for a namespace"""
+  defaultValue: String
+
+  """Human-readable description of what this config key controls"""
+  description: String
+
+  """Unique identifier for this config definition"""
+  id: UUID
+
+  """Whether this row was seeded as a built-in config definition"""
+  isBuiltIn: Boolean
+
+  """Key-value metadata for filtering and grouping config definitions"""
+  labels: JSON
+
+  """Config key name (must match config table name for resolution)"""
+  name: String!
+  updatedAt: Datetime
+}
+
+"""The output of our create `PlatformNamespace` mutation."""
+type CreatePlatformNamespacePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformNamespace` that was created by this mutation."""
+  platformNamespace: PlatformNamespace
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformNamespace`. May be used by Relay 1."""
+  platformNamespaceEdge(
+    """The method to use when ordering `PlatformNamespace`."""
+    orderBy: [PlatformNamespaceOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformNamespaceEdge
+}
+
+"""All input for the create `PlatformNamespace` mutation."""
+input CreatePlatformNamespaceInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformNamespace` to be created by this mutation."""
+  platformNamespace: PlatformNamespaceInput!
+}
+
+"""An input for mutations affecting `PlatformNamespace`"""
+input PlatformNamespaceInput {
+  """Freeform metadata for tooling and operational notes"""
+  annotations: JSON
+  createdAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID!
+
+  """Optional human-readable description of this namespace"""
+  description: String
+  id: UUID
+
+  """Whether this namespace is active (soft-disable for filtering)"""
+  isActive: Boolean
+
+  """Key/value pairs for selecting and filtering namespaces"""
+  labels: JSON
+
+  """Human-readable namespace name (e.g. default, production, oauth)"""
+  name: String!
+
+  """
+  Globally unique computed namespace identifier via inflection.underscore
+  """
+  namespaceName: String!
+  updatedAt: Datetime
+}
+
+"""The output of our create `PlatformConfig` mutation."""
+type CreatePlatformConfigPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformConfig` that was created by this mutation."""
+  platformConfig: PlatformConfig
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformConfig`. May be used by Relay 1."""
+  platformConfigEdge(
+    """The method to use when ordering `PlatformConfig`."""
+    orderBy: [PlatformConfigOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformConfigEdge
+}
+
+"""All input for the create `PlatformConfig` mutation."""
+input CreatePlatformConfigInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformConfig` to be created by this mutation."""
+  platformConfig: PlatformConfigInput!
+}
+
+"""An input for mutations affecting `PlatformConfig`"""
+input PlatformConfigInput {
+  """Freeform metadata for tooling and operational notes"""
+  annotations: JSON
+  createdAt: Datetime
+
+  """Human-readable note about this config entry"""
+  description: String
+
+  """Optional expiration timestamp for time-limited config entries"""
+  expiresAt: Datetime
+
+  """Unique identifier for this config entry"""
+  id: UUID
+
+  """Key/value pairs for selecting/filtering config entries"""
+  labels: JSON
+
+  """Key name identifying the config entry"""
+  name: String!
+
+  """FK to namespaces — logical grouping for config entries"""
+  namespaceId: UUID!
+  updatedAt: Datetime
+
+  """Plaintext config value"""
+  value: String
+}
+
+"""The output of our create `PlatformBucket` mutation."""
+type CreatePlatformBucketPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformBucket` that was created by this mutation."""
+  platformBucket: PlatformBucket
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformBucket`. May be used by Relay 1."""
+  platformBucketEdge(
+    """The method to use when ordering `PlatformBucket`."""
+    orderBy: [PlatformBucketOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformBucketEdge
+}
+
+"""All input for the create `PlatformBucket` mutation."""
+input CreatePlatformBucketInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformBucket` to be created by this mutation."""
+  platformBucket: PlatformBucketInput!
+}
+
+"""An input for mutations affecting `PlatformBucket`"""
+input PlatformBucketInput {
+  """User who created this bucket. Forced to current_user_id() on INSERT."""
+  actorId: UUID!
+
+  """
+  When true, clients can provide custom S3 keys (e.g. reports/2024/Q1.pdf). When false (default), S3 key = content hash (automatic dedup). contentHash always required for integrity.
+  """
+  allowCustomKeys: Boolean
+
+  """
+  Whitelist of allowed MIME types for files in this bucket (NULL = all allowed, enforcement deferred)
+  """
+  allowedMimeTypes: [String]
+
+  """
+  Per-bucket CORS allowed origins override (NULL = inherit from storage_module/plugin defaults). Use ARRAY['*'] for open/CDN mode.
+  """
+  allowedOrigins: [String]
+  createdAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID!
+
+  """Human-readable description of the bucket purpose"""
+  description: String
+  id: UUID
+
+  """
+  Whether bucket contents are publicly readable. Set to true when type is public.
+  """
+  isPublic: Boolean
+
+  """
+  Unique bucket identifier used in S3 key paths (e.g. avatars, documents, temp)
+  """
+  key: String!
+
+  """
+  Maximum file size in bytes allowed in this bucket (NULL = no limit, enforcement deferred)
+  """
+  maxFileSize: BigInt
+
+  """
+  Bucket CDN access type: public (CDN-served), private (presigned GET), temp (staging uploads)
+  """
+  type: String
+  updatedAt: Datetime
+}
+
+"""The output of our create `User` mutation."""
+type CreateUserPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `User` that was created by this mutation."""
+  user: User
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `User`. May be used by Relay 1."""
+  userEdge(
+    """The method to use when ordering `User`."""
+    orderBy: [UserOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): UserEdge
+}
+
+"""All input for the create `User` mutation."""
+input CreateUserInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `User` to be created by this mutation."""
+  user: UserInput!
+}
+
+"""An input for mutations affecting `User`"""
+input UserInput {
+  createdAt: Datetime
+  displayName: String
+  id: UUID
+  profilePicture: ConstructiveInternalTypeImage
+  type: Int
+  updatedAt: Datetime
+  username: String
+}
+
+"""The output of our create `PlatformNamespaceEvent` mutation."""
+type CreatePlatformNamespaceEventPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformNamespaceEvent` that was created by this mutation."""
+  platformNamespaceEvent: PlatformNamespaceEvent
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformNamespaceEvent`. May be used by Relay 1."""
+  platformNamespaceEventEdge(
+    """The method to use when ordering `PlatformNamespaceEvent`."""
+    orderBy: [PlatformNamespaceEventOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformNamespaceEventEdge
+}
+
+"""All input for the create `PlatformNamespaceEvent` mutation."""
+input CreatePlatformNamespaceEventInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformNamespaceEvent` to be created by this mutation."""
+  platformNamespaceEvent: PlatformNamespaceEventInput!
+}
+
+"""An input for mutations affecting `PlatformNamespaceEvent`"""
+input PlatformNamespaceEventInput {
+  """Event timestamp (partition key)"""
+  createdAt: Datetime
+
+  """User who triggered this event (NULL for system/automated)"""
+  actorId: UUID
+
+  """CPU usage in millicores at time of event"""
+  cpuMillicores: Int
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID!
+
+  """
+  Event type: created, activated, deactivated, labels_updated, annotations_updated, renamed
+  """
+  eventType: String!
+
+  """Unique event identifier"""
+  id: UUID
+
+  """Memory usage in bytes at time of event"""
+  memoryBytes: BigInt
+
+  """Human-readable description of the event"""
+  message: String
+
+  """Structured context (old/new values, labels diff, etc.)"""
+  metadata: JSON
+
+  """Additional resource metrics (gpu, replicas, quotas, etc.)"""
+  metrics: JSON
+
+  """Namespace this event belongs to"""
+  namespaceId: UUID!
+
+  """Network egress in bytes during event window"""
+  networkEgressBytes: BigInt
+
+  """Network ingress in bytes during event window"""
+  networkIngressBytes: BigInt
+
+  """Number of active pods in the namespace at time of event"""
+  podCount: Int
+
+  """Storage usage in bytes at time of event"""
+  storageBytes: BigInt
+}
+
+"""The output of our create `PlatformFile` mutation."""
+type CreatePlatformFilePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFile` that was created by this mutation."""
+  platformFile: PlatformFile
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFile`. May be used by Relay 1."""
+  platformFileEdge(
+    """The method to use when ordering `PlatformFile`."""
+    orderBy: [PlatformFileOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFileEdge
+}
+
+"""All input for the create `PlatformFile` mutation."""
+input CreatePlatformFileInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformFile` to be created by this mutation."""
+  platformFile: PlatformFileInput!
+}
+
+"""An input for mutations affecting `PlatformFile`"""
+input PlatformFileInput {
+  """
+  User who uploaded this file. Forced to current_user_id() on INSERT. Used for UPDATE/DELETE authorization.
+  """
+  actorId: UUID!
+
+  """
+  Bucket this file belongs to. Determines owner_id and is_public via inheritance trigger.
+  """
+  bucketId: UUID!
+
+  """
+  SHA-256 content hash for integrity verification and dedup. In default mode, equals the S3 key. In custom key mode, stored separately.
+  """
+  contentHash: String
+  createdAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID!
+
+  """Human-readable description or alt text for the file (mutable)"""
+  description: String
+
+  """
+  Original filename provided by the uploader. Used for display and Content-Disposition header on download.
+  """
+  filename: String
+  id: UUID
+
+  """
+  Whether this file is publicly readable. Inherited from bucket on INSERT.
+  """
+  isPublic: Boolean
+
+  """S3 object key for this file, unique within its bucket"""
+  key: String!
+
+  """
+  MIME type of the file (e.g. image/png, application/pdf). Immutable after INSERT.
+  """
+  mimeType: String!
+
+  """File size in bytes. Immutable after INSERT."""
+  size: BigInt!
+
+  """User-defined tags for categorization and search (mutable)"""
+  tags: [String]
+  updatedAt: Datetime
+
+  """
+  Processed file reference (upload domain). Populated by processing jobs after file is uploaded. Copy this value to other tables to reference the file.
+  """
+  upload: ConstructiveInternalTypeUpload
+
+  """
+  File lifecycle status: requested (presigned URL generated, not yet in S3), uploaded (file in S3, ready for basic use), processed (MIME verified, image resized, embedding computed).
+  """
+  status: FileStatus
+}
+
+"""The output of our update `RoleType` mutation."""
+type UpdateRoleTypePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `RoleType` that was updated by this mutation."""
+  roleType: RoleType
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `RoleType`. May be used by Relay 1."""
+  roleTypeEdge(
+    """The method to use when ordering `RoleType`."""
+    orderBy: [RoleTypeOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): RoleTypeEdge
+}
+
+"""All input for the `updateRoleType` mutation."""
+input UpdateRoleTypeInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: Int!
+
+  """
+  An object where the defined keys will be set on the `RoleType` being updated.
+  """
+  roleTypePatch: RoleTypePatch!
+}
+
+"""
+Represents an update to a `RoleType`. Fields that are set will be updated.
+"""
+input RoleTypePatch {
+  id: Int
+  name: String
+}
+
+"""The output of our update `PlatformConfigDefinition` mutation."""
+type UpdatePlatformConfigDefinitionPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformConfigDefinition` that was updated by this mutation."""
+  platformConfigDefinition: PlatformConfigDefinition
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformConfigDefinition`. May be used by Relay 1."""
+  platformConfigDefinitionEdge(
+    """The method to use when ordering `PlatformConfigDefinition`."""
+    orderBy: [PlatformConfigDefinitionOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformConfigDefinitionEdge
+}
+
+"""All input for the `updatePlatformConfigDefinition` mutation."""
+input UpdatePlatformConfigDefinitionInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Unique identifier for this config definition"""
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformConfigDefinition` being updated.
+  """
+  platformConfigDefinitionPatch: PlatformConfigDefinitionPatch!
+}
+
+"""
+Represents an update to a `PlatformConfigDefinition`. Fields that are set will be updated.
+"""
+input PlatformConfigDefinitionPatch {
+  """Freeform metadata annotations for config definitions"""
+  annotations: JSON
+  createdAt: Datetime
+
+  """Default value used when no config entry exists for a namespace"""
+  defaultValue: String
+
+  """Human-readable description of what this config key controls"""
+  description: String
+
+  """Unique identifier for this config definition"""
+  id: UUID
+
+  """Whether this row was seeded as a built-in config definition"""
+  isBuiltIn: Boolean
+
+  """Key-value metadata for filtering and grouping config definitions"""
+  labels: JSON
+
+  """Config key name (must match config table name for resolution)"""
+  name: String
+  updatedAt: Datetime
+}
+
+"""The output of our update `PlatformNamespace` mutation."""
+type UpdatePlatformNamespacePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformNamespace` that was updated by this mutation."""
+  platformNamespace: PlatformNamespace
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformNamespace`. May be used by Relay 1."""
+  platformNamespaceEdge(
+    """The method to use when ordering `PlatformNamespace`."""
+    orderBy: [PlatformNamespaceOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformNamespaceEdge
+}
+
+"""All input for the `updatePlatformNamespace` mutation."""
+input UpdatePlatformNamespaceInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformNamespace` being updated.
+  """
+  platformNamespacePatch: PlatformNamespacePatch!
+}
+
+"""
+Represents an update to a `PlatformNamespace`. Fields that are set will be updated.
+"""
+input PlatformNamespacePatch {
+  """Freeform metadata for tooling and operational notes"""
+  annotations: JSON
+  createdAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID
+
+  """Optional human-readable description of this namespace"""
+  description: String
+  id: UUID
+
+  """Whether this namespace is active (soft-disable for filtering)"""
+  isActive: Boolean
+
+  """Key/value pairs for selecting and filtering namespaces"""
+  labels: JSON
+
+  """Human-readable namespace name (e.g. default, production, oauth)"""
+  name: String
+
+  """
+  Globally unique computed namespace identifier via inflection.underscore
+  """
+  namespaceName: String
+  updatedAt: Datetime
+}
+
+"""The output of our update `PlatformConfig` mutation."""
+type UpdatePlatformConfigPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformConfig` that was updated by this mutation."""
+  platformConfig: PlatformConfig
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformConfig`. May be used by Relay 1."""
+  platformConfigEdge(
+    """The method to use when ordering `PlatformConfig`."""
+    orderBy: [PlatformConfigOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformConfigEdge
+}
+
+"""All input for the `updatePlatformConfig` mutation."""
+input UpdatePlatformConfigInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Unique identifier for this config entry"""
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformConfig` being updated.
+  """
+  platformConfigPatch: PlatformConfigPatch!
+}
+
+"""
+Represents an update to a `PlatformConfig`. Fields that are set will be updated.
+"""
+input PlatformConfigPatch {
+  """Freeform metadata for tooling and operational notes"""
+  annotations: JSON
+  createdAt: Datetime
+
+  """Human-readable note about this config entry"""
+  description: String
+
+  """Optional expiration timestamp for time-limited config entries"""
+  expiresAt: Datetime
+
+  """Unique identifier for this config entry"""
+  id: UUID
+
+  """Key/value pairs for selecting/filtering config entries"""
+  labels: JSON
+
+  """Key name identifying the config entry"""
+  name: String
+
+  """FK to namespaces — logical grouping for config entries"""
+  namespaceId: UUID
+  updatedAt: Datetime
+
+  """Plaintext config value"""
+  value: String
+}
+
+"""The output of our update `PlatformBucket` mutation."""
+type UpdatePlatformBucketPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformBucket` that was updated by this mutation."""
+  platformBucket: PlatformBucket
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformBucket`. May be used by Relay 1."""
+  platformBucketEdge(
+    """The method to use when ordering `PlatformBucket`."""
+    orderBy: [PlatformBucketOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformBucketEdge
+}
+
+"""All input for the `updatePlatformBucket` mutation."""
+input UpdatePlatformBucketInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformBucket` being updated.
+  """
+  platformBucketPatch: PlatformBucketPatch!
+}
+
+"""
+Represents an update to a `PlatformBucket`. Fields that are set will be updated.
+"""
+input PlatformBucketPatch {
+  """User who created this bucket. Forced to current_user_id() on INSERT."""
+  actorId: UUID
+
+  """
+  When true, clients can provide custom S3 keys (e.g. reports/2024/Q1.pdf). When false (default), S3 key = content hash (automatic dedup). contentHash always required for integrity.
+  """
+  allowCustomKeys: Boolean
+
+  """
+  Whitelist of allowed MIME types for files in this bucket (NULL = all allowed, enforcement deferred)
+  """
+  allowedMimeTypes: [String]
+
+  """
+  Per-bucket CORS allowed origins override (NULL = inherit from storage_module/plugin defaults). Use ARRAY['*'] for open/CDN mode.
+  """
+  allowedOrigins: [String]
+  createdAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID
+
+  """Human-readable description of the bucket purpose"""
+  description: String
+  id: UUID
+
+  """
+  Whether bucket contents are publicly readable. Set to true when type is public.
+  """
+  isPublic: Boolean
+
+  """
+  Unique bucket identifier used in S3 key paths (e.g. avatars, documents, temp)
+  """
+  key: String
+
+  """
+  Maximum file size in bytes allowed in this bucket (NULL = no limit, enforcement deferred)
+  """
+  maxFileSize: BigInt
+
+  """
+  Bucket CDN access type: public (CDN-served), private (presigned GET), temp (staging uploads)
+  """
+  type: String
+  updatedAt: Datetime
+}
+
+"""The output of our update `User` mutation."""
+type UpdateUserPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `User` that was updated by this mutation."""
+  user: User
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `User`. May be used by Relay 1."""
+  userEdge(
+    """The method to use when ordering `User`."""
+    orderBy: [UserOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): UserEdge
+}
+
+"""All input for the `updateUser` mutation."""
+input UpdateUserInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `User` being updated.
+  """
+  userPatch: UserPatch!
+}
+
+"""Represents an update to a `User`. Fields that are set will be updated."""
+input UserPatch {
+  createdAt: Datetime
+  displayName: String
+  id: UUID
+  profilePicture: ConstructiveInternalTypeImage
+  type: Int
+  updatedAt: Datetime
+  username: String
+
+  """File upload for the `profilePicture` field."""
+  profilePictureUpload: Upload
+}
+
+"""The `Upload` scalar type represents a file upload."""
+scalar Upload
+
+"""The output of our update `PlatformNamespaceEvent` mutation."""
+type UpdatePlatformNamespaceEventPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformNamespaceEvent` that was updated by this mutation."""
+  platformNamespaceEvent: PlatformNamespaceEvent
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformNamespaceEvent`. May be used by Relay 1."""
+  platformNamespaceEventEdge(
+    """The method to use when ordering `PlatformNamespaceEvent`."""
+    orderBy: [PlatformNamespaceEventOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformNamespaceEventEdge
+}
+
+"""All input for the `updatePlatformNamespaceEvent` mutation."""
+input UpdatePlatformNamespaceEventInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Event timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """Unique event identifier"""
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformNamespaceEvent` being updated.
+  """
+  platformNamespaceEventPatch: PlatformNamespaceEventPatch!
+}
+
+"""
+Represents an update to a `PlatformNamespaceEvent`. Fields that are set will be updated.
+"""
+input PlatformNamespaceEventPatch {
+  """Event timestamp (partition key)"""
+  createdAt: Datetime
+
+  """User who triggered this event (NULL for system/automated)"""
+  actorId: UUID
+
+  """CPU usage in millicores at time of event"""
+  cpuMillicores: Int
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID
+
+  """
+  Event type: created, activated, deactivated, labels_updated, annotations_updated, renamed
+  """
+  eventType: String
+
+  """Unique event identifier"""
+  id: UUID
+
+  """Memory usage in bytes at time of event"""
+  memoryBytes: BigInt
+
+  """Human-readable description of the event"""
+  message: String
+
+  """Structured context (old/new values, labels diff, etc.)"""
+  metadata: JSON
+
+  """Additional resource metrics (gpu, replicas, quotas, etc.)"""
+  metrics: JSON
+
+  """Namespace this event belongs to"""
+  namespaceId: UUID
+
+  """Network egress in bytes during event window"""
+  networkEgressBytes: BigInt
+
+  """Network ingress in bytes during event window"""
+  networkIngressBytes: BigInt
+
+  """Number of active pods in the namespace at time of event"""
+  podCount: Int
+
+  """Storage usage in bytes at time of event"""
+  storageBytes: BigInt
+}
+
+"""The output of our update `PlatformFile` mutation."""
+type UpdatePlatformFilePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFile` that was updated by this mutation."""
+  platformFile: PlatformFile
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFile`. May be used by Relay 1."""
+  platformFileEdge(
+    """The method to use when ordering `PlatformFile`."""
+    orderBy: [PlatformFileOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFileEdge
+}
+
+"""All input for the `updatePlatformFile` mutation."""
+input UpdatePlatformFileInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformFile` being updated.
+  """
+  platformFilePatch: PlatformFilePatch!
+}
+
+"""
+Represents an update to a `PlatformFile`. Fields that are set will be updated.
+"""
+input PlatformFilePatch {
+  """
+  User who uploaded this file. Forced to current_user_id() on INSERT. Used for UPDATE/DELETE authorization.
+  """
+  actorId: UUID
+
+  """
+  Bucket this file belongs to. Determines owner_id and is_public via inheritance trigger.
+  """
+  bucketId: UUID
+
+  """
+  SHA-256 content hash for integrity verification and dedup. In default mode, equals the S3 key. In custom key mode, stored separately.
+  """
+  contentHash: String
+  createdAt: Datetime
+
+  """Database that owns this resource (database-scoped isolation)"""
+  databaseId: UUID
+
+  """Human-readable description or alt text for the file (mutable)"""
+  description: String
+
+  """
+  Original filename provided by the uploader. Used for display and Content-Disposition header on download.
+  """
+  filename: String
+  id: UUID
+
+  """
+  Whether this file is publicly readable. Inherited from bucket on INSERT.
+  """
+  isPublic: Boolean
+
+  """S3 object key for this file, unique within its bucket"""
+  key: String
+
+  """
+  MIME type of the file (e.g. image/png, application/pdf). Immutable after INSERT.
+  """
+  mimeType: String
+
+  """File size in bytes. Immutable after INSERT."""
+  size: BigInt
+
+  """User-defined tags for categorization and search (mutable)"""
+  tags: [String]
+  updatedAt: Datetime
+
+  """
+  Processed file reference (upload domain). Populated by processing jobs after file is uploaded. Copy this value to other tables to reference the file.
+  """
+  upload: ConstructiveInternalTypeUpload
+
+  """
+  File lifecycle status: requested (presigned URL generated, not yet in S3), uploaded (file in S3, ready for basic use), processed (MIME verified, image resized, embedding computed).
+  """
+  status: FileStatus
+
+  """
+  Upload for Processed file reference (upload domain). Populated by processing jobs after file is uploaded. Copy this value to other tables to reference the file.
+  """
+  uploadUpload: Upload
+}
+
+"""The output of our delete `RoleType` mutation."""
+type DeleteRoleTypePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `RoleType` that was deleted by this mutation."""
+  roleType: RoleType
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `RoleType`. May be used by Relay 1."""
+  roleTypeEdge(
+    """The method to use when ordering `RoleType`."""
+    orderBy: [RoleTypeOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): RoleTypeEdge
+}
+
+"""All input for the `deleteRoleType` mutation."""
+input DeleteRoleTypeInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: Int!
+}
+
+"""The output of our delete `PlatformConfigDefinition` mutation."""
+type DeletePlatformConfigDefinitionPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformConfigDefinition` that was deleted by this mutation."""
+  platformConfigDefinition: PlatformConfigDefinition
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformConfigDefinition`. May be used by Relay 1."""
+  platformConfigDefinitionEdge(
+    """The method to use when ordering `PlatformConfigDefinition`."""
+    orderBy: [PlatformConfigDefinitionOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformConfigDefinitionEdge
+}
+
+"""All input for the `deletePlatformConfigDefinition` mutation."""
+input DeletePlatformConfigDefinitionInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Unique identifier for this config definition"""
+  id: UUID!
+}
+
+"""The output of our delete `PlatformNamespace` mutation."""
+type DeletePlatformNamespacePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformNamespace` that was deleted by this mutation."""
+  platformNamespace: PlatformNamespace
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformNamespace`. May be used by Relay 1."""
+  platformNamespaceEdge(
+    """The method to use when ordering `PlatformNamespace`."""
+    orderBy: [PlatformNamespaceOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformNamespaceEdge
+}
+
+"""All input for the `deletePlatformNamespace` mutation."""
+input DeletePlatformNamespaceInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: UUID!
+}
+
+"""The output of our delete `PlatformConfig` mutation."""
+type DeletePlatformConfigPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformConfig` that was deleted by this mutation."""
+  platformConfig: PlatformConfig
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformConfig`. May be used by Relay 1."""
+  platformConfigEdge(
+    """The method to use when ordering `PlatformConfig`."""
+    orderBy: [PlatformConfigOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformConfigEdge
+}
+
+"""All input for the `deletePlatformConfig` mutation."""
+input DeletePlatformConfigInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Unique identifier for this config entry"""
+  id: UUID!
+}
+
+"""The output of our delete `PlatformBucket` mutation."""
+type DeletePlatformBucketPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformBucket` that was deleted by this mutation."""
+  platformBucket: PlatformBucket
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformBucket`. May be used by Relay 1."""
+  platformBucketEdge(
+    """The method to use when ordering `PlatformBucket`."""
+    orderBy: [PlatformBucketOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformBucketEdge
+}
+
+"""All input for the `deletePlatformBucket` mutation."""
+input DeletePlatformBucketInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: UUID!
+}
+
+"""The output of our delete `User` mutation."""
+type DeleteUserPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `User` that was deleted by this mutation."""
+  user: User
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `User`. May be used by Relay 1."""
+  userEdge(
+    """The method to use when ordering `User`."""
+    orderBy: [UserOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): UserEdge
+}
+
+"""All input for the `deleteUser` mutation."""
+input DeleteUserInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: UUID!
+}
+
+"""The output of our delete `PlatformNamespaceEvent` mutation."""
+type DeletePlatformNamespaceEventPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformNamespaceEvent` that was deleted by this mutation."""
+  platformNamespaceEvent: PlatformNamespaceEvent
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformNamespaceEvent`. May be used by Relay 1."""
+  platformNamespaceEventEdge(
+    """The method to use when ordering `PlatformNamespaceEvent`."""
+    orderBy: [PlatformNamespaceEventOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformNamespaceEventEdge
+}
+
+"""All input for the `deletePlatformNamespaceEvent` mutation."""
+input DeletePlatformNamespaceEventInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Event timestamp (partition key)"""
+  createdAt: Datetime!
+
+  """Unique event identifier"""
+  id: UUID!
+}
+
+"""The output of our delete `PlatformFile` mutation."""
+type DeletePlatformFilePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """The `PlatformFile` that was deleted by this mutation."""
+  platformFile: PlatformFile
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """An edge for our `PlatformFile`. May be used by Relay 1."""
+  platformFileEdge(
+    """The method to use when ordering `PlatformFile`."""
+    orderBy: [PlatformFileOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFileEdge
+}
+
+"""All input for the `deletePlatformFile` mutation."""
+input DeletePlatformFileInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+  id: UUID!
+}
+
+type UploadPlatformFilePayload {
+  """Presigned PUT URL (null if deduplicated)"""
+  uploadUrl: String
+
+  """The file ID (UUID)"""
+  fileId: String!
+
+  """The S3 object key"""
+  key: String!
+
+  """Whether this file was deduplicated (content already exists)"""
+  deduplicated: Boolean!
+
+  """Presigned URL expiry time (null if deduplicated)"""
+  expiresAt: String
+
+  """ID of the previous version (when using custom keys)"""
+  previousVersionId: String
+}
+
+input UploadPlatformFileInput {
+  """Bucket key (e.g., "public", "private")"""
+  bucketKey: String!
+
+  """SHA-256 content hash (hex-encoded, 64 chars)"""
+  contentHash: String!
+
+  """MIME type of the file"""
+  contentType: String!
+
+  """File size in bytes"""
+  size: Int!
+
+  """Original filename (optional)"""
+  filename: String
+
+  """Custom S3 key (only when bucket has allow_custom_keys=true)"""
+  key: String
+}
+
+type UploadPlatformFileBulkPayload {
+  files: [UploadPlatformFileBulkFilePayload!]!
+}
+
+type UploadPlatformFileBulkFilePayload {
+  uploadUrl: String
+  fileId: String!
+  key: String!
+  deduplicated: Boolean!
+  expiresAt: String
+  previousVersionId: String
+}
+
+input UploadPlatformFileBulkInput {
+  """Bucket key (e.g., "public", "private")"""
+  bucketKey: String!
+
+  """Array of files to upload"""
+  files: [UploadPlatformFileBulkFileInput!]!
+}
+
+input UploadPlatformFileBulkFileInput {
+  """SHA-256 content hash (hex-encoded, 64 chars)"""
+  contentHash: String!
+
+  """MIME type of the file"""
+  contentType: String!
+
+  """File size in bytes"""
+  size: Int!
+
+  """Original filename (optional)"""
+  filename: String
+
+  """Custom S3 key (only when bucket has allow_custom_keys=true)"""
+  key: String
+}
+
+input ProvisionBucketInput {
+  """The logical bucket key (e.g., "public", "private")"""
+  bucketKey: String!
+
+  """
+  Owner entity ID for entity-scoped bucket provisioning.
+  Omit for app-level (database-wide) storage.
+  """
+  ownerId: UUID
+}
+
+type ProvisionBucketPayload {
+  """Whether provisioning succeeded"""
+  success: Boolean!
+
+  """The S3 bucket name that was provisioned"""
+  bucketName: String!
+
+  """The access type applied"""
+  accessType: String!
+
+  """The storage provider used"""
+  provider: String!
+
+  """The S3 endpoint (null for AWS S3 default)"""
+  endpoint: String
+
+  """Error message if provisioning failed"""
+  error: String
+}

@@ -2,4 +2,5 @@ packages:
   - 'generated/*'
   - 'packages/*'
   - 'job/*'
+  - 'sdk/*'
   - 'www'
