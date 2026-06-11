@@ -49,12 +49,12 @@ fi
 
 # Collect known secret/config names from function definitions
 SECRET_NAMES=$(psql -d "$DB_NAME" -t -A -c "
-  SELECT DISTINCT (r).name FROM constructive_infra_public.platform_function_definitions,
+  SELECT DISTINCT (r).name FROM constructive_compute_public.platform_function_definitions,
   unnest(required_secrets) AS r WHERE is_invocable = true
 " 2>/dev/null || echo "")
 
 CONFIG_NAMES=$(psql -d "$DB_NAME" -t -A -c "
-  SELECT DISTINCT (r).name FROM constructive_infra_public.platform_function_definitions,
+  SELECT DISTINCT (r).name FROM constructive_compute_public.platform_function_definitions,
   unnest(required_configs) AS r WHERE is_invocable = true
 " 2>/dev/null || echo "")
 

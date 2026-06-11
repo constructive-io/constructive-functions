@@ -1,12 +1,12 @@
 -- Seed platform function definitions for local development.
--- Run after deploying the constructive-infra pgpm package.
+-- Run after deploying the constructive-compute pgpm package.
 --
 -- Usage:
 --   psql -d constructive-functions-db1 -f scripts/seed-functions.sql
 
 BEGIN;
 
-INSERT INTO constructive_infra_public.platform_function_definitions
+INSERT INTO constructive_compute_public.platform_function_definitions
   (id, name, task_identifier, service_url, is_invocable, is_built_in, max_attempts, priority, queue_name, scope, description, created_at, updated_at)
 VALUES
   (

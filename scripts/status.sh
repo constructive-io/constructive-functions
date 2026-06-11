@@ -68,14 +68,14 @@ fi
 echo ""
 
 # --- Databases ---
-echo -e "${BOLD}Databases with constructive_infra_public:${NC}"
+echo -e "${BOLD}Databases with constructive_compute_public:${NC}"
 if command -v psql &>/dev/null; then
   DBS=$(psql -t -A -c "SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY datname" 2>/dev/null)
   FOUND=0
   for db in $DBS; do
-    HAS_INFRA=$(psql -d "$db" -t -A -c "SELECT 1 FROM information_schema.schemata WHERE schema_name = 'constructive_infra_public'" 2>/dev/null)
-    if [ "$HAS_INFRA" = "1" ]; then
-      FN_COUNT=$(psql -d "$db" -t -A -c "SELECT count(*) FROM constructive_infra_public.platform_function_definitions WHERE is_invocable = true" 2>/dev/null || echo "?")
+    HAS_COMPUTE=$(psql -d "$db" -t -A -c "SELECT 1 FROM information_schema.schemata WHERE schema_name = 'constructive_compute_public'" 2>/dev/null)
+    if [ "$HAS_COMPUTE" = "1" ]; then
+      FN_COUNT=$(psql -d "$db" -t -A -c "SELECT count(*) FROM constructive_compute_public.platform_function_definitions WHERE is_invocable = true" 2>/dev/null || echo "?")
       JOBS_SCHEMA=$(psql -d "$db" -t -A -c "SELECT 1 FROM information_schema.schemata WHERE schema_name = 'app_jobs'" 2>/dev/null)
       JOBS_STATUS=""
       if [ "$JOBS_SCHEMA" = "1" ]; then
@@ -88,7 +88,7 @@ if command -v psql &>/dev/null; then
     fi
   done
   if [ "$FOUND" = "0" ]; then
-    warn "No databases with constructive_infra_public found"
+    warn "No databases with constructive_compute_public found"
     echo "    Run: make setup-platform"
   fi
 fi

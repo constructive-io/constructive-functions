@@ -44,7 +44,7 @@ pgpm deploy --yes --database "$DB_NAME" --package constructive-infra-seed
 echo ""
 echo "→ Verifying..."
 FUNCTION_COUNT=$(psql -d "$DB_NAME" -t -A -c \
-  "SELECT count(*) FROM constructive_infra_public.platform_function_definitions WHERE is_invocable = true")
+  "SELECT count(*) FROM constructive_compute_public.platform_function_definitions WHERE is_invocable = true")
 echo "  $FUNCTION_COUNT invocable function(s) registered."
 
 echo ""
