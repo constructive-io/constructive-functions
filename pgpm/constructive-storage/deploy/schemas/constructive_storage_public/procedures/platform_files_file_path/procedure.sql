@@ -3,6 +3,7 @@
 
 -- requires: schemas/constructive_storage_public/schema
 -- requires: schemas/constructive_storage_public/tables/platform_files/table
+-- requires: schemas/constructive_storage_public/tables/platform_files/columns/filename/column
 
 
 CREATE FUNCTION "constructive_storage_public".platform_files_file_path(
