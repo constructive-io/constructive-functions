@@ -58,10 +58,7 @@ export class ComputeModuleLoader {
 
     log.debug(`module config cache miss for database ${databaseId}, querying metaschema`);
 
-    const [fnResult, invResult] = await Promise.all([
-      this.pool.query(FUNCTION_MODULE_SQL, [databaseId]),
-      this.pool.query(INVOCATION_MODULE_SQL, [databaseId]),
-    ]);
+    const fnResult = await this.pool.query(FUNCTION_MODULE_SQL, [databaseId]);
 
     let functionModule: FunctionModuleConfig | null = null;
     if (fnResult.rows.length > 0) {
@@ -75,14 +72,21 @@ export class ComputeModuleLoader {
       };
     }
 
-    const invocationModules: InvocationModuleConfig[] = invResult.rows.map(
-      (row: Record<string, string>) => ({
-        publicSchema: row.public_schema,
-        invocationsTable: row.invocations_table_name,
-        executionLogsTable: row.execution_logs_table_name,
-        scope: row.scope,
-      })
-    );
+    // Invocation module is optional — the table may not be deployed yet
+    let invocationModules: InvocationModuleConfig[] = [];
+    try {
+      const invResult = await this.pool.query(INVOCATION_MODULE_SQL, [databaseId]);
+      invocationModules = invResult.rows.map(
+        (row: Record<string, string>) => ({
+          publicSchema: row.public_schema,
+          invocationsTable: row.invocations_table_name,
+          executionLogsTable: row.execution_logs_table_name,
+          scope: row.scope,
+        })
+      );
+    } catch {
+      log.debug(`function_invocation_module not available for database ${databaseId} — invocation tracking disabled`);
+    }
 
     const config: ComputeModuleConfig = { functionModule, invocationModules };
     this.cache.set(databaseId, config);
