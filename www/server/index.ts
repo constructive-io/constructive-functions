@@ -44,7 +44,7 @@ app.get('/api/functions', async (_req, res) => {
              payload_schema, namespace_id,
              (SELECT n.name FROM constructive_infra_public.platform_namespaces n WHERE n.id = f.namespace_id) as namespace,
              created_at, updated_at
-      FROM constructive_infra_public.platform_function_definitions f
+      FROM constructive_compute_public.platform_function_definitions f
       ORDER BY name
     `);
     const rows = result.rows.map((r: any) => ({
@@ -66,7 +66,7 @@ app.get('/api/definitions', async (_req, res) => {
       SELECT name, task_identifier, service_url, is_invocable,
              scope, description, required_secrets, required_configs,
              payload_schema
-      FROM constructive_infra_public.platform_function_definitions
+      FROM constructive_compute_public.platform_function_definitions
       ORDER BY name
     `);
 
@@ -121,12 +121,12 @@ app.get('/api/secrets', async (_req, res) => {
     // Derive secret/config definitions from function definitions (inlined arrays)
     const result = await pool.query(`
       SELECT DISTINCT (r).name, (r).required, 'secret' AS kind
-      FROM constructive_infra_public.platform_function_definitions,
+      FROM constructive_compute_public.platform_function_definitions,
            unnest(required_secrets) AS r
       WHERE is_invocable = true
       UNION
       SELECT DISTINCT (r).name, (r).required, 'config' AS kind
-      FROM constructive_infra_public.platform_function_definitions,
+      FROM constructive_compute_public.platform_function_definitions,
            unnest(required_configs) AS r
       WHERE is_invocable = true
       ORDER BY name
@@ -253,7 +253,7 @@ async function getDefaultNamespaceId(): Promise<string> {
 async function getSecretNames(): Promise<Set<string>> {
   const result = await pool.query(`
     SELECT DISTINCT (r).name AS secret_name
-    FROM constructive_infra_public.platform_function_definitions,
+    FROM constructive_compute_public.platform_function_definitions,
          unnest(required_secrets) AS r
     WHERE is_invocable = true
   `);
@@ -263,7 +263,7 @@ async function getSecretNames(): Promise<Set<string>> {
 async function getConfigNames(): Promise<Set<string>> {
   const result = await pool.query(`
     SELECT DISTINCT (r).name AS config_name
-    FROM constructive_infra_public.platform_function_definitions,
+    FROM constructive_compute_public.platform_function_definitions,
          unnest(required_configs) AS r
     WHERE is_invocable = true
   `);
@@ -528,7 +528,7 @@ app.get('/api/invocations', async (_req, res) => {
       SELECT id, function_name, job_id, worker_id, status,
              started_at, completed_at, duration_ms, error_message,
              created_at
-      FROM constructive_infra_public.platform_function_invocations
+      FROM constructive_compute_public.platform_function_invocations
       ORDER BY created_at DESC
       LIMIT 50
     `);
@@ -545,13 +545,13 @@ app.get('/api/status', async (_req, res) => {
     const pgVersion = await pool.query('SELECT version()');
     const dbName = await pool.query('SELECT current_database()');
     const fnCount = await pool.query(
-      `SELECT count(*) as count FROM constructive_infra_public.platform_function_definitions WHERE is_invocable = true`
+      `SELECT count(*) as count FROM constructive_compute_public.platform_function_definitions WHERE is_invocable = true`
     );
     const jobCount = await pool.query(
       `SELECT count(*) as count FROM app_jobs.jobs`
     );
     const invocationCount = await pool.query(
-      `SELECT count(*) as count FROM constructive_infra_public.platform_function_invocations`
+      `SELECT count(*) as count FROM constructive_compute_public.platform_function_invocations`
     );
 
     res.json({

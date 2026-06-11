@@ -5,7 +5,7 @@ description: Platform-aware compute worker and service for constructive-function
 
 # Compute Worker & Service
 
-The compute-worker is a platform-aware replacement for the legacy knative-job-worker. Instead of discovering functions from a static manifest or env vars, it queries `constructive_infra_public.platform_function_definitions` and tracks every invocation in `platform_function_invocations`.
+The compute-worker is a platform-aware replacement for the legacy knative-job-worker. Instead of discovering functions from a static manifest or env vars, it queries `constructive_compute_public.platform_function_definitions` and tracks every invocation in `platform_function_invocations`.
 
 ## Architecture
 
@@ -79,7 +79,7 @@ FunctionDiscovery.resolve("send-email")
   ├─ Cache hit? → return cached definition
   │
   └─ Cache miss? → SQL query:
-       SELECT * FROM constructive_infra_public.platform_function_definitions
+       SELECT * FROM constructive_compute_public.platform_function_definitions
        WHERE task_identifier = 'send-email'
        │
        └─ Cache result (TTL default: 60s)
@@ -152,6 +152,6 @@ psql -d constructive-functions-db1 -c "
 
 The compute-service checks two things at boot:
 1. `app_jobs.jobs` table exists (deployed by `@pgpm/database-jobs`, a dependency of `constructive-infra`)
-2. `constructive_infra_public.platform_function_definitions` table exists (deployed by `constructive-infra`)
+2. `constructive_compute_public.platform_function_definitions` table exists (deployed by `constructive-infra`)
 
 Both are deployed together via `make setup-platform` or the `platform-setup` Docker Compose service.

@@ -15,7 +15,7 @@ Use this skill when:
 
 ## Core Mapping
 
-Each `platform_function_definition` row (from `constructive_infra_public.platform_function_definitions`) maps to an FBP `NodeDefinition`:
+Each `platform_function_definition` row (from `constructive_compute_public.platform_function_definitions`) maps to an FBP `NodeDefinition`:
 
 | Platform Field | FBP Field | Notes |
 |---|---|---|

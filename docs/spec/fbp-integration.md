@@ -8,7 +8,7 @@ This document describes how [Flow-Based Programming](https://en.wikipedia.org/wi
 
 ### Platform Function Definitions
 
-Functions are registered in `constructive_infra_public.platform_function_definitions`:
+Functions are registered in `constructive_compute_public.platform_function_definitions`:
 
 ```sql
 CREATE TABLE platform_function_definitions (

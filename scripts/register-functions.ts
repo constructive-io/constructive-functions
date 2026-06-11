@@ -88,8 +88,8 @@ function generateValueBlock(m: FunctionManifest): string {
   const scope = m.scope || 'platform';
   const desc = (m.description || '').replace(/'/g, "''");
   const port = m.port || 8080;
-  const secrets = sqlArray(m.requiredSecrets, 'constructive_infra_public.function_requirement');
-  const configs = sqlArray(m.requiredConfigs, 'constructive_infra_public.function_requirement');
+  const secrets = sqlArray(m.requiredSecrets, 'constructive_compute_public.function_requirement');
+  const configs = sqlArray(m.requiredConfigs, 'constructive_compute_public.function_requirement');
   const schema = sqlJsonb(m.payloadSchema);
 
   return `  (
@@ -147,7 +147,7 @@ function generateRevertSQL(manifests: FunctionManifest[]): string {
 
 BEGIN;
 
-DELETE FROM constructive_infra_public.platform_function_definitions
+DELETE FROM constructive_compute_public.platform_function_definitions
 WHERE is_built_in = true
   AND scope = 'platform'
   AND name IN (${names});
@@ -158,7 +158,7 @@ COMMIT;
 
 function generateVerifySQL(manifests: FunctionManifest[]): string {
   const checks = manifests
-    .map((m) => `SELECT 1 FROM constructive_infra_public.platform_function_definitions\nWHERE name = '${m.name}' AND is_built_in = true;`)
+    .map((m) => `SELECT 1 FROM constructive_compute_public.platform_function_definitions\nWHERE name = '${m.name}' AND is_built_in = true;`)
     .join('\n\n');
   return `-- Verify: schemas/constructive_infra_public/tables/platform_function_definitions/fixtures/seed_built_in_functions
 -- made with <3 @ constructive.io
