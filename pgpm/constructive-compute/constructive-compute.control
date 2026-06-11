@@ -1,5 +1,7 @@
 # constructive-compute extension
-comment = 'constructive-compute module'
+comment = 'constructive-compute extension'
 default_version = '0.0.1'
+module_pathname = '$libdir/constructive-compute'
+requires = 'constructive-compute-stubs,constructive-platform-function-graph,metaschema-modules,metaschema-schema,pgpm-database-jobs,pgpm-inflection,pgpm-jwt-claims,pgpm-stamps,pgpm-types,pgpm-verify,plpgsql,services'
 relocatable = false
-requires = 'plpgsql,pgpm-inflection,pgpm-stamps,services,constructive-users,constructive-infra'
+superuser = false

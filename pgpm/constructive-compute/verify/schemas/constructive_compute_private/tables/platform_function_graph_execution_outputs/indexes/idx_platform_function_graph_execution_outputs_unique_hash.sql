@@ -1,0 +1,6 @@
+-- Verify: schemas/constructive_compute_private/tables/platform_function_graph_execution_outputs/indexes/idx_platform_function_graph_execution_outputs_unique_hash
+
+
+SELECT verify_index('constructive_compute_private.platform_function_graph_execution_outputs', 'idx_platform_function_graph_execution_outputs_unique_hash');
+
+

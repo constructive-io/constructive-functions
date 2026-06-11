@@ -1,0 +1,6 @@
+-- Verify: schemas/constructive_compute_public/tables/platform_function_definitions/triggers/platform_function_definitions_job_functionprovision_insert_tg
+
+
+SELECT verify_trigger('constructive_compute_public.platform_function_definitions_job_functionprovision_insert_tg');
+
+

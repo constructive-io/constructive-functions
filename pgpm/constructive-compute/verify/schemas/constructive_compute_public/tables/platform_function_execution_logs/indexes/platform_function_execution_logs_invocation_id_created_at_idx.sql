@@ -1,0 +1,6 @@
+-- Verify: schemas/constructive_compute_public/tables/platform_function_execution_logs/indexes/platform_function_execution_logs_invocation_id_created_at_idx
+
+
+SELECT verify_index('constructive_compute_public.platform_function_execution_logs', 'platform_function_execution_logs_invocation_id_created_at_idx');
+
+
