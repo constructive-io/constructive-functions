@@ -14,8 +14,6 @@ INSERT INTO metaschema_modules_public.function_module (
     public_schema_name,
     private_schema_name,
     definitions_table_name,
-    invocations_table_name,
-    execution_logs_table_name,
     secret_definitions_table_name
 )
 SELECT
@@ -25,8 +23,6 @@ SELECT
     'constructive_compute_public',
     'constructive_compute_private',
     'platform_function_definitions',
-    'app_function_invocations',
-    'app_function_execution_logs',
     'platform_secret_definitions'
 FROM metaschema_public.database d
 LIMIT 1
@@ -39,8 +35,6 @@ INSERT INTO metaschema_modules_public.function_module (
     public_schema_name,
     private_schema_name,
     definitions_table_name,
-    invocations_table_name,
-    execution_logs_table_name,
     secret_definitions_table_name
 )
 SELECT
@@ -50,8 +44,6 @@ SELECT
     'constructive_compute_public',
     'constructive_compute_private',
     'platform_function_definitions',
-    'org_function_invocations',
-    'org_function_execution_logs',
     'platform_secret_definitions'
 FROM metaschema_public.database d
 LIMIT 1

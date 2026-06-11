@@ -7,11 +7,11 @@
 
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS constructive_compute_public.app_function_invocations_default
-  PARTITION OF constructive_compute_public.app_function_invocations DEFAULT;
+CREATE TABLE IF NOT EXISTS constructive_compute_public.platform_function_invocations_default
+  PARTITION OF constructive_compute_public.platform_function_invocations DEFAULT;
 
-CREATE TABLE IF NOT EXISTS constructive_compute_public.app_function_execution_logs_default
-  PARTITION OF constructive_compute_public.app_function_execution_logs DEFAULT;
+CREATE TABLE IF NOT EXISTS constructive_compute_public.platform_function_execution_logs_default
+  PARTITION OF constructive_compute_public.platform_function_execution_logs DEFAULT;
 
 CREATE TABLE IF NOT EXISTS constructive_compute_public.org_function_invocations_default
   PARTITION OF constructive_compute_public.org_function_invocations DEFAULT;

@@ -1,5 +1,0 @@
-# constructive-compute-stubs extension
-comment = 'constructive-compute-stubs module'
-default_version = '0.0.1'
-relocatable = false
-requires = 'plpgsql,pgpm-inflection,pgpm-stamps'

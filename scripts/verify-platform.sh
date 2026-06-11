@@ -80,7 +80,7 @@ else
 fi
 
 # --- platform_function_invocations table ---
-HAS_INV=$(psql -d "$DB_NAME" -t -A -c "SELECT 1 FROM information_schema.tables WHERE table_schema = 'constructive_compute_public' AND table_name = 'app_function_invocations'" 2>/dev/null)
+HAS_INV=$(psql -d "$DB_NAME" -t -A -c "SELECT 1 FROM information_schema.tables WHERE table_schema = 'constructive_compute_public' AND table_name = 'platform_function_invocations'" 2>/dev/null)
 if [ "$HAS_INV" = "1" ]; then
   ok "Table platform_function_invocations exists"
 else
