@@ -4,10 +4,7 @@ BEGIN;
 
 SELECT d.id, d.database_id, d.api_id, d.subdomain, d.domain
 FROM services_public.domains d
-WHERE d.subdomain = 'compute' AND d.domain = 'localhost';
-
-SELECT d.id, d.database_id, d.api_id, d.subdomain, d.domain
-FROM services_public.domains d
-WHERE d.subdomain = 'graph' AND d.domain = 'localhost';
+WHERE d.domain = 'localhost'
+  AND d.subdomain IN ('api', 'compute', 'objects', 'flow');
 
 ROLLBACK;
