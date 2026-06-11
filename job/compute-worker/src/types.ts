@@ -24,6 +24,28 @@ export interface PlatformFunctionDefinition {
   description: string | null;
 }
 
+// ─── Compute Module Config ────────────────────────────────────────────────────
+
+export interface FunctionModuleConfig {
+  publicSchema: string;
+  privateSchema: string;
+  definitionsTable: string;
+  secretDefinitionsTable: string;
+  scope: string;
+}
+
+export interface InvocationModuleConfig {
+  publicSchema: string;
+  invocationsTable: string;
+  executionLogsTable: string;
+  scope: string;
+}
+
+export interface ComputeModuleConfig {
+  functionModule: FunctionModuleConfig | null;
+  invocationModules: InvocationModuleConfig[];
+}
+
 // ─── Invocation Record ───────────────────────────────────────────────────────
 
 export type InvocationStatus = 'running' | 'completed' | 'failed';
@@ -35,6 +57,8 @@ export interface CreateInvocationInput {
   job_id: string | number;
   database_id?: string;
   actor_id?: string;
+  entity_id?: string;
+  scope?: string;
 }
 
 export interface InvocationRecord {
@@ -68,4 +92,5 @@ export interface ComputeWorkerOptions {
   idleDelay?: number;
   workerId?: string;
   cacheTtlMs?: number;
+  databaseId?: string;
 }

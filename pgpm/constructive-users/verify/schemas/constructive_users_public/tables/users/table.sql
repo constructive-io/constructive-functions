@@ -1,5 +1,6 @@
--- Verify schemas/constructive_users_public/tables/users/table
+-- Verify: schemas/constructive_users_public/tables/users/table
 
-BEGIN;
-SELECT 1 FROM "constructive_users_public".users WHERE FALSE;
-ROLLBACK;
+
+SELECT verify_table('constructive_users_public.users');
+
+

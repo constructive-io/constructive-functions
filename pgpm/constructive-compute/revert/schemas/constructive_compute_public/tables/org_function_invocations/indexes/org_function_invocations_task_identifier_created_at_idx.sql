@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_compute_public/tables/org_function_invocations/indexes/org_function_invocations_task_identifier_created_at_idx
+
+
+DROP INDEX "constructive_compute_public".org_function_invocations_task_identifier_created_at_idx;
+
+

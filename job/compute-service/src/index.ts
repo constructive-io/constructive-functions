@@ -3,7 +3,7 @@
  *
  * Mirrors the KnativeJobsSvc pattern from job/service but swaps the
  * static Worker for the platform-aware ComputeWorker which discovers
- * functions from the database and tracks invocations.
+ * functions and tracks invocations via dynamic metaschema resolution.
  *
  * It starts:
  *   1. (optional) In-process function servers from the manifest
@@ -12,7 +12,7 @@
  *   4. A Scheduler for cron-like scheduled jobs
  */
 
-import ComputeWorker from '@constructive-io/compute-worker';
+import ComputeWorker, { ComputeModuleLoader } from '@constructive-io/compute-worker';
 import poolManager from '@constructive-io/job-pg';
 import Scheduler from '@constructive-io/job-scheduler';
 import {
@@ -28,7 +28,7 @@ import { Logger } from '@pgpmjs/logger';
 import retry from 'async-retry';
 import type { Server as HttpServer } from 'http';
 import { createRequire } from 'module';
-import { Client } from 'pg';
+import { Client, Pool } from 'pg';
 
 import {
   loadFunctionRegistry,
@@ -283,10 +283,13 @@ export class ComputeService {
     const callbackPort = getJobsCallbackPort();
     this.jobsHttpServer = await listenApp(jobsApp, callbackPort);
 
+    const databaseId = process.env.DEFAULT_DATABASE_ID || undefined;
+
     // Platform-aware worker: discovers functions from the database
     this.worker = new ComputeWorker({
       pgPool,
       workerId: getWorkerHostname(),
+      databaseId,
     });
 
     this.scheduler = new Scheduler({
@@ -371,6 +374,7 @@ export const buildComputeServiceOptionsFromEnv = (): ComputeServiceOptions => ({
 export const waitForComputePrereqs = async (): Promise<void> => {
   log.info('waiting for compute prereqs');
   let client: Client | null = null;
+  let pool: Pool | null = null;
   try {
     const cfg = getJobPgConfig();
     client = new Client({
@@ -385,17 +389,36 @@ export const waitForComputePrereqs = async (): Promise<void> => {
     const schema = getJobSchema();
     await client.query(`SELECT * FROM "${schema}".jobs LIMIT 1;`);
 
-    // Also verify the infra schema is deployed
-    await client.query(
-      'SELECT count(*) FROM constructive_infra_public.platform_function_definitions LIMIT 1'
-    );
-    log.info('compute prereqs satisfied (jobs table + infra schema present)');
+    // Verify the compute module is deployed via dynamic resolution
+    const databaseId = process.env.DEFAULT_DATABASE_ID || '00000000-0000-0000-0000-000000000000';
+    pool = new Pool({
+      host: cfg.host,
+      port: cfg.port,
+      user: cfg.user,
+      password: cfg.password,
+      database: cfg.database,
+      max: 1,
+    });
+    const loader = new ComputeModuleLoader(pool, 0);
+    const config = await loader.load(databaseId);
+
+    if (!config.functionModule) {
+      throw new Error('function_module not found in metaschema — compute schema not deployed');
+    }
+
+    const { publicSchema, definitionsTable } = config.functionModule;
+    await client.query(`SELECT count(*) FROM "${publicSchema}"."${definitionsTable}" LIMIT 1`);
+
+    log.info('compute prereqs satisfied (jobs table + compute module present)');
   } catch (error) {
     log.error(error);
-    throw new Error('compute-service boot failed — jobs table or infra schema not ready');
+    throw new Error('compute-service boot failed — jobs table or compute module not ready');
   } finally {
     if (client) {
       void client.end();
+    }
+    if (pool) {
+      void pool.end();
     }
   }
 };

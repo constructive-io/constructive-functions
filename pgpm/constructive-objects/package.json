@@ -1,7 +1,7 @@
 {
   "name": "@constructive-io/constructive-objects",
   "version": "0.0.1",
-  "description": "Objects module — content-addressable merkle store, refs, commits",
+  "description": "Objects module — content-addressable object store, refs, commits",
   "author": "Constructive <developers@constructive.io>",
   "keywords": [
     "postgresql",

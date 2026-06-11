@@ -1,31 +1,17 @@
 {
   "name": "@constructive-io/constructive-infra",
   "version": "0.0.1",
-  "description": "Infrastructure module — function definitions, invocations, namespaces, secret definitions",
+  "description": "Platform infrastructure stubs \u2014 namespaces and namespace events",
   "author": "Constructive <developers@constructive.io>",
   "keywords": [
     "postgresql",
     "pgpm",
     "constructive-infra"
   ],
-  "publishConfig": {
-    "access": "public"
-  },
   "scripts": {
-    "bundle": "pgpm package",
-    "test": "jest",
-    "test:watch": "jest --watch"
-  },
-  "dependencies": {
-    "@pgpm/inflection": "*",
-    "@pgpm/stamps": "*",
-    "@pgpm/database-jobs": "*"
+    "bundle": "pgpm package"
   },
   "devDependencies": {
     "pgpm": "^4.26.1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/constructive-io/constructive-functions"
   }
 }

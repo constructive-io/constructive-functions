@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_compute_fbp_public/tables/platform_function_graph_store/indexes/idx_platform_function_graph_store_unique_name
+
+
+DROP INDEX "constructive_compute_fbp_public".idx_platform_function_graph_store_unique_name;
+
+

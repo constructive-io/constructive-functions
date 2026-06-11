@@ -2,4 +2,4 @@
 %project=constructive-infra-services
 %uri=constructive-infra-services
 
-register_function_module/register [constructive-infra:schemas/constructive_infra_public/schema metaschema-modules:schemas/metaschema_modules_public/tables/function_module/table] 2026-06-08T00:00:00Z Constructive <developers@constructive.io> # register infra function tables as MetaSchema module
+register_function_module/register [constructive-compute:schemas/constructive_compute_public/schema metaschema-modules:schemas/metaschema_modules_public/tables/function_module/table] 2026-06-08T00:00:00Z Constructive <developers@constructive.io> # register compute function tables as MetaSchema module (app + org scopes)

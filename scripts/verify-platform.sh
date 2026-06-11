@@ -45,11 +45,13 @@ SCHEMAS_TO_CHECK=(
   constructive_store_private
   constructive_objects_public
   constructive_objects_private
-  constructive_fbp_public
-  constructive_fbp_private
+  constructive_compute_fbp_public
+  constructive_compute_fbp_private
+  constructive_compute_public
+  constructive_compute_private
   constructive_storage_public
   constructive_storage_private
-  constructive_private
+  constructive_users_public
 )
 
 for schema in "${SCHEMAS_TO_CHECK[@]}"; do
@@ -70,7 +72,7 @@ else
 fi
 
 # --- platform_function_definitions table ---
-HAS_TABLE=$(psql -d "$DB_NAME" -t -A -c "SELECT 1 FROM information_schema.tables WHERE table_schema = 'constructive_infra_public' AND table_name = 'platform_function_definitions'" 2>/dev/null)
+HAS_TABLE=$(psql -d "$DB_NAME" -t -A -c "SELECT 1 FROM information_schema.tables WHERE table_schema = 'constructive_compute_public' AND table_name = 'platform_function_definitions'" 2>/dev/null)
 if [ "$HAS_TABLE" = "1" ]; then
   ok "Table platform_function_definitions exists"
 else
@@ -78,7 +80,7 @@ else
 fi
 
 # --- platform_function_invocations table ---
-HAS_INV=$(psql -d "$DB_NAME" -t -A -c "SELECT 1 FROM information_schema.tables WHERE table_schema = 'constructive_infra_public' AND table_name = 'platform_function_invocations'" 2>/dev/null)
+HAS_INV=$(psql -d "$DB_NAME" -t -A -c "SELECT 1 FROM information_schema.tables WHERE table_schema = 'constructive_compute_public' AND table_name = 'app_function_invocations'" 2>/dev/null)
 if [ "$HAS_INV" = "1" ]; then
   ok "Table platform_function_invocations exists"
 else
@@ -87,10 +89,10 @@ fi
 
 # --- Seeded functions ---
 if [ "$HAS_TABLE" = "1" ]; then
-  FN_COUNT=$(psql -d "$DB_NAME" -t -A -c "SELECT count(*) FROM constructive_infra_public.platform_function_definitions WHERE is_invocable = true" 2>/dev/null)
+  FN_COUNT=$(psql -d "$DB_NAME" -t -A -c "SELECT count(*) FROM constructive_compute_public.platform_function_definitions WHERE is_invocable = true" 2>/dev/null)
   if [ "$FN_COUNT" -gt 0 ] 2>/dev/null; then
     ok "$FN_COUNT invocable function(s) registered:"
-    psql -d "$DB_NAME" -t -A -c "SELECT '    ' || name || ' → ' || COALESCE(service_url, '(no url)') FROM constructive_infra_public.platform_function_definitions WHERE is_invocable = true ORDER BY name" 2>/dev/null
+    psql -d "$DB_NAME" -t -A -c "SELECT '    ' || name || ' → ' || COALESCE(service_url, '(no url)') FROM constructive_compute_public.platform_function_definitions WHERE is_invocable = true ORDER BY name" 2>/dev/null
   else
     fail "No invocable functions seeded (re-deploy to seed)"
     echo "    Fix: cd pgpm && pgpm deploy --yes --database $DB_NAME --package constructive-infra"

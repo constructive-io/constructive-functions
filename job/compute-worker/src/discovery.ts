@@ -1,49 +1,38 @@
 /**
- * FunctionDiscovery — lazy, cached lookups against
- * constructive_infra_public.platform_function_definitions.
+ * FunctionDiscovery — lazy, cached lookups against the
+ * platform function definitions table.
  *
- * When a job arrives the worker calls `resolve(taskIdentifier)`.
- * On cache miss, a single SQL query fetches the function definition
- * and caches it for `ttlMs` (default 60 s). Subsequent calls for the
- * same task_identifier are served from memory.
+ * Schema and table names are resolved dynamically via ComputeModuleLoader
+ * instead of hardcoding a specific schema. When a job arrives the worker
+ * calls `resolve(taskIdentifier)`. On cache miss, a single SQL query
+ * fetches the function definition and caches it for `ttlMs` (default 60 s).
  */
 
 import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
 
 import { TtlCache } from './cache';
+import type { ComputeModuleLoader } from './module-loader';
 import type { PlatformFunctionDefinition } from './types';
 
 const log = new Logger('compute:discovery');
 
-const RESOLVE_SQL = `
-  SELECT
+const COLUMNS = `
     id, name, task_identifier, service_url,
     is_invocable, is_built_in, max_attempts,
     priority, queue_name, scope, namespace_id,
-    required_configs, required_secrets, description
-  FROM constructive_infra_public.platform_function_definitions
-  WHERE task_identifier = $1
-  LIMIT 1
-`;
-
-const LIST_INVOCABLE_SQL = `
-  SELECT
-    id, name, task_identifier, service_url,
-    is_invocable, is_built_in, max_attempts,
-    priority, queue_name, scope, namespace_id,
-    required_configs, required_secrets, description
-  FROM constructive_infra_public.platform_function_definitions
-  WHERE is_invocable = true
-  ORDER BY name
-`;
+    required_configs, required_secrets, description`;
 
 export class FunctionDiscovery {
   private cache: TtlCache<PlatformFunctionDefinition | null>;
   private pool: Pool;
+  private loader: ComputeModuleLoader;
+  private databaseId: string;
 
-  constructor(pool: Pool, ttlMs = 60_000) {
+  constructor(pool: Pool, loader: ComputeModuleLoader, databaseId: string, ttlMs = 60_000) {
     this.pool = pool;
+    this.loader = loader;
+    this.databaseId = databaseId;
     this.cache = new TtlCache<PlatformFunctionDefinition | null>(ttlMs);
   }
 
@@ -60,7 +49,16 @@ export class FunctionDiscovery {
 
     log.debug(`cache miss: ${taskIdentifier}, querying DB`);
     try {
-      const { rows } = await this.pool.query(RESOLVE_SQL, [taskIdentifier]);
+      const config = await this.loader.load(this.databaseId);
+      if (!config.functionModule) {
+        log.warn('no function module configured — cannot resolve functions');
+        return null;
+      }
+
+      const { publicSchema, definitionsTable } = config.functionModule;
+      const sql = `SELECT ${COLUMNS} FROM "${publicSchema}"."${definitionsTable}" WHERE task_identifier = $1 LIMIT 1`;
+
+      const { rows } = await this.pool.query(sql, [taskIdentifier]);
       const def = (rows[0] as PlatformFunctionDefinition) ?? null;
       this.cache.set(taskIdentifier, def);
       if (def) {
@@ -81,7 +79,16 @@ export class FunctionDiscovery {
    */
   async listInvocable(): Promise<PlatformFunctionDefinition[]> {
     try {
-      const { rows } = await this.pool.query(LIST_INVOCABLE_SQL);
+      const config = await this.loader.load(this.databaseId);
+      if (!config.functionModule) {
+        log.warn('no function module configured — cannot list functions');
+        return [];
+      }
+
+      const { publicSchema, definitionsTable } = config.functionModule;
+      const sql = `SELECT ${COLUMNS} FROM "${publicSchema}"."${definitionsTable}" WHERE is_invocable = true ORDER BY name`;
+
+      const { rows } = await this.pool.query(sql);
       return rows as PlatformFunctionDefinition[];
     } catch (err: any) {
       log.error(`failed to list invocable functions: ${err.message}`);

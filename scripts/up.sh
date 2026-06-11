@@ -109,22 +109,25 @@ cd "$ROOT_DIR/pgpm"
 
 # Deploy order matters: downstream modules depend on upstream ones.
 #
-#   constructive-services  (standalone — apps, apis, sites, domains stubs)
 #   constructive-users     (standalone — users, role_types stubs)
-#   constructive-infra     (standalone — namespaces, function defs, invocations)
-#   constructive-store     (depends on infra — encrypted secrets, config, user state)
+#   constructive-infra     (standalone — namespaces, namespace_events)
 #   constructive-objects   (standalone — content-addressable merkle store)
-#   constructive-fbp       (standalone — flow graphs, graph-specific merkle store)
-#   constructive-storage   (standalone — file uploads, buckets, versioning)
+#   constructive-storage   (standalone — file uploads, buckets)
+#   constructive-store     (standalone — encrypted secrets, config, user state)
+#   constructive-compute   (depends on services, users, infra — function defs, invocations, execution logs)
+#   constructive-compute-fbp (standalone — flow graphs, graph-specific merkle store)
+#
+# @pgpm/services is installed as an extension dependency (extensions/@pgpm/services)
+# and auto-deployed when constructive-compute requires it.
 
 MODULES=(
-  constructive-services
   constructive-users
   constructive-infra
-  constructive-store
   constructive-objects
-  constructive-fbp
   constructive-storage
+  constructive-store
+  constructive-compute
+  constructive-compute-fbp
 )
 
 DEPLOY_LOG="$ROOT_DIR/.deploy-log"
@@ -148,9 +151,11 @@ done
 
 rm -f "$DEPLOY_LOG"
 
-# ─── Step 5: Deploy constructive-infra-seed ──────────────────────────────────
+# ─── Step 5: Deploy seed + service registration ──────────────────────────────
 
-step 5 "Deploying constructive-infra-seed (function + secret definitions)"
+step 5 "Deploying seed data + MetaSchema registration"
+
+DEPLOY_LOG="$ROOT_DIR/.deploy-log"
 
 SEED_RC=0
 pgpm deploy --yes --database "$DB_NAME" --package constructive-infra-seed > "$DEPLOY_LOG" 2>&1 || SEED_RC=$?
@@ -160,6 +165,16 @@ else
   fail "constructive-infra-seed — deploy output:"
   sed 's/^/    /' "$DEPLOY_LOG"
 fi
+
+SVC_RC=0
+pgpm deploy --yes --database "$DB_NAME" --package constructive-infra-services > "$DEPLOY_LOG" 2>&1 || SVC_RC=$?
+if [ $SVC_RC -eq 0 ]; then
+  ok "constructive-infra-services deployed"
+else
+  fail "constructive-infra-services — deploy output:"
+  sed 's/^/    /' "$DEPLOY_LOG"
+fi
+
 rm -f "$DEPLOY_LOG"
 
 cd "$ROOT_DIR"

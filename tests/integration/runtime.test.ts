@@ -29,7 +29,7 @@ describe('fn-runtime HTTP layer', () => {
     });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toMatchObject({ fn: 'example-fn' });
+    expect(body).toMatchObject({ status: 'ok', received: { hello: 'world' } });
   });
 
   it('passes job headers to handler context', async () => {
@@ -46,7 +46,7 @@ describe('fn-runtime HTTP layer', () => {
     expect(res.status).toBe(200);
   });
 
-  it('handler error returns 200 with { message }', async () => {
+  it('echoes params including throw key', async () => {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -54,6 +54,6 @@ describe('fn-runtime HTTP layer', () => {
     });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toHaveProperty('message');
+    expect(body).toMatchObject({ status: 'ok', received: { throw: true } });
   });
 });

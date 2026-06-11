@@ -1,15 +1,13 @@
 /**
  * ComputeWorker — Platform-aware job worker.
  *
- * Unlike the original knative-job-worker which looks up functions from a
- * static manifest, ComputeWorker queries constructive_infra_public
- * .platform_function_definitions to discover registered functions and
- * tracks every invocation in platform_function_invocations.
+ * Discovers functions and tracks invocations using dynamically-resolved
+ * schema/table names from metaschema via ComputeModuleLoader.
  *
  * Flow:
  *   1. Poll app_jobs.jobs for the next job
  *   2. Lazy-resolve the function definition from DB (cached)
- *   3. Create an invocation record (status=running)
+ *   3. Create an invocation record (status=running) — scope-aware
  *   4. HTTP POST to the function's service_url
  *   5. Update invocation to completed/failed with duration
  */
@@ -22,6 +20,7 @@ import type { Pool, PoolClient } from 'pg';
 
 import { FunctionDiscovery } from './discovery';
 import { InvocationTracker } from './invocation';
+import { ComputeModuleLoader } from './module-loader';
 import { compute_request } from './req';
 import type { ComputeJobRow, ComputeWorkerOptions } from './types';
 
@@ -30,13 +29,17 @@ const DEFAULT_DATABASE_ID = '00000000-0000-0000-0000-000000000000';
 export { TtlCache } from './cache';
 export { FunctionDiscovery } from './discovery';
 export { InvocationTracker } from './invocation';
+export { ComputeModuleLoader } from './module-loader';
 export type { ComputeRequestOptions } from './req';
 export { compute_request } from './req';
 export type {
   ComputeJobRow,
+  ComputeModuleConfig,
   ComputeWorkerOptions,
   CreateInvocationInput,
+  FunctionModuleConfig,
   FunctionRequirement,
+  InvocationModuleConfig,
   InvocationStatus,
   PlatformFunctionDefinition,
 } from './types';
@@ -53,18 +56,23 @@ export default class ComputeWorker {
   listenRelease?: () => void;
   stopped?: boolean;
 
+  readonly loader: ComputeModuleLoader;
   readonly discovery: FunctionDiscovery;
   readonly tracker: InvocationTracker;
 
   private callbackUrl?: string;
   private gatewayUrl?: string;
+  private platformDatabaseId: string;
 
   constructor(opts: ComputeWorkerOptions) {
     this.idleDelay = opts.idleDelay ?? 15_000;
     this.workerId = opts.workerId ?? 'compute-worker-0';
     this.pgPool = opts.pgPool;
-    this.discovery = new FunctionDiscovery(this.pgPool, opts.cacheTtlMs);
-    this.tracker = new InvocationTracker(this.pgPool);
+    this.platformDatabaseId = opts.databaseId ?? DEFAULT_DATABASE_ID;
+
+    this.loader = new ComputeModuleLoader(this.pgPool, opts.cacheTtlMs);
+    this.discovery = new FunctionDiscovery(this.pgPool, this.loader, this.platformDatabaseId, opts.cacheTtlMs);
+    this.tracker = new InvocationTracker(this.pgPool, this.loader, this.platformDatabaseId);
 
     this.callbackUrl = process.env.COMPUTE_CALLBACK_URL
       || process.env.INTERNAL_JOBS_CALLBACK_URL;
@@ -236,6 +244,7 @@ export default class ComputeWorker {
       id: job.id,
       task: task_identifier,
       databaseId: job.database_id,
+      entityId: job.entity_id,
     });
 
     const fn = await this.discovery.resolve(task_identifier);
@@ -253,7 +262,8 @@ export default class ComputeWorker {
       );
     }
 
-    const databaseId = job.database_id || DEFAULT_DATABASE_ID;
+    const databaseId = job.database_id || this.platformDatabaseId;
+    const scope = job.entity_id ? 'org' : 'platform';
 
     const { id: invocationId } = await this.tracker.create({
       function_id: fn.id,
@@ -262,6 +272,8 @@ export default class ComputeWorker {
       job_id: job.id,
       database_id: databaseId,
       actor_id: job.actor_id,
+      entity_id: job.entity_id,
+      scope,
     });
 
     const reqStart = process.hrtime();
@@ -279,11 +291,17 @@ export default class ComputeWorker {
 
       const elapsed = process.hrtime(reqStart);
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
-      await this.tracker.complete(invocationId, ms);
+      await this.tracker.complete(
+        invocationId, ms, undefined,
+        scope, scope === 'org' ? databaseId : undefined
+      );
     } catch (err: any) {
       const elapsed = process.hrtime(reqStart);
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
-      await this.tracker.fail(invocationId, ms, err.message);
+      await this.tracker.fail(
+        invocationId, ms, err.message,
+        scope, scope === 'org' ? databaseId : undefined
+      );
       throw err;
     }
   }
@@ -340,13 +358,15 @@ export default class ComputeWorker {
   }
 
   async handleSuccess(
-    _client: PgClientLike,
+    client: PgClientLike,
     { job, duration }: { job: ComputeJobRow; duration: string }
   ): Promise<void> {
-    log.info(
-      `Completed task ${job.id} (${job.task_identifier}) in ${duration}ms`
+    log.debug(
+      `Completed task ${job.id} (${job.task_identifier}) (${duration}ms)`
     );
+    await jobs.completeJob(client, {
+      workerId: this.workerId,
+      jobId: job.id,
+    });
   }
 }
-
-export { ComputeWorker };

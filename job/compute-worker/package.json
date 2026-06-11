@@ -1,7 +1,7 @@
 {
   "name": "@constructive-io/compute-worker",
   "version": "0.1.0",
-  "description": "Platform-aware job worker — discovers functions from constructive_infra_public and tracks invocations",
+  "description": "Platform-aware job worker — discovers functions and tracks invocations via dynamic metaschema resolution",
   "author": "Constructive <developers@constructive.io>",
   "private": true,
   "main": "dist/index.js",
