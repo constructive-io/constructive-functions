@@ -22,11 +22,11 @@ CREATE TABLE IF NOT EXISTS constructive_compute_public.org_function_execution_lo
 CREATE TABLE IF NOT EXISTS constructive_infra_public.platform_namespace_events_default
   PARTITION OF constructive_infra_public.platform_namespace_events DEFAULT;
 
--- FBP module partitioned tables
-CREATE TABLE IF NOT EXISTS constructive_compute_fbp_private.function_graph_executions_default
-  PARTITION OF constructive_compute_fbp_private.function_graph_executions DEFAULT;
+-- FBP module partitioned tables (now in constructive_compute_private after schema consolidation)
+CREATE TABLE IF NOT EXISTS constructive_compute_private.platform_function_graph_executions_default
+  PARTITION OF constructive_compute_private.platform_function_graph_executions DEFAULT;
 
-CREATE TABLE IF NOT EXISTS constructive_compute_fbp_private.function_graph_execution_outputs_default
-  PARTITION OF constructive_compute_fbp_private.function_graph_execution_outputs DEFAULT;
+CREATE TABLE IF NOT EXISTS constructive_compute_private.platform_function_graph_execution_outputs_default
+  PARTITION OF constructive_compute_private.platform_function_graph_execution_outputs DEFAULT;
 
 COMMIT;

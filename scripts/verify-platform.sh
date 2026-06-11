@@ -45,8 +45,8 @@ SCHEMAS_TO_CHECK=(
   constructive_store_private
   constructive_objects_public
   constructive_objects_private
-  constructive_compute_fbp_public
-  constructive_compute_fbp_private
+  constructive_platform_function_graph_public
+  constructive_platform_function_graph_private
   constructive_compute_public
   constructive_compute_private
   constructive_storage_public

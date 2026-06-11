@@ -1,0 +1,6 @@
+-- Verify: schemas/constructive_platform_function_graph_public/tables/platform_function_graph_store/indexes/idx_platform_function_graph_store_unique_name
+
+
+SELECT verify_index('constructive_platform_function_graph_public.platform_function_graph_store', 'idx_platform_function_graph_store_unique_name');
+
+

@@ -1,7 +1,0 @@
--- Revert: schemas/constructive_compute_fbp_private/tables/function_graph_executions/columns/timeout_at/alterations/alt0000002690
-
-
-ALTER TABLE "constructive_compute_fbp_private".function_graph_executions 
-  ALTER COLUMN timeout_at DROP NOT NULL;
-
-

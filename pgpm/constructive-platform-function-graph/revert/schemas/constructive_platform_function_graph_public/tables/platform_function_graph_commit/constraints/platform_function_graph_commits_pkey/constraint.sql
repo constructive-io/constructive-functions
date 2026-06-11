@@ -1,0 +1,7 @@
+-- Revert: schemas/constructive_platform_function_graph_public/tables/platform_function_graph_commit/constraints/platform_function_graph_commits_pkey/constraint
+
+
+ALTER TABLE "constructive_platform_function_graph_public".platform_function_graph_commit 
+  DROP CONSTRAINT platform_function_graph_commits_pkey;
+
+

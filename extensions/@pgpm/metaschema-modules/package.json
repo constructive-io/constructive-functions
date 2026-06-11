@@ -1,6 +1,6 @@
 {
   "name": "@pgpm/metaschema-modules",
-  "version": "0.26.5",
+  "version": "0.28.0",
   "description": "Module metadata handling and dependency tracking",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "contributors": [
@@ -21,8 +21,8 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "@pgpm/metaschema-schema": "0.26.5",
-    "@pgpm/verify": "0.26.0"
+    "@pgpm/metaschema-schema": "0.28.0",
+    "@pgpm/verify": "0.28.0"
   },
   "devDependencies": {
     "pgpm": "^4.23.2"
@@ -35,5 +35,5 @@
   "bugs": {
     "url": "https://github.com/constructive-io/pgpm-modules/issues"
   },
-  "gitHead": "a496a00d89c37d874f4a7207265b9972b6f05c7d"
+  "gitHead": "d2ab7ca810ded086eb742eb8f0ca362b6212b97e"
 }

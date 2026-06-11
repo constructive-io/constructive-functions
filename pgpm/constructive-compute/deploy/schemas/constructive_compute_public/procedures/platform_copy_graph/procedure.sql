@@ -1,0 +1,19 @@
+-- Deploy: schemas/constructive_compute_public/procedures/platform_copy_graph/procedure
+-- made with <3 @ constructive.io
+
+-- requires: schemas/constructive_compute_public/schema
+
+
+CREATE FUNCTION "constructive_compute_public".platform_copy_graph(
+  IN database_id uuid,
+  IN graph_id uuid,
+  IN name text
+) RETURNS uuid AS $_PGFN_$
+DECLARE
+  v_snapshot jsonb;
+BEGIN
+  v_snapshot := "constructive_compute_private".platform_serialize_graph(platform_copy_graph.graph_id);
+  RETURN "constructive_compute_private".platform_deserialize_graph(platform_copy_graph.database_id, platform_copy_graph.name, v_snapshot);
+END;
+$_PGFN_$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
+
