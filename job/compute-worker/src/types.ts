@@ -61,6 +61,28 @@ export interface ComputeJobRow {
   entity_id?: string;
 }
 
+// ─── Compute Module Config ────────────────────────────────────────────────────
+
+export interface FunctionModuleConfig {
+  publicSchema: string;
+  privateSchema: string;
+  definitionsTable: string;
+  secretDefinitionsTable: string;
+  scope: string;
+}
+
+export interface InvocationModuleConfig {
+  publicSchema: string;
+  invocationsTable: string;
+  executionLogsTable: string;
+  scope: string;
+}
+
+export interface ComputeModuleConfig {
+  functionModule: FunctionModuleConfig | null;
+  invocationModules: InvocationModuleConfig[];
+}
+
 // ─── Worker Options ──────────────────────────────────────────────────────────
 
 export interface ComputeWorkerOptions {

@@ -30,13 +30,17 @@ const DEFAULT_DATABASE_ID = '00000000-0000-0000-0000-000000000000';
 export { TtlCache } from './cache';
 export { FunctionDiscovery } from './discovery';
 export { InvocationTracker } from './invocation';
+export { ComputeModuleLoader } from './module-loader';
 export type { ComputeRequestOptions } from './req';
 export { compute_request } from './req';
 export type {
   ComputeJobRow,
+  ComputeModuleConfig,
   ComputeWorkerOptions,
   CreateInvocationInput,
+  FunctionModuleConfig,
   FunctionRequirement,
+  InvocationModuleConfig,
   InvocationStatus,
   PlatformFunctionDefinition,
 } from './types';
