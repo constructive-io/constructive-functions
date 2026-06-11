@@ -680,6 +680,68 @@ export interface ProvisionBucketInput {
    */
   ownerId?: string;
 }
+/** An input for mutations affecting `Store` */
+export interface StoreInput {
+  /** Timestamp of store creation */
+  createdAt?: string;
+  /** Database scope for multi-tenant isolation */
+  databaseId: string;
+  /** Current root object hash of this store */
+  hash?: string;
+  /** Unique store identifier */
+  id?: string;
+  /** Human-readable store name */
+  name: string;
+}
+/** An input for mutations affecting `Ref` */
+export interface RefInput {
+  /** Commit this ref points to */
+  commitId?: string;
+  /** Database scope for multi-tenant isolation */
+  databaseId: string;
+  /** Unique ref identifier */
+  id?: string;
+  /** Ref name (e.g. HEAD, main) */
+  name: string;
+  /** Store this ref belongs to */
+  storeId: string;
+}
+/** An input for mutations affecting `Object` */
+export interface ObjectInput {
+  /** Timestamp of object creation */
+  createdAt?: string;
+  /** Payload data for this object node */
+  data?: Record<string, unknown>;
+  /** Database scope for multi-tenant isolation */
+  databaseId: string;
+  /** Content-addressed UUID v5 — deterministic hash of (data, kids, ktree) */
+  id: string;
+  /** Ordered array of child object IDs */
+  kids?: string[];
+  /** Ordered array of child path names (parallel to kids) */
+  ktree?: string[];
+}
+/** An input for mutations affecting `Commit` */
+export interface CommitInput {
+  /** User who authored the changes */
+  authorId?: string;
+  /** User who committed (may differ from author) */
+  committerId?: string;
+  /** Database scope for multi-tenant isolation */
+  databaseId: string;
+  /** Commit timestamp */
+  date?: string;
+  /** Unique commit identifier */
+  id?: string;
+  /** Optional commit message */
+  message?: string;
+  /** Parent commit IDs (supports merge commits) */
+  parentIds?: string[];
+  /** Store this commit belongs to */
+  storeId: string;
+  /** Root object ID of the tree snapshot at this commit */
+  treeId?: string;
+}
 // ============ Payload/Return Types (for custom operations) ============
 export interface InitEmptyRepoPayload {
   clientMutationId?: string | null;

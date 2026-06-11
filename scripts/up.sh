@@ -199,6 +199,14 @@ rm -f "$DEPLOY_LOG"
 
 cd "$ROOT_DIR"
 
+# Register functions from handler.json manifests (always runs — ON CONFLICT UPDATE)
+echo "  Registering functions from handler.json manifests..."
+if node --experimental-strip-types scripts/register-functions.ts --apply --database="$DB_NAME" 2>/dev/null; then
+  ok "Functions registered from handler.json"
+else
+  warn "Function registration skipped (register-functions.ts failed)"
+fi
+
 # ─── Step 7: Start MinIO ────────────────────────────────────────────────────
 
 step 7 "Starting MinIO (object storage)"
