@@ -232,6 +232,10 @@ export interface UUIDListFilter {
 }
 // ============ Custom Scalar Types ============
 export type FunctionRequirement = unknown;
+export interface FunctionRequirementInput {
+  name?: string;
+  required?: boolean;
+}
 // ============ Entity Types ============
 export interface GetAllRecord {
   path?: string[] | null;
