@@ -7,10 +7,11 @@
 #   2. Start PostgreSQL via pgpm docker
 #   3. Bootstrap pgpm admin users
 #   4. Create database + deploy all pgpm modules
-#   5. Deploy constructive-infra-seed (function + secret definitions)
-#   6. Start MinIO (object storage)
-#   7. Verify everything
-#   8. Check .env coverage (if .env exists)
+#   5. Deploy platform-seed (database row, schemas, API routing)
+#   6. Deploy constructive-infra-seed + services registration
+#   7. Start MinIO (object storage)
+#   8. Verify everything
+#   9. Check .env coverage (if .env exists)
 #
 # Usage:
 #   make up                       # defaults to constructive-functions-db1
@@ -35,7 +36,7 @@ ok()   { echo -e "  ${GREEN}✓${NC} $1"; }
 warn() { echo -e "  ${YELLOW}●${NC} $1"; }
 fail() { echo -e "  ${RED}✗${NC} $1"; }
 
-TOTAL_STEPS=8
+TOTAL_STEPS=9
 
 echo ""
 echo -e "${BOLD}════════════════════════════════════════════════════════════${NC}"
@@ -151,9 +152,26 @@ done
 
 rm -f "$DEPLOY_LOG"
 
-# ─── Step 5: Deploy seed + service registration ──────────────────────────────
+# ─── Step 5: Deploy platform seed (metaschema routing) ────────────────────────
 
-step 5 "Deploying seed data + MetaSchema registration"
+step 5 "Deploying platform seed (database, schemas, API routing)"
+
+DEPLOY_LOG="$ROOT_DIR/.deploy-log"
+
+PLAT_RC=0
+pgpm deploy --yes --database "$DB_NAME" --package constructive-platform-seed > "$DEPLOY_LOG" 2>&1 || PLAT_RC=$?
+if [ $PLAT_RC -eq 0 ]; then
+  ok "constructive-platform-seed deployed"
+else
+  fail "constructive-platform-seed — deploy output:"
+  sed 's/^/    /' "$DEPLOY_LOG"
+fi
+
+rm -f "$DEPLOY_LOG"
+
+# ─── Step 6: Deploy seed data + service registration ─────────────────────────
+
+step 6 "Deploying seed data + MetaSchema registration"
 
 DEPLOY_LOG="$ROOT_DIR/.deploy-log"
 
@@ -179,9 +197,9 @@ rm -f "$DEPLOY_LOG"
 
 cd "$ROOT_DIR"
 
-# ─── Step 6: Start MinIO ────────────────────────────────────────────────────
+# ─── Step 7: Start MinIO ────────────────────────────────────────────────────
 
-step 6 "Starting MinIO (object storage)"
+step 7 "Starting MinIO (object storage)"
 
 MINIO_UP=$(docker ps --filter "name=minio" --filter "status=running" --format "{{.Names}}" 2>/dev/null | head -1)
 
@@ -203,15 +221,15 @@ fi
 echo "  API:     http://localhost:9000"
 echo "  Console: http://localhost:9001  (minioadmin/minioadmin)"
 
-# ─── Step 7: Verify ─────────────────────────────────────────────────────────
+# ─── Step 8: Verify ─────────────────────────────────────────────────────────
 
-step 7 "Verifying platform"
+step 8 "Verifying platform"
 
 "$SCRIPT_DIR/verify-platform.sh" "$DB_NAME"
 
-# ─── Step 8: Check .env ─────────────────────────────────────────────────────
+# ─── Step 9: Check .env ─────────────────────────────────────────────────────
 
-step 8 "Loading .env into platform"
+step 9 "Loading .env into platform"
 
 if [ -f "$ROOT_DIR/.env" ]; then
   "$SCRIPT_DIR/load-platform-env.sh" "$ROOT_DIR/.env" "$DB_NAME" || true

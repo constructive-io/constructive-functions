@@ -2,6 +2,6 @@
 comment = 'MetaSchema service registration for constructive-infra function tables'
 default_version = '0.1.0'
 module_pathname = '$libdir/constructive-infra-services'
-requires = 'plpgsql,constructive-compute,metaschema-modules,services'
+requires = 'plpgsql,constructive-compute,metaschema-modules,services,constructive-platform-seed'
 relocatable = false
 superuser = false
