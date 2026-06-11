@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { GraphEditor, NodeIcon } from '@fbp/graph-editor';
 import { evaluate } from '@fbp/evaluator';
 import {
@@ -12,11 +12,28 @@ import {
 } from '@fbp/evaluator';
 import type { NodeDefinitionWithImpl } from '@fbp/evaluator';
 import type { Graph, NodeDefinition, Node } from '@fbp/types';
-import { api, type PlatformFunction } from '../lib/api';
+import { compute } from '@constructive-functions/constructive-functions-hooks';
 import { RefreshCw, Save, Trash2, Plus, Play, Zap, ChevronDown, ChevronRight } from 'lucide-react';
 
 const STORAGE_KEY = 'constructive-flows-v2';
 const BOUNDARY_NAMES = ['graph/input', 'graph/output', 'graph/prop'];
+
+interface FunctionRequirement {
+  name?: string;
+  required?: boolean;
+}
+
+type FunctionNode = {
+  name?: string | null;
+  taskIdentifier?: string | null;
+  serviceUrl?: string | null;
+  isInvocable?: boolean | null;
+  isBuiltIn?: boolean | null;
+  scope?: string | null;
+  description?: string | null;
+  requiredSecrets?: FunctionRequirement[] | null;
+  requiredConfigs?: FunctionRequirement[] | null;
+};
 
 interface SavedFlow {
   name: string;
@@ -36,33 +53,31 @@ function saveFlows(flows: SavedFlow[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(flows));
 }
 
-function platformFnToDefinition(fn: PlatformFunction): NodeDefinition {
+function platformFnToDefinition(fn: FunctionNode): NodeDefinition {
   return {
     context: fn.scope || 'platform',
-    name: fn.task_identifier || fn.name,
+    name: fn.taskIdentifier || fn.name || '',
     category: 'functions',
     description: fn.description || undefined,
     inputs: [{ name: 'payload', type: 'json' }],
     outputs: [{ name: 'result', type: 'json' }],
-    icon: fn.is_invocable ? 'zap' : 'circle',
+    icon: fn.isInvocable ? 'zap' : 'circle',
   };
 }
 
-// Create a graph node from a platform function with metadata props
-function functionToNode(fn: PlatformFunction, position: { x: number; y: number }): Node {
+function functionToNode(fn: FunctionNode, position: { x: number; y: number }): Node {
   return {
     name: `${fn.name}_${Date.now()}`,
-    type: fn.task_identifier || fn.name,
+    type: fn.taskIdentifier || fn.name || '',
     meta: position,
     props: [
-      { name: 'secretsCount', type: 'number', value: fn.required_secrets?.length || 0 },
-      { name: 'configsCount', type: 'number', value: fn.required_configs?.length || 0 },
+      { name: 'secretsCount', type: 'number', value: ((fn.requiredSecrets ?? []) as FunctionRequirement[]).length || 0 },
+      { name: 'configsCount', type: 'number', value: ((fn.requiredConfigs ?? []) as FunctionRequirement[]).length || 0 },
       { name: 'scope', type: 'string', value: fn.scope || 'platform' },
     ],
   };
 }
 
-// Create a graph node from a definition
 function definitionToNode(def: NodeDefinition, position: { x: number; y: number }): Node {
   return {
     name: `${def.name.split('/').pop()}_${Date.now().toString(36)}`,
@@ -71,25 +86,24 @@ function definitionToNode(def: NodeDefinition, position: { x: number; y: number 
   };
 }
 
-// Mock functions for demo when API is unavailable
-const MOCK_FUNCTIONS: PlatformFunction[] = [
+const MOCK_FUNCTIONS: FunctionNode[] = [
   {
-    name: 'send-email', task_identifier: 'email:send_email', service_url: '', is_invocable: true, is_built_in: true,
+    name: 'send-email', taskIdentifier: 'email:send_email', serviceUrl: '', isInvocable: true, isBuiltIn: true,
     scope: 'platform', description: 'Sends transactional emails via SMTP or Mailgun',
-    required_secrets: [{ name: 'MAILGUN_API_KEY', required: true }, { name: 'SMTP_PASSWORD', required: false }],
-    required_configs: [{ name: 'SMTP_HOST', required: true }], created_at: '', updated_at: '',
+    requiredSecrets: [{ name: 'MAILGUN_API_KEY', required: true }, { name: 'SMTP_PASSWORD', required: false }],
+    requiredConfigs: [{ name: 'SMTP_HOST', required: true }],
   },
   {
-    name: 'send-verification-link', task_identifier: 'email:send_verification_link', service_url: '', is_invocable: true, is_built_in: true,
+    name: 'send-verification-link', taskIdentifier: 'email:send_verification_link', serviceUrl: '', isInvocable: true, isBuiltIn: true,
     scope: 'platform', description: 'Sends invite, password reset, and verification emails',
-    required_secrets: [{ name: 'MAILGUN_API_KEY', required: true }],
-    required_configs: [{ name: 'SMTP_HOST', required: true }, { name: 'FROM_EMAIL', required: true }], created_at: '', updated_at: '',
+    requiredSecrets: [{ name: 'MAILGUN_API_KEY', required: true }],
+    requiredConfigs: [{ name: 'SMTP_HOST', required: true }, { name: 'FROM_EMAIL', required: true }],
   },
   {
-    name: 'process-webhook', task_identifier: 'webhook:process', service_url: '', is_invocable: true, is_built_in: false,
+    name: 'process-webhook', taskIdentifier: 'webhook:process', serviceUrl: '', isInvocable: true, isBuiltIn: false,
     scope: 'tenant', description: 'Processes incoming webhook payloads and routes to handlers',
-    required_secrets: [{ name: 'WEBHOOK_SECRET', required: true }],
-    required_configs: [], created_at: '', updated_at: '',
+    requiredSecrets: [{ name: 'WEBHOOK_SECRET', required: true }],
+    requiredConfigs: [],
   },
 ];
 
@@ -100,7 +114,6 @@ const DEFAULT_GRAPH: Graph = {
 };
 
 
-// Category display order and labels
 const CATEGORY_ORDER = ['functions', 'graph', 'const', 'math', 'json', 'flow', 'string', 'layout', 'form', 'content', 'graphql'];
 const CATEGORY_LABELS: Record<string, string> = {
   functions: 'Functions',
@@ -116,9 +129,28 @@ const CATEGORY_LABELS: Record<string, string> = {
   graphql: 'GraphQL',
 };
 
+const FUNCTION_FIELDS = {
+  id: true,
+  name: true,
+  taskIdentifier: true,
+  serviceUrl: true,
+  isInvocable: true,
+  isBuiltIn: true,
+  scope: true,
+  description: true,
+  requiredSecrets: true,
+  requiredConfigs: true,
+} as const;
+
 export function FlowsPanel() {
-  const [functions, setFunctions] = useState<PlatformFunction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = compute.usePlatformFunctionDefinitionsQuery({
+    selection: { fields: FUNCTION_FIELDS },
+  });
+
+  const apiFunctions = data?.platformFunctionDefinitions?.nodes ?? [];
+  const functions: FunctionNode[] = apiFunctions.length > 0 ? apiFunctions : MOCK_FUNCTIONS;
+  const loading = isLoading;
+
   const [flows, setFlowsList] = useState<SavedFlow[]>(loadFlows);
   const [activeFlowIdx, setActiveFlowIdx] = useState<number | null>(
     loadFlows().length > 0 ? 0 : null
@@ -132,26 +164,23 @@ export function FlowsPanel() {
   const graphRef = useRef<Graph>(currentGraph);
   graphRef.current = currentGraph;
 
-  // Load functions from API, fall back to mock data for demo
-  useEffect(() => {
-    setLoading(true);
-    api.getFunctions()
-      .then(fns => setFunctions(fns.length > 0 ? fns : MOCK_FUNCTIONS))
-      .catch(() => setFunctions(MOCK_FUNCTIONS))
-      .finally(() => setLoading(false));
-  }, []);
-
   // Load active flow
-  useEffect(() => {
-    if (activeFlowIdx !== null && flows[activeFlowIdx]) {
-      const flow = flows[activeFlowIdx];
-      setCurrentGraph(flow.graph);
-      setFlowName(flow.name);
+  const loadActiveFlow = useCallback((idx: number | null) => {
+    if (idx !== null && flows[idx]) {
+      setCurrentGraph(flows[idx].graph);
+      setFlowName(flows[idx].name);
       setEvaluationResult(undefined);
     }
-  }, [activeFlowIdx, flows]);
+  }, [flows]);
 
-  // Build all definitions: platform functions + built-in evaluator defs + palette boundary nodes
+  // Sync active flow on index change
+  useState(() => {
+    if (activeFlowIdx !== null && flows[activeFlowIdx]) {
+      setCurrentGraph(flows[activeFlowIdx].graph);
+      setFlowName(flows[activeFlowIdx].name);
+    }
+  });
+
   const definitions: NodeDefinition[] = useMemo(() => [
     ...functions.map(platformFnToDefinition),
     ...mathDefinitions.map(({ impl, ...rest }) => rest as NodeDefinition),
@@ -160,7 +189,6 @@ export function FlowsPanel() {
     ...netDefinitions.map(({ impl, ...rest }) => rest as NodeDefinition),
   ], [functions]);
 
-  // Build impl definitions for evaluation
   const implDefinitions: NodeDefinitionWithImpl[] = useMemo(() => [
     ...mathDefinitions,
     ...coreDefinitions,
@@ -177,10 +205,9 @@ export function FlowsPanel() {
     })),
   ], [functions]);
 
-  // Group definitions by category for the unified sidebar
   const groupedDefinitions = useMemo(() => {
-    const groups: Record<string, { def: NodeDefinition; fn?: PlatformFunction }[]> = {};
-    const fnMap = new Map(functions.map(f => [f.task_identifier || f.name, f]));
+    const groups: Record<string, { def: NodeDefinition; fn?: FunctionNode }[]> = {};
+    const fnMap = new Map(functions.map(f => [f.taskIdentifier || f.name || '', f]));
 
     for (const def of definitions) {
       const cat = def.category || 'other';
@@ -190,7 +217,6 @@ export function FlowsPanel() {
     return groups;
   }, [definitions, functions]);
 
-  // Ordered categories
   const orderedCategories = useMemo(() => {
     const result: string[] = [];
     for (const cat of CATEGORY_ORDER) {
@@ -231,7 +257,6 @@ export function FlowsPanel() {
     }
   }, [implDefinitions]);
 
-  // Save current flow
   const handleSave = useCallback(() => {
     const name = flowName.trim() || `Flow ${flows.length + 1}`;
     const flowData: SavedFlow = { name, graph: graphRef.current };
@@ -248,7 +273,6 @@ export function FlowsPanel() {
     setFlowName(name);
   }, [flowName, flows, activeFlowIdx]);
 
-  // New flow
   const handleNew = useCallback(() => {
     setCurrentGraph({ ...DEFAULT_GRAPH, name: '' });
     setFlowName('');
@@ -256,7 +280,6 @@ export function FlowsPanel() {
     setEvaluationResult(undefined);
   }, []);
 
-  // Delete flow
   const handleDelete = useCallback(() => {
     if (activeFlowIdx === null) return;
     const updated = flows.filter((_, i) => i !== activeFlowIdx);
@@ -269,8 +292,7 @@ export function FlowsPanel() {
     }
   }, [activeFlowIdx, flows, handleNew]);
 
-  // Add a node to canvas from a definition
-  const handleAddNode = useCallback((def: NodeDefinition, fn?: PlatformFunction) => {
+  const handleAddNode = useCallback((def: NodeDefinition, fn?: FunctionNode) => {
     const position = { x: 300 + Math.random() * 200, y: 100 + Math.random() * 200 };
     if (fn) {
       const node = functionToNode(fn, position);
@@ -281,7 +303,6 @@ export function FlowsPanel() {
     }
   }, []);
 
-  // Load all functions to canvas
   const handleLoadAll = useCallback(() => {
     const newNodes = functions.map((fn, i) =>
       functionToNode(fn, { x: 300, y: 50 + i * 200 })
@@ -289,7 +310,6 @@ export function FlowsPanel() {
     setCurrentGraph(prev => ({ ...prev, nodes: [...prev.nodes, ...newNodes] }));
   }, [functions]);
 
-  // Drag start for node palette items (uses same format as internal NodePalette)
   const handleDragStart = useCallback((e: React.DragEvent, def: NodeDefinition) => {
     e.dataTransfer.setData('application/fbp-node', JSON.stringify({
       definitionName: def.name,
@@ -355,7 +375,7 @@ export function FlowsPanel() {
               {flows.map((f, i) => (
                 <button
                   key={i}
-                  onClick={() => setActiveFlowIdx(i)}
+                  onClick={() => { setActiveFlowIdx(i); loadActiveFlow(i); }}
                   className={`w-full text-left px-3 py-1.5 rounded-md text-sm truncate transition-colors ${
                     activeFlowIdx === i
                       ? 'bg-zinc-800 text-zinc-200'

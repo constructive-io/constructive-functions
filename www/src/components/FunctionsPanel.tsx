@@ -1,26 +1,44 @@
-import { useEffect, useState, useCallback } from 'react';
-import { api, type PlatformFunction } from '../lib/api';
+import { useState } from 'react';
+import { compute } from '@constructive-functions/constructive-functions-hooks';
+import { api } from '../lib/api';
 import { RefreshCw, Zap, Lock, Settings, Play, X, CheckCircle, AlertCircle, Loader, ExternalLink } from 'lucide-react';
 
 type Tab = 'functions' | 'flows' | 'secrets' | 'jobs' | 'invocations' | 'k8s' | 'commands' | 'terminal';
 
+interface FunctionRequirement {
+  name?: string;
+  required?: boolean;
+}
+
+const FUNCTION_FIELDS = {
+  id: true,
+  name: true,
+  taskIdentifier: true,
+  serviceUrl: true,
+  isInvocable: true,
+  isBuiltIn: true,
+  scope: true,
+  description: true,
+  requiredSecrets: true,
+  requiredConfigs: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
 export function FunctionsPanel({ onNavigate }: { onNavigate?: (tab: Tab) => void }) {
-  const [functions, setFunctions] = useState<PlatformFunction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading, refetch, isFetching } = compute.usePlatformFunctionDefinitionsQuery({
+    selection: { fields: FUNCTION_FIELDS },
+  });
 
-  const refresh = useCallback(() => {
-    setLoading(true);
-    api.getFunctions().then(setFunctions).catch(() => {}).finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => { refresh(); }, [refresh]);
+  const functions = data?.platformFunctionDefinitions?.nodes ?? [];
+  const loading = isLoading || isFetching;
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
         <h2 className="text-sm font-semibold text-zinc-300">Functions</h2>
         <button
-          onClick={refresh}
+          onClick={() => refetch()}
           className="p-1 rounded hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -58,13 +76,28 @@ interface TriggerResult {
   jobId?: string;
 }
 
-function FunctionCard({ fn, onNavigate }: { fn: PlatformFunction; onNavigate?: (tab: Tab) => void }) {
+type FunctionNode = {
+  name?: string | null;
+  taskIdentifier?: string | null;
+  serviceUrl?: string | null;
+  isInvocable?: boolean | null;
+  isBuiltIn?: boolean | null;
+  scope?: string | null;
+  description?: string | null;
+  requiredSecrets?: FunctionRequirement[] | null;
+  requiredConfigs?: FunctionRequirement[] | null;
+};
+
+function FunctionCard({ fn, onNavigate }: { fn: FunctionNode; onNavigate?: (tab: Tab) => void }) {
   const [showTrigger, setShowTrigger] = useState(false);
   const [payload, setPayload] = useState('');
   const [result, setResult] = useState<TriggerResult>({ status: 'idle' });
 
+  const secrets = (fn.requiredSecrets ?? []) as FunctionRequirement[];
+  const configs = (fn.requiredConfigs ?? []) as FunctionRequirement[];
+
   const openTrigger = () => {
-    const defaultPayload = DEFAULT_PAYLOADS[fn.task_identifier] || { key: 'value' };
+    const defaultPayload = DEFAULT_PAYLOADS[fn.taskIdentifier ?? ''] || { key: 'value' };
     setPayload(JSON.stringify(defaultPayload, null, 2));
     setResult({ status: 'idle' });
     setShowTrigger(true);
@@ -79,7 +112,7 @@ function FunctionCard({ fn, onNavigate }: { fn: PlatformFunction; onNavigate?: (
     setResult({ status: 'sending' });
     try {
       const parsed = JSON.parse(payload);
-      const job = await api.createJob(fn.task_identifier, parsed);
+      const job = await api.createJob(fn.taskIdentifier ?? '', parsed);
       setResult({
         status: 'success',
         message: `Job #${job.id.slice(0, 8)} created`,
@@ -97,11 +130,11 @@ function FunctionCard({ fn, onNavigate }: { fn: PlatformFunction; onNavigate?: (
     <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Zap size={14} className={fn.is_invocable ? 'text-emerald-400' : 'text-zinc-600'} />
+          <Zap size={14} className={fn.isInvocable ? 'text-emerald-400' : 'text-zinc-600'} />
           <span className="font-mono text-sm text-zinc-200">{fn.name}</span>
         </div>
         <div className="flex items-center gap-2">
-          {fn.is_invocable && !showTrigger && (
+          {fn.isInvocable && !showTrigger && (
             <button
               onClick={openTrigger}
               className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-emerald-700 hover:bg-emerald-600 text-white transition-colors"
@@ -119,44 +152,20 @@ function FunctionCard({ fn, onNavigate }: { fn: PlatformFunction; onNavigate?: (
         <p className="text-xs text-zinc-500">{fn.description}</p>
       )}
       <div className="flex items-center gap-3 text-xs text-zinc-500">
-        <span className="font-mono">{fn.task_identifier}</span>
-        {fn.required_secrets?.length > 0 && (
+        <span className="font-mono">{fn.taskIdentifier}</span>
+        {secrets.length > 0 && (
           <span className="flex items-center gap-1">
             <Lock size={10} />
-            {fn.required_secrets.length} secret{fn.required_secrets.length !== 1 ? 's' : ''}
+            {secrets.length} secret{secrets.length !== 1 ? 's' : ''}
           </span>
         )}
-        {fn.required_configs?.length > 0 && (
+        {configs.length > 0 && (
           <span className="flex items-center gap-1">
             <Settings size={10} />
-            {fn.required_configs.length} config{fn.required_configs.length !== 1 ? 's' : ''}
+            {configs.length} config{configs.length !== 1 ? 's' : ''}
           </span>
         )}
       </div>
-
-      {/* Payload schema (FBP port definition) */}
-      {fn.payload_schema && (fn.payload_schema as any).properties && (
-        <div className="border-t border-zinc-800 pt-2 mt-1">
-          <div className="text-[11px] text-zinc-500 mb-1 font-semibold">Payload Schema</div>
-          <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[11px]">
-            {Object.entries((fn.payload_schema as any).properties).map(([key, def]: [string, any]) => {
-              const required = ((fn.payload_schema as any).required || []).includes(key);
-              return (
-                <div key={key} className="contents">
-                  <span className="font-mono text-zinc-300">
-                    {key}{required && <span className="text-red-400">*</span>}
-                  </span>
-                  <span className="text-zinc-500">
-                    {def.enum ? def.enum.join(' | ') : Array.isArray(def.type) ? def.type.join(' | ') : def.type || 'any'}
-                    {def.format && <span className="text-zinc-600 ml-1">({def.format})</span>}
-                    {def.description && <span className="text-zinc-600 ml-1">— {def.description}</span>}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Inline trigger form */}
       {showTrigger && (

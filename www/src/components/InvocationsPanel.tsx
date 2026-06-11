@@ -1,28 +1,36 @@
-import { useEffect, useState, useCallback } from 'react';
-import { api, type Invocation } from '../lib/api';
+import { compute } from '@constructive-functions/constructive-functions-hooks';
 import { RefreshCw, CheckCircle, XCircle, Clock, Loader } from 'lucide-react';
 
+const INVOCATION_FIELDS = {
+  id: true,
+  taskIdentifier: true,
+  jobId: true,
+  status: true,
+  startedAt: true,
+  completedAt: true,
+  durationMs: true,
+  error: true,
+  createdAt: true,
+} as const;
+
 export function InvocationsPanel() {
-  const [invocations, setInvocations] = useState<Invocation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading, refetch, isFetching } = compute.usePlatformFunctionInvocationsQuery({
+    selection: {
+      fields: INVOCATION_FIELDS,
+      orderBy: ['CREATED_AT_DESC'],
+    },
+    refetchInterval: 3000,
+  });
 
-  const refresh = useCallback(() => {
-    setLoading(true);
-    api.getInvocations().then(setInvocations).catch(() => {}).finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    refresh();
-    const id = setInterval(refresh, 3000);
-    return () => clearInterval(id);
-  }, [refresh]);
+  const invocations = data?.platformFunctionInvocations?.nodes ?? [];
+  const loading = isLoading || isFetching;
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
         <h2 className="text-sm font-semibold text-zinc-300">Invocations</h2>
         <button
-          onClick={refresh}
+          onClick={() => refetch()}
           className="p-1 rounded hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -40,37 +48,49 @@ export function InvocationsPanel() {
   );
 }
 
-function InvocationRow({ inv }: { inv: Invocation }) {
+type InvocationNode = {
+  id?: string | null;
+  taskIdentifier?: string | null;
+  jobId?: string | null;
+  status?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  durationMs?: number | null;
+  error?: string | null;
+};
+
+function InvocationRow({ inv }: { inv: InvocationNode }) {
+  const status = inv.status ?? 'pending';
   const StatusIcon = {
     completed: CheckCircle,
     failed: XCircle,
     running: Loader,
     pending: Clock,
-  }[inv.status] || Clock;
+  }[status] || Clock;
 
   const statusColor = {
     completed: 'text-emerald-400',
     failed: 'text-red-400',
     running: 'text-blue-400',
     pending: 'text-zinc-500',
-  }[inv.status] || 'text-zinc-500';
+  }[status] || 'text-zinc-500';
 
   return (
     <div className="flex items-center gap-3 rounded border border-zinc-800 bg-zinc-900/30 px-3 py-2 text-sm">
-      <StatusIcon size={14} className={`${statusColor} ${inv.status === 'running' ? 'animate-spin' : ''}`} />
+      <StatusIcon size={14} className={`${statusColor} ${status === 'running' ? 'animate-spin' : ''}`} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-zinc-200">{inv.function_name}</span>
-          <span className="text-xs text-zinc-600">job #{inv.job_id}</span>
+          <span className="font-mono text-zinc-200">{inv.taskIdentifier}</span>
+          <span className="text-xs text-zinc-600">job #{inv.jobId}</span>
         </div>
-        {inv.error_message && (
-          <p className="text-xs text-red-400 truncate mt-0.5">{inv.error_message}</p>
+        {inv.error && (
+          <p className="text-xs text-red-400 truncate mt-0.5">{inv.error}</p>
         )}
       </div>
       <div className="flex items-center gap-2 text-xs text-zinc-500 shrink-0">
-        {inv.duration_ms != null && <span>{inv.duration_ms}ms</span>}
+        {inv.durationMs != null && <span>{inv.durationMs}ms</span>}
         <span className={`px-1.5 py-0.5 rounded ${statusColor} bg-zinc-800`}>
-          {inv.status}
+          {status}
         </span>
       </div>
     </div>

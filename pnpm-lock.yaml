@@ -695,6 +695,9 @@ importers:
 
   www:
     dependencies:
+      '@constructive-functions/constructive-functions-hooks':
+        specifier: workspace:*
+        version: link:../sdk/constructive-functions-hooks/dist
       '@fbp/evaluator':
         specifier: workspace:*
         version: link:../packages/fbp-evaluator
@@ -707,6 +710,9 @@ importers:
       '@fbp/types':
         specifier: workspace:*
         version: link:../packages/fbp-types
+      '@tanstack/react-query':
+        specifier: ^5.0.0
+        version: 5.101.0(react@19.2.7)
       '@xterm/addon-fit':
         specifier: ^0.10.0
         version: 0.10.0(@xterm/xterm@5.5.0)

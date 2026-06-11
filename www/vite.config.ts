@@ -21,6 +21,24 @@ export default defineConfig({
         target: 'ws://localhost:3456',
         ws: true,
       },
+      '/graphql/compute': {
+        target: 'http://127.0.0.1:6464',
+        changeOrigin: true,
+        rewrite: (p) => p.replace('/graphql/compute', '/graphql'),
+        headers: { Host: 'compute.localhost:6464' },
+      },
+      '/graphql/api': {
+        target: 'http://127.0.0.1:6464',
+        changeOrigin: true,
+        rewrite: (p) => p.replace('/graphql/api', '/graphql'),
+        headers: { Host: 'api.localhost:6464' },
+      },
+      '/graphql/objects': {
+        target: 'http://127.0.0.1:6464',
+        changeOrigin: true,
+        rewrite: (p) => p.replace('/graphql/objects', '/graphql'),
+        headers: { Host: 'objects.localhost:6464' },
+      },
     },
   },
 });

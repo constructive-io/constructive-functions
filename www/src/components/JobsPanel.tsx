@@ -1,6 +1,21 @@
 import { useEffect, useState, useCallback } from 'react';
-import { api, type Job, type PlatformFunction } from '../lib/api';
+import { compute } from '@constructive-functions/constructive-functions-hooks';
+import { api, type Job } from '../lib/api';
 import { RefreshCw, Plus, Send, Clock, AlertCircle, ChevronDown } from 'lucide-react';
+
+interface FunctionRequirement {
+  name?: string;
+  required?: boolean;
+}
+
+type FunctionNode = {
+  name?: string | null;
+  taskIdentifier?: string | null;
+  isInvocable?: boolean | null;
+  description?: string | null;
+  requiredSecrets?: FunctionRequirement[] | null;
+  requiredConfigs?: FunctionRequirement[] | null;
+};
 
 export function JobsPanel() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -65,53 +80,47 @@ const HARDCODED_PAYLOADS: Record<string, Record<string, unknown>> = {
   },
 };
 
-function defaultFromSchema(schema: Record<string, unknown> | null | undefined): Record<string, unknown> | null {
-  if (!schema || typeof schema !== 'object') return null;
-  const props = (schema as any).properties;
-  if (!props || typeof props !== 'object') return null;
-  const result: Record<string, unknown> = {};
-  for (const [key, def] of Object.entries(props) as [string, any][]) {
-    if (def.enum) { result[key] = def.enum[0]; continue; }
-    const t = Array.isArray(def.type) ? def.type[0] : def.type;
-    if (def.format === 'email') result[key] = 'test@example.com';
-    else if (def.format === 'uuid') result[key] = '00000000-0000-0000-0000-000000000000';
-    else if (t === 'string') result[key] = '';
-    else if (t === 'number' || t === 'integer') result[key] = 0;
-    else if (t === 'boolean') result[key] = false;
-    else result[key] = null;
-  }
-  return result;
-}
-
-function getDefaultPayload(fn: PlatformFunction): Record<string, unknown> {
-  if (HARDCODED_PAYLOADS[fn.task_identifier]) return HARDCODED_PAYLOADS[fn.task_identifier];
-  const fromSchema = defaultFromSchema(fn.payload_schema);
-  if (fromSchema) return fromSchema;
+function getDefaultPayload(fn: FunctionNode): Record<string, unknown> {
+  if (fn.taskIdentifier && HARDCODED_PAYLOADS[fn.taskIdentifier]) return HARDCODED_PAYLOADS[fn.taskIdentifier];
   return { key: 'value' };
 }
 
+const JOB_FUNCTION_FIELDS = {
+  id: true,
+  name: true,
+  taskIdentifier: true,
+  isInvocable: true,
+  description: true,
+  requiredSecrets: true,
+  requiredConfigs: true,
+} as const;
+
 function NewJobForm({ onCreated }: { onCreated: () => void }) {
-  const [functions, setFunctions] = useState<PlatformFunction[]>([]);
+  const { data } = compute.usePlatformFunctionDefinitionsQuery({
+    selection: { fields: JOB_FUNCTION_FIELDS },
+  });
+
+  const allFunctions = data?.platformFunctionDefinitions?.nodes ?? [];
+  const functions = allFunctions.filter((f) => f.isInvocable);
+
   const [taskId, setTaskId] = useState('');
   const [payload, setPayload] = useState('{\n  "key": "value"\n}');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    api.getFunctions().then((fns) => {
-      const invocable = fns.filter((f) => f.is_invocable);
-      setFunctions(invocable);
-      if (invocable.length > 0 && !taskId) {
-        const first = invocable[0];
-        setTaskId(first.task_identifier);
-        setPayload(JSON.stringify(getDefaultPayload(first), null, 2));
-      }
-    }).catch(() => {});
-  }, []);
+    if (!initialized && functions.length > 0) {
+      const first = functions[0];
+      setTaskId(first.taskIdentifier ?? '');
+      setPayload(JSON.stringify(getDefaultPayload(first), null, 2));
+      setInitialized(true);
+    }
+  }, [functions, initialized]);
 
   const handleFunctionChange = (newTaskId: string) => {
     setTaskId(newTaskId);
-    const fn = functions.find((f) => f.task_identifier === newTaskId);
+    const fn = functions.find((f) => f.taskIdentifier === newTaskId);
     setPayload(JSON.stringify(fn ? getDefaultPayload(fn) : { key: 'value' }, null, 2));
     setError(null);
   };
@@ -130,7 +139,9 @@ function NewJobForm({ onCreated }: { onCreated: () => void }) {
     }
   };
 
-  const selectedFn = functions.find((f) => f.task_identifier === taskId);
+  const selectedFn = functions.find((f) => f.taskIdentifier === taskId);
+  const secrets = ((selectedFn?.requiredSecrets ?? []) as FunctionRequirement[]);
+  const configs = ((selectedFn?.requiredConfigs ?? []) as FunctionRequirement[]);
 
   return (
     <div className="border-b border-zinc-800 p-4 space-y-3 bg-zinc-900/50">
@@ -143,8 +154,8 @@ function NewJobForm({ onCreated }: { onCreated: () => void }) {
             className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-500 appearance-none pr-8"
           >
             {functions.map((fn) => (
-              <option key={fn.task_identifier} value={fn.task_identifier}>
-                {fn.name} — {fn.description || fn.task_identifier}
+              <option key={fn.taskIdentifier} value={fn.taskIdentifier ?? ''}>
+                {fn.name} — {fn.description || fn.taskIdentifier}
               </option>
             ))}
             {functions.length === 0 && (
@@ -154,13 +165,13 @@ function NewJobForm({ onCreated }: { onCreated: () => void }) {
           <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
         </div>
       </div>
-      {selectedFn && (selectedFn.required_secrets?.length > 0 || selectedFn.required_configs?.length > 0) && (
+      {selectedFn && (secrets.length > 0 || configs.length > 0) && (
         <div className="flex gap-3 text-xs text-zinc-500">
-          {selectedFn.required_secrets?.length > 0 && (
-            <span>{selectedFn.required_secrets.length} secret(s)</span>
+          {secrets.length > 0 && (
+            <span>{secrets.length} secret(s)</span>
           )}
-          {selectedFn.required_configs?.length > 0 && (
-            <span>{selectedFn.required_configs.length} config(s)</span>
+          {configs.length > 0 && (
+            <span>{configs.length} config(s)</span>
           )}
         </div>
       )}
@@ -211,15 +222,12 @@ function JobRow({ job }: { job: Job }) {
           </div>
         )}
       </div>
-      <div className="flex items-center gap-2 text-xs text-zinc-500 shrink-0">
-        <span>{job.attempts}/{job.max_attempts}</span>
+      <div className="flex items-center gap-3 text-xs text-zinc-500 shrink-0">
+        <span>attempt {job.attempts}/{job.max_attempts}</span>
         {isLocked && (
-          <span className="px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-400">locked</span>
+          <span className="px-1.5 py-0.5 rounded bg-blue-900/50 text-blue-400">locked</span>
         )}
-        <span className="flex items-center gap-1">
-          <Clock size={10} />
-          {age}
-        </span>
+        <span title={job.created_at}>{age}</span>
       </div>
     </div>
   );
@@ -227,8 +235,8 @@ function JobRow({ job }: { job: Job }) {
 
 function timeSince(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (seconds < 60) return `${seconds}s`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
-  return `${Math.floor(seconds / 86400)}d`;
+  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
 }

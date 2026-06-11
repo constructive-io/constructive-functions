@@ -1,13 +1,55 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { api, type PlatformSecret, type PlatformFunction, type PlatformNamespace } from '../lib/api';
+import { compute, api as apiHooks } from '@constructive-functions/constructive-functions-hooks';
+import { api } from '../lib/api';
 import { RefreshCw, Key, Globe, Save, Eye, EyeOff, CheckCircle, AlertTriangle, FileText, Database, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
+
+interface FunctionRequirement {
+  name?: string;
+  required?: boolean;
+}
 
 type SecretEdits = Record<string, string>;
 
+const SECRET_FIELDS = {
+  id: true,
+  name: true,
+  description: true,
+  isBuiltIn: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+const FUNCTION_FIELDS = {
+  id: true,
+  name: true,
+  isInvocable: true,
+  requiredSecrets: true,
+  requiredConfigs: true,
+} as const;
+
+const NAMESPACE_FIELDS = {
+  id: true,
+  name: true,
+  namespaceName: true,
+  description: true,
+  isActive: true,
+} as const;
+
 export function SecretsPanel() {
-  const [secrets, setSecrets] = useState<PlatformSecret[]>([]);
-  const [functions, setFunctions] = useState<PlatformFunction[]>([]);
-  const [namespaces, setNamespaces] = useState<PlatformNamespace[]>([]);
+  const { data: secretsData, refetch: refetchSecrets } = compute.usePlatformSecretDefinitionsQuery({
+    selection: { fields: SECRET_FIELDS },
+  });
+  const { data: functionsData, refetch: refetchFunctions } = compute.usePlatformFunctionDefinitionsQuery({
+    selection: { fields: FUNCTION_FIELDS },
+  });
+  const { data: namespacesData, refetch: refetchNamespaces } = apiHooks.usePlatformNamespacesQuery({
+    selection: { fields: NAMESPACE_FIELDS },
+  });
+
+  const secrets = secretsData?.platformSecretDefinitions?.nodes ?? [];
+  const functions = functionsData?.platformFunctionDefinitions?.nodes ?? [];
+  const namespaces = namespacesData?.platformNamespaces?.nodes ?? [];
+
   const [envVars, setEnvVars] = useState<Record<string, string>>({});
   const [envPath, setEnvPath] = useState('');
   const [envExists, setEnvExists] = useState(false);
@@ -18,18 +60,10 @@ export function SecretsPanel() {
   const [syncing, setSyncing] = useState<'from-db' | 'to-db' | null>(null);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const refresh = useCallback(() => {
+  const loadEnv = useCallback(() => {
     setLoading(true);
-    Promise.all([
-      api.getSecrets(),
-      api.getFunctions(),
-      api.getNamespaces(),
-      api.getEnv(),
-    ])
-      .then(([s, f, n, env]) => {
-        setSecrets(s);
-        setFunctions(f);
-        setNamespaces(n);
+    api.getEnv()
+      .then((env) => {
         setEnvVars(env.vars);
         setEnvPath(env.path);
         setEnvExists(env.exists);
@@ -40,39 +74,45 @@ export function SecretsPanel() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => { loadEnv(); }, [loadEnv]);
 
-  // Build a map: secretName → which functions require it
+  const refresh = useCallback(() => {
+    refetchSecrets();
+    refetchFunctions();
+    refetchNamespaces();
+    loadEnv();
+  }, [refetchSecrets, refetchFunctions, refetchNamespaces, loadEnv]);
+
   const secretUsage = useMemo(() => {
     const map: Record<string, string[]> = {};
     for (const fn of functions) {
-      for (const s of fn.required_secrets) {
-        if (!map[s.name]) map[s.name] = [];
-        map[s.name].push(fn.name);
-      }
-      for (const c of fn.required_configs) {
-        if (!map[c.name]) map[c.name] = [];
-        map[c.name].push(fn.name);
+      const reqs = [
+        ...((fn.requiredSecrets ?? []) as FunctionRequirement[]),
+        ...((fn.requiredConfigs ?? []) as FunctionRequirement[]),
+      ];
+      for (const r of reqs) {
+        if (!r.name) continue;
+        if (!map[r.name]) map[r.name] = [];
+        map[r.name].push(fn.name ?? '');
       }
     }
     return map;
   }, [functions]);
 
-  // All keys: union of secrets from DB + keys from .env + keys from function requirements
   const allKeys = useMemo(() => {
     const keys = new Set<string>();
-    for (const s of secrets) keys.add(s.name);
+    for (const s of secrets) if (s.name) keys.add(s.name);
     for (const fn of functions) {
-      for (const s of fn.required_secrets) keys.add(s.name);
-      for (const c of fn.required_configs) keys.add(c.name);
+      for (const s of (fn.requiredSecrets ?? []) as FunctionRequirement[]) if (s.name) keys.add(s.name);
+      for (const c of (fn.requiredConfigs ?? []) as FunctionRequirement[]) if (c.name) keys.add(c.name);
     }
     for (const k of Object.keys(envVars)) keys.add(k);
     return Array.from(keys).sort();
   }, [secrets, functions, envVars]);
 
   const secretDefs = useMemo(() => {
-    const map: Record<string, PlatformSecret> = {};
-    for (const s of secrets) map[s.name] = s;
+    const map: Record<string, typeof secrets[number]> = {};
+    for (const s of secrets) if (s.name) map[s.name] = s;
     return map;
   }, [secrets]);
 
@@ -99,7 +139,6 @@ export function SecretsPanel() {
       const merged = { ...envVars, ...edits };
       const result = await api.saveEnv(merged);
       setSaveMsg({ ok: true, text: `Saved ${result.count} vars to ${result.path}` });
-      // Refresh to pick up saved values
       const env = await api.getEnv();
       setEnvVars(env.vars);
       setEnvPath(env.path);
@@ -148,15 +187,17 @@ export function SecretsPanel() {
     });
   };
 
-  // Coverage stats per function
   const fnCoverage = useMemo(() => {
     return functions
-      .filter((fn) => fn.is_invocable)
+      .filter((fn) => fn.isInvocable)
       .map((fn) => {
-        const allReqs = [...fn.required_secrets, ...fn.required_configs];
+        const allReqs = [
+          ...((fn.requiredSecrets ?? []) as FunctionRequirement[]),
+          ...((fn.requiredConfigs ?? []) as FunctionRequirement[]),
+        ];
         const vals = { ...envVars, ...edits };
-        const set = allReqs.filter((r) => vals[r.name] && vals[r.name] !== '').length;
-        return { name: fn.name, total: allReqs.length, set, missing: allReqs.length - set };
+        const set = allReqs.filter((r) => r.name && vals[r.name] && vals[r.name] !== '').length;
+        return { name: fn.name ?? '', total: allReqs.length, set, missing: allReqs.length - set };
       });
   }, [functions, envVars, edits]);
 
@@ -270,15 +311,15 @@ export function SecretsPanel() {
               <div key={ns.id} className="flex items-center gap-3 rounded border border-zinc-800 bg-zinc-900/30 px-3 py-2 text-sm">
                 <div className="flex-1">
                   <span className="font-mono text-zinc-200">{ns.name}</span>
-                  <span className="text-xs text-zinc-600 ml-2">({ns.namespace_name})</span>
+                  <span className="text-xs text-zinc-600 ml-2">({ns.namespaceName})</span>
                   {ns.description && (
                     <p className="text-xs text-zinc-500 mt-0.5">{ns.description}</p>
                   )}
                 </div>
                 <span className={`px-1.5 py-0.5 rounded text-xs ${
-                  ns.is_active ? 'bg-emerald-900/50 text-emerald-400' : 'bg-zinc-800 text-zinc-500'
+                  ns.isActive ? 'bg-emerald-900/50 text-emerald-400' : 'bg-zinc-800 text-zinc-500'
                 }`}>
-                  {ns.is_active ? 'active' : 'inactive'}
+                  {ns.isActive ? 'active' : 'inactive'}
                 </span>
               </div>
             ))}
@@ -317,7 +358,7 @@ export function SecretsPanel() {
                   <div className="flex items-center gap-2 mb-1">
                     <Key size={12} className={val ? 'text-emerald-500' : 'text-amber-500'} />
                     <span className="font-mono text-xs text-zinc-200">{key}</span>
-                    {def?.is_built_in && (
+                    {def?.isBuiltIn && (
                       <span className="px-1 py-0.5 rounded bg-blue-900/50 text-blue-400 text-[10px]">built-in</span>
                     )}
                     {isEdited && (
