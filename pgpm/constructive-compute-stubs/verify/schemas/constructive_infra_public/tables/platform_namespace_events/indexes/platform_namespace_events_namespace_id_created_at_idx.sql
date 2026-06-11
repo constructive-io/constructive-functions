@@ -1,6 +1,0 @@
--- Verify: schemas/constructive_infra_public/tables/platform_namespace_events/indexes/platform_namespace_events_namespace_id_created_at_idx
-
-
-SELECT verify_index('constructive_infra_public.platform_namespace_events', 'platform_namespace_events_namespace_id_created_at_idx');
-
-
