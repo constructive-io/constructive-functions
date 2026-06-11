@@ -3,7 +3,7 @@
  *
  * Instead of resolving URLs from a static manifest or gateway env var,
  * the compute worker reads `service_url` from the function definition
- * stored in constructive_infra_public.platform_function_definitions.
+ * resolved dynamically via ComputeModuleLoader.
  *
  * Falls back to a gateway URL pattern when service_url is not set.
  */
