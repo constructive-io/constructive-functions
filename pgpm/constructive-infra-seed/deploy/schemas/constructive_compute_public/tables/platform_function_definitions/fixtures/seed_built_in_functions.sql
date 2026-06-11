@@ -11,7 +11,7 @@ BEGIN;
 
 INSERT INTO constructive_compute_public.platform_function_definitions
   (name, task_identifier, service_url, is_invocable, is_built_in, scope, description,
-   namespace_id, required_secrets, required_configs, payload_schema)
+   namespace_id, required_secrets, required_configs)
 VALUES
   (
     'node-example',
@@ -21,8 +21,7 @@ VALUES
     'Example Node.js function — copy this to create a new function',
     (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
     ARRAY[]::constructive_compute_public.function_requirement[],
-    ARRAY[]::constructive_compute_public.function_requirement[],
-    '{"type":"object","properties":{"message":{"type":"string","description":"A message to process"}},"additionalProperties":true}'::jsonb
+    ARRAY[]::constructive_compute_public.function_requirement[]
   ),
   (
     'python-example',
@@ -32,8 +31,7 @@ VALUES
     'Example Python function — copy this to create a new Python function',
     (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
     ARRAY[]::constructive_compute_public.function_requirement[],
-    ARRAY[]::constructive_compute_public.function_requirement[],
-    '{"type":"object","properties":{"message":{"type":"string","description":"A message to process"}},"additionalProperties":true}'::jsonb
+    ARRAY[]::constructive_compute_public.function_requirement[]
   ),
   (
     'send-email',
@@ -53,8 +51,7 @@ VALUES
       ROW('SMTP_PORT', false),
       ROW('SMTP_FROM', false),
       ROW('SEND_EMAIL_DRY_RUN', false)
-    ]::constructive_compute_public.function_requirement[],
-    '{"type":"object","required":["to","subject"],"properties":{"to":{"type":"string","format":"email","description":"Recipient email address"},"subject":{"type":"string","description":"Email subject line"},"html":{"type":"string","description":"HTML body content"},"text":{"type":"string","description":"Plain text body content"},"from":{"type":"string","format":"email","description":"Sender email address (overrides env default)"},"replyTo":{"type":"string","format":"email","description":"Reply-to email address"}},"additionalProperties":false}'::jsonb
+    ]::constructive_compute_public.function_requirement[]
   ),
   (
     'send-verification-link',
@@ -76,8 +73,7 @@ VALUES
       ROW('SMTP_FROM', false),
       ROW('LOCAL_APP_PORT', false),
       ROW('SEND_VERIFICATION_LINK_DRY_RUN', false)
-    ]::constructive_compute_public.function_requirement[],
-    '{"type":"object","required":["email_type","email"],"properties":{"email_type":{"type":"string","enum":["invite_email","forgot_password","email_verification"],"description":"Type of verification email to send"},"email":{"type":"string","format":"email","description":"Recipient email address"},"invite_type":{"type":["number","string"],"description":"Invite type identifier (for invite_email)"},"invite_token":{"type":"string","description":"Invitation token (required for invite_email)"},"sender_id":{"type":"string","format":"uuid","description":"User ID of the sender (required for invite_email)"},"user_id":{"type":"string","format":"uuid","description":"User ID (required for forgot_password)"},"reset_token":{"type":"string","description":"Password reset token (required for forgot_password)"},"email_id":{"type":"string","format":"uuid","description":"Email record ID (required for email_verification)"},"verification_token":{"type":"string","description":"Email verification token (required for email_verification)"}},"additionalProperties":false}'::jsonb
+    ]::constructive_compute_public.function_requirement[]
   )
 ON CONFLICT (scope, name) DO UPDATE SET
   task_identifier  = EXCLUDED.task_identifier,
@@ -85,7 +81,6 @@ ON CONFLICT (scope, name) DO UPDATE SET
   namespace_id     = EXCLUDED.namespace_id,
   required_secrets = EXCLUDED.required_secrets,
   required_configs = EXCLUDED.required_configs,
-  description      = EXCLUDED.description,
-  payload_schema   = EXCLUDED.payload_schema;
+  description      = EXCLUDED.description;
 
 COMMIT;
