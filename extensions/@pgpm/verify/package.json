@@ -1,6 +1,6 @@
 {
   "name": "@pgpm/verify",
-  "version": "0.26.0",
+  "version": "0.28.0",
   "description": "Verification utilities for PGPM deploy/verify/revert workflow",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "contributors": [
@@ -31,5 +31,5 @@
   "bugs": {
     "url": "https://github.com/constructive-io/pgpm-modules/issues"
   },
-  "gitHead": "3badf1e5e2fc71deae9e194b779599d17ab28a0d"
+  "gitHead": "d2ab7ca810ded086eb742eb8f0ca362b6212b97e"
 }
