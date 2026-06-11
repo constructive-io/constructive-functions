@@ -45,6 +45,21 @@ if [ -n "$DB_NAME" ] && [ -n "$DROP" ]; then
   dropdb "$DB_NAME" 2>/dev/null && ok "Database '$DB_NAME' dropped" || ok "Database '$DB_NAME' does not exist"
 fi
 
+# --- Stop GraphQL server ---
+if [ -f "$ROOT_DIR/.graphql-server.pid" ]; then
+  echo "Stopping GraphQL server..."
+  GQL_PID=$(cat "$ROOT_DIR/.graphql-server.pid")
+  if kill "$GQL_PID" 2>/dev/null; then
+    sleep 1
+    # Force kill if still alive
+    kill -9 "$GQL_PID" 2>/dev/null || true
+    ok "GraphQL server stopped (PID $GQL_PID)"
+  else
+    ok "GraphQL server was not running"
+  fi
+  rm -f "$ROOT_DIR/.graphql-server.pid"
+fi
+
 # --- Stop MinIO ---
 echo "Stopping MinIO..."
 docker stop constructive-functions-minio 2>/dev/null && docker rm constructive-functions-minio 2>/dev/null && ok "MinIO stopped" || ok "MinIO was not running"

@@ -10,8 +10,9 @@
 #   5. Deploy platform-seed (database row, schemas, API routing)
 #   6. Deploy constructive-infra-seed + services registration
 #   7. Start MinIO (object storage)
-#   8. Verify everything
-#   9. Check .env coverage (if .env exists)
+#   8. Start GraphQL server (cnc server on port 6464)
+#   9. Verify everything
+#  10. Check .env coverage (if .env exists)
 #
 # Usage:
 #   make up                       # defaults to constructive-functions-db1
@@ -36,7 +37,8 @@ ok()   { echo -e "  ${GREEN}✓${NC} $1"; }
 warn() { echo -e "  ${YELLOW}●${NC} $1"; }
 fail() { echo -e "  ${RED}✗${NC} $1"; }
 
-TOTAL_STEPS=9
+TOTAL_STEPS=10
+GRAPHQL_PORT="${GRAPHQL_PORT:-6464}"
 
 echo ""
 echo -e "${BOLD}════════════════════════════════════════════════════════════${NC}"
@@ -221,15 +223,36 @@ fi
 echo "  API:     http://localhost:9000"
 echo "  Console: http://localhost:9001  (minioadmin/minioadmin)"
 
-# ─── Step 8: Verify ─────────────────────────────────────────────────────────
+# ─── Step 8: GraphQL Server ──────────────────────────────────────────────────
 
-step 8 "Verifying platform"
+step 8 "Starting GraphQL server (port $GRAPHQL_PORT)"
+
+GQL_PID=$(
+  "$SCRIPT_DIR/start-graphql-server.sh" "$DB_NAME" "$GRAPHQL_PORT" 2>&1
+) && {
+  if echo "$GQL_PID" | grep -qE '^[0-9]+$'; then
+    ok "GraphQL server started (PID $GQL_PID)"
+  else
+    # Output was informational, not a PID
+    echo "$GQL_PID" | while read -r line; do echo "  $line"; done
+    ok "GraphQL server started"
+  fi
+} || {
+  warn "GraphQL server skipped (see above)"
+}
+
+echo "  GraphQL:  http://compute.localhost:$GRAPHQL_PORT/graphql"
+echo "  GraphiQL: http://compute.localhost:$GRAPHQL_PORT/graphiql"
+
+# ─── Step 9: Verify ─────────────────────────────────────────────────────────
+
+step 9 "Verifying platform"
 
 "$SCRIPT_DIR/verify-platform.sh" "$DB_NAME"
 
-# ─── Step 9: Check .env ─────────────────────────────────────────────────────
+# ─── Step 10: Check .env ────────────────────────────────────────────────────
 
-step 9 "Loading .env into platform"
+step 10 "Loading .env into platform"
 
 if [ -f "$ROOT_DIR/.env" ]; then
   "$SCRIPT_DIR/load-platform-env.sh" "$ROOT_DIR/.env" "$DB_NAME" || true
@@ -256,6 +279,10 @@ echo -e "  ${BOLD}Services:${NC}"
 echo "    PostgreSQL    localhost:5432"
 echo "    MinIO API     http://localhost:9000"
 echo "    MinIO Console http://localhost:9001"
+if [ -f "$ROOT_DIR/.graphql-server.pid" ]; then
+  echo "    GraphQL       http://compute.localhost:$GRAPHQL_PORT/graphql"
+  echo "    GraphiQL      http://compute.localhost:$GRAPHQL_PORT/graphiql"
+fi
 echo ""
 echo -e "  ${BOLD}Next:${NC}"
 echo "    make up:email-job    # start mailpit + compute-service"
