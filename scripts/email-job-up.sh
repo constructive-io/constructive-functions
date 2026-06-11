@@ -78,10 +78,13 @@ echo "  Web UI: http://localhost:8025"
 step 3 "Checking build"
 
 cd "$ROOT_DIR"
+if [ ! -f "generated/functions-manifest.json" ]; then
+  echo "  Generating function packages..."
+  node --experimental-strip-types scripts/generate.ts
+  pnpm install 2>/dev/null || true
+fi
 if [ ! -d "job/compute-service/dist" ] || [ ! -d "job/compute-worker/dist" ]; then
   echo "  Building packages..."
-  pnpm generate 2>/dev/null || true
-  pnpm install 2>/dev/null || true
   pnpm build 2>&1 | tail -5
   ok "Built"
 else

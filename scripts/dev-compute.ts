@@ -39,8 +39,8 @@ interface FunctionsManifest {
 function loadManifest(): FunctionsManifest {
   const manifestPath = path.resolve(ROOT, 'generated/functions-manifest.json');
   if (!fs.existsSync(manifestPath)) {
-    console.error('generated/functions-manifest.json not found. Run `pnpm generate` first.');
-    process.exit(1);
+    console.log('generated/functions-manifest.json not found — running generate...');
+    execSync('node --experimental-strip-types scripts/generate.ts', { cwd: ROOT, stdio: 'inherit' });
   }
   return JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
 }
