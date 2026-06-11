@@ -115,7 +115,7 @@ cd "$ROOT_DIR/pgpm"
 #   constructive-storage   (standalone — file uploads, buckets)
 #   constructive-store     (standalone — encrypted secrets, config, user state)
 #   constructive-compute   (depends on services, users, infra — function defs, invocations, execution logs)
-#   constructive-compute-fbp (standalone — flow graphs, graph-specific merkle store)
+#   constructive-platform-function-graph (standalone — function graph merkle store, unprefixed functions)
 #
 # @pgpm/services is installed as an extension dependency (extensions/@pgpm/services)
 # and auto-deployed when constructive-compute requires it.
@@ -127,7 +127,7 @@ MODULES=(
   constructive-storage
   constructive-store
   constructive-compute
-  constructive-compute-fbp
+  constructive-platform-function-graph
 )
 
 DEPLOY_LOG="$ROOT_DIR/.deploy-log"
