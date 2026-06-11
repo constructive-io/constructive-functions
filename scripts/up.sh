@@ -241,8 +241,8 @@ GQL_PID=$(
   warn "GraphQL server skipped (see above)"
 }
 
-echo "  GraphQL:  http://compute.localhost:$GRAPHQL_PORT/graphql"
-echo "  GraphiQL: http://compute.localhost:$GRAPHQL_PORT/graphiql"
+echo "  Compute GraphiQL: http://compute.localhost:$GRAPHQL_PORT/graphiql"
+echo "  Graph GraphiQL:   http://graph.localhost:$GRAPHQL_PORT/graphiql"
 
 # ─── Step 9: Verify ─────────────────────────────────────────────────────────
 
@@ -280,8 +280,8 @@ echo "    PostgreSQL    localhost:5432"
 echo "    MinIO API     http://localhost:9000"
 echo "    MinIO Console http://localhost:9001"
 if [ -f "$ROOT_DIR/.graphql-server.pid" ]; then
-  echo "    GraphQL       http://compute.localhost:$GRAPHQL_PORT/graphql"
-  echo "    GraphiQL      http://compute.localhost:$GRAPHQL_PORT/graphiql"
+  echo "    Compute API   http://compute.localhost:$GRAPHQL_PORT/graphiql"
+  echo "    Graph API     http://graph.localhost:$GRAPHQL_PORT/graphiql"
 fi
 echo ""
 echo -e "  ${BOLD}Next:${NC}"

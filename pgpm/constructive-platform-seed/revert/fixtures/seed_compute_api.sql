@@ -2,6 +2,20 @@
 
 BEGIN;
 
+-- Revert graph API
+DELETE FROM services_public.api_schemas
+WHERE database_id = '00000000-0000-0000-0000-000000000000'
+  AND api_id IN (
+    SELECT id FROM services_public.apis
+    WHERE database_id = '00000000-0000-0000-0000-000000000000'
+      AND name = 'graph'
+  );
+
+DELETE FROM services_public.apis
+WHERE database_id = '00000000-0000-0000-0000-000000000000'
+  AND name = 'graph';
+
+-- Revert compute API
 DELETE FROM services_public.api_schemas
 WHERE database_id = '00000000-0000-0000-0000-000000000000'
   AND api_id IN (

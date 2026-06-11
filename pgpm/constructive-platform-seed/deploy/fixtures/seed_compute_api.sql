@@ -7,6 +7,10 @@
 
 BEGIN;
 
+-- ─── Compute API ─────────────────────────────────────────────────────────────
+-- Function definitions, invocations, execution, storage, secrets, users, infra.
+-- Domain: compute.localhost
+
 INSERT INTO services_public.apis (database_id, name, role_name, anon_role, is_public)
 VALUES ('00000000-0000-0000-0000-000000000000', 'compute', 'authenticated', 'anonymous', true)
 ON CONFLICT (database_id, name) DO NOTHING;
@@ -27,8 +31,31 @@ WHERE a.database_id = '00000000-0000-0000-0000-000000000000'
     'constructive_objects_public',
     'constructive_storage_public',
     'constructive_store_public',
-    'constructive_compute_public',
-    'constructive_platform_function_graph_public'
+    'constructive_compute_public'
+  )
+ON CONFLICT (api_id, schema_id) DO NOTHING;
+
+-- ─── Graph API ───────────────────────────────────────────────────────────────
+-- Flow-based function graph editor (merkle store + graph operations).
+-- Domain: graph.localhost
+
+INSERT INTO services_public.apis (database_id, name, role_name, anon_role, is_public)
+VALUES ('00000000-0000-0000-0000-000000000000', 'graph', 'authenticated', 'anonymous', true)
+ON CONFLICT (database_id, name) DO NOTHING;
+
+INSERT INTO services_public.api_schemas (database_id, api_id, schema_id)
+SELECT
+  '00000000-0000-0000-0000-000000000000',
+  a.id,
+  s.id
+FROM services_public.apis a
+CROSS JOIN metaschema_public.schema s
+WHERE a.database_id = '00000000-0000-0000-0000-000000000000'
+  AND a.name = 'graph'
+  AND s.database_id = '00000000-0000-0000-0000-000000000000'
+  AND s.schema_name IN (
+    'constructive_platform_function_graph_public',
+    'constructive_compute_public'
   )
 ON CONFLICT (api_id, schema_id) DO NOTHING;
 
