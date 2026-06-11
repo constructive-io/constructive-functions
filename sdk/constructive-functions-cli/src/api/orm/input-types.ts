@@ -1569,6 +1569,172 @@ export interface TrgmSearchInput {
   /** Minimum similarity threshold (0.0 to 1.0). Higher = stricter matching. Default is 0.3. */
   threshold?: number;
 }
+/** An input for mutations affecting `RoleType` */
+export interface RoleTypeInput {
+  id: number;
+  name: string;
+}
+/** An input for mutations affecting `PlatformConfigDefinition` */
+export interface PlatformConfigDefinitionInput {
+  /** Freeform metadata annotations for config definitions */
+  annotations?: Record<string, unknown>;
+  createdAt?: string;
+  /** Default value used when no config entry exists for a namespace */
+  defaultValue?: string;
+  /** Human-readable description of what this config key controls */
+  description?: string;
+  /** Unique identifier for this config definition */
+  id?: string;
+  /** Whether this row was seeded as a built-in config definition */
+  isBuiltIn?: boolean;
+  /** Key-value metadata for filtering and grouping config definitions */
+  labels?: Record<string, unknown>;
+  /** Config key name (must match config table name for resolution) */
+  name: string;
+  updatedAt?: string;
+}
+/** An input for mutations affecting `PlatformNamespace` */
+export interface PlatformNamespaceInput {
+  /** Freeform metadata for tooling and operational notes */
+  annotations?: Record<string, unknown>;
+  createdAt?: string;
+  /** Database that owns this resource (database-scoped isolation) */
+  databaseId: string;
+  /** Optional human-readable description of this namespace */
+  description?: string;
+  id?: string;
+  /** Whether this namespace is active (soft-disable for filtering) */
+  isActive?: boolean;
+  /** Key/value pairs for selecting and filtering namespaces */
+  labels?: Record<string, unknown>;
+  /** Human-readable namespace name (e.g. default, production, oauth) */
+  name: string;
+  /** Globally unique computed namespace identifier via inflection.underscore */
+  namespaceName: string;
+  updatedAt?: string;
+}
+/** An input for mutations affecting `PlatformConfig` */
+export interface PlatformConfigInput {
+  /** Freeform metadata for tooling and operational notes */
+  annotations?: Record<string, unknown>;
+  createdAt?: string;
+  /** Human-readable note about this config entry */
+  description?: string;
+  /** Optional expiration timestamp for time-limited config entries */
+  expiresAt?: string;
+  /** Unique identifier for this config entry */
+  id?: string;
+  /** Key/value pairs for selecting/filtering config entries */
+  labels?: Record<string, unknown>;
+  /** Key name identifying the config entry */
+  name: string;
+  /** FK to namespaces — logical grouping for config entries */
+  namespaceId: string;
+  updatedAt?: string;
+  /** Plaintext config value */
+  value?: string;
+}
+/** An input for mutations affecting `PlatformBucket` */
+export interface PlatformBucketInput {
+  /** User who created this bucket. Forced to current_user_id() on INSERT. */
+  actorId: string;
+  /** When true, clients can provide custom S3 keys (e.g. reports/2024/Q1.pdf). When false (default), S3 key = content hash (automatic dedup). contentHash always required for integrity. */
+  allowCustomKeys?: boolean;
+  /** Whitelist of allowed MIME types for files in this bucket (NULL = all allowed, enforcement deferred) */
+  allowedMimeTypes?: string[];
+  /** Per-bucket CORS allowed origins override (NULL = inherit from storage_module/plugin defaults). Use ARRAY['*'] for open/CDN mode. */
+  allowedOrigins?: string[];
+  createdAt?: string;
+  /** Database that owns this resource (database-scoped isolation) */
+  databaseId: string;
+  /** Human-readable description of the bucket purpose */
+  description?: string;
+  id?: string;
+  /** Whether bucket contents are publicly readable. Set to true when type is public. */
+  isPublic?: boolean;
+  /** Unique bucket identifier used in S3 key paths (e.g. avatars, documents, temp) */
+  key: string;
+  /** Maximum file size in bytes allowed in this bucket (NULL = no limit, enforcement deferred) */
+  maxFileSize?: string;
+  /** Bucket CDN access type: public (CDN-served), private (presigned GET), temp (staging uploads) */
+  type?: string;
+  updatedAt?: string;
+}
+/** An input for mutations affecting `PlatformFile` */
+export interface PlatformFileInput {
+  /** User who uploaded this file. Forced to current_user_id() on INSERT. Used for UPDATE/DELETE authorization. */
+  actorId: string;
+  /** Bucket this file belongs to. Determines owner_id and is_public via inheritance trigger. */
+  bucketId: string;
+  /** SHA-256 content hash for integrity verification and dedup. In default mode, equals the S3 key. In custom key mode, stored separately. */
+  contentHash?: string;
+  createdAt?: string;
+  /** Database that owns this resource (database-scoped isolation) */
+  databaseId: string;
+  /** Human-readable description or alt text for the file (mutable) */
+  description?: string;
+  /** Original filename provided by the uploader. Used for display and Content-Disposition header on download. */
+  filename?: string;
+  id?: string;
+  /** Whether this file is publicly readable. Inherited from bucket on INSERT. */
+  isPublic?: boolean;
+  /** S3 object key for this file, unique within its bucket */
+  key: string;
+  /** MIME type of the file (e.g. image/png, application/pdf). Immutable after INSERT. */
+  mimeType: string;
+  /** File size in bytes. Immutable after INSERT. */
+  size: string;
+  /** User-defined tags for categorization and search (mutable) */
+  tags?: string[];
+  updatedAt?: string;
+  /** Processed file reference (upload domain). Populated by processing jobs after file is uploaded. Copy this value to other tables to reference the file. */
+  upload?: ConstructiveInternalTypeUpload;
+  /** File lifecycle status: requested (presigned URL generated, not yet in S3), uploaded (file in S3, ready for basic use), processed (MIME verified, image resized, embedding computed). */
+  status?: FileStatus;
+}
+/** An input for mutations affecting `User` */
+export interface UserInput {
+  createdAt?: string;
+  displayName?: string;
+  id?: string;
+  profilePicture?: ConstructiveInternalTypeImage;
+  type?: number;
+  updatedAt?: string;
+  username?: string;
+}
+/** An input for mutations affecting `PlatformNamespaceEvent` */
+export interface PlatformNamespaceEventInput {
+  /** Event timestamp (partition key) */
+  createdAt?: string;
+  /** User who triggered this event (NULL for system/automated) */
+  actorId?: string;
+  /** CPU usage in millicores at time of event */
+  cpuMillicores?: number;
+  /** Database that owns this resource (database-scoped isolation) */
+  databaseId: string;
+  /** Event type: created, activated, deactivated, labels_updated, annotations_updated, renamed */
+  eventType: string;
+  /** Unique event identifier */
+  id?: string;
+  /** Memory usage in bytes at time of event */
+  memoryBytes?: string;
+  /** Human-readable description of the event */
+  message?: string;
+  /** Structured context (old/new values, labels diff, etc.) */
+  metadata?: Record<string, unknown>;
+  /** Additional resource metrics (gpu, replicas, quotas, etc.) */
+  metrics?: Record<string, unknown>;
+  /** Namespace this event belongs to */
+  namespaceId: string;
+  /** Network egress in bytes during event window */
+  networkEgressBytes?: string;
+  /** Network ingress in bytes during event window */
+  networkIngressBytes?: string;
+  /** Number of active pods in the namespace at time of event */
+  podCount?: number;
+  /** Storage usage in bytes at time of event */
+  storageBytes?: string;
+}
 export interface UploadPlatformFileBulkFileInput {
   /** SHA-256 content hash (hex-encoded, 64 chars) */
   contentHash: string;

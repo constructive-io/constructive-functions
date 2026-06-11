@@ -1746,6 +1746,256 @@ export interface ProvisionBucketInput {
    */
   ownerId?: string;
 }
+/** An input for mutations affecting `PlatformFunctionGraphRef` */
+export interface PlatformFunctionGraphRefInput {
+  /** Commit this ref points to */
+  commitId?: string;
+  /** Database scope for multi-tenant isolation */
+  databaseId: string;
+  /** Unique ref identifier */
+  id?: string;
+  /** Ref name (e.g. HEAD, main) */
+  name: string;
+  /** Store this ref belongs to */
+  storeId: string;
+}
+/** An input for mutations affecting `PlatformFunctionGraphStore` */
+export interface PlatformFunctionGraphStoreInput {
+  /** Timestamp of store creation */
+  createdAt?: string;
+  /** Database scope for multi-tenant isolation */
+  databaseId: string;
+  /** Current root object hash of this store */
+  hash?: string;
+  /** Unique store identifier */
+  id?: string;
+  /** Human-readable store name */
+  name: string;
+}
+/** An input for mutations affecting `PlatformFunctionGraphObject` */
+export interface PlatformFunctionGraphObjectInput {
+  /** Timestamp of object creation */
+  createdAt?: string;
+  /** Payload data for this object node */
+  data?: Record<string, unknown>;
+  /** Database scope for multi-tenant isolation */
+  databaseId: string;
+  /** Content-addressed UUID v5 — deterministic hash of (data, kids, ktree) */
+  id: string;
+  /** Ordered array of child object IDs */
+  kids?: string[];
+  /** Ordered array of child path names (parallel to kids) */
+  ktree?: string[];
+}
+/** An input for mutations affecting `OrgFunctionExecutionLog` */
+export interface OrgFunctionExecutionLogInput {
+  /** Log entry timestamp (partition key) */
+  createdAt?: string;
+  /** User who triggered the execution (NULL for system/cron) */
+  actorId?: string;
+  /** Unique log entry identifier */
+  id?: string;
+  /** Invocation this log entry belongs to (NULL for standalone job logs) */
+  invocationId?: string;
+  /** Log severity: debug, info, warn, error */
+  logLevel?: string;
+  /** Log message text */
+  message: string;
+  /** Structured context (labels, trace data, extra fields) */
+  metadata?: Record<string, unknown>;
+  /** Function routing key (NULL for generic job logs) */
+  taskIdentifier?: string;
+}
+/** An input for mutations affecting `PlatformFunctionGraphCommit` */
+export interface PlatformFunctionGraphCommitInput {
+  /** User who authored the changes */
+  authorId?: string;
+  /** User who committed (may differ from author) */
+  committerId?: string;
+  /** Database scope for multi-tenant isolation */
+  databaseId: string;
+  /** Commit timestamp */
+  date?: string;
+  /** Unique commit identifier */
+  id?: string;
+  /** Optional commit message */
+  message?: string;
+  /** Parent commit IDs (supports merge commits) */
+  parentIds?: string[];
+  /** Store this commit belongs to */
+  storeId: string;
+  /** Root object ID of the tree snapshot at this commit */
+  treeId?: string;
+}
+/** An input for mutations affecting `PlatformSecretDefinition` */
+export interface PlatformSecretDefinitionInput {
+  /** Freeform metadata annotations for secret definitions */
+  annotations?: Record<string, unknown>;
+  createdAt?: string;
+  /** Database that owns this resource (database-scoped isolation) */
+  databaseId: string;
+  /** Human-readable description of what this secret is used for */
+  description?: string;
+  id?: string;
+  /** Whether this row was seeded as a built-in secret definition. Built-in rows are immutable. */
+  isBuiltIn?: boolean;
+  /** Key-value metadata for filtering and grouping secret definitions */
+  labels?: Record<string, unknown>;
+  /** Secret name (must match app_secrets.name for resolution) */
+  name: string;
+  updatedAt?: string;
+}
+/** An input for mutations affecting `PlatformFunctionExecutionLog` */
+export interface PlatformFunctionExecutionLogInput {
+  /** Log entry timestamp (partition key) */
+  createdAt?: string;
+  /** User who triggered the execution (NULL for system/cron) */
+  actorId?: string;
+  /** Database that owns this resource (database-scoped isolation) */
+  databaseId: string;
+  /** Unique log entry identifier */
+  id?: string;
+  /** Invocation this log entry belongs to (NULL for standalone job logs) */
+  invocationId?: string;
+  /** Log severity: debug, info, warn, error */
+  logLevel?: string;
+  /** Log message text */
+  message: string;
+  /** Structured context (labels, trace data, extra fields) */
+  metadata?: Record<string, unknown>;
+  /** Function routing key (NULL for generic job logs) */
+  taskIdentifier?: string;
+}
+/** An input for mutations affecting `PlatformFunctionGraph` */
+export interface PlatformFunctionGraphInput {
+  /** Evaluator/runtime context (function, js, sql, system) */
+  context?: string;
+  /** Timestamp of graph creation */
+  createdAt?: string;
+  /** Actor who created this graph */
+  createdBy?: string;
+  /** Database scope for multi-tenant isolation */
+  databaseId: string;
+  /** Pinned definitions store commit for deterministic evaluation */
+  definitionsCommitId?: string;
+  /** Human-readable description of the graph */
+  description?: string;
+  /** Entity context (org/team) for scoped billing */
+  entityId?: string;
+  /** Unique graph identifier */
+  id?: string;
+  /** Whether graph passes structural validation */
+  isValid?: boolean;
+  /** Graph name (unique per database) */
+  name: string;
+  /** Graph store (Merkle store) holding the graph definition */
+  storeId: string;
+  /** Timestamp of last modification */
+  updatedAt?: string;
+  /** Array of validation error objects when is_valid = false */
+  validationErrors?: Record<string, unknown>;
+}
+/** An input for mutations affecting `OrgFunctionInvocation` */
+export interface OrgFunctionInvocationInput {
+  /** Invocation creation timestamp (partition key) */
+  createdAt?: string;
+  /** Who triggered the invocation (NULL for system/cron) */
+  actorId?: string;
+  /** When execution completed */
+  completedAt?: string;
+  /** Wall-clock execution time in milliseconds */
+  durationMs?: number;
+  /** Error message when status is failed */
+  error?: string;
+  /** Groups all node invocations from a single flow graph execution */
+  graphExecutionId?: string;
+  /** Unique invocation identifier */
+  id?: string;
+  /** FK to app_jobs.jobs — the underlying transport */
+  jobId?: string;
+  /** Parent invocation when this is a child node of a flow graph execution */
+  parentInvocationId?: string;
+  /** Function input payload */
+  payload?: Record<string, unknown>;
+  /** Function return value (success) or structured error (failure) */
+  result?: Record<string, unknown>;
+  /** When execution started */
+  startedAt?: string;
+  /** Lifecycle: pending → running → completed/failed/cancelled */
+  status?: string;
+  /** Function routing slug (scope:name). Links to function_definitions.task_identifier by convention — no FK. */
+  taskIdentifier: string;
+}
+/** An input for mutations affecting `PlatformFunctionInvocation` */
+export interface PlatformFunctionInvocationInput {
+  /** Invocation creation timestamp (partition key) */
+  createdAt?: string;
+  /** Who triggered the invocation (NULL for system/cron) */
+  actorId?: string;
+  /** When execution completed */
+  completedAt?: string;
+  /** Database that owns this resource (database-scoped isolation) */
+  databaseId: string;
+  /** Wall-clock execution time in milliseconds */
+  durationMs?: number;
+  /** Error message when status is failed */
+  error?: string;
+  /** Groups all node invocations from a single flow graph execution */
+  graphExecutionId?: string;
+  /** Unique invocation identifier */
+  id?: string;
+  /** FK to app_jobs.jobs — the underlying transport */
+  jobId?: string;
+  /** Parent invocation when this is a child node of a flow graph execution */
+  parentInvocationId?: string;
+  /** Function input payload */
+  payload?: Record<string, unknown>;
+  /** Function return value (success) or structured error (failure) */
+  result?: Record<string, unknown>;
+  /** When execution started */
+  startedAt?: string;
+  /** Lifecycle: pending → running → completed/failed/cancelled */
+  status?: string;
+  /** Function routing slug (scope:name). Links to function_definitions.task_identifier by convention — no FK. */
+  taskIdentifier: string;
+}
+/** An input for mutations affecting `PlatformFunctionDefinition` */
+export interface PlatformFunctionDefinitionInput {
+  createdAt?: string;
+  /** Human-readable description of what this function does */
+  description?: string;
+  id?: string;
+  /** Whether this function is a built-in platform function (synced from platform) vs user-created */
+  isBuiltIn?: boolean;
+  /** Whether this function can be called via function_invocations (public API). Default false = internal-only via add_job() */
+  isInvocable?: boolean;
+  /** Maximum retry attempts for the underlying job */
+  maxAttempts?: number;
+  /** Function name within scope (e.g. send_verification_link, process_file_embedding) */
+  name: string;
+  /** Namespace this function belongs to (FK to namespaces table) */
+  namespaceId?: string;
+  /** Job priority (lower = higher priority) */
+  priority?: number;
+  /** Job queue name for serialization (e.g. email, ai, default) */
+  queueName?: string;
+  /** Function grouping scope (e.g. email, embed, chunk, custom) */
+  scope: string;
+  /** Optional service URL override for function dispatch. NULL = use gateway convention (gatewayUrl/task_identifier). Set for customer-deployed functions or external endpoints. */
+  serviceUrl?: string;
+  /** Computed routing slug: scope:name (used by Knative job worker for dispatch) */
+  taskIdentifier: string;
+  updatedAt?: string;
+  /** Embedded config requirements: array of (name, required) tuples */
+  requiredConfigs?: FunctionRequirementInput[];
+  /** Embedded secret requirements: array of (name, required) tuples */
+  requiredSecrets?: FunctionRequirementInput[];
+}
+/** An input for mutations affecting `FunctionRequirement` */
+export interface FunctionRequirementInput {
+  name?: string;
+  required?: boolean;
+}
 /** An interval of time that has passed where the smallest distinct unit is a second. */
 export interface IntervalInput {
   /**
