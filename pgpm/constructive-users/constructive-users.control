@@ -1,0 +1,5 @@
+# constructive-users extension
+comment = 'User identity stubs — users table and role_types (structural DDL only)'
+default_version = '0.0.1'
+relocatable = false
+requires = 'plpgsql,pgpm-types'
