@@ -1,5 +1,5 @@
 .PHONY: install build clean lint generate register \
-       up down status verify-platform check-env setup-platform \
+       up down kill status verify-platform check-env setup-platform \
        up\:email-job down\:email-job \
        up\:www \
        dev dev-fn dev-compute dev-down dev-logs setup-dev setup-check \
@@ -36,12 +36,17 @@ register:
 #   make up:email-job             # add mailpit + compute-service (SMTP mode)
 #   make down:email-job           # stop mailpit + compute-service
 #   make down                     # stop everything (postgres, compose, etc.)
+#   make kill                     # make down + drop all constructive-functions databases
 #   DROP=1 make down DB_NAME=mydb # also drop the database
 
 up:
 	./scripts/up.sh $(DB_NAME)
 
 down:
+	./scripts/down.sh $(DB_NAME)
+
+kill:
+	pgpm kill --pattern constructive-functions% --yes
 	./scripts/down.sh $(DB_NAME)
 
 up\:email-job:
