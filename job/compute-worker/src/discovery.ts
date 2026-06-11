@@ -50,12 +50,8 @@ export class FunctionDiscovery {
     log.debug(`cache miss: ${taskIdentifier}, querying DB`);
     try {
       const config = await this.loader.load(this.databaseId);
-      if (!config.functionModule) {
-        log.warn('no function module configured — cannot resolve functions');
-        return null;
-      }
-
-      const { publicSchema, definitionsTable } = config.functionModule;
+      const publicSchema = config.functionModule?.publicSchema ?? 'constructive_compute_public';
+      const definitionsTable = config.functionModule?.definitionsTable ?? 'platform_function_definitions';
       const sql = `SELECT ${COLUMNS} FROM "${publicSchema}"."${definitionsTable}" WHERE task_identifier = $1 LIMIT 1`;
 
       const { rows } = await this.pool.query(sql, [taskIdentifier]);
@@ -80,12 +76,8 @@ export class FunctionDiscovery {
   async listInvocable(): Promise<PlatformFunctionDefinition[]> {
     try {
       const config = await this.loader.load(this.databaseId);
-      if (!config.functionModule) {
-        log.warn('no function module configured — cannot list functions');
-        return [];
-      }
-
-      const { publicSchema, definitionsTable } = config.functionModule;
+      const publicSchema = config.functionModule?.publicSchema ?? 'constructive_compute_public';
+      const definitionsTable = config.functionModule?.definitionsTable ?? 'platform_function_definitions';
       const sql = `SELECT ${COLUMNS} FROM "${publicSchema}"."${definitionsTable}" WHERE is_invocable = true ORDER BY name`;
 
       const { rows } = await this.pool.query(sql);

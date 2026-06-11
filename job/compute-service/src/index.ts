@@ -389,7 +389,7 @@ export const waitForComputePrereqs = async (): Promise<void> => {
     const schema = getJobSchema();
     await client.query(`SELECT * FROM "${schema}".jobs LIMIT 1;`);
 
-    // Verify the compute module is deployed via dynamic resolution
+    // Try dynamic resolution from metaschema first, fall back to direct check
     const databaseId = process.env.DEFAULT_DATABASE_ID || '00000000-0000-0000-0000-000000000000';
     pool = new Pool({
       host: cfg.host,
@@ -402,12 +402,14 @@ export const waitForComputePrereqs = async (): Promise<void> => {
     const loader = new ComputeModuleLoader(pool, 0);
     const config = await loader.load(databaseId);
 
-    if (!config.functionModule) {
-      throw new Error('function_module not found in metaschema — compute schema not deployed');
+    if (config.functionModule) {
+      const { publicSchema, definitionsTable } = config.functionModule;
+      await client.query(`SELECT count(*) FROM "${publicSchema}"."${definitionsTable}" LIMIT 1`);
+    } else {
+      // Metaschema not populated — check the compute schema directly
+      log.info('function_module not in metaschema, checking constructive_compute_public directly');
+      await client.query('SELECT count(*) FROM constructive_compute_public.platform_function_definitions LIMIT 1');
     }
-
-    const { publicSchema, definitionsTable } = config.functionModule;
-    await client.query(`SELECT count(*) FROM "${publicSchema}"."${definitionsTable}" LIMIT 1`);
 
     log.info('compute prereqs satisfied (jobs table + compute module present)');
   } catch (error) {
