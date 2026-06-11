@@ -15,6 +15,11 @@
   "scripts": {
     "generate": "node --experimental-strip-types scripts/generate.ts",
     "generate:all": "node --experimental-strip-types scripts/generate.ts",
+    "generate:schemas": "pnpm --filter @constructive-functions/constructive-functions-schema run generate",
+    "generate:sdk": "pnpm --filter @constructive-functions/constructive-functions-sdk run generate",
+    "generate:cli": "pnpm --filter @constructive-functions/constructive-functions-cli run generate",
+    "generate:hooks": "pnpm --filter @constructive-functions/constructive-functions-hooks run generate",
+    "generate:sdk-all": "pnpm run generate:schemas && pnpm run generate:sdk && pnpm run generate:cli && pnpm run generate:hooks",
     "clean": "pnpm -r run clean",
     "build": "pnpm -r run build",
     "docker:build": "node --experimental-strip-types scripts/docker-build.ts --all",

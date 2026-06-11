@@ -2,6 +2,7 @@
        up down kill status verify-platform check-env setup-platform \
        up\:email-job down\:email-job \
        up\:www \
+       generate\:schemas generate\:sdk generate\:cli generate\:hooks generate\:sdk-all \
        dev dev-fn dev-compute dev-down dev-logs setup-dev setup-check \
        secrets\:sync \
        skaffold-dev skaffold-dev-knative docker-build
@@ -38,6 +39,13 @@ register:
 #   make down                     # stop everything (postgres, compose, etc.)
 #   make kill                     # make down + drop all constructive-functions databases
 #   DROP=1 make down DB_NAME=mydb # also drop the database
+#
+# SDK generation (requires GraphQL server running — do make up first):
+#   make generate:schemas          # export .graphql from live endpoints
+#   make generate:sdk              # ORM client from schema files
+#   make generate:cli              # CLI from schema files
+#   make generate:hooks            # React Query hooks from schema files
+#   make generate:sdk-all          # all of the above in order
 
 up:
 	./scripts/up.sh $(DB_NAME)
@@ -48,6 +56,25 @@ down:
 kill:
 	pgpm kill --pattern constructive-functions% --yes
 	./scripts/down.sh $(DB_NAME)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SDK generation — schemas, ORM, CLI, hooks
+# ═══════════════════════════════════════════════════════════════════════════════
+
+generate\:schemas:
+	pnpm run generate:schemas
+
+generate\:sdk:
+	pnpm run generate:sdk
+
+generate\:cli:
+	pnpm run generate:cli
+
+generate\:hooks:
+	pnpm run generate:hooks
+
+generate\:sdk-all:
+	pnpm run generate:sdk-all
 
 up\:email-job:
 	./scripts/email-job-up.sh $(DB_NAME)

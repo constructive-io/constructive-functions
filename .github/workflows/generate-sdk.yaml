@@ -1,0 +1,237 @@
+name: Generate SDK
+
+# Regenerates all SDK outputs (schemas, ORM, CLI, hooks) and commits them via PR.
+#
+# FLOW:
+#   1. Start Postgres, deploy pgpm modules, start GraphQL server
+#   2. Export schemas from live endpoints
+#   3. Generate SDK, CLI, and React Query hooks from schema files
+#   4. If anything changed, create a PR with the regenerated output
+#
+# GENERATED OUTPUTS:
+#   - sdk/constructive-functions-schema/schemas/  (GraphQL schema files)
+#   - sdk/constructive-functions-sdk/src/          (ORM client)
+#   - sdk/constructive-functions-cli/src/          (CLI)
+#   - sdk/constructive-functions-hooks/src/        (React Query hooks)
+#   - .agents/                                     (skill reference docs)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch/tag/SHA to regenerate from (default: feat/constructive-infra-schema)'
+        required: false
+        default: 'feat/constructive-infra-schema'
+      create_pr:
+        description: 'Create a PR with changes (otherwise just validate)'
+        required: false
+        default: 'true'
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10'
+  PGHOST: localhost
+  PGPORT: 5432
+  PGUSER: postgres
+  PGPASSWORD: password
+  DB_NAME: constructive-functions-db1
+  GRAPHQL_PORT: 6464
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: ghcr.io/constructive-io/docker/postgres-plus:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Checkout constructive-functions
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || 'feat/constructive-infra-schema' }}
+          fetch-depth: 0
+
+      - name: Checkout constructive (for GraphQL server)
+        uses: actions/checkout@v4
+        with:
+          repository: constructive-io/constructive
+          token: ${{ secrets.GH_SUBMODULE_PAT || github.token }}
+          path: .constructive-repo
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install pgpm CLI
+        run: npm install -g pgpm
+
+      - name: Install dependencies (constructive-functions)
+        run: |
+          node --experimental-strip-types scripts/generate.ts
+          pnpm install
+
+      - name: Build constructive repo (GraphQL server)
+        run: |
+          cd .constructive-repo
+          pnpm install
+          pnpm -r build
+
+      # =============================================
+      # Database setup — deploy all pgpm modules
+      # =============================================
+
+      - name: Bootstrap pgpm users
+        run: pgpm admin-users bootstrap --yes
+
+      - name: Create database and deploy modules
+        run: |
+          pgpm admin-users add --test --yes || true
+          createdb -h $PGHOST -p $PGPORT -U $PGUSER "$DB_NAME" 2>/dev/null || true
+
+          MODULES=(
+            constructive-users
+            constructive-infra
+            constructive-objects
+            constructive-storage
+            constructive-store
+            constructive-compute
+            constructive-platform-function-graph
+          )
+
+          for module in "${MODULES[@]}"; do
+            echo "Deploying $module..."
+            cd pgpm/$module && pgpm deploy --database "$DB_NAME" --yes && cd ../..
+          done
+
+      - name: Deploy seed and services
+        run: |
+          cd pgpm/constructive-platform-seed && pgpm deploy --database "$DB_NAME" --yes && cd ../..
+          cd pgpm/constructive-infra-seed && pgpm deploy --database "$DB_NAME" --yes && cd ../..
+          cd pgpm/constructive-infra-services && pgpm deploy --database "$DB_NAME" --yes && cd ../..
+
+      # =============================================
+      # Start GraphQL server
+      # =============================================
+
+      - name: Start GraphQL server
+        run: |
+          CONSTRUCTIVE_REPO="$(pwd)/.constructive-repo" \
+          ./scripts/start-graphql-server.sh "$DB_NAME" "$GRAPHQL_PORT"
+          echo "Waiting for server to be ready..."
+          for i in $(seq 1 15); do
+            if curl -sf http://localhost:$GRAPHQL_PORT/healthz >/dev/null 2>&1; then
+              echo "GraphQL server is ready!"
+              break
+            fi
+            sleep 1
+          done
+
+      # =============================================
+      # Generation pipeline
+      # =============================================
+
+      - name: Generate schemas
+        run: pnpm run generate:schemas
+
+      - name: Generate SDK (ORM)
+        run: pnpm run generate:sdk
+
+      - name: Generate CLI
+        run: pnpm run generate:cli
+
+      - name: Generate hooks
+        run: pnpm run generate:hooks
+
+      # =============================================
+      # Detect changes and create PR
+      # =============================================
+
+      - name: Check for changes
+        id: check
+        run: |
+          SDK_UNTRACKED=$(git ls-files --others --exclude-standard sdk/ | head -20)
+          AGENTS_UNTRACKED=$(git ls-files --others --exclude-standard .agents/ | head -20)
+
+          HAS_CHANGES="false"
+          if ! git diff --quiet sdk/ || [ -n "$SDK_UNTRACKED" ]; then
+            HAS_CHANGES="true"
+            echo "SDK changes detected"
+            git diff --stat sdk/
+          fi
+          if ! git diff --quiet .agents/ || [ -n "$AGENTS_UNTRACKED" ]; then
+            HAS_CHANGES="true"
+            echo "Agent skill changes detected"
+          fi
+
+          echo "has_changes=$HAS_CHANGES" >> $GITHUB_OUTPUT
+
+      - name: Create branch and PR
+        if: steps.check.outputs.has_changes == 'true' && inputs.create_pr != false
+        env:
+          GH_TOKEN: ${{ secrets.GH_SUBMODULE_PAT || github.token }}
+        run: |
+          BRANCH_NAME="chore/sdk-update-$(date -u +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH_NAME"
+          git add sdk/ .agents/
+          git commit -m "chore: regenerate SDK (schemas, ORM, CLI, hooks)
+
+          Auto-generated by generate-sdk workflow.
+          Source: $(git rev-parse --short HEAD) (ref: ${{ inputs.ref || 'feat/constructive-infra-schema' }})"
+
+          git push origin "$BRANCH_NAME"
+
+          gh pr create \
+            --title "chore: regenerate SDK (schemas, ORM, CLI, hooks)" \
+            --body "## Automated SDK Regeneration
+
+          This PR was created by the [generate-sdk workflow](${{ github.server_url }}/${{ github.repository }}/actions/workflows/generate-sdk.yaml).
+
+          ### What was regenerated
+          - \`sdk/constructive-functions-schema/schemas/\` — GraphQL schema files
+          - \`sdk/constructive-functions-sdk/src/\` — ORM client
+          - \`sdk/constructive-functions-cli/src/\` — CLI
+          - \`sdk/constructive-functions-hooks/src/\` — React Query hooks
+          - \`.agents/\` — skill reference docs
+
+          ---
+          *Auto-generated by constructive-functions generate-sdk workflow*" \
+            --base "${{ inputs.ref || 'feat/constructive-infra-schema' }}" \
+            --head "$BRANCH_NAME"
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.check.outputs.has_changes }}" = "true" ]; then
+            echo "## SDK Generation Complete — Changes Detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## SDK Generation Complete — No Changes" >> $GITHUB_STEP_SUMMARY
+            echo "All generated outputs are up-to-date." >> $GITHUB_STEP_SUMMARY
+          fi
