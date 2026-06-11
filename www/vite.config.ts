@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
+      '@constructive-functions/constructive-functions-hooks': path.resolve(__dirname, '../sdk/constructive-functions-hooks/src'),
       '@fbp/types': path.resolve(__dirname, '../packages/fbp-types/src'),
       '@fbp/spec': path.resolve(__dirname, '../packages/fbp-spec/src'),
       '@fbp/evaluator': path.resolve(__dirname, '../packages/fbp-evaluator/src'),
