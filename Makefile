@@ -5,7 +5,7 @@
        generate\:schemas generate\:sdk generate\:cli generate\:hooks generate\:sdk-all \
        dev dev-fn dev-compute dev-down dev-logs setup-dev setup-check \
        secrets\:sync \
-       test test\:unit test\:integration test\:workflow test\:workflow\:schema \
+       test test\:unit test\:integration test\:workflow test\:workflow\:schema test\:functions \
        skaffold-dev skaffold-dev-knative docker-build
 
 install:
@@ -186,6 +186,9 @@ test\:workflow:
 
 test\:workflow\:schema:
 	pnpm test:workflow:schema
+
+test\:functions:
+	pnpm --filter @constructive-io/functions-test test
 
 # Single function: make skaffold-dev-send-email
 skaffold-dev-%:

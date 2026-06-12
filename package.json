@@ -32,7 +32,8 @@
     "test:integration": "jest --testPathPatterns='tests/integration'",
     "test:e2e": "jest --testPathPatterns='tests/e2e'",
     "test:workflow": "jest --testPathPatterns='tests/workflow' --runInBand",
-    "test:workflow:schema": "jest --testPathPatterns='tests/workflow/__tests__/platform-schema' --runInBand"
+    "test:workflow:schema": "jest --testPathPatterns='tests/workflow/__tests__/platform-schema' --runInBand",
+    "test:functions": "pnpm --filter @constructive-io/functions-test test"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
