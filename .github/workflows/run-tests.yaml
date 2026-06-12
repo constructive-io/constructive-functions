@@ -331,4 +331,4 @@ jobs:
         run: pgpm admin-users bootstrap --yes
 
       - name: Run functions-test suite
-        run: pnpm test:functions -- --runInBand --verbose
+        run: pnpm --filter @constructive-io/functions-test exec jest --config jest.config.js --runInBand --verbose
