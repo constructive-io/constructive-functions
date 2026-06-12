@@ -13,10 +13,20 @@ import {
 import type { NodeDefinitionWithImpl } from '@fbp/evaluator';
 import type { Graph, NodeDefinition, Node } from '@fbp/types';
 import { compute } from '@constructive-functions/constructive-functions-hooks';
-import { RefreshCw, Save, Trash2, Plus, Play, Zap, ChevronDown, ChevronRight, Cloud } from 'lucide-react';
+import { RefreshCw, Save, Trash2, Plus, Play, Zap, ChevronDown, ChevronRight, Cloud, Server } from 'lucide-react';
 
 const DATABASE_ID = '00000000-0000-0000-0000-000000000000';
 const BOUNDARY_NAMES = ['graph/input', 'graph/output', 'graph/prop'];
+const EXECUTION_POLL_MS = 1500;
+
+type NodeState = 'pending' | 'running' | 'completed' | 'failed';
+type ExecutionState = {
+  executionId: string;
+  status: 'running' | 'completed' | 'failed' | 'unknown';
+  nodeStates: Record<string, NodeState>;
+  output?: unknown;
+  error?: string;
+};
 
 interface FunctionRequirement {
   name?: string;
@@ -288,6 +298,90 @@ async function deleteStore(id: string): Promise<void> {
   `, { input: { id } });
 }
 
+// ─── Graph execution helpers ────────────────────────────────────────────
+
+async function importAndExecuteGraph(
+  graph: Graph,
+  inputPayload: Record<string, unknown> = {}
+): Promise<{ graphId: string; executionId: string }> {
+  const endpoint = '/graphql/compute';
+
+  const importData = await gqlFetch(endpoint, `
+    mutation ($input: PlatformImportGraphJsonInput!) {
+      platformImportGraphJson(input: $input) { result }
+    }
+  `, {
+    input: {
+      databaseId: DATABASE_ID,
+      name: graph.name || 'untitled',
+      graphJson: graph as unknown as Record<string, unknown>,
+      context: graph.context || 'function',
+    },
+  });
+  const graphId = importData.platformImportGraphJson.result;
+
+  const execData = await gqlFetch(endpoint, `
+    mutation ($input: PlatformStartExecutionInput!) {
+      platformStartExecution(input: $input) { result }
+    }
+  `, {
+    input: {
+      graphId,
+      inputPayload,
+      outputNode: 'output_result',
+      outputPort: 'value',
+    },
+  });
+  const executionId = execData.platformStartExecution.result;
+
+  return { graphId, executionId };
+}
+
+async function pollExecutionStatus(executionId: string): Promise<{
+  status: string;
+  nodeStates: Record<string, NodeState>;
+  output?: unknown;
+  error?: string;
+}> {
+  const endpoint = '/graphql/compute';
+
+  // Query invocations for this execution to get per-node status
+  const invData = await gqlFetch(endpoint, `
+    query ($where: PlatformFunctionInvocationFilter) {
+      platformFunctionInvocations(where: $where, orderBy: CREATED_AT_ASC) {
+        nodes {
+          id
+          taskIdentifier
+          status
+          durationMs
+          createdAt
+          graphExecutionId
+          payload
+        }
+      }
+    }
+  `, {
+    where: { graphExecutionId: { equalTo: executionId } },
+  });
+
+  const invocations = invData?.platformFunctionInvocations?.nodes ?? [];
+  const nodeStates: Record<string, NodeState> = {};
+  let hasRunning = false;
+  let hasFailed = false;
+
+  for (const inv of invocations) {
+    const nodeName = inv.payload?.node_name;
+    if (!nodeName) continue;
+    const s = inv.status as string;
+    if (s === 'completed') nodeStates[nodeName] = 'completed';
+    else if (s === 'failed') { nodeStates[nodeName] = 'failed'; hasFailed = true; }
+    else { nodeStates[nodeName] = 'running'; hasRunning = true; }
+  }
+
+  const overallStatus = hasFailed ? 'failed' : hasRunning ? 'running' : (invocations.length > 0 ? 'completed' : 'running');
+  return { status: overallStatus, nodeStates };
+}
+
 // ─── Component ──────────────────────────────────────────────────────────
 
 export function FlowsPanel() {
@@ -315,9 +409,19 @@ export function FlowsPanel() {
   const [isLoadingFlow, setIsLoadingFlow] = useState(false);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [executionState, setExecutionState] = useState<ExecutionState | null>(null);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const graphRef = useRef<Graph>(currentGraph);
   graphRef.current = currentGraph;
+
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
 
   // Load a flow from a store
   const handleLoadStore = useCallback(async (store: StoreEntry) => {
@@ -425,6 +529,79 @@ export function FlowsPanel() {
       setIsEvaluating(false);
     }
   }, [implDefinitions]);
+
+  const handleExecute = useCallback(async () => {
+    const graph = graphRef.current;
+    if (!graph.nodes.length) return;
+
+    setIsExecuting(true);
+    setExecutionState(null);
+    if (pollRef.current) clearInterval(pollRef.current);
+
+    try {
+      // Build input payload from graphInput nodes' props
+      const inputPayload: Record<string, unknown> = {};
+      for (const node of graph.nodes) {
+        if (node.type === 'graphInput') {
+          const portNameProp = (node.props ?? []).find(p => p.name === 'portName');
+          const valueProp = (node.props ?? []).find(p => p.name === 'value');
+          if (portNameProp?.value && valueProp?.value !== undefined) {
+            inputPayload[String(portNameProp.value)] = valueProp.value;
+          }
+        }
+      }
+
+      const { executionId } = await importAndExecuteGraph(graph, inputPayload);
+
+      // Initialize node states — mark all non-boundary nodes as pending
+      const initialNodeStates: Record<string, NodeState> = {};
+      for (const node of graph.nodes) {
+        if (!['graphInput', 'graphOutput', 'graphProp'].includes(node.type)) {
+          initialNodeStates[node.name] = 'pending';
+        }
+      }
+
+      setExecutionState({
+        executionId,
+        status: 'running',
+        nodeStates: initialNodeStates,
+      });
+
+      // Start polling for execution status
+      pollRef.current = setInterval(async () => {
+        try {
+          const pollResult = await pollExecutionStatus(executionId);
+          setExecutionState(prev => {
+            if (!prev || prev.executionId !== executionId) return prev;
+            const merged: Record<string, NodeState> = { ...prev.nodeStates };
+            for (const [name, state] of Object.entries(pollResult.nodeStates)) {
+              merged[name] = state;
+            }
+            return {
+              ...prev,
+              nodeStates: merged,
+              status: pollResult.status as ExecutionState['status'],
+              output: pollResult.output,
+              error: pollResult.error,
+            };
+          });
+
+          // Stop polling when execution completes or fails
+          if (pollResult.status === 'completed' || pollResult.status === 'failed') {
+            if (pollRef.current) clearInterval(pollRef.current);
+            pollRef.current = null;
+            setIsExecuting(false);
+          }
+        } catch {
+          // Keep polling on transient errors
+        }
+      }, EXECUTION_POLL_MS);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setExecutionState({ executionId: '', status: 'failed', nodeStates: {}, error: msg });
+      setIsExecuting(false);
+    }
+  }, []);
 
   const handleSave = useCallback(async () => {
     const name = flowName.trim() || `Flow ${stores.length + 1}`;
@@ -535,6 +712,15 @@ export function FlowsPanel() {
         >
           <Play size={14} />
           {isEvaluating ? 'Running...' : 'Evaluate'}
+        </button>
+        <button
+          onClick={handleExecute}
+          disabled={isExecuting}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-purple-600 hover:bg-purple-500 text-white transition-colors disabled:opacity-50"
+          title="Execute graph on the server via compute-worker"
+        >
+          {isExecuting ? <RefreshCw size={14} className="animate-spin" /> : <Server size={14} />}
+          {isExecuting ? 'Executing...' : 'Execute'}
         </button>
         {activeStoreId && (
           <button
@@ -659,10 +845,54 @@ export function FlowsPanel() {
             </div>
           </div>
 
+          {/* Execution state */}
+          {executionState && (
+            <div className="p-3 border-t border-zinc-800 flex-shrink-0">
+              <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+                Execution
+                <span className={`ml-2 inline-block w-2 h-2 rounded-full ${
+                  executionState.status === 'running' ? 'bg-yellow-400 animate-pulse' :
+                  executionState.status === 'completed' ? 'bg-green-400' :
+                  executionState.status === 'failed' ? 'bg-red-400' : 'bg-zinc-400'
+                }`} />
+              </h4>
+              <div className="space-y-1 mb-2">
+                {Object.entries(executionState.nodeStates).map(([name, state]) => (
+                  <div key={name} className="flex items-center gap-2 text-xs">
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      state === 'completed' ? 'bg-green-400' :
+                      state === 'failed' ? 'bg-red-400' :
+                      state === 'running' ? 'bg-yellow-400 animate-pulse' : 'bg-zinc-600'
+                    }`} />
+                    <span className="text-zinc-400 truncate">{name}</span>
+                    <span className={`ml-auto text-[10px] ${
+                      state === 'completed' ? 'text-green-400' :
+                      state === 'failed' ? 'text-red-400' :
+                      state === 'running' ? 'text-yellow-400' : 'text-zinc-600'
+                    }`}>{state}</span>
+                  </div>
+                ))}
+              </div>
+              {executionState.error && (
+                <pre className="text-xs text-red-400 bg-zinc-900 rounded-md p-2 overflow-x-auto whitespace-pre-wrap break-all max-h-24 overflow-y-auto">
+                  {executionState.error}
+                </pre>
+              )}
+              {executionState.output && (
+                <pre className="text-xs text-zinc-300 bg-zinc-900 rounded-md p-2 overflow-x-auto whitespace-pre-wrap break-all max-h-24 overflow-y-auto">
+                  {JSON.stringify(executionState.output, null, 2)}
+                </pre>
+              )}
+              <p className="text-[10px] text-zinc-600 mt-1">
+                ID: {executionState.executionId.slice(0, 8)}...
+              </p>
+            </div>
+          )}
+
           {/* Evaluation result */}
           {evaluationResult !== undefined && (
             <div className="p-3 border-t border-zinc-800 flex-shrink-0">
-              <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Result</h4>
+              <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Local Eval</h4>
               <pre className="text-xs text-zinc-300 bg-zinc-900 rounded-md p-2 overflow-x-auto whitespace-pre-wrap break-all max-h-40 overflow-y-auto">
                 {JSON.stringify(evaluationResult, null, 2)}
               </pre>
