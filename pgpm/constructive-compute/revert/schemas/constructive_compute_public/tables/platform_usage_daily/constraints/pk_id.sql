@@ -2,4 +2,4 @@
 
 
 ALTER TABLE "constructive_compute_public".platform_usage_daily
-  DROP CONSTRAINT pk_id;
+  DROP CONSTRAINT platform_usage_daily_pkey;

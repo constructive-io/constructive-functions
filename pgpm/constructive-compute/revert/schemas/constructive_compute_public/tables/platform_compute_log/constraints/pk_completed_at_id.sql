@@ -2,4 +2,4 @@
 
 
 ALTER TABLE "constructive_compute_public".platform_compute_log
-  DROP CONSTRAINT pk_completed_at_id;
+  DROP CONSTRAINT platform_compute_log_pkey;
