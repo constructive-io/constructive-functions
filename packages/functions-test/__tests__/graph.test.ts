@@ -458,18 +458,7 @@ describe('e2e auto-dispatch via runToCompletion', () => {
     const result = await worker.runToCompletion(ctx.pg, execId);
     expect(result.status).toBe('completed');
 
-    // Verify invocation records for both nodes
-    const { rows: invocations } = await ctx.pg.query(
-      `SELECT task_identifier, status FROM constructive_compute_public.platform_function_invocations
-       WHERE job_id IN (
-         SELECT id FROM app_jobs.jobs_archive WHERE (payload::jsonb->>'execution_id')::uuid = $1::uuid
-         UNION ALL
-         SELECT id FROM app_jobs.jobs WHERE (payload::jsonb->>'execution_id')::uuid = $1::uuid
-       )
-       ORDER BY created_at`,
-      [execId]
-    );
-    // Jobs are deleted after processing, so invocations track by job_id — query invocations directly
+    // Query invocations directly (jobs are deleted after processing)
     const { rows: allInvocations } = await ctx.pg.query(
       `SELECT task_identifier, status FROM constructive_compute_public.platform_function_invocations
        ORDER BY created_at DESC LIMIT 10`

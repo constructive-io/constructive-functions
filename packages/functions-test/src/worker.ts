@@ -292,12 +292,15 @@ export async function createTestWorker(
     let waves = 0;
 
     for (let wave = 0; wave < maxWaves; wave++) {
-      // Fetch available graph jobs for this execution
+      // Fetch available graph jobs for this execution, deduplicated by node_name.
+      // tick_execution may re-enqueue a node that was already enqueued but not yet
+      // completed (e.g. after completing a sibling in the same wave).
       const { rows: jobs } = await pgClient.query(
-        `SELECT id, database_id, task_identifier, payload::jsonb as payload
+        `SELECT DISTINCT ON (payload::jsonb->>'node_name')
+                id, database_id, task_identifier, payload::jsonb as payload
          FROM app_jobs.jobs
          WHERE (payload::jsonb->>'execution_id')::uuid = $1::uuid
-         ORDER BY id`,
+         ORDER BY payload::jsonb->>'node_name', id`,
         [executionId]
       );
 
@@ -312,9 +315,13 @@ export async function createTestWorker(
           database_id: job.database_id ?? dbId,
         });
         totalJobsProcessed++;
-        // Remove processed job
-        await pgClient.query(`DELETE FROM app_jobs.jobs WHERE id = $1`, [job.id]);
       }
+
+      // Clean up ALL jobs for this execution (processed + any duplicates re-enqueued during the wave)
+      await pgClient.query(
+        `DELETE FROM app_jobs.jobs WHERE (payload::jsonb->>'execution_id')::uuid = $1::uuid`,
+        [executionId]
+      );
 
       // Check execution status after processing wave
       const { rows: [exec] } = await pgClient.query(
