@@ -266,13 +266,11 @@ export default class ComputeWorker {
     const scope = job.entity_id ? 'org' : 'platform';
 
     const { id: invocationId } = await this.tracker.create({
-      function_id: fn.id,
       task_identifier,
       payload,
       job_id: job.id,
       database_id: databaseId,
       actor_id: job.actor_id,
-      entity_id: job.entity_id,
       scope,
     });
 

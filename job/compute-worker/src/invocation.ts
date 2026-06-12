@@ -56,12 +56,9 @@ export class InvocationTracker {
   /**
    * Create an invocation record before dispatching the function.
    * Returns the invocation ID and start timestamp.
-   *
-   * When entity_id is present, uses org-scoped invocation table and
-   * sets owner_id. Otherwise uses platform-scoped table.
    */
   async create(input: CreateInvocationInput): Promise<{ id: string; started_at: Date }> {
-    const scope = input.scope ?? (input.entity_id ? 'org' : 'platform');
+    const scope = input.scope ?? 'platform';
     const targetDbId = scope === 'org' ? input.database_id : undefined;
     const mod = await this.resolveInvocationModule(scope, targetDbId);
     if (!mod) {
@@ -71,51 +68,23 @@ export class InvocationTracker {
     const { publicSchema, invocationsTable } = mod;
     const payload_json = input.payload != null ? JSON.stringify(input.payload) : null;
 
-    if (input.entity_id) {
-      const sql = `
-        INSERT INTO "${publicSchema}"."${invocationsTable}"
-          (id, function_id, task_identifier, payload, job_id, database_id, actor_id, owner_id, status, started_at)
-        VALUES
-          (gen_random_uuid(), $1, $2, $3::jsonb, $4, $5, $6, $7, 'running', now())
-        RETURNING id, started_at
-      `;
-      try {
-        const { rows } = await this.pool.query(sql, [
-          input.function_id,
-          input.task_identifier,
-          payload_json,
-          String(input.job_id),
-          input.database_id ?? null,
-          input.actor_id ?? null,
-          input.entity_id,
-        ]);
-        const row = rows[0];
-        log.debug(`created org-scoped invocation ${row.id} for ${input.task_identifier} (entity=${input.entity_id})`);
-        return { id: row.id, started_at: row.started_at };
-      } catch (err: any) {
-        log.error(`failed to create org-scoped invocation for ${input.task_identifier}: ${err.message}`);
-        throw err;
-      }
-    }
-
     const sql = `
       INSERT INTO "${publicSchema}"."${invocationsTable}"
-        (id, function_id, task_identifier, payload, job_id, database_id, actor_id, status, started_at)
+        (id, task_identifier, payload, job_id, database_id, actor_id, status, started_at)
       VALUES
-        (gen_random_uuid(), $1, $2, $3::jsonb, $4, $5, $6, 'running', now())
+        (gen_random_uuid(), $1, $2::jsonb, $3, $4, $5, 'running', now())
       RETURNING id, started_at
     `;
     try {
       const { rows } = await this.pool.query(sql, [
-        input.function_id,
         input.task_identifier,
         payload_json,
         String(input.job_id),
-        input.database_id ?? null,
+        input.database_id ?? this.databaseId,
         input.actor_id ?? null,
       ]);
       const row = rows[0];
-      log.debug(`created platform-scoped invocation ${row.id} for ${input.task_identifier}`);
+      log.debug(`created ${scope}-scoped invocation ${row.id} for ${input.task_identifier}`);
       return { id: row.id, started_at: row.started_at };
     } catch (err: any) {
       log.error(`failed to create invocation for ${input.task_identifier}: ${err.message}`);

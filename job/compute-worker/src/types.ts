@@ -51,19 +51,16 @@ export interface ComputeModuleConfig {
 export type InvocationStatus = 'running' | 'completed' | 'failed';
 
 export interface CreateInvocationInput {
-  function_id: string;
   task_identifier: string;
   payload: unknown;
   job_id: string | number;
   database_id?: string;
   actor_id?: string;
-  entity_id?: string;
   scope?: string;
 }
 
 export interface InvocationRecord {
   id: string;
-  function_id: string;
   task_identifier: string;
   status: InvocationStatus;
   started_at: string;
