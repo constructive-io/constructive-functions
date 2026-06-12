@@ -486,6 +486,7 @@ ALTER TABLE constructive_compute_private.platform_function_graph_execution_outpu
 CREATE UNIQUE INDEX idx_platform_function_graph_execution_outputs_unique_hash ON constructive_compute_private.platform_function_graph_execution_outputs (database_id, hash, created_at);
 
 
+
 CREATE TABLE constructive_compute_private.platform_function_graph_executions (
   started_at timestamptz NOT NULL DEFAULT now()
 ) PARTITION BY RANGE (started_at);
@@ -685,6 +686,7 @@ CREATE TABLE constructive_compute_public.platform_function_graphs ();
 
 ALTER TABLE constructive_compute_private.platform_function_graph_executions 
   ADD CONSTRAINT platform_function_graph_executions_pkey PRIMARY KEY (started_at, id);
+
 
 
 CREATE FUNCTION constructive_compute_public.platform_add_edge(
@@ -1420,6 +1422,7 @@ ALTER TABLE constructive_compute_public.org_function_execution_logs
 CREATE INDEX org_function_execution_logs_invocation_id_created_at_idx ON constructive_compute_public.org_function_execution_logs (invocation_id, created_at);
 
 
+
 CREATE TABLE constructive_compute_public.org_function_invocations (
   created_at timestamptz NOT NULL DEFAULT now()
 ) PARTITION BY RANGE (created_at);
@@ -1523,6 +1526,7 @@ CREATE INDEX org_function_invocations_actor_id_created_at_idx ON constructive_co
 CREATE INDEX org_function_invocations_graph_execution_id_created_at_idx ON constructive_compute_public.org_function_invocations (graph_execution_id, created_at);
 
 CREATE INDEX org_function_invocations_task_identifier_created_at_idx ON constructive_compute_public.org_function_invocations (task_identifier, created_at);
+
 
 
 CREATE TABLE constructive_compute_public.platform_function_definitions ();
@@ -1809,6 +1813,7 @@ ALTER TABLE constructive_compute_public.platform_function_execution_logs
 CREATE INDEX platform_function_execution_logs_invocation_id_created_at_idx ON constructive_compute_public.platform_function_execution_logs (invocation_id, created_at);
 
 
+
 ALTER TABLE constructive_compute_public.platform_function_graphs 
   DISABLE ROW LEVEL SECURITY;
 
@@ -2039,6 +2044,7 @@ CREATE INDEX platform_function_invocations_actor_id_created_at_idx ON constructi
 CREATE INDEX platform_function_invocations_graph_execution_id_created_at_idx ON constructive_compute_public.platform_function_invocations (graph_execution_id, created_at);
 
 CREATE INDEX platform_function_invocations_task_identifier_created_at_idx ON constructive_compute_public.platform_function_invocations (task_identifier, created_at);
+
 
 
 CREATE TABLE constructive_compute_public.platform_secret_definitions ();
