@@ -25,6 +25,7 @@ import {
   getGraphJobs,
   registerFunction,
   buildCalculatorGraph,
+  buildParallelGraph,
 } from '../src';
 
 jest.setTimeout(120_000);
@@ -32,6 +33,8 @@ jest.setTimeout(120_000);
 let ctx: FunctionsTestResult;
 let addServer: MockFunctionServer;
 let doubleServer: MockFunctionServer;
+let tripleServer: MockFunctionServer;
+let mergeServer: MockFunctionServer;
 let worker: TestWorker;
 let databaseId: string;
 
@@ -45,12 +48,16 @@ beforeAll(async () => {
 
   addServer = await createMockFunctionServer({ responseBody: { result: 8 } });
   doubleServer = await createMockFunctionServer({ responseBody: { result: 16 } });
+  tripleServer = await createMockFunctionServer({ responseBody: { result: 15 } });
+  mergeServer = await createMockFunctionServer({ responseBody: { result: 25 } });
 
   worker = await createTestWorker(ctx.pg, {
     functionUrl: addServer.url,
     functionUrlMap: {
       add: addServer.url,
       double: doubleServer.url,
+      triple: tripleServer.url,
+      merge: mergeServer.url,
     },
     databaseId,
   });
@@ -58,18 +65,24 @@ beforeAll(async () => {
   // Register functions once (visible to worker pool and graph SQL)
   await registerFunction(ctx.pg, databaseId, 'add', addServer.url);
   await registerFunction(ctx.pg, databaseId, 'double', doubleServer.url);
+  await registerFunction(ctx.pg, databaseId, 'triple', tripleServer.url);
+  await registerFunction(ctx.pg, databaseId, 'merge', mergeServer.url);
 });
 
 afterAll(async () => {
   if (worker) await worker.close();
   if (addServer) await addServer.close();
   if (doubleServer) await doubleServer.close();
+  if (tripleServer) await tripleServer.close();
+  if (mergeServer) await mergeServer.close();
   if (ctx) await ctx.teardown();
 });
 
 beforeEach(() => {
   addServer.reset();
   doubleServer.reset();
+  tripleServer.reset();
+  mergeServer.reset();
 });
 
 // ─── Graph infrastructure tests ────────────────────────────────────────
@@ -393,5 +406,143 @@ describe('graph safety limits', () => {
       `DELETE FROM app_jobs.jobs WHERE (payload::jsonb->>'execution_id')::uuid = $1::uuid`,
       [execId]
     );
+  });
+});
+
+// ─── End-to-end auto-dispatch ──────────────────────────────────────────
+
+describe('e2e auto-dispatch via runToCompletion', () => {
+  test('calculator flow completes automatically', async () => {
+    const graphId = await importGraphJson(ctx.pg, databaseId, 'e2e-calc', buildCalculatorGraph());
+
+    addServer.setResponse({ responseBody: { result: 8 } });
+    doubleServer.setResponse({ responseBody: { result: 16 } });
+
+    const execId = await startExecution(ctx.pg, graphId, { a: 5, b: 3 });
+
+    const result = await worker.runToCompletion(ctx.pg, execId);
+
+    expect(result.status).toBe('completed');
+    expect(result.totalJobsProcessed).toBe(2); // add + double
+    expect(result.waves).toBe(2);
+    expect(result.output).toEqual({ value: 16 });
+
+    // Verify both servers were called
+    expect(addServer.requests).toHaveLength(1);
+    expect(doubleServer.requests).toHaveLength(1);
+  });
+
+  test('failure stops execution automatically', async () => {
+    const graphId = await importGraphJson(ctx.pg, databaseId, 'e2e-fail', buildCalculatorGraph());
+
+    addServer.setResponse({ statusCode: 500, responseBody: { error: 'boom' } });
+
+    const execId = await startExecution(ctx.pg, graphId, { a: 1, b: 2 });
+
+    const result = await worker.runToCompletion(ctx.pg, execId);
+
+    expect(result.status).toBe('failed');
+    expect(result.totalJobsProcessed).toBe(1);
+    expect(result.error).toBeTruthy();
+    expect(doubleServer.requests).toHaveLength(0);
+  });
+
+  test('full metering pipeline per node', async () => {
+    const graphId = await importGraphJson(ctx.pg, databaseId, 'e2e-meter', buildCalculatorGraph());
+
+    addServer.setResponse({ responseBody: { result: 100 } });
+    doubleServer.setResponse({ responseBody: { result: 200 } });
+
+    const execId = await startExecution(ctx.pg, graphId, { a: 50, b: 50 });
+
+    const result = await worker.runToCompletion(ctx.pg, execId);
+    expect(result.status).toBe('completed');
+
+    // Verify invocation records for both nodes
+    const { rows: invocations } = await ctx.pg.query(
+      `SELECT task_identifier, status FROM constructive_compute_public.platform_function_invocations
+       WHERE job_id IN (
+         SELECT id FROM app_jobs.jobs_archive WHERE (payload::jsonb->>'execution_id')::uuid = $1::uuid
+         UNION ALL
+         SELECT id FROM app_jobs.jobs WHERE (payload::jsonb->>'execution_id')::uuid = $1::uuid
+       )
+       ORDER BY created_at`,
+      [execId]
+    );
+    // Jobs are deleted after processing, so invocations track by job_id — query invocations directly
+    const { rows: allInvocations } = await ctx.pg.query(
+      `SELECT task_identifier, status FROM constructive_compute_public.platform_function_invocations
+       ORDER BY created_at DESC LIMIT 10`
+    );
+    const addInv = allInvocations.find((i: any) => i.task_identifier === 'add');
+    const doubleInv = allInvocations.find((i: any) => i.task_identifier === 'double');
+    expect(addInv).toBeTruthy();
+    expect(addInv.status).toBe('completed');
+    expect(doubleInv).toBeTruthy();
+    expect(doubleInv.status).toBe('completed');
+
+    // Verify compute log entries
+    const { rows: logs } = await ctx.pg.query(
+      `SELECT task_identifier, status, duration_ms FROM constructive_compute_public.platform_compute_log
+       ORDER BY created_at DESC LIMIT 10`
+    );
+    const addLog = logs.find((l: any) => l.task_identifier === 'add');
+    const doubleLog = logs.find((l: any) => l.task_identifier === 'double');
+    expect(addLog).toBeTruthy();
+    expect(addLog.status).toBe('completed');
+    expect(addLog.duration_ms).toBeGreaterThan(0);
+    expect(doubleLog).toBeTruthy();
+    expect(doubleLog.status).toBe('completed');
+  });
+});
+
+// ─── Parallel branches ─────────────────────────────────────────────────
+
+describe('parallel branch execution', () => {
+  test('parallel branches dispatch concurrently, merge waits for both', async () => {
+    const graphId = await importGraphJson(ctx.pg, databaseId, 'parallel-basic', buildParallelGraph());
+
+    // x=5: double→10, triple→15, merge→25
+    doubleServer.setResponse({ responseBody: { result: 10 } });
+    tripleServer.setResponse({ responseBody: { result: 15 } });
+    mergeServer.setResponse({ responseBody: { result: 25 } });
+
+    const execId = await startExecution(ctx.pg, graphId, { x: 5 });
+
+    const result = await worker.runToCompletion(ctx.pg, execId);
+
+    expect(result.status).toBe('completed');
+    expect(result.totalJobsProcessed).toBe(3); // double + triple + merge
+    expect(result.output).toEqual({ value: 25 });
+
+    // Both double and triple should have been called
+    expect(doubleServer.requests).toHaveLength(1);
+    expect(tripleServer.requests).toHaveLength(1);
+    expect(mergeServer.requests).toHaveLength(1);
+
+    // Verify double received {value: 5}
+    expect(doubleServer.requests[0].body).toEqual({ value: 5 });
+    // Verify triple received {value: 5}
+    expect(tripleServer.requests[0].body).toEqual({ value: 5 });
+    // Verify merge received both inputs
+    expect(mergeServer.requests[0].body).toEqual({ a: 10, b: 15 });
+  });
+
+  test('parallel branch failure fails the execution', async () => {
+    const graphId = await importGraphJson(ctx.pg, databaseId, 'parallel-fail', buildParallelGraph());
+
+    doubleServer.setResponse({ responseBody: { result: 10 } });
+    tripleServer.setResponse({ statusCode: 500, responseBody: { error: 'triple failed' } });
+
+    const execId = await startExecution(ctx.pg, graphId, { x: 5 });
+
+    const result = await worker.runToCompletion(ctx.pg, execId);
+
+    expect(result.status).toBe('failed');
+    // double succeeded, triple failed
+    expect(doubleServer.requests).toHaveLength(1);
+    expect(tripleServer.requests).toHaveLength(1);
+    // merge should never have been called
+    expect(mergeServer.requests).toHaveLength(0);
   });
 });

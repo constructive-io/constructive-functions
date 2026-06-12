@@ -33,9 +33,28 @@ export interface DispatchResult {
   error?: string;
 }
 
+export interface RunToCompletionResult {
+  executionId: string;
+  status: 'completed' | 'failed';
+  totalJobsProcessed: number;
+  waves: number;
+  output?: Record<string, unknown> | null;
+  error?: string | null;
+}
+
 export interface TestWorker {
   /** Dispatch a job through the full compute-worker pipeline */
   dispatchJob: (job: ComputeJobRow) => Promise<DispatchResult>;
+  /**
+   * Automatically poll and process all graph jobs for an execution
+   * until completion or failure. This simulates the production compute-worker
+   * polling loop — the true end-to-end test.
+   */
+  runToCompletion: (
+    pgClient: { query: (sql: string, params?: unknown[]) => Promise<{ rows: any[] }> },
+    executionId: string,
+    opts?: { maxWaves?: number; databaseId?: string }
+  ) => Promise<RunToCompletionResult>;
   /** Set GUCs on the pool connection for a job (same as the real worker) */
   setJobGUCs: (job: ComputeJobRow) => Promise<void>;
   /** Access the module loader for inspection */
@@ -262,8 +281,82 @@ export async function createTestWorker(
     }
   }
 
+  async function runToCompletion(
+    pgClient: { query: (sql: string, params?: unknown[]) => Promise<{ rows: any[] }> },
+    executionId: string,
+    rtoOpts: { maxWaves?: number; databaseId?: string } = {}
+  ): Promise<RunToCompletionResult> {
+    const maxWaves = rtoOpts.maxWaves ?? 50;
+    const dbId = rtoOpts.databaseId ?? databaseId;
+    let totalJobsProcessed = 0;
+    let waves = 0;
+
+    for (let wave = 0; wave < maxWaves; wave++) {
+      // Fetch available graph jobs for this execution
+      const { rows: jobs } = await pgClient.query(
+        `SELECT id, database_id, task_identifier, payload::jsonb as payload
+         FROM app_jobs.jobs
+         WHERE (payload::jsonb->>'execution_id')::uuid = $1::uuid
+         ORDER BY id`,
+        [executionId]
+      );
+
+      if (jobs.length === 0) break;
+      waves++;
+
+      for (const job of jobs) {
+        await dispatchJob({
+          id: job.id,
+          task_identifier: job.task_identifier,
+          payload: job.payload,
+          database_id: job.database_id ?? dbId,
+        });
+        totalJobsProcessed++;
+        // Remove processed job
+        await pgClient.query(`DELETE FROM app_jobs.jobs WHERE id = $1`, [job.id]);
+      }
+
+      // Check execution status after processing wave
+      const { rows: [exec] } = await pgClient.query(
+        `SELECT status, output_payload, error_message
+         FROM constructive_compute_private.platform_function_graph_executions
+         WHERE id = $1`,
+        [executionId]
+      );
+
+      if (exec?.status === 'completed' || exec?.status === 'failed') {
+        return {
+          executionId,
+          status: exec.status,
+          totalJobsProcessed,
+          waves,
+          output: exec.output_payload,
+          error: exec.error_message,
+        };
+      }
+    }
+
+    // If we exhaust waves, check final status
+    const { rows: [finalExec] } = await pgClient.query(
+      `SELECT status, output_payload, error_message
+       FROM constructive_compute_private.platform_function_graph_executions
+       WHERE id = $1`,
+      [executionId]
+    );
+
+    return {
+      executionId,
+      status: finalExec?.status === 'completed' ? 'completed' : 'failed',
+      totalJobsProcessed,
+      waves,
+      output: finalExec?.output_payload,
+      error: finalExec?.error_message ?? (totalJobsProcessed === 0 ? 'no jobs found' : 'max waves exceeded'),
+    };
+  }
+
   return {
     dispatchJob,
+    runToCompletion,
     setJobGUCs,
     loader,
     discovery,

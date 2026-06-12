@@ -157,8 +157,7 @@ export async function getGraphJobs(
   const result = await client.query<GraphJob>(
     `SELECT id, database_id, task_identifier, payload::jsonb as payload
      FROM app_jobs.jobs
-     WHERE task_identifier LIKE 'fbp:eval:%'
-       AND (payload::jsonb->>'execution_id')::uuid = $1::uuid
+     WHERE (payload::jsonb->>'execution_id')::uuid = $1::uuid
      ORDER BY id`,
     [executionId]
   );
@@ -217,6 +216,34 @@ export function buildCalculatorGraph(): GraphJson {
       { src: { node: 'input_b', port: 'value' }, dst: { node: 'add_node', port: 'b' } },
       { src: { node: 'add_node', port: 'result' }, dst: { node: 'double_node', port: 'value' } },
       { src: { node: 'double_node', port: 'result' }, dst: { node: 'output_result', port: 'value' } },
+    ],
+  };
+}
+
+/**
+ * Build a parallel-branch graph:
+ *   graphInput(x) ──┬── double(x*2) ──┬── merge(a+b) → graphOutput
+ *                   └── triple(x*3) ──┘
+ *
+ * Both `double` and `triple` run concurrently (same wave).
+ * `merge` waits for both inputs before executing.
+ */
+export function buildParallelGraph(): GraphJson {
+  return {
+    context: 'function',
+    nodes: [
+      { name: 'input_x', type: 'graphInput', props: [{ name: 'portName', value: 'x' }] },
+      { name: 'double_node', type: 'double' },
+      { name: 'triple_node', type: 'triple' },
+      { name: 'merge_node', type: 'merge' },
+      { name: 'output_result', type: 'graphOutput' },
+    ],
+    edges: [
+      { src: { node: 'input_x', port: 'value' }, dst: { node: 'double_node', port: 'value' } },
+      { src: { node: 'input_x', port: 'value' }, dst: { node: 'triple_node', port: 'value' } },
+      { src: { node: 'double_node', port: 'result' }, dst: { node: 'merge_node', port: 'a' } },
+      { src: { node: 'triple_node', port: 'result' }, dst: { node: 'merge_node', port: 'b' } },
+      { src: { node: 'merge_node', port: 'result' }, dst: { node: 'output_result', port: 'value' } },
     ],
   };
 }

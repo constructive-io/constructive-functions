@@ -94,6 +94,9 @@ export function createMockFunctionServer(
           }),
         reset: () => {
           requests.length = 0;
+          statusCode = opts.statusCode ?? 200;
+          responseBody = opts.responseBody ?? { status: 'ok' };
+          delayMs = opts.delayMs ?? 0;
         },
         setResponse: (newOpts) => {
           if (newOpts.statusCode !== undefined) statusCode = newOpts.statusCode;
