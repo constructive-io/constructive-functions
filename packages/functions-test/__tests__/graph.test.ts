@@ -473,7 +473,7 @@ describe('e2e auto-dispatch via runToCompletion', () => {
     // Verify compute log entries
     const { rows: logs } = await ctx.pg.query(
       `SELECT task_identifier, status, duration_ms FROM constructive_compute_public.platform_compute_log
-       ORDER BY created_at DESC LIMIT 10`
+       ORDER BY completed_at DESC LIMIT 10`
     );
     const addLog = logs.find((l: any) => l.task_identifier === 'add');
     const doubleLog = logs.find((l: any) => l.task_identifier === 'double');
