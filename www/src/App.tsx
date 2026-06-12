@@ -6,11 +6,12 @@ import { JobsPanel } from './components/JobsPanel';
 import { InvocationsPanel } from './components/InvocationsPanel';
 import { K8sPanel } from './components/K8sPanel';
 import { FlowsPanel } from './components/FlowsPanel';
+import { UsagePanel } from './components/UsagePanel';
 import { Terminal } from './components/Terminal';
 import { CommandBar } from './components/CommandBar';
-import { TerminalSquare, Cpu, Key, Briefcase, Activity, Wrench, Container, Workflow } from 'lucide-react';
+import { TerminalSquare, Cpu, Key, Briefcase, Activity, Wrench, Container, Workflow, BarChart3 } from 'lucide-react';
 
-type Tab = 'functions' | 'flows' | 'secrets' | 'jobs' | 'invocations' | 'k8s' | 'commands' | 'terminal';
+type Tab = 'functions' | 'flows' | 'secrets' | 'jobs' | 'invocations' | 'usage' | 'k8s' | 'commands' | 'terminal';
 
 const TABS: { id: Tab; label: string; icon: typeof Cpu }[] = [
   { id: 'functions', label: 'Functions', icon: Cpu },
@@ -18,6 +19,7 @@ const TABS: { id: Tab; label: string; icon: typeof Cpu }[] = [
   { id: 'secrets', label: 'Secrets', icon: Key },
   { id: 'jobs', label: 'Jobs', icon: Briefcase },
   { id: 'invocations', label: 'Invocations', icon: Activity },
+  { id: 'usage', label: 'Usage', icon: BarChart3 },
   { id: 'k8s', label: 'K8s', icon: Container },
   { id: 'commands', label: 'Commands', icon: Wrench },
   { id: 'terminal', label: 'Terminal', icon: TerminalSquare },
@@ -63,6 +65,7 @@ export function App() {
         {activeTab === 'secrets' && <SecretsPanel />}
         {activeTab === 'jobs' && <JobsPanel />}
         {activeTab === 'invocations' && <InvocationsPanel />}
+        {activeTab === 'usage' && <UsagePanel />}
         {activeTab === 'k8s' && <K8sPanel />}
         {activeTab === 'commands' && (
           <div className="p-4 h-full overflow-y-auto">

@@ -386,6 +386,36 @@ export interface PlatformFunctionGraph {
   /** Array of validation error objects when is_valid = false */
   validationErrors?: Record<string, unknown> | null;
 }
+export interface PlatformComputeLog {
+  completedAt?: string | null;
+  id: string;
+  databaseId?: string | null;
+  entityId?: string | null;
+  organizationId?: string | null;
+  entityType?: string | null;
+  actorId?: string | null;
+  taskIdentifier?: string | null;
+  jobId?: string | null;
+  invocationId?: string | null;
+  status?: string | null;
+  durationMs?: number | null;
+  error?: string | null;
+}
+export interface PlatformUsageDaily {
+  id: string;
+  databaseId?: string | null;
+  entityId?: string | null;
+  organizationId?: string | null;
+  entityType?: string | null;
+  taskIdentifier?: string | null;
+  date?: string | null;
+  totalCalls?: string | null;
+  successful?: string | null;
+  failed?: string | null;
+  totalDurationMs?: string | null;
+  minDurationMs?: number | null;
+  maxDurationMs?: number | null;
+}
 /** Function invocation log — INSERT to call a function (business-layer, metered). Linked to definitions by task_identifier string. */
 export interface OrgFunctionInvocation {
   /** Invocation creation timestamp (partition key) */
@@ -504,6 +534,8 @@ export interface PlatformFunctionGraphCommitRelations {}
 export interface PlatformSecretDefinitionRelations {}
 export interface PlatformFunctionExecutionLogRelations {}
 export interface PlatformFunctionGraphRelations {}
+export interface PlatformComputeLogRelations {}
+export interface PlatformUsageDailyRelations {}
 export interface OrgFunctionInvocationRelations {}
 export interface PlatformFunctionInvocationRelations {}
 export interface PlatformFunctionDefinitionRelations {}
@@ -525,6 +557,8 @@ export type PlatformFunctionExecutionLogWithRelations = PlatformFunctionExecutio
   PlatformFunctionExecutionLogRelations;
 export type PlatformFunctionGraphWithRelations = PlatformFunctionGraph &
   PlatformFunctionGraphRelations;
+export type PlatformComputeLogWithRelations = PlatformComputeLog & PlatformComputeLogRelations;
+export type PlatformUsageDailyWithRelations = PlatformUsageDaily & PlatformUsageDailyRelations;
 export type OrgFunctionInvocationWithRelations = OrgFunctionInvocation &
   OrgFunctionInvocationRelations;
 export type PlatformFunctionInvocationWithRelations = PlatformFunctionInvocation &
@@ -615,6 +649,36 @@ export type PlatformFunctionGraphSelect = {
   storeId?: boolean;
   updatedAt?: boolean;
   validationErrors?: boolean;
+};
+export type PlatformComputeLogSelect = {
+  completedAt?: boolean;
+  id?: boolean;
+  databaseId?: boolean;
+  entityId?: boolean;
+  organizationId?: boolean;
+  entityType?: boolean;
+  actorId?: boolean;
+  taskIdentifier?: boolean;
+  jobId?: boolean;
+  invocationId?: boolean;
+  status?: boolean;
+  durationMs?: boolean;
+  error?: boolean;
+};
+export type PlatformUsageDailySelect = {
+  id?: boolean;
+  databaseId?: boolean;
+  entityId?: boolean;
+  organizationId?: boolean;
+  entityType?: boolean;
+  taskIdentifier?: boolean;
+  date?: boolean;
+  totalCalls?: boolean;
+  successful?: boolean;
+  failed?: boolean;
+  totalDurationMs?: boolean;
+  minDurationMs?: boolean;
+  maxDurationMs?: boolean;
 };
 export type OrgFunctionInvocationSelect = {
   createdAt?: boolean;
@@ -866,6 +930,74 @@ export interface PlatformFunctionGraphFilter {
   or?: PlatformFunctionGraphFilter[];
   /** Negates the expression. */
   not?: PlatformFunctionGraphFilter;
+}
+export interface PlatformComputeLogFilter {
+  /** Filter by the object’s `completedAt` field. */
+  completedAt?: DatetimeFilter;
+  /** Filter by the object’s `id` field. */
+  id?: UUIDFilter;
+  /** Filter by the object’s `databaseId` field. */
+  databaseId?: UUIDFilter;
+  /** Filter by the object’s `entityId` field. */
+  entityId?: UUIDFilter;
+  /** Filter by the object’s `organizationId` field. */
+  organizationId?: UUIDFilter;
+  /** Filter by the object’s `entityType` field. */
+  entityType?: StringFilter;
+  /** Filter by the object’s `actorId` field. */
+  actorId?: UUIDFilter;
+  /** Filter by the object’s `taskIdentifier` field. */
+  taskIdentifier?: StringFilter;
+  /** Filter by the object’s `jobId` field. */
+  jobId?: BigIntFilter;
+  /** Filter by the object’s `invocationId` field. */
+  invocationId?: UUIDFilter;
+  /** Filter by the object’s `status` field. */
+  status?: StringFilter;
+  /** Filter by the object’s `durationMs` field. */
+  durationMs?: IntFilter;
+  /** Filter by the object’s `error` field. */
+  error?: StringFilter;
+  /** Checks for all expressions in this list. */
+  and?: PlatformComputeLogFilter[];
+  /** Checks for any expressions in this list. */
+  or?: PlatformComputeLogFilter[];
+  /** Negates the expression. */
+  not?: PlatformComputeLogFilter;
+}
+export interface PlatformUsageDailyFilter {
+  /** Filter by the object’s `id` field. */
+  id?: UUIDFilter;
+  /** Filter by the object’s `databaseId` field. */
+  databaseId?: UUIDFilter;
+  /** Filter by the object’s `entityId` field. */
+  entityId?: UUIDFilter;
+  /** Filter by the object’s `organizationId` field. */
+  organizationId?: UUIDFilter;
+  /** Filter by the object’s `entityType` field. */
+  entityType?: StringFilter;
+  /** Filter by the object’s `taskIdentifier` field. */
+  taskIdentifier?: StringFilter;
+  /** Filter by the object’s `date` field. */
+  date?: DateFilter;
+  /** Filter by the object’s `totalCalls` field. */
+  totalCalls?: BigIntFilter;
+  /** Filter by the object’s `successful` field. */
+  successful?: BigIntFilter;
+  /** Filter by the object’s `failed` field. */
+  failed?: BigIntFilter;
+  /** Filter by the object’s `totalDurationMs` field. */
+  totalDurationMs?: BigIntFilter;
+  /** Filter by the object’s `minDurationMs` field. */
+  minDurationMs?: IntFilter;
+  /** Filter by the object’s `maxDurationMs` field. */
+  maxDurationMs?: IntFilter;
+  /** Checks for all expressions in this list. */
+  and?: PlatformUsageDailyFilter[];
+  /** Checks for any expressions in this list. */
+  or?: PlatformUsageDailyFilter[];
+  /** Negates the expression. */
+  not?: PlatformUsageDailyFilter;
 }
 export interface OrgFunctionInvocationFilter {
   /** Filter by the object’s `createdAt` field. */
@@ -1146,6 +1278,66 @@ export type PlatformFunctionGraphOrderBy =
   | 'UPDATED_AT_DESC'
   | 'VALIDATION_ERRORS_ASC'
   | 'VALIDATION_ERRORS_DESC';
+export type PlatformComputeLogOrderBy =
+  | 'NATURAL'
+  | 'PRIMARY_KEY_ASC'
+  | 'PRIMARY_KEY_DESC'
+  | 'COMPLETED_AT_ASC'
+  | 'COMPLETED_AT_DESC'
+  | 'ID_ASC'
+  | 'ID_DESC'
+  | 'DATABASE_ID_ASC'
+  | 'DATABASE_ID_DESC'
+  | 'ENTITY_ID_ASC'
+  | 'ENTITY_ID_DESC'
+  | 'ORGANIZATION_ID_ASC'
+  | 'ORGANIZATION_ID_DESC'
+  | 'ENTITY_TYPE_ASC'
+  | 'ENTITY_TYPE_DESC'
+  | 'ACTOR_ID_ASC'
+  | 'ACTOR_ID_DESC'
+  | 'TASK_IDENTIFIER_ASC'
+  | 'TASK_IDENTIFIER_DESC'
+  | 'JOB_ID_ASC'
+  | 'JOB_ID_DESC'
+  | 'INVOCATION_ID_ASC'
+  | 'INVOCATION_ID_DESC'
+  | 'STATUS_ASC'
+  | 'STATUS_DESC'
+  | 'DURATION_MS_ASC'
+  | 'DURATION_MS_DESC'
+  | 'ERROR_ASC'
+  | 'ERROR_DESC';
+export type PlatformUsageDailyOrderBy =
+  | 'NATURAL'
+  | 'PRIMARY_KEY_ASC'
+  | 'PRIMARY_KEY_DESC'
+  | 'ID_ASC'
+  | 'ID_DESC'
+  | 'DATABASE_ID_ASC'
+  | 'DATABASE_ID_DESC'
+  | 'ENTITY_ID_ASC'
+  | 'ENTITY_ID_DESC'
+  | 'ORGANIZATION_ID_ASC'
+  | 'ORGANIZATION_ID_DESC'
+  | 'ENTITY_TYPE_ASC'
+  | 'ENTITY_TYPE_DESC'
+  | 'TASK_IDENTIFIER_ASC'
+  | 'TASK_IDENTIFIER_DESC'
+  | 'DATE_ASC'
+  | 'DATE_DESC'
+  | 'TOTAL_CALLS_ASC'
+  | 'TOTAL_CALLS_DESC'
+  | 'SUCCESSFUL_ASC'
+  | 'SUCCESSFUL_DESC'
+  | 'FAILED_ASC'
+  | 'FAILED_DESC'
+  | 'TOTAL_DURATION_MS_ASC'
+  | 'TOTAL_DURATION_MS_DESC'
+  | 'MIN_DURATION_MS_ASC'
+  | 'MIN_DURATION_MS_DESC'
+  | 'MAX_DURATION_MS_ASC'
+  | 'MAX_DURATION_MS_DESC';
 export type OrgFunctionInvocationOrderBy =
   | 'NATURAL'
   | 'PRIMARY_KEY_ASC'
@@ -1490,6 +1682,86 @@ export interface UpdatePlatformFunctionGraphInput {
   platformFunctionGraphPatch: PlatformFunctionGraphPatch;
 }
 export interface DeletePlatformFunctionGraphInput {
+  clientMutationId?: string;
+  id: string;
+}
+export interface CreatePlatformComputeLogInput {
+  clientMutationId?: string;
+  platformComputeLog: {
+    completedAt?: string;
+    databaseId?: string;
+    entityId?: string;
+    organizationId?: string;
+    entityType?: string;
+    actorId?: string;
+    taskIdentifier: string;
+    jobId: string;
+    invocationId?: string;
+    status: string;
+    durationMs: number;
+    error?: string;
+  };
+}
+export interface PlatformComputeLogPatch {
+  completedAt?: string | null;
+  databaseId?: string | null;
+  entityId?: string | null;
+  organizationId?: string | null;
+  entityType?: string | null;
+  actorId?: string | null;
+  taskIdentifier?: string | null;
+  jobId?: string | null;
+  invocationId?: string | null;
+  status?: string | null;
+  durationMs?: number | null;
+  error?: string | null;
+}
+export interface UpdatePlatformComputeLogInput {
+  clientMutationId?: string;
+  id: string;
+  platformComputeLogPatch: PlatformComputeLogPatch;
+}
+export interface DeletePlatformComputeLogInput {
+  clientMutationId?: string;
+  id: string;
+}
+export interface CreatePlatformUsageDailyInput {
+  clientMutationId?: string;
+  platformUsageDaily: {
+    databaseId?: string;
+    entityId?: string;
+    organizationId?: string;
+    entityType?: string;
+    taskIdentifier: string;
+    date: string;
+    totalCalls?: string;
+    successful?: string;
+    failed?: string;
+    totalDurationMs?: string;
+    minDurationMs?: number;
+    maxDurationMs?: number;
+  };
+}
+export interface PlatformUsageDailyPatch {
+  databaseId?: string | null;
+  entityId?: string | null;
+  organizationId?: string | null;
+  entityType?: string | null;
+  taskIdentifier?: string | null;
+  date?: string | null;
+  totalCalls?: string | null;
+  successful?: string | null;
+  failed?: string | null;
+  totalDurationMs?: string | null;
+  minDurationMs?: number | null;
+  maxDurationMs?: number | null;
+}
+export interface UpdatePlatformUsageDailyInput {
+  clientMutationId?: string;
+  id: string;
+  platformUsageDailyPatch: PlatformUsageDailyPatch;
+}
+export interface DeletePlatformUsageDailyInput {
   clientMutationId?: string;
   id: string;
 }
@@ -1894,6 +2166,38 @@ export interface PlatformFunctionGraphInput {
   updatedAt?: string;
   /** Array of validation error objects when is_valid = false */
   validationErrors?: Record<string, unknown>;
+}
+/** An input for mutations affecting `PlatformComputeLog` */
+export interface PlatformComputeLogInput {
+  completedAt?: string;
+  id?: string;
+  databaseId?: string;
+  entityId?: string;
+  organizationId?: string;
+  entityType?: string;
+  actorId?: string;
+  taskIdentifier: string;
+  jobId: string;
+  invocationId?: string;
+  status: string;
+  durationMs: number;
+  error?: string;
+}
+/** An input for mutations affecting `PlatformUsageDaily` */
+export interface PlatformUsageDailyInput {
+  id?: string;
+  databaseId?: string;
+  entityId?: string;
+  organizationId?: string;
+  entityType?: string;
+  taskIdentifier: string;
+  date: string;
+  totalCalls?: string;
+  successful?: string;
+  failed?: string;
+  totalDurationMs?: string;
+  minDurationMs?: number;
+  maxDurationMs?: number;
 }
 /** An input for mutations affecting `OrgFunctionInvocation` */
 export interface OrgFunctionInvocationInput {
@@ -2506,6 +2810,96 @@ export type DeletePlatformFunctionGraphPayloadSelect = {
     select: PlatformFunctionGraphEdgeSelect;
   };
 };
+export interface CreatePlatformComputeLogPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformComputeLog` that was created by this mutation. */
+  platformComputeLog?: PlatformComputeLog | null;
+  platformComputeLogEdge?: PlatformComputeLogEdge | null;
+}
+export type CreatePlatformComputeLogPayloadSelect = {
+  clientMutationId?: boolean;
+  platformComputeLog?: {
+    select: PlatformComputeLogSelect;
+  };
+  platformComputeLogEdge?: {
+    select: PlatformComputeLogEdgeSelect;
+  };
+};
+export interface UpdatePlatformComputeLogPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformComputeLog` that was updated by this mutation. */
+  platformComputeLog?: PlatformComputeLog | null;
+  platformComputeLogEdge?: PlatformComputeLogEdge | null;
+}
+export type UpdatePlatformComputeLogPayloadSelect = {
+  clientMutationId?: boolean;
+  platformComputeLog?: {
+    select: PlatformComputeLogSelect;
+  };
+  platformComputeLogEdge?: {
+    select: PlatformComputeLogEdgeSelect;
+  };
+};
+export interface DeletePlatformComputeLogPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformComputeLog` that was deleted by this mutation. */
+  platformComputeLog?: PlatformComputeLog | null;
+  platformComputeLogEdge?: PlatformComputeLogEdge | null;
+}
+export type DeletePlatformComputeLogPayloadSelect = {
+  clientMutationId?: boolean;
+  platformComputeLog?: {
+    select: PlatformComputeLogSelect;
+  };
+  platformComputeLogEdge?: {
+    select: PlatformComputeLogEdgeSelect;
+  };
+};
+export interface CreatePlatformUsageDailyPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformUsageDaily` that was created by this mutation. */
+  platformUsageDaily?: PlatformUsageDaily | null;
+  platformUsageDailyEdge?: PlatformUsageDailyEdge | null;
+}
+export type CreatePlatformUsageDailyPayloadSelect = {
+  clientMutationId?: boolean;
+  platformUsageDaily?: {
+    select: PlatformUsageDailySelect;
+  };
+  platformUsageDailyEdge?: {
+    select: PlatformUsageDailyEdgeSelect;
+  };
+};
+export interface UpdatePlatformUsageDailyPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformUsageDaily` that was updated by this mutation. */
+  platformUsageDaily?: PlatformUsageDaily | null;
+  platformUsageDailyEdge?: PlatformUsageDailyEdge | null;
+}
+export type UpdatePlatformUsageDailyPayloadSelect = {
+  clientMutationId?: boolean;
+  platformUsageDaily?: {
+    select: PlatformUsageDailySelect;
+  };
+  platformUsageDailyEdge?: {
+    select: PlatformUsageDailyEdgeSelect;
+  };
+};
+export interface DeletePlatformUsageDailyPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformUsageDaily` that was deleted by this mutation. */
+  platformUsageDaily?: PlatformUsageDaily | null;
+  platformUsageDailyEdge?: PlatformUsageDailyEdge | null;
+}
+export type DeletePlatformUsageDailyPayloadSelect = {
+  clientMutationId?: boolean;
+  platformUsageDaily?: {
+    select: PlatformUsageDailySelect;
+  };
+  platformUsageDailyEdge?: {
+    select: PlatformUsageDailyEdgeSelect;
+  };
+};
 export interface CreateOrgFunctionInvocationPayload {
   clientMutationId?: string | null;
   /** The `OrgFunctionInvocation` that was created by this mutation. */
@@ -2735,6 +3129,30 @@ export type PlatformFunctionGraphEdgeSelect = {
   cursor?: boolean;
   node?: {
     select: PlatformFunctionGraphSelect;
+  };
+};
+/** A `PlatformComputeLog` edge in the connection. */
+export interface PlatformComputeLogEdge {
+  cursor?: string | null;
+  /** The `PlatformComputeLog` at the end of the edge. */
+  node?: PlatformComputeLog | null;
+}
+export type PlatformComputeLogEdgeSelect = {
+  cursor?: boolean;
+  node?: {
+    select: PlatformComputeLogSelect;
+  };
+};
+/** A `PlatformUsageDaily` edge in the connection. */
+export interface PlatformUsageDailyEdge {
+  cursor?: string | null;
+  /** The `PlatformUsageDaily` at the end of the edge. */
+  node?: PlatformUsageDaily | null;
+}
+export type PlatformUsageDailyEdgeSelect = {
+  cursor?: boolean;
+  node?: {
+    select: PlatformUsageDailySelect;
   };
 };
 /** A `OrgFunctionInvocation` edge in the connection. */

@@ -14,6 +14,8 @@ import { PlatformFunctionGraphCommitModel } from './models/platformFunctionGraph
 import { PlatformSecretDefinitionModel } from './models/platformSecretDefinition';
 import { PlatformFunctionExecutionLogModel } from './models/platformFunctionExecutionLog';
 import { PlatformFunctionGraphModel } from './models/platformFunctionGraph';
+import { PlatformComputeLogModel } from './models/platformComputeLog';
+import { PlatformUsageDailyModel } from './models/platformUsageDaily';
 import { OrgFunctionInvocationModel } from './models/orgFunctionInvocation';
 import { PlatformFunctionInvocationModel } from './models/platformFunctionInvocation';
 import { PlatformFunctionDefinitionModel } from './models/platformFunctionDefinition';
@@ -61,6 +63,8 @@ export function createClient(config: OrmClientConfig) {
     platformSecretDefinition: new PlatformSecretDefinitionModel(client),
     platformFunctionExecutionLog: new PlatformFunctionExecutionLogModel(client),
     platformFunctionGraph: new PlatformFunctionGraphModel(client),
+    platformComputeLog: new PlatformComputeLogModel(client),
+    platformUsageDaily: new PlatformUsageDailyModel(client),
     orgFunctionInvocation: new OrgFunctionInvocationModel(client),
     platformFunctionInvocation: new PlatformFunctionInvocationModel(client),
     platformFunctionDefinition: new PlatformFunctionDefinitionModel(client),

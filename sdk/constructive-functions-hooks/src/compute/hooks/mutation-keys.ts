@@ -123,6 +123,24 @@ export const platformFunctionGraphMutationKeys = {
   /** Delete platformFunctionGraph mutation key */ delete: (id: string | number) =>
     ['mutation', 'platformfunctiongraph', 'delete', id] as const,
 } as const;
+export const platformComputeLogMutationKeys = {
+  /** All platformComputeLog mutation keys */ all: ['mutation', 'platformcomputelog'] as const,
+  /** Create platformComputeLog mutation key */ create: () =>
+    ['mutation', 'platformcomputelog', 'create'] as const,
+  /** Update platformComputeLog mutation key */ update: (id: string | number) =>
+    ['mutation', 'platformcomputelog', 'update', id] as const,
+  /** Delete platformComputeLog mutation key */ delete: (id: string | number) =>
+    ['mutation', 'platformcomputelog', 'delete', id] as const,
+} as const;
+export const platformUsageDailyMutationKeys = {
+  /** All platformUsageDaily mutation keys */ all: ['mutation', 'platformusagedaily'] as const,
+  /** Create platformUsageDaily mutation key */ create: () =>
+    ['mutation', 'platformusagedaily', 'create'] as const,
+  /** Update platformUsageDaily mutation key */ update: (id: string | number) =>
+    ['mutation', 'platformusagedaily', 'update', id] as const,
+  /** Delete platformUsageDaily mutation key */ delete: (id: string | number) =>
+    ['mutation', 'platformusagedaily', 'delete', id] as const,
+} as const;
 export const orgFunctionInvocationMutationKeys = {
   /** All orgFunctionInvocation mutation keys */ all: [
     'mutation',
@@ -264,6 +282,8 @@ export const mutationKeys = {
   platformSecretDefinition: platformSecretDefinitionMutationKeys,
   platformFunctionExecutionLog: platformFunctionExecutionLogMutationKeys,
   platformFunctionGraph: platformFunctionGraphMutationKeys,
+  platformComputeLog: platformComputeLogMutationKeys,
+  platformUsageDaily: platformUsageDailyMutationKeys,
   orgFunctionInvocation: orgFunctionInvocationMutationKeys,
   platformFunctionInvocation: platformFunctionInvocationMutationKeys,
   platformFunctionDefinition: platformFunctionDefinitionMutationKeys,

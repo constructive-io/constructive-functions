@@ -12,7 +12,7 @@ import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
 
 import { TtlCache } from './cache';
-import type { ComputeModuleConfig, FunctionModuleConfig, InvocationModuleConfig } from './types';
+import type { ComputeLogModuleConfig, ComputeModuleConfig, FunctionModuleConfig, InvocationModuleConfig } from './types';
 
 const log = new Logger('compute:module-loader');
 
@@ -38,6 +38,19 @@ const INVOCATION_MODULE_SQL = `
   FROM metaschema_modules_public.function_invocation_module fim
   JOIN metaschema_public.schema s ON fim.schema_id = s.id
   WHERE fim.database_id = $1
+`;
+
+const COMPUTE_LOG_MODULE_SQL = `
+  SELECT
+    s.schema_name  AS public_schema,
+    ps.schema_name AS private_schema,
+    clm.compute_log_table_name,
+    clm.usage_daily_table_name,
+    clm.scope
+  FROM metaschema_modules_public.compute_log_module clm
+  JOIN metaschema_public.schema s  ON clm.schema_id = s.id
+  JOIN metaschema_public.schema ps ON clm.private_schema_id = ps.id
+  WHERE clm.database_id = $1
 `;
 
 export class ComputeModuleLoader {
@@ -88,13 +101,32 @@ export class ComputeModuleLoader {
       log.debug(`function_invocation_module not available for database ${databaseId} — invocation tracking disabled`);
     }
 
-    const config: ComputeModuleConfig = { functionModule, invocationModules };
+    // Compute log module is optional — only present when usage tracking is provisioned
+    let computeLogModule: ComputeLogModuleConfig | null = null;
+    try {
+      const clResult = await this.pool.query(COMPUTE_LOG_MODULE_SQL, [databaseId]);
+      if (clResult.rows.length > 0) {
+        const row = clResult.rows[0];
+        computeLogModule = {
+          publicSchema: row.public_schema,
+          privateSchema: row.private_schema,
+          computeLogTable: row.compute_log_table_name,
+          usageDailyTable: row.usage_daily_table_name,
+          scope: row.scope,
+        };
+      }
+    } catch {
+      log.debug(`compute_log_module not available for database ${databaseId} — usage logging disabled`);
+    }
+
+    const config: ComputeModuleConfig = { functionModule, invocationModules, computeLogModule };
     this.cache.set(databaseId, config);
 
     log.info(
       `loaded compute module config for database ${databaseId}: ` +
         `fn=${functionModule ? `${functionModule.publicSchema}.${functionModule.definitionsTable}` : 'none'}, ` +
-        `invocations=${invocationModules.length} scope(s)`
+        `invocations=${invocationModules.length} scope(s), ` +
+        `computeLog=${computeLogModule ? `${computeLogModule.publicSchema}.${computeLogModule.computeLogTable}` : 'none'}`
     );
 
     return config;

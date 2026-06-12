@@ -40,6 +40,7 @@ GRANT USAGE ON ALL SEQUENCES IN SCHEMA constructive_users_public                
 -- ─── Private schemas (for functions/triggers that need cross-schema access) ──
 GRANT USAGE ON SCHEMA constructive_compute_private                          TO authenticated;
 GRANT SELECT ON ALL TABLES IN SCHEMA constructive_compute_private           TO authenticated;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA constructive_compute_private        TO authenticated;
 
 GRANT USAGE ON SCHEMA constructive_platform_function_graph_private          TO authenticated;
 GRANT SELECT ON ALL TABLES IN SCHEMA constructive_platform_function_graph_private TO authenticated;

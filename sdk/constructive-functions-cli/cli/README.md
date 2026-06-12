@@ -41,7 +41,7 @@ constructive-functions auth set-token <your-token>
 | Target | Default Endpoint | Tables | Custom Operations |
 |--------|-----------------|--------|-------------------|
 | `api` |  | 8 | 9 |
-| `compute` |  | 12 | 16 |
+| `compute` |  | 14 | 16 |
 | `objects` |  | 5 | 4 |
 
 ## Commands
@@ -92,6 +92,8 @@ and lifecycle settings. |
 | `compute:platform-secret-definition` | platformSecretDefinition CRUD operations |
 | `compute:platform-function-execution-log` | platformFunctionExecutionLog CRUD operations |
 | `compute:platform-function-graph` | platformFunctionGraph CRUD operations |
+| `compute:platform-compute-log` | platformComputeLog CRUD operations |
+| `compute:platform-usage-daily` | platformUsageDaily CRUD operations |
 | `compute:org-function-invocation` | orgFunctionInvocation CRUD operations |
 | `compute:platform-function-invocation` | platformFunctionInvocation CRUD operations |
 | `compute:platform-function-definition` | platformFunctionDefinition CRUD operations |
@@ -862,6 +864,74 @@ CRUD operations for PlatformFunctionGraph records.
 
 **Required create fields:** `databaseId`, `name`, `storeId`
 **Optional create fields (backend defaults):** `context`, `createdBy`, `definitionsCommitId`, `description`, `entityId`, `isValid`, `validationErrors`
+
+### `compute:platform-compute-log`
+
+CRUD operations for PlatformComputeLog records.
+
+| Subcommand | Description |
+|------------|-------------|
+| `list` | List all platformComputeLog records |
+| `find-first` | Find first matching platformComputeLog record |
+| `get` | Get a platformComputeLog by id |
+| `create` | Create a new platformComputeLog |
+| `update` | Update an existing platformComputeLog |
+| `delete` | Delete a platformComputeLog |
+
+**Fields:**
+
+| Field | Type |
+|-------|------|
+| `completedAt` | Datetime |
+| `id` | UUID |
+| `databaseId` | UUID |
+| `entityId` | UUID |
+| `organizationId` | UUID |
+| `entityType` | String |
+| `actorId` | UUID |
+| `taskIdentifier` | String |
+| `jobId` | BigInt |
+| `invocationId` | UUID |
+| `status` | String |
+| `durationMs` | Int |
+| `error` | String |
+
+**Required create fields:** `taskIdentifier`, `jobId`, `status`, `durationMs`
+**Optional create fields (backend defaults):** `completedAt`, `databaseId`, `entityId`, `organizationId`, `entityType`, `actorId`, `invocationId`, `error`
+
+### `compute:platform-usage-daily`
+
+CRUD operations for PlatformUsageDaily records.
+
+| Subcommand | Description |
+|------------|-------------|
+| `list` | List all platformUsageDaily records |
+| `find-first` | Find first matching platformUsageDaily record |
+| `get` | Get a platformUsageDaily by id |
+| `create` | Create a new platformUsageDaily |
+| `update` | Update an existing platformUsageDaily |
+| `delete` | Delete a platformUsageDaily |
+
+**Fields:**
+
+| Field | Type |
+|-------|------|
+| `id` | UUID |
+| `databaseId` | UUID |
+| `entityId` | UUID |
+| `organizationId` | UUID |
+| `entityType` | String |
+| `taskIdentifier` | String |
+| `date` | Date |
+| `totalCalls` | BigInt |
+| `successful` | BigInt |
+| `failed` | BigInt |
+| `totalDurationMs` | BigInt |
+| `minDurationMs` | Int |
+| `maxDurationMs` | Int |
+
+**Required create fields:** `taskIdentifier`, `date`
+**Optional create fields (backend defaults):** `databaseId`, `entityId`, `organizationId`, `entityType`, `totalCalls`, `successful`, `failed`, `totalDurationMs`, `minDurationMs`, `maxDurationMs`
 
 ### `compute:org-function-invocation`
 

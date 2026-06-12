@@ -19,6 +19,7 @@ import { Logger } from '@pgpmjs/logger';
 import type { Pool, PoolClient } from 'pg';
 
 import { BillingTracker } from './billing';
+import { ComputeLogTracker } from './compute-log';
 import { FunctionDiscovery } from './discovery';
 import { InvocationTracker } from './invocation';
 import { ComputeModuleLoader } from './module-loader';
@@ -29,6 +30,8 @@ const DEFAULT_DATABASE_ID = '00000000-0000-0000-0000-000000000000';
 
 export { BillingTracker } from './billing';
 export { TtlCache } from './cache';
+export { ComputeLogTracker } from './compute-log';
+export type { ComputeLogEntry } from './compute-log';
 export { FunctionDiscovery } from './discovery';
 export { InvocationTracker } from './invocation';
 export { ComputeModuleLoader } from './module-loader';
@@ -38,6 +41,7 @@ export type {
   BillingContext,
   BillingModuleConfig,
   ComputeJobRow,
+  ComputeLogModuleConfig,
   ComputeModuleConfig,
   ComputeWorkerOptions,
   CreateInvocationInput,
@@ -64,6 +68,7 @@ export default class ComputeWorker {
   readonly discovery: FunctionDiscovery;
   readonly tracker: InvocationTracker;
   readonly billing: BillingTracker;
+  readonly computeLog: ComputeLogTracker;
 
   private callbackUrl?: string;
   private gatewayUrl?: string;
@@ -79,6 +84,7 @@ export default class ComputeWorker {
     this.discovery = new FunctionDiscovery(this.pgPool, this.loader, this.platformDatabaseId, opts.cacheTtlMs);
     this.tracker = new InvocationTracker(this.pgPool, this.loader, this.platformDatabaseId);
     this.billing = new BillingTracker(this.pgPool, this.platformDatabaseId, opts.cacheTtlMs);
+    this.computeLog = new ComputeLogTracker(this.pgPool, this.loader, this.platformDatabaseId);
 
     this.callbackUrl = process.env.COMPUTE_CALLBACK_URL
       || process.env.INTERNAL_JOBS_CALLBACK_URL;
@@ -345,6 +351,20 @@ export default class ComputeWorker {
           job_id: String(job.id),
         }, databaseId);
       }
+
+      // Write compute log entry (no-ops if compute_log_module not provisioned)
+      await this.computeLog.log({
+        task_identifier,
+        job_id: job.id,
+        invocation_id: invocationId,
+        database_id: databaseId,
+        entity_id: job.entity_id,
+        organization_id: job.organization_id,
+        entity_type: job.entity_type,
+        actor_id: job.actor_id,
+        status: 'completed',
+        duration_ms: ms,
+      });
     } catch (err: any) {
       const elapsed = process.hrtime(reqStart);
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
@@ -352,6 +372,21 @@ export default class ComputeWorker {
         invocationId, ms, err.message,
         scope, scope === 'org' ? databaseId : undefined
       );
+
+      // Write compute log entry for failures too
+      await this.computeLog.log({
+        task_identifier,
+        job_id: job.id,
+        invocation_id: invocationId,
+        database_id: databaseId,
+        entity_id: job.entity_id,
+        organization_id: job.organization_id,
+        entity_type: job.entity_type,
+        actor_id: job.actor_id,
+        status: 'failed',
+        duration_ms: ms,
+        error: err.message,
+      });
       throw err;
     }
   }

@@ -12,6 +12,8 @@ export { PlatformFunctionGraphCommitModel } from './platformFunctionGraphCommit'
 export { PlatformSecretDefinitionModel } from './platformSecretDefinition';
 export { PlatformFunctionExecutionLogModel } from './platformFunctionExecutionLog';
 export { PlatformFunctionGraphModel } from './platformFunctionGraph';
+export { PlatformComputeLogModel } from './platformComputeLog';
+export { PlatformUsageDailyModel } from './platformUsageDaily';
 export { OrgFunctionInvocationModel } from './orgFunctionInvocation';
 export { PlatformFunctionInvocationModel } from './platformFunctionInvocation';
 export { PlatformFunctionDefinitionModel } from './platformFunctionDefinition';

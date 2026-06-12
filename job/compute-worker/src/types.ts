@@ -41,9 +41,18 @@ export interface InvocationModuleConfig {
   scope: string;
 }
 
+export interface ComputeLogModuleConfig {
+  publicSchema: string;
+  privateSchema: string;
+  computeLogTable: string;
+  usageDailyTable: string;
+  scope: string;
+}
+
 export interface ComputeModuleConfig {
   functionModule: FunctionModuleConfig | null;
   invocationModules: InvocationModuleConfig[];
+  computeLogModule: ComputeLogModuleConfig | null;
 }
 
 // ─── Invocation Record ───────────────────────────────────────────────────────

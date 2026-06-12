@@ -104,6 +104,24 @@ export const platformFunctionGraphKeys = {
   /** Detail query key for specific item */ detail: (id: string | number) =>
     [...platformFunctionGraphKeys.details(), id] as const,
 } as const;
+export const platformComputeLogKeys = {
+  /** All platformComputeLog queries */ all: ['platformcomputelog'] as const,
+  /** List query keys */ lists: () => [...platformComputeLogKeys.all, 'list'] as const,
+  /** List query key with variables */ list: (variables?: object) =>
+    [...platformComputeLogKeys.lists(), variables] as const,
+  /** Detail query keys */ details: () => [...platformComputeLogKeys.all, 'detail'] as const,
+  /** Detail query key for specific item */ detail: (id: string | number) =>
+    [...platformComputeLogKeys.details(), id] as const,
+} as const;
+export const platformUsageDailyKeys = {
+  /** All platformUsageDaily queries */ all: ['platformusagedaily'] as const,
+  /** List query keys */ lists: () => [...platformUsageDailyKeys.all, 'list'] as const,
+  /** List query key with variables */ list: (variables?: object) =>
+    [...platformUsageDailyKeys.lists(), variables] as const,
+  /** Detail query keys */ details: () => [...platformUsageDailyKeys.all, 'detail'] as const,
+  /** Detail query key for specific item */ detail: (id: string | number) =>
+    [...platformUsageDailyKeys.details(), id] as const,
+} as const;
 export const orgFunctionInvocationKeys = {
   /** All orgFunctionInvocation queries */ all: ['orgfunctioninvocation'] as const,
   /** List query keys */ lists: () => [...orgFunctionInvocationKeys.all, 'list'] as const,
@@ -174,6 +192,8 @@ export const queryKeys = {
   platformSecretDefinition: platformSecretDefinitionKeys,
   platformFunctionExecutionLog: platformFunctionExecutionLogKeys,
   platformFunctionGraph: platformFunctionGraphKeys,
+  platformComputeLog: platformComputeLogKeys,
+  platformUsageDaily: platformUsageDailyKeys,
   orgFunctionInvocation: orgFunctionInvocationKeys,
   platformFunctionInvocation: platformFunctionInvocationKeys,
   platformFunctionDefinition: platformFunctionDefinitionKeys,

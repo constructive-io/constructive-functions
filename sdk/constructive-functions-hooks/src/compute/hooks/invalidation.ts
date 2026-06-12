@@ -24,6 +24,8 @@ import {
   platformSecretDefinitionKeys,
   platformFunctionExecutionLogKeys,
   platformFunctionGraphKeys,
+  platformComputeLogKeys,
+  platformUsageDailyKeys,
   orgFunctionInvocationKeys,
   platformFunctionInvocationKeys,
   platformFunctionDefinitionKeys,
@@ -201,6 +203,40 @@ export const invalidate = {
         queryKey: platformFunctionGraphKeys.detail(id),
       }),
   },
+  /** Invalidate platformComputeLog queries */ platformComputeLog: {
+    /** Invalidate all platformComputeLog queries */ all: (queryClient: QueryClient) =>
+      queryClient.invalidateQueries({
+        queryKey: platformComputeLogKeys.all,
+      }),
+    /** Invalidate platformComputeLog list queries */ lists: (queryClient: QueryClient) =>
+      queryClient.invalidateQueries({
+        queryKey: platformComputeLogKeys.lists(),
+      }),
+    /** Invalidate a specific platformComputeLog */ detail: (
+      queryClient: QueryClient,
+      id: string | number
+    ) =>
+      queryClient.invalidateQueries({
+        queryKey: platformComputeLogKeys.detail(id),
+      }),
+  },
+  /** Invalidate platformUsageDaily queries */ platformUsageDaily: {
+    /** Invalidate all platformUsageDaily queries */ all: (queryClient: QueryClient) =>
+      queryClient.invalidateQueries({
+        queryKey: platformUsageDailyKeys.all,
+      }),
+    /** Invalidate platformUsageDaily list queries */ lists: (queryClient: QueryClient) =>
+      queryClient.invalidateQueries({
+        queryKey: platformUsageDailyKeys.lists(),
+      }),
+    /** Invalidate a specific platformUsageDaily */ detail: (
+      queryClient: QueryClient,
+      id: string | number
+    ) =>
+      queryClient.invalidateQueries({
+        queryKey: platformUsageDailyKeys.detail(id),
+      }),
+  },
   /** Invalidate orgFunctionInvocation queries */ orgFunctionInvocation: {
     /** Invalidate all orgFunctionInvocation queries */ all: (queryClient: QueryClient) =>
       queryClient.invalidateQueries({
@@ -335,6 +371,22 @@ export const remove = {
   ) => {
     queryClient.removeQueries({
       queryKey: platformFunctionGraphKeys.detail(id),
+    });
+  },
+  /** Remove platformComputeLog from cache */ platformComputeLog: (
+    queryClient: QueryClient,
+    id: string | number
+  ) => {
+    queryClient.removeQueries({
+      queryKey: platformComputeLogKeys.detail(id),
+    });
+  },
+  /** Remove platformUsageDaily from cache */ platformUsageDaily: (
+    queryClient: QueryClient,
+    id: string | number
+  ) => {
+    queryClient.removeQueries({
+      queryKey: platformUsageDailyKeys.detail(id),
     });
   },
   /** Remove orgFunctionInvocation from cache */ orgFunctionInvocation: (

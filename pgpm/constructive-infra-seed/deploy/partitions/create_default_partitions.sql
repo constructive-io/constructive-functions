@@ -29,4 +29,8 @@ CREATE TABLE IF NOT EXISTS constructive_compute_private.platform_function_graph_
 CREATE TABLE IF NOT EXISTS constructive_compute_private.platform_function_graph_execution_outputs_default
   PARTITION OF constructive_compute_private.platform_function_graph_execution_outputs DEFAULT;
 
+-- Compute usage logging (partitioned by completed_at)
+CREATE TABLE IF NOT EXISTS constructive_compute_public.platform_compute_log_default
+  PARTITION OF constructive_compute_public.platform_compute_log DEFAULT;
+
 COMMIT;

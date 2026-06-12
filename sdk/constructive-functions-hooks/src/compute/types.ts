@@ -88,6 +88,36 @@ export interface PlatformFunctionGraph {
   updatedAt: string | null;
   validationErrors: unknown | null;
 }
+export interface PlatformComputeLog {
+  completedAt: string | null;
+  id: string | null;
+  databaseId: string | null;
+  entityId: string | null;
+  organizationId: string | null;
+  entityType: string | null;
+  actorId: string | null;
+  taskIdentifier: string | null;
+  jobId: string | null;
+  invocationId: string | null;
+  status: string | null;
+  durationMs: number | null;
+  error: string | null;
+}
+export interface PlatformUsageDaily {
+  id: string | null;
+  databaseId: string | null;
+  entityId: string | null;
+  organizationId: string | null;
+  entityType: string | null;
+  taskIdentifier: string | null;
+  date: string | null;
+  totalCalls: string | null;
+  successful: string | null;
+  failed: string | null;
+  totalDurationMs: string | null;
+  minDurationMs: number | null;
+  maxDurationMs: number | null;
+}
 export interface OrgFunctionInvocation {
   createdAt: string | null;
   actorId: string | null;

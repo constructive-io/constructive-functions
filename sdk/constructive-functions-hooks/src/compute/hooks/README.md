@@ -74,6 +74,16 @@ function App() {
 | `useCreatePlatformFunctionGraphMutation` | Mutation | Flow graph definitions — FBP graphs stored in the dedicated graph Merkle store |
 | `useUpdatePlatformFunctionGraphMutation` | Mutation | Flow graph definitions — FBP graphs stored in the dedicated graph Merkle store |
 | `useDeletePlatformFunctionGraphMutation` | Mutation | Flow graph definitions — FBP graphs stored in the dedicated graph Merkle store |
+| `usePlatformComputeLogsQuery` | Query | List all platformComputeLogs |
+| `usePlatformComputeLogQuery` | Query | Get one platformComputeLog |
+| `useCreatePlatformComputeLogMutation` | Mutation | Create a platformComputeLog |
+| `useUpdatePlatformComputeLogMutation` | Mutation | Update a platformComputeLog |
+| `useDeletePlatformComputeLogMutation` | Mutation | Delete a platformComputeLog |
+| `usePlatformUsageDailiesQuery` | Query | List all platformUsageDailies |
+| `usePlatformUsageDailyQuery` | Query | Get one platformUsageDaily |
+| `useCreatePlatformUsageDailyMutation` | Mutation | Create a platformUsageDaily |
+| `useUpdatePlatformUsageDailyMutation` | Mutation | Update a platformUsageDaily |
+| `useDeletePlatformUsageDailyMutation` | Mutation | Delete a platformUsageDaily |
 | `useOrgFunctionInvocationsQuery` | Query | Function invocation log — INSERT to call a function (business-layer, metered). Linked to definitions by task_identifier string. |
 | `useOrgFunctionInvocationQuery` | Query | Function invocation log — INSERT to call a function (business-layer, metered). Linked to definitions by task_identifier string. |
 | `useCreateOrgFunctionInvocationMutation` | Mutation | Function invocation log — INSERT to call a function (business-layer, metered). Linked to definitions by task_identifier string. |
@@ -292,6 +302,48 @@ const { mutate: create } = useCreatePlatformFunctionGraphMutation({
   selection: { fields: { id: true } },
 });
 create({ context: '<String>', createdBy: '<UUID>', databaseId: '<UUID>', definitionsCommitId: '<UUID>', description: '<String>', entityId: '<UUID>', isValid: '<Boolean>', name: '<String>', storeId: '<UUID>', validationErrors: '<JSON>' });
+```
+
+### PlatformComputeLog
+
+```typescript
+// List all platformComputeLogs
+const { data, isLoading } = usePlatformComputeLogsQuery({
+  selection: { fields: { completedAt: true, id: true, databaseId: true, entityId: true, organizationId: true, entityType: true, actorId: true, taskIdentifier: true, jobId: true, invocationId: true, status: true, durationMs: true, error: true } },
+});
+
+// Get one platformComputeLog
+const { data: item } = usePlatformComputeLogQuery({
+  id: '<UUID>',
+  selection: { fields: { completedAt: true, id: true, databaseId: true, entityId: true, organizationId: true, entityType: true, actorId: true, taskIdentifier: true, jobId: true, invocationId: true, status: true, durationMs: true, error: true } },
+});
+
+// Create a platformComputeLog
+const { mutate: create } = useCreatePlatformComputeLogMutation({
+  selection: { fields: { id: true } },
+});
+create({ completedAt: '<Datetime>', databaseId: '<UUID>', entityId: '<UUID>', organizationId: '<UUID>', entityType: '<String>', actorId: '<UUID>', taskIdentifier: '<String>', jobId: '<BigInt>', invocationId: '<UUID>', status: '<String>', durationMs: '<Int>', error: '<String>' });
+```
+
+### PlatformUsageDaily
+
+```typescript
+// List all platformUsageDailies
+const { data, isLoading } = usePlatformUsageDailiesQuery({
+  selection: { fields: { id: true, databaseId: true, entityId: true, organizationId: true, entityType: true, taskIdentifier: true, date: true, totalCalls: true, successful: true, failed: true, totalDurationMs: true, minDurationMs: true, maxDurationMs: true } },
+});
+
+// Get one platformUsageDaily
+const { data: item } = usePlatformUsageDailyQuery({
+  id: '<UUID>',
+  selection: { fields: { id: true, databaseId: true, entityId: true, organizationId: true, entityType: true, taskIdentifier: true, date: true, totalCalls: true, successful: true, failed: true, totalDurationMs: true, minDurationMs: true, maxDurationMs: true } },
+});
+
+// Create a platformUsageDaily
+const { mutate: create } = useCreatePlatformUsageDailyMutation({
+  selection: { fields: { id: true } },
+});
+create({ databaseId: '<UUID>', entityId: '<UUID>', organizationId: '<UUID>', entityType: '<String>', taskIdentifier: '<String>', date: '<Date>', totalCalls: '<BigInt>', successful: '<BigInt>', failed: '<BigInt>', totalDurationMs: '<BigInt>', minDurationMs: '<Int>', maxDurationMs: '<Int>' });
 ```
 
 ### OrgFunctionInvocation

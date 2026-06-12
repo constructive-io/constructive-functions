@@ -30,6 +30,8 @@ const db = createClient({
 | `platformSecretDefinition` | findMany, findOne, create, update, delete |
 | `platformFunctionExecutionLog` | findMany, findOne, create, update, delete |
 | `platformFunctionGraph` | findMany, findOne, create, update, delete |
+| `platformComputeLog` | findMany, findOne, create, update, delete |
+| `platformUsageDaily` | findMany, findOne, create, update, delete |
 | `orgFunctionInvocation` | findMany, findOne, create, update, delete |
 | `platformFunctionInvocation` | findMany, findOne, create, update, delete |
 | `platformFunctionDefinition` | findMany, findOne, create, update, delete |
@@ -352,6 +354,88 @@ const updated = await db.platformFunctionGraph.update({ where: { id: '<UUID>' },
 
 // Delete
 const deleted = await db.platformFunctionGraph.delete({ where: { id: '<UUID>' } }).execute();
+```
+
+### `db.platformComputeLog`
+
+CRUD operations for PlatformComputeLog records.
+
+**Fields:**
+
+| Field | Type | Editable |
+|-------|------|----------|
+| `completedAt` | Datetime | Yes |
+| `id` | UUID | No |
+| `databaseId` | UUID | Yes |
+| `entityId` | UUID | Yes |
+| `organizationId` | UUID | Yes |
+| `entityType` | String | Yes |
+| `actorId` | UUID | Yes |
+| `taskIdentifier` | String | Yes |
+| `jobId` | BigInt | Yes |
+| `invocationId` | UUID | Yes |
+| `status` | String | Yes |
+| `durationMs` | Int | Yes |
+| `error` | String | Yes |
+
+**Operations:**
+
+```typescript
+// List all platformComputeLog records
+const items = await db.platformComputeLog.findMany({ select: { completedAt: true, id: true, databaseId: true, entityId: true, organizationId: true, entityType: true, actorId: true, taskIdentifier: true, jobId: true, invocationId: true, status: true, durationMs: true, error: true } }).execute();
+
+// Get one by id
+const item = await db.platformComputeLog.findOne({ id: '<UUID>', select: { completedAt: true, id: true, databaseId: true, entityId: true, organizationId: true, entityType: true, actorId: true, taskIdentifier: true, jobId: true, invocationId: true, status: true, durationMs: true, error: true } }).execute();
+
+// Create
+const created = await db.platformComputeLog.create({ data: { completedAt: '<Datetime>', databaseId: '<UUID>', entityId: '<UUID>', organizationId: '<UUID>', entityType: '<String>', actorId: '<UUID>', taskIdentifier: '<String>', jobId: '<BigInt>', invocationId: '<UUID>', status: '<String>', durationMs: '<Int>', error: '<String>' }, select: { id: true } }).execute();
+
+// Update
+const updated = await db.platformComputeLog.update({ where: { id: '<UUID>' }, data: { completedAt: '<Datetime>' }, select: { id: true } }).execute();
+
+// Delete
+const deleted = await db.platformComputeLog.delete({ where: { id: '<UUID>' } }).execute();
+```
+
+### `db.platformUsageDaily`
+
+CRUD operations for PlatformUsageDaily records.
+
+**Fields:**
+
+| Field | Type | Editable |
+|-------|------|----------|
+| `id` | UUID | No |
+| `databaseId` | UUID | Yes |
+| `entityId` | UUID | Yes |
+| `organizationId` | UUID | Yes |
+| `entityType` | String | Yes |
+| `taskIdentifier` | String | Yes |
+| `date` | Date | Yes |
+| `totalCalls` | BigInt | Yes |
+| `successful` | BigInt | Yes |
+| `failed` | BigInt | Yes |
+| `totalDurationMs` | BigInt | Yes |
+| `minDurationMs` | Int | Yes |
+| `maxDurationMs` | Int | Yes |
+
+**Operations:**
+
+```typescript
+// List all platformUsageDaily records
+const items = await db.platformUsageDaily.findMany({ select: { id: true, databaseId: true, entityId: true, organizationId: true, entityType: true, taskIdentifier: true, date: true, totalCalls: true, successful: true, failed: true, totalDurationMs: true, minDurationMs: true, maxDurationMs: true } }).execute();
+
+// Get one by id
+const item = await db.platformUsageDaily.findOne({ id: '<UUID>', select: { id: true, databaseId: true, entityId: true, organizationId: true, entityType: true, taskIdentifier: true, date: true, totalCalls: true, successful: true, failed: true, totalDurationMs: true, minDurationMs: true, maxDurationMs: true } }).execute();
+
+// Create
+const created = await db.platformUsageDaily.create({ data: { databaseId: '<UUID>', entityId: '<UUID>', organizationId: '<UUID>', entityType: '<String>', taskIdentifier: '<String>', date: '<Date>', totalCalls: '<BigInt>', successful: '<BigInt>', failed: '<BigInt>', totalDurationMs: '<BigInt>', minDurationMs: '<Int>', maxDurationMs: '<Int>' }, select: { id: true } }).execute();
+
+// Update
+const updated = await db.platformUsageDaily.update({ where: { id: '<UUID>' }, data: { databaseId: '<UUID>' }, select: { id: true } }).execute();
+
+// Delete
+const deleted = await db.platformUsageDaily.delete({ where: { id: '<UUID>' } }).execute();
 ```
 
 ### `db.orgFunctionInvocation`
