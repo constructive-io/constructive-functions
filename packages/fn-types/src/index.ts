@@ -7,7 +7,8 @@ export type {
   K8sTarget
 } from './config';
 export { defineConfig } from './config';
-export type { HandlerManifest } from './manifest';
+export type { HandlerManifest, NodeDefinition, Port } from './manifest';
+export { toNodeDefinition } from './manifest';
 export type { FnRegistry, FnRegistryEntry } from './registry';
 export type {
   FunctionContext,

@@ -52,6 +52,18 @@
     },
     "additionalProperties": false
   },
+  "inputs": [
+    { "name": "to", "type": "string", "description": "Recipient email address" },
+    { "name": "subject", "type": "string", "description": "Email subject line" },
+    { "name": "html", "type": "string", "description": "HTML body content", "optional": true },
+    { "name": "text", "type": "string", "description": "Plain text body content", "optional": true },
+    { "name": "from", "type": "string", "description": "Sender email address", "optional": true },
+    { "name": "replyTo", "type": "string", "description": "Reply-to email address", "optional": true }
+  ],
+  "outputs": [
+    { "name": "result", "type": "json", "description": "Send result with status and message ID" }
+  ],
+  "volatile": true,
   "dependencies": {
     "@constructive-io/postmaster": "^1.5.2",
     "@pgpmjs/env": "^2.15.3",

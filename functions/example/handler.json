@@ -18,5 +18,13 @@
     },
     "additionalProperties": true
   },
+  "inputs": [
+    { "name": "payload", "type": "json", "description": "Incoming job payload" }
+  ],
+  "outputs": [
+    { "name": "status", "type": "string", "description": "Processing status" },
+    { "name": "received", "type": "json", "description": "Echo of the received params" },
+    { "name": "timestamp", "type": "string", "description": "ISO timestamp of processing" }
+  ],
   "dependencies": {}
 }
