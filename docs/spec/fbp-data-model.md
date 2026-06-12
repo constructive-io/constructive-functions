@@ -259,7 +259,7 @@ start_execution(graph_id, input_payload, output_node)
           │     │     When sub-execution completes → complete_node(parent, node, outputs)
           │     │
           │     └── Otherwise (native/external node):
-          │           INSERT INTO app_jobs.jobs with task_identifier = 'fbp:eval:{context}:{type}'
+          │           INSERT INTO app_jobs.jobs with task_identifier = node_type
           │           payload = { execution_id, node_name, node_type, inputs }
           │
           └── Safety guards:
@@ -279,7 +279,7 @@ start_execution(graph_id, input_payload, output_node)
 }
 ```
 
-Task identifier: `fbp:eval:function:add`
+Task identifier: `add` (the raw node_type — no prefix)
 
 ### Completing a Node
 

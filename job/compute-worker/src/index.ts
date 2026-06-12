@@ -287,8 +287,9 @@ export default class ComputeWorker {
       ...(graphNode ? { executionId: payload.execution_id, nodeName: payload.node_name } : {}),
     });
 
-    // For graph nodes, the task_identifier is 'fbp:eval:context:functionName'.
-    // Strip the prefix to resolve the actual function definition.
+    // For graph nodes, task_identifier IS the function name (no prefix).
+    // payload.node_type also carries it; we prefer it for graph dispatches
+    // so the code stays explicit about the source.
     const functionName = graphNode ? payload.node_type : task_identifier;
 
     const fn = await this.discovery.resolve(functionName);

@@ -532,15 +532,16 @@ expect(computeLogs).toHaveLength(2);
 
 ## Implementation Phases
 
-### Phase 1: Remove `fbp:eval:` prefix (constructive-db)
+### Phase 1: Remove `fbp:eval:` prefix (constructive-db) ✅ DONE
 
 **Scope:** SQL migration + test updates in constructive-db  
+**Status:** Merged in constructive-db PR #1610, exported to constructive-functions pgpm modules  
 **Changes:**
-- [ ] `tick_execution` line 181: `v_node_type` instead of `'fbp:eval:' || context || ':' || node_type`
-- [ ] `tick_execution` line 167: remove `task_identifier LIKE 'fbp:eval:%'` filter (keep execution_id match)
-- [ ] `graph-test-helper.ts` line 76: update `doWork()` detection to payload-based
-- [ ] `graph-test-helper.ts` line 380: update `waitForJobs()` filter
-- [ ] Run existing graph-module integration tests — all 11 fixtures must pass
+- [x] `tick_execution` line 181: `v_node_type` instead of `'fbp:eval:' || context || ':' || node_type`
+- [x] `tick_execution` line 167: remove `task_identifier LIKE 'fbp:eval:%'` filter (keep execution_id match)
+- [x] `graph-test-helper.ts`: updated detection to payload-based
+- [x] Test assertions updated — all graph-module integration tests pass
+- [x] Exported updated SQL to constructive-functions pgpm/constructive-compute
 
 ### Phase 2: Graph dispatch in compute-worker (constructive-functions)
 

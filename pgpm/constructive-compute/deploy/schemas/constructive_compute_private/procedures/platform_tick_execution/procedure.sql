@@ -164,7 +164,7 @@ BEGIN
     SELECT (count(*))::integer
     FROM app_jobs.jobs
     WHERE
-      task_identifier LIKE ( 'fbp:eval:%' ) AND (payload::jsonb->>'execution_id')::uuid = platform_tick_execution.execution_id INTO v_pending_jobs;
+      (payload::jsonb->>'execution_id')::uuid = platform_tick_execution.execution_id INTO v_pending_jobs;
     IF (v_pending_jobs + v_jobs_enqueued) >= v_exec.max_pending_jobs THEN
       UPDATE "constructive_compute_private".platform_function_graph_executions SET
       status = 'failed', completed_at = now(), error_code = 'JOB_LIMIT_EXCEEDED', error_message = ('execution exceeded ' || v_exec.max_pending_jobs) || ' pending jobs'
@@ -178,7 +178,7 @@ BEGIN
       payload
     )
     VALUES
-      (v_exec.database_id, (('fbp:eval:' || v_graph.context) || ':') || v_node_type, (json_build_object('execution_id', v_exec.id, 'node_name', v_node_name, 'node_type', v_node_type, 'inputs', v_inputs))::json);
+      (v_exec.database_id, v_node_type, (json_build_object('execution_id', v_exec.id, 'node_name', v_node_name, 'node_type', v_node_type, 'inputs', v_inputs))::json);
     v_jobs_enqueued := v_jobs_enqueued + 1;
   END LOOP;
   UPDATE "constructive_compute_private".platform_function_graph_executions SET
