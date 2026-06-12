@@ -2,6 +2,6 @@
 comment = 'Platform metadata seed: database, schemas, compute API, domain, and site'
 default_version = '0.1.0'
 module_pathname = '$libdir/constructive-platform-seed'
-requires = 'plpgsql,metaschema-schema,services'
+requires = 'plpgsql,metaschema-schema,metaschema-modules,services'
 relocatable = false
 superuser = false
