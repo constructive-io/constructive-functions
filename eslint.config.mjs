@@ -54,7 +54,8 @@ export default [
       'prefer-spread': 0,
       'no-case-declarations': 0,
       'no-implicit-globals': 0,
-      '@typescript-eslint/no-unsafe-declaration-merging': 0
+      '@typescript-eslint/no-unsafe-declaration-merging': 0,
+      '@typescript-eslint/no-empty-object-type': 0
     }
   },
   prettierConfig
