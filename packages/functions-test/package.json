@@ -19,6 +19,7 @@
     "test": "jest --config jest.config.js"
   },
   "dependencies": {
+    "@constructive-io/compute-worker": "workspace:*",
     "pgsql-test": "^4.16.4",
     "pg": "^8.21.0"
   },
