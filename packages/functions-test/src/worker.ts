@@ -323,7 +323,7 @@ export async function createTestWorker(
       // same node_name). We must NOT sweep-delete all execution jobs because
       // complete_node → tick_execution may have enqueued the NEXT wave's jobs.
       await pgClient.query(
-        `DELETE FROM app_jobs.jobs WHERE id = ANY($1::text[])`,
+        `DELETE FROM app_jobs.jobs WHERE id = ANY($1::bigint[])`,
         [processedIds]
       );
       // Also remove duplicates that were re-enqueued for nodes we just completed
