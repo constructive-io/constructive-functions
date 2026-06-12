@@ -26,6 +26,14 @@ export interface ComputeRequestOptions {
   job_id: string | number;
   invocation_id: string;
   callback_url?: string;
+  execution_id?: string;
+  node_name?: string;
+}
+
+export interface ComputeRequestResult {
+  ok: boolean;
+  status: number;
+  body: unknown;
 }
 
 /**
@@ -38,7 +46,7 @@ export interface ComputeRequestOptions {
 export function compute_request(
   url: string,
   opts: ComputeRequestOptions
-): Promise<boolean> {
+): Promise<ComputeRequestResult> {
   log.info('dispatching job', {
     url,
     worker_id: opts.worker_id,
@@ -47,7 +55,7 @@ export function compute_request(
     database_id: opts.database_id,
   });
 
-  return new Promise<boolean>((resolve, reject) => {
+  return new Promise<ComputeRequestResult>((resolve, reject) => {
     let parsed: URL;
     try {
       parsed = new URL(url);
@@ -76,13 +84,28 @@ export function compute_request(
           ...(opts.entity_id ? { 'X-Entity-Id': opts.entity_id } : {}),
           ...(opts.organization_id ? { 'X-Organization-Id': opts.organization_id } : {}),
           ...(opts.callback_url ? { 'X-Callback-Url': opts.callback_url } : {}),
+          ...(opts.execution_id ? { 'X-Execution-Id': opts.execution_id } : {}),
+          ...(opts.node_name ? { 'X-Node-Name': opts.node_name } : {}),
         },
       },
       (res) => {
-        res.on('data', () => {});
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
         res.on('end', () => {
           log.debug(`request completed for job[${opts.job_id}]`);
-          resolve(true);
+          const raw = Buffer.concat(chunks).toString('utf8');
+          let body: unknown;
+          try {
+            body = JSON.parse(raw);
+          } catch {
+            body = raw || null;
+          }
+          const status = res.statusCode ?? 0;
+          if (status >= 400) {
+            reject(new Error(`HTTP ${status}: ${typeof body === 'string' ? body : JSON.stringify(body)}`));
+          } else {
+            resolve({ ok: true, status, body });
+          }
         });
       }
     );

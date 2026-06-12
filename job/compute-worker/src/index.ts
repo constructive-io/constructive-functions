@@ -25,17 +25,18 @@ import { InvocationTracker } from './invocation';
 import { ComputeModuleLoader } from './module-loader';
 import { compute_request } from './req';
 import type { ComputeJobRow, ComputeWorkerOptions } from './types';
+import { isGraphNodePayload } from './types';
 
 const DEFAULT_DATABASE_ID = '00000000-0000-0000-0000-000000000000';
 
 export { BillingTracker } from './billing';
 export { TtlCache } from './cache';
-export { ComputeLogTracker } from './compute-log';
 export type { ComputeLogEntry } from './compute-log';
+export { ComputeLogTracker } from './compute-log';
 export { FunctionDiscovery } from './discovery';
 export { InvocationTracker } from './invocation';
 export { ComputeModuleLoader } from './module-loader';
-export type { ComputeRequestOptions } from './req';
+export type { ComputeRequestOptions, ComputeRequestResult } from './req';
 export { compute_request } from './req';
 export type {
   BillingContext,
@@ -47,10 +48,12 @@ export type {
   CreateInvocationInput,
   FunctionModuleConfig,
   FunctionRequirement,
+  GraphNodePayload,
   InvocationModuleConfig,
   InvocationStatus,
   PlatformFunctionDefinition,
 } from './types';
+export { isGraphNodePayload } from './types';
 
 const log = new Logger('compute:worker');
 
@@ -272,6 +275,8 @@ export default class ComputeWorker {
 
   async doWork(job: ComputeJobRow): Promise<void> {
     const { task_identifier, payload } = job;
+    const graphNode = isGraphNodePayload(payload);
+
     log.debug('starting work on job', {
       id: job.id,
       task: task_identifier,
@@ -279,6 +284,7 @@ export default class ComputeWorker {
       actorId: job.actor_id,
       entityId: job.entity_id,
       organizationId: job.organization_id,
+      ...(graphNode ? { executionId: payload.execution_id, nodeName: payload.node_name } : {}),
     });
 
     const fn = await this.discovery.resolve(task_identifier);
@@ -300,6 +306,9 @@ export default class ComputeWorker {
     const scope = job.entity_id ? 'org' : 'platform';
     const billingEntityId = job.entity_id || job.organization_id;
     const meterSlug = task_identifier;
+
+    // For graph nodes, send inputs as the HTTP body; for standalone, send the full payload
+    const httpBody = graphNode ? payload.inputs : payload;
 
     // Set GUCs so triggers/RLS can see the job's user context
     await this.setJobGUCs(job);
@@ -323,8 +332,8 @@ export default class ComputeWorker {
 
     const reqStart = process.hrtime();
     try {
-      await compute_request(url, {
-        body: payload,
+      const result = await compute_request(url, {
+        body: httpBody,
         database_id: databaseId,
         actor_id: job.actor_id,
         entity_id: job.entity_id,
@@ -333,6 +342,10 @@ export default class ComputeWorker {
         job_id: job.id,
         invocation_id: invocationId,
         callback_url: this.callbackUrl,
+        ...(graphNode ? {
+          execution_id: payload.execution_id,
+          node_name: payload.node_name,
+        } : {}),
       });
 
       const elapsed = process.hrtime(reqStart);
@@ -365,6 +378,15 @@ export default class ComputeWorker {
         status: 'completed',
         duration_ms: ms,
       });
+
+      // Graph node completion: tell the SQL engine this node finished
+      if (graphNode) {
+        await this.completeGraphNode(
+          payload.execution_id,
+          payload.node_name,
+          result.body
+        );
+      }
     } catch (err: any) {
       const elapsed = process.hrtime(reqStart);
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
@@ -387,8 +409,52 @@ export default class ComputeWorker {
         duration_ms: ms,
         error: err.message,
       });
+
+      // Graph node failure: mark execution as failed
+      if (graphNode) {
+        try {
+          await this.failGraphExecution(payload.execution_id, err.message);
+        } catch (graphErr) {
+          log.error('Failed to mark graph execution as failed', graphErr);
+        }
+      }
       throw err;
     }
+  }
+
+  // ─── Graph execution ──────────────────────────────────────────────────
+
+  /**
+   * Complete a graph node after its function returns successfully.
+   * Calls the SQL complete_node procedure which stores the output and
+   * triggers tick_execution to cascade to downstream nodes.
+   */
+  private async completeGraphNode(
+    executionId: string,
+    nodeName: string,
+    output: unknown
+  ): Promise<void> {
+    log.debug('completing graph node', { executionId, nodeName });
+    await this.pgPool.query(
+      `SELECT constructive_compute_private.platform_complete_node($1::uuid, $2, $3::jsonb)`,
+      [executionId, nodeName, JSON.stringify(output ?? {})]
+    );
+  }
+
+  /**
+   * Mark a graph execution as failed when a node errors.
+   */
+  private async failGraphExecution(
+    executionId: string,
+    errorMessage: string
+  ): Promise<void> {
+    log.debug('failing graph execution', { executionId, error: errorMessage });
+    await this.pgPool.query(
+      `UPDATE constructive_compute_private.platform_function_graph_executions
+       SET status = 'failed', error_message = $1
+       WHERE id = $2`,
+      [errorMessage, executionId]
+    );
   }
 
   /**

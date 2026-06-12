@@ -18,6 +18,10 @@ export type FunctionContext = {
     databaseId?: string;
     actorId?: string;
     entityId?: string;
+    /** Present when this function is running as a graph node */
+    executionId?: string;
+    /** Present when this function is running as a graph node */
+    nodeName?: string;
   };
   client: GraphQLClient;
   meta: GraphQLClient;

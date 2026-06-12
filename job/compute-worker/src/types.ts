@@ -93,6 +93,31 @@ export interface ComputeJobRow {
   entity_type?: string;
 }
 
+// ─── Graph Execution ─────────────────────────────────────────────────────────
+
+/**
+ * When a job is enqueued by tick_execution for a graph node,
+ * its payload includes these fields alongside the node's assembled inputs.
+ */
+export interface GraphNodePayload {
+  execution_id: string;
+  node_name: string;
+  node_type: string;
+  inputs: Record<string, unknown>;
+}
+
+/**
+ * Type guard: does this payload represent a graph node dispatch?
+ */
+export function isGraphNodePayload(payload: unknown): payload is GraphNodePayload {
+  if (!payload || typeof payload !== 'object') return false;
+  const p = payload as Record<string, unknown>;
+  return typeof p.execution_id === 'string'
+    && typeof p.node_name === 'string'
+    && typeof p.node_type === 'string'
+    && p.inputs !== undefined;
+}
+
 // ─── Billing ──────────────────────────────────────────────────────────────────
 
 export interface BillingModuleConfig {
