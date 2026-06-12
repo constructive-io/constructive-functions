@@ -41,7 +41,7 @@ app.get('/api/functions', async (_req, res) => {
     const result = await pool.query(`
       SELECT name, task_identifier, service_url, is_invocable, is_built_in,
              scope, description, required_secrets, required_configs,
-             payload_schema, namespace_id,
+             namespace_id,
              (SELECT n.name FROM constructive_infra_public.platform_namespaces n WHERE n.id = f.namespace_id) as namespace,
              created_at, updated_at
       FROM constructive_compute_public.platform_function_definitions f
@@ -64,8 +64,7 @@ app.get('/api/definitions', async (_req, res) => {
   try {
     const result = await pool.query(`
       SELECT name, task_identifier, service_url, is_invocable,
-             scope, description, required_secrets, required_configs,
-             payload_schema
+             scope, description, required_secrets, required_configs
       FROM constructive_compute_public.platform_function_definitions
       ORDER BY name
     `);
@@ -73,8 +72,6 @@ app.get('/api/definitions', async (_req, res) => {
     const definitions = result.rows.map((r: any) => {
       const secrets = parseRequirements(r.required_secrets);
       const configs = parseRequirements(r.required_configs);
-      const schema = r.payload_schema;
-
       const props = [
         ...secrets.map((s: { name: string; required: boolean }) => ({
           name: s.name,
@@ -94,7 +91,6 @@ app.get('/api/definitions', async (_req, res) => {
         name: 'payload',
         type: 'json',
         description: 'Job payload object',
-        ...(schema ? { schema } : {}),
       }];
 
       return {

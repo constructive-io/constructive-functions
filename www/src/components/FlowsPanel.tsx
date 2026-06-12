@@ -159,7 +159,11 @@ async function loadGraphFromStore(storeId: string): Promise<{ graph: Graph; comm
     }
   `, { where: { storeId: { equalTo: storeId } } });
   const ref = refData?.platformFunctionGraphRefs?.nodes?.[0];
-  if (!ref?.commitId) return null;
+  if (!ref?.commitId) {
+    // No ref/commit chain — try reading via platformReadFunctionGraph
+    // (graph was created by platformImportGraphJson, not blob save)
+    return loadGraphFromImport(storeId);
+  }
 
   // Get the commit
   const commitData = await gqlFetch(endpoint, `
@@ -170,7 +174,7 @@ async function loadGraphFromStore(storeId: string): Promise<{ graph: Graph; comm
     }
   `, { where: { id: { equalTo: ref.commitId } } });
   const commit = commitData?.platformFunctionGraphCommits?.nodes?.[0];
-  if (!commit?.treeId) return null;
+  if (!commit?.treeId) return loadGraphFromImport(storeId);
 
   // Get the object (tree)
   const objData = await gqlFetch(endpoint, `
@@ -181,9 +185,39 @@ async function loadGraphFromStore(storeId: string): Promise<{ graph: Graph; comm
     }
   `, { where: { id: { equalTo: commit.treeId } } });
   const obj = objData?.platformFunctionGraphObjects?.nodes?.[0];
-  if (!obj?.data) return null;
+  if (!obj?.data) return loadGraphFromImport(storeId);
 
   return { graph: obj.data as unknown as Graph, commitId: ref.commitId };
+}
+
+async function loadGraphFromImport(storeId: string): Promise<{ graph: Graph; commitId: string | null } | null> {
+  const endpoint = '/graphql/compute';
+
+  // Find the platform_function_graphs entry that uses this store
+  const graphData = await gqlFetch(endpoint, `
+    query ($where: PlatformFunctionGraphFilter) {
+      platformFunctionGraphs(where: $where, first: 1) {
+        nodes { id storeId name context }
+      }
+    }
+  `, { where: { storeId: { equalTo: storeId } } });
+  const graph = graphData?.platformFunctionGraphs?.nodes?.[0];
+  if (!graph?.id) return null;
+
+  // Read the full graph using the SQL deserialization function
+  const readData = await gqlFetch(endpoint, `
+    query ($graphId: UUID!) {
+      platformReadFunctionGraph(graphId: $graphId)
+    }
+  `, { graphId: graph.id });
+  const graphJson = readData?.platformReadFunctionGraph;
+  if (!graphJson) return null;
+
+  // Strip the SQL execution context — it's for the graph engine, not the local evaluator
+  const parsed = graphJson as Record<string, unknown>;
+  if (parsed.context === 'function') delete parsed.context;
+
+  return { graph: parsed as unknown as Graph, commitId: null };
 }
 
 async function saveGraphToStore(
@@ -293,7 +327,7 @@ async function deleteStore(id: string): Promise<void> {
   const endpoint = '/graphql/compute';
   await gqlFetch(endpoint, `
     mutation ($input: DeletePlatformFunctionGraphStoreInput!) {
-      deletePlatformFunctionGraphStore(input: $input) { deletedPlatformFunctionGraphStoreNodeId }
+      deletePlatformFunctionGraphStore(input: $input) { platformFunctionGraphStore { id } }
     }
   `, { input: { id } });
 }
@@ -412,6 +446,7 @@ export function FlowsPanel() {
   const [executionState, setExecutionState] = useState<ExecutionState | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const didAutoLoad = useRef(false);
 
   const graphRef = useRef<Graph>(currentGraph);
   graphRef.current = currentGraph;
@@ -447,12 +482,13 @@ export function FlowsPanel() {
     }
   }, []);
 
-  // Auto-load first store when stores arrive
+  // Auto-load first store only on initial mount
   useEffect(() => {
-    if (stores.length > 0 && !activeStoreId) {
+    if (stores.length > 0 && !didAutoLoad.current) {
+      didAutoLoad.current = true;
       handleLoadStore(stores[0]);
     }
-  }, [stores, activeStoreId, handleLoadStore]);
+  }, [stores, handleLoadStore]);
 
   const definitions: NodeDefinition[] = useMemo(() => [
     ...functions.map(platformFnToDefinition),
@@ -517,7 +553,9 @@ export function FlowsPanel() {
         return;
       }
 
-      const result = await evaluate(graph, {
+      // Set context to 'js' for local evaluation (definitions use context: 'js')
+      const evalGraph = { ...graph, context: 'js' };
+      const result = await evaluate(evalGraph, {
         definitions: implDefinitions,
         outputNode: outputNode.name,
         outputPort: 'value',
