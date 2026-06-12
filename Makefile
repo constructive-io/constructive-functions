@@ -5,6 +5,7 @@
        generate\:schemas generate\:sdk generate\:cli generate\:hooks generate\:sdk-all \
        dev dev-fn dev-compute dev-down dev-logs setup-dev setup-check \
        secrets\:sync \
+       test test\:unit test\:integration test\:workflow test\:workflow\:schema \
        skaffold-dev skaffold-dev-knative docker-build
 
 install:
@@ -158,6 +159,33 @@ secrets\:sync:
 # Plain k8s (Deployments + Services, no Knative operators needed)
 skaffold-dev:
 	skaffold dev -p local-simple
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Testing
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Workflow tests run against a live `make up` stack (pgpm-local PostgreSQL).
+# Schema tests only need `make up`. Full workflow tests also need `make dev-compute`.
+#
+#   make test:workflow:schema     # verify DB schema, tables, registrations
+#   make test:workflow            # full pipeline: dispatch → log → rollup → GraphQL
+#   make test:unit                # unit tests (functions/*/__tests__)
+#   make test:integration         # integration tests (tests/integration/)
+
+test:
+	pnpm test
+
+test\:unit:
+	pnpm test:unit
+
+test\:integration:
+	pnpm test:integration
+
+test\:workflow:
+	pnpm test:workflow
+
+test\:workflow\:schema:
+	pnpm test:workflow:schema
 
 # Single function: make skaffold-dev-send-email
 skaffold-dev-%:
