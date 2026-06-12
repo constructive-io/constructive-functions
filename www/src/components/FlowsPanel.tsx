@@ -53,25 +53,13 @@ interface StoreEntry {
 
 
 function platformFnToDefinition(fn: FunctionNode): NodeDefinition {
-  const inputs: Array<{ name: string; type: string }> = [];
-  const secrets = (fn.requiredSecrets ?? []) as FunctionRequirement[];
-  const configs = (fn.requiredConfigs ?? []) as FunctionRequirement[];
-
-  for (const s of secrets) {
-    if (s.name) inputs.push({ name: s.name, type: 'string' });
-  }
-  for (const c of configs) {
-    if (c.name) inputs.push({ name: c.name, type: 'string' });
-  }
-  // Fallback: if no fields declared, expose a generic payload input
-  if (inputs.length === 0) inputs.push({ name: 'payload', type: 'json' });
-
   return {
     context: fn.scope || 'platform',
     name: fn.taskIdentifier || fn.name || '',
     category: 'functions',
     description: fn.description || undefined,
-    inputs,
+    // TODO: pull typed ports from handler.json inputs/outputs once stored in DB
+    inputs: [{ name: 'payload', type: 'json' }],
     outputs: [{ name: 'result', type: 'json' }],
     icon: fn.isInvocable ? 'zap' : 'circle',
   };
@@ -143,8 +131,6 @@ const FUNCTION_FIELDS = {
   isBuiltIn: true,
   scope: true,
   description: true,
-  requiredSecrets: true,
-  requiredConfigs: true,
 } as const;
 
 const STORE_FIELDS = { id: true, name: true, hash: true } as const;
