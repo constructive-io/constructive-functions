@@ -53,12 +53,25 @@ interface StoreEntry {
 
 
 function platformFnToDefinition(fn: FunctionNode): NodeDefinition {
+  const inputs: Array<{ name: string; type: string }> = [];
+  const secrets = (fn.requiredSecrets ?? []) as FunctionRequirement[];
+  const configs = (fn.requiredConfigs ?? []) as FunctionRequirement[];
+
+  for (const s of secrets) {
+    if (s.name) inputs.push({ name: s.name, type: 'string' });
+  }
+  for (const c of configs) {
+    if (c.name) inputs.push({ name: c.name, type: 'string' });
+  }
+  // Fallback: if no fields declared, expose a generic payload input
+  if (inputs.length === 0) inputs.push({ name: 'payload', type: 'json' });
+
   return {
     context: fn.scope || 'platform',
     name: fn.taskIdentifier || fn.name || '',
     category: 'functions',
     description: fn.description || undefined,
-    inputs: [{ name: 'payload', type: 'json' }],
+    inputs,
     outputs: [{ name: 'result', type: 'json' }],
     icon: fn.isInvocable ? 'zap' : 'circle',
   };
@@ -130,6 +143,8 @@ const FUNCTION_FIELDS = {
   isBuiltIn: true,
   scope: true,
   description: true,
+  requiredSecrets: true,
+  requiredConfigs: true,
 } as const;
 
 const STORE_FIELDS = { id: true, name: true, hash: true } as const;
@@ -336,7 +351,9 @@ async function deleteStore(id: string): Promise<void> {
 
 async function importAndExecuteGraph(
   graph: Graph,
-  inputPayload: Record<string, unknown> = {}
+  inputPayload: Record<string, unknown> = {},
+  outputNode: string | null = null,
+  outputPort: string | null = null,
 ): Promise<{ graphId: string; executionId: string }> {
   const endpoint = '/graphql/compute';
 
@@ -354,18 +371,15 @@ async function importAndExecuteGraph(
   });
   const graphId = importData.platformImportGraphJson.result;
 
+  const execInput: Record<string, unknown> = { graphId, inputPayload };
+  if (outputNode) execInput.outputNode = outputNode;
+  if (outputPort) execInput.outputPort = outputPort;
+
   const execData = await gqlFetch(endpoint, `
     mutation ($input: PlatformStartExecutionInput!) {
       platformStartExecution(input: $input) { result }
     }
-  `, {
-    input: {
-      graphId,
-      inputPayload,
-      outputNode: 'output_result',
-      outputPort: 'value',
-    },
-  });
+  `, { input: execInput });
   const executionId = execData.platformStartExecution.result;
 
   return { graphId, executionId };
@@ -443,6 +457,8 @@ export function FlowsPanel() {
   const [isLoadingFlow, setIsLoadingFlow] = useState(false);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [autoSave, setAutoSave] = useState(false);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [executionState, setExecutionState] = useState<ExecutionState | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -541,6 +557,7 @@ export function FlowsPanel() {
     setCurrentGraph(graph);
   }, []);
 
+
   const handleEvaluate = useCallback(async () => {
     const graph = graphRef.current;
     if (!graph.nodes.length) return;
@@ -589,7 +606,14 @@ export function FlowsPanel() {
         }
       }
 
-      const { executionId } = await importAndExecuteGraph(graph, inputPayload);
+      // Auto-detect output node — use first graphOutput if present, otherwise omit
+      const outputNode = graph.nodes.find(n => n.type === 'graphOutput');
+      const { executionId } = await importAndExecuteGraph(
+        graph,
+        inputPayload,
+        outputNode?.name ?? null,
+        outputNode ? 'value' : null,
+      );
 
       // Initialize node states — mark all non-boundary nodes as pending
       const initialNodeStates: Record<string, NodeState> = {};
@@ -671,6 +695,18 @@ export function FlowsPanel() {
     }
   }, [flowName, stores.length, activeStoreId, activeCommitId, refetchStores]);
 
+  // Auto-save: debounce 1s after each graph edit
+  useEffect(() => {
+    if (!autoSave || !activeStoreId) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      handleSave();
+    }, 1000);
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [currentGraph, autoSave, activeStoreId, handleSave]);
+
   const handleNew = useCallback(() => {
     setCurrentGraph({ ...DEFAULT_GRAPH, name: '' });
     setFlowName('');
@@ -743,6 +779,15 @@ export function FlowsPanel() {
           {isSaving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
           {isSaving ? 'Saving...' : 'Save'}
         </button>
+        <label className="flex items-center gap-1.5 text-xs text-zinc-400 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={autoSave}
+            onChange={(e) => setAutoSave(e.target.checked)}
+            className="accent-green-500 w-3.5 h-3.5"
+          />
+          Auto
+        </label>
         <button
           onClick={handleEvaluate}
           disabled={isEvaluating}
