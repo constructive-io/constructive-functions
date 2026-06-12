@@ -26,7 +26,7 @@ DECLARE
   v_def jsonb;
 BEGIN
   v_context := coalesce(platform_import_graph_json.context, platform_import_graph_json.graph_json->>'context', 'function');
-  v_graph_id := "constructive_platform_function_graph_public".platform_create_function_graph(platform_import_graph_json.database_id, platform_import_graph_json.name, v_context, platform_import_graph_json.description, platform_import_graph_json.entity_id, platform_import_graph_json.created_by, platform_import_graph_json.definitions_commit_id);
+  v_graph_id := "constructive_compute_public".platform_create_function_graph(platform_import_graph_json.database_id, platform_import_graph_json.name, v_context, platform_import_graph_json.description, platform_import_graph_json.entity_id, platform_import_graph_json.created_by, platform_import_graph_json.definitions_commit_id);
   SELECT *
   FROM "constructive_compute_public".platform_function_graphs
   WHERE
