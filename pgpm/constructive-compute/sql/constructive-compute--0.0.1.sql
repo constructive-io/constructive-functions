@@ -485,19 +485,6 @@ ALTER TABLE constructive_compute_private.platform_function_graph_execution_outpu
 
 CREATE UNIQUE INDEX idx_platform_function_graph_execution_outputs_unique_hash ON constructive_compute_private.platform_function_graph_execution_outputs (database_id, hash, created_at);
 
-INSERT INTO metaschema_public.partition (
-  id,
-  database_id,
-  table_id,
-  strategy,
-  partition_key_id,
-  "interval",
-  retention,
-  retention_keep_table,
-  premake,
-  naming_pattern
-) VALUES
-  ('be29cb5b-1998-7dcb-56f3-61e8f55a8c7c', '028752cb-510b-1438-2f39-64534bd1cbd7', '64cd7926-8f47-0e02-f4f7-302c82eb3c17', 'range', 'bf0ea379-9fa4-ea53-67e3-9b5585acae15', '1 month', '12 months', true, 2, '{parent}_{bounds}') ON CONFLICT (table_id) DO NOTHING;
 
 CREATE TABLE constructive_compute_private.platform_function_graph_executions (
   started_at timestamptz NOT NULL DEFAULT now()
@@ -699,19 +686,6 @@ CREATE TABLE constructive_compute_public.platform_function_graphs ();
 ALTER TABLE constructive_compute_private.platform_function_graph_executions 
   ADD CONSTRAINT platform_function_graph_executions_pkey PRIMARY KEY (started_at, id);
 
-INSERT INTO metaschema_public.partition (
-  id,
-  database_id,
-  table_id,
-  strategy,
-  partition_key_id,
-  "interval",
-  retention,
-  retention_keep_table,
-  premake,
-  naming_pattern
-) VALUES
-  ('38249da6-1578-f91e-0c4a-8c74297f2ada', '028752cb-510b-1438-2f39-64534bd1cbd7', '1e6f6b7e-271e-2d01-3fea-f38c589b3ff7', 'range', '91e0e56f-af9a-d1ba-ca35-760528a7c59a', '1 month', '12 months', true, 2, '{parent}_{bounds}') ON CONFLICT (table_id) DO NOTHING;
 
 CREATE FUNCTION constructive_compute_public.platform_add_edge(
   IN database_id uuid,
@@ -1445,19 +1419,6 @@ ALTER TABLE constructive_compute_public.org_function_execution_logs
 
 CREATE INDEX org_function_execution_logs_invocation_id_created_at_idx ON constructive_compute_public.org_function_execution_logs (invocation_id, created_at);
 
-INSERT INTO metaschema_public.partition (
-  id,
-  database_id,
-  table_id,
-  strategy,
-  partition_key_id,
-  "interval",
-  retention,
-  retention_keep_table,
-  premake,
-  naming_pattern
-) VALUES
-  ('65f412a7-ad98-0422-e289-c1645c3e2524', '028752cb-510b-1438-2f39-64534bd1cbd7', '573ffbad-c132-a16b-bcf9-9b9e705c050e', 'range', '37248364-46c9-ce93-ebbb-481991760b76', '1 month', '12 months', true, 2, '{parent}_{bounds}') ON CONFLICT (table_id) DO NOTHING;
 
 CREATE TABLE constructive_compute_public.org_function_invocations (
   created_at timestamptz NOT NULL DEFAULT now()
@@ -1563,19 +1524,6 @@ CREATE INDEX org_function_invocations_graph_execution_id_created_at_idx ON const
 
 CREATE INDEX org_function_invocations_task_identifier_created_at_idx ON constructive_compute_public.org_function_invocations (task_identifier, created_at);
 
-INSERT INTO metaschema_public.partition (
-  id,
-  database_id,
-  table_id,
-  strategy,
-  partition_key_id,
-  "interval",
-  retention,
-  retention_keep_table,
-  premake,
-  naming_pattern
-) VALUES
-  ('0e892fa3-af9b-807f-866b-5bf74775fa08', '028752cb-510b-1438-2f39-64534bd1cbd7', '8799acf7-0878-c41d-47f7-0855ca3ec3e9', 'range', 'cc0a0f86-06a7-c34f-3b9e-c6988c51d987', '1 month', '12 months', true, 2, '{parent}_{bounds}') ON CONFLICT (table_id) DO NOTHING;
 
 CREATE TABLE constructive_compute_public.platform_function_definitions ();
 
@@ -1860,19 +1808,6 @@ ALTER TABLE constructive_compute_public.platform_function_execution_logs
 
 CREATE INDEX platform_function_execution_logs_invocation_id_created_at_idx ON constructive_compute_public.platform_function_execution_logs (invocation_id, created_at);
 
-INSERT INTO metaschema_public.partition (
-  id,
-  database_id,
-  table_id,
-  strategy,
-  partition_key_id,
-  "interval",
-  retention,
-  retention_keep_table,
-  premake,
-  naming_pattern
-) VALUES
-  ('80203546-1307-d2b7-3203-b304f3ce2c61', '028752cb-510b-1438-2f39-64534bd1cbd7', '68c9e260-c7d4-de5d-237b-ab26ac862465', 'range', 'be79aea3-c893-e16f-d03b-0b9e56c859a1', '1 month', '12 months', true, 2, '{parent}_{bounds}') ON CONFLICT (table_id) DO NOTHING;
 
 ALTER TABLE constructive_compute_public.platform_function_graphs 
   DISABLE ROW LEVEL SECURITY;
@@ -2105,19 +2040,6 @@ CREATE INDEX platform_function_invocations_graph_execution_id_created_at_idx ON 
 
 CREATE INDEX platform_function_invocations_task_identifier_created_at_idx ON constructive_compute_public.platform_function_invocations (task_identifier, created_at);
 
-INSERT INTO metaschema_public.partition (
-  id,
-  database_id,
-  table_id,
-  strategy,
-  partition_key_id,
-  "interval",
-  retention,
-  retention_keep_table,
-  premake,
-  naming_pattern
-) VALUES
-  ('4febb492-b8bc-f579-863e-faff0c29e895', '028752cb-510b-1438-2f39-64534bd1cbd7', '8b7f9797-b828-d5a9-7a22-35d32a76e301', 'range', '740747f7-b504-8365-8c61-b98eee1ed795', '1 month', '12 months', true, 2, '{parent}_{bounds}') ON CONFLICT (table_id) DO NOTHING;
 
 CREATE TABLE constructive_compute_public.platform_secret_definitions ();
 

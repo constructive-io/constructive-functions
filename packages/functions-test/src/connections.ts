@@ -19,8 +19,8 @@ const SCHEMA_MODULES = [
   'constructive-objects',
   'constructive-storage',
   'constructive-store',
-  'constructive-compute',
   'constructive-platform-function-graph',
+  'constructive-compute',
 ];
 
 /**
