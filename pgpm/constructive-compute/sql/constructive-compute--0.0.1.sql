@@ -367,8 +367,8 @@ BEGIN
       FROM "constructive_platform_function_graph_public".get_node_at_path(v_graph.database_id, v_tree_id, ARRAY[v_graph.context, 'definitions', v_node_name]) AS def INTO v_def_data;
     END IF;
     IF v_def_data IS NOT NULL AND v_def_data ? 'graph' THEN
-      SELECT "constructive_platform_function_graph_public".platform_import_graph_json(v_graph.database_id, ('def_' || platform_tick_execution.execution_id) || ('_' || v_node_name), v_def_data->'graph') INTO v_sub_graph_id;
-      PERFORM "constructive_platform_function_graph_public".platform_start_execution(graph_id:=v_sub_graph_id, input_payload:=v_inputs, parent_execution_id:=platform_tick_execution.execution_id, parent_node_name:=v_node_name);
+      SELECT "constructive_compute_public".platform_import_graph_json(v_graph.database_id, ('def_' || platform_tick_execution.execution_id) || ('_' || v_node_name), v_def_data->'graph') INTO v_sub_graph_id;
+      PERFORM "constructive_compute_public".platform_start_execution(graph_id:=v_sub_graph_id, input_payload:=v_inputs, parent_execution_id:=platform_tick_execution.execution_id, parent_node_name:=v_node_name);
       v_jobs_enqueued := v_jobs_enqueued + 1;
       CONTINUE;
     END IF;
@@ -742,8 +742,8 @@ BEGIN
   FROM "constructive_platform_function_graph_public".platform_function_graph_ref AS r INNER JOIN "constructive_platform_function_graph_public".platform_function_graph_commit AS c ON c.id = r.commit_id AND c.database_id = r.database_id
   WHERE
     (r.database_id = v_graph.database_id AND r.store_id = v_graph.store_id) AND r.name = 'main' INTO v_root_hash;
-  v_root_hash := "constructive_platform_function_graph_public".platform_add_edge(v_graph.database_id, v_root_hash, platform_add_edge_and_save.src_node, platform_add_edge_and_save.src_port, platform_add_edge_and_save.dst_node, platform_add_edge_and_save.dst_port, v_graph.context, v_graph.name);
-  PERFORM "constructive_platform_function_graph_public".platform_save_graph(platform_add_edge_and_save.graph_id, v_root_hash, coalesce(platform_add_edge_and_save.message, 'add edge' || platform_add_edge_and_save.src_node));
+  v_root_hash := "constructive_compute_public".platform_add_edge(v_graph.database_id, v_root_hash, platform_add_edge_and_save.src_node, platform_add_edge_and_save.src_port, platform_add_edge_and_save.dst_node, platform_add_edge_and_save.dst_port, v_graph.context, v_graph.name);
+  PERFORM "constructive_compute_public".platform_save_graph(platform_add_edge_and_save.graph_id, v_root_hash, coalesce(platform_add_edge_and_save.message, 'add edge' || platform_add_edge_and_save.src_node));
   RETURN platform_add_edge_and_save.graph_id;
 END;
 $EOFCODE$ LANGUAGE plpgsql VOLATILE SECURITY INVOKER;
@@ -803,8 +803,8 @@ BEGIN
   FROM "constructive_platform_function_graph_public".platform_function_graph_ref AS r INNER JOIN "constructive_platform_function_graph_public".platform_function_graph_commit AS c ON c.id = r.commit_id AND c.database_id = r.database_id
   WHERE
     (r.database_id = v_graph.database_id AND r.store_id = v_graph.store_id) AND r.name = 'main' INTO v_root_hash;
-  v_root_hash := "constructive_platform_function_graph_public".platform_add_node(v_graph.database_id, v_root_hash, platform_add_node_and_save.node_name, platform_add_node_and_save.node_type, v_graph.context, v_graph.name, platform_add_node_and_save.props, platform_add_node_and_save.meta);
-  PERFORM "constructive_platform_function_graph_public".platform_save_graph(platform_add_node_and_save.graph_id, v_root_hash, coalesce(platform_add_node_and_save.message, 'add node: ' || platform_add_node_and_save.node_name));
+  v_root_hash := "constructive_compute_public".platform_add_node(v_graph.database_id, v_root_hash, platform_add_node_and_save.node_name, platform_add_node_and_save.node_type, v_graph.context, v_graph.name, platform_add_node_and_save.props, platform_add_node_and_save.meta);
+  PERFORM "constructive_compute_public".platform_save_graph(platform_add_node_and_save.graph_id, v_root_hash, coalesce(platform_add_node_and_save.message, 'add node: ' || platform_add_node_and_save.node_name));
   RETURN platform_add_node_and_save.graph_id;
 END;
 $EOFCODE$ LANGUAGE plpgsql VOLATILE SECURITY INVOKER;
@@ -843,7 +843,7 @@ BEGIN
     (platform_create_function_graph.database_id, platform_create_function_graph.name)
   RETURNING id INTO v_store_id;
   PERFORM "constructive_platform_function_graph_public".init_empty_repo(platform_create_function_graph.database_id, v_store_id);
-  INSERT INTO "constructive_platform_function_graph_public".platform_function_graphs (
+  INSERT INTO "constructive_compute_public".platform_function_graphs (
     database_id,
     store_id,
     name,
@@ -887,7 +887,7 @@ BEGIN
     v_ctx := (platform_import_definitions.contexts)[v_i];
     v_root_hash := "constructive_compute_private".platform_copy_subtree(platform_import_definitions.source_scope_id, platform_import_definitions.source_commit_id, ARRAY[v_ctx, 'definitions'], v_graph.database_id, v_root_hash, ARRAY[v_ctx, 'definitions']);
   END LOOP;
-  PERFORM "constructive_platform_function_graph_public".platform_save_graph(platform_import_definitions.graph_id, v_root_hash, 'import definitions');
+  PERFORM "constructive_compute_public".platform_save_graph(platform_import_definitions.graph_id, v_root_hash, 'import definitions');
   RETURN;
 END;
 $EOFCODE$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
@@ -927,7 +927,7 @@ BEGIN
     FOR v_node IN SELECT *
     FROM jsonb_array_elements(platform_import_graph_json.graph_json->'nodes') LOOP
       v_node_name := v_node->>'name';
-      v_root_hash := "constructive_platform_function_graph_public".platform_add_node(v_graph.database_id, v_root_hash, v_node_name, v_node->>'type', v_graph.context, v_graph.name, v_node->'props', v_node->'meta');
+      v_root_hash := "constructive_compute_public".platform_add_node(v_graph.database_id, v_root_hash, v_node_name, v_node->>'type', v_graph.context, v_graph.name, v_node->'props', v_node->'meta');
       IF v_node ? 'nodes' THEN
         v_root_hash := "constructive_compute_private".platform_insert_subnet_nodes(v_graph.database_id, v_root_hash, ARRAY[v_graph.context, 'graphs', v_graph.name, 'nodes', v_node_name], v_node->'nodes', v_node->'edges');
         v_root_hash := "constructive_platform_function_graph_public".insert_node_at_path(v_graph.database_id, v_root_hash, ARRAY[v_context, 'definitions', v_node_name], jsonb_build_object('name', v_node_name, 'context', v_graph.context, 'graph', jsonb_build_object('name', v_node_name || '_subnet', 'context', v_graph.context, 'nodes', v_node->'nodes', 'edges', v_node->'edges')), '{}'::uuid[], '{}'::text[]);
@@ -947,7 +947,7 @@ BEGIN
       v_root_hash := "constructive_platform_function_graph_public".insert_node_at_path(v_graph.database_id, v_root_hash, ARRAY[v_context, 'definitions', v_def->>'name'], v_def, '{}'::uuid[], '{}'::text[]);
     END LOOP;
   END IF;
-  PERFORM "constructive_platform_function_graph_public".platform_save_graph(v_graph_id, v_root_hash, 'import from JSON');
+  PERFORM "constructive_compute_public".platform_save_graph(v_graph_id, v_root_hash, 'import from JSON');
   RETURN v_graph_id;
 END;
 $EOFCODE$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
@@ -1059,7 +1059,7 @@ BEGIN
   commit_id = v_commit_id
   WHERE
     (r.database_id = v_graph.database_id AND r.store_id = v_graph.store_id) AND r.name = 'main';
-  UPDATE "constructive_platform_function_graph_public".platform_function_graphs SET
+  UPDATE "constructive_compute_public".platform_function_graphs SET
   is_valid = false, validation_errors = NULL, updated_at = now()
   WHERE
     id = platform_save_graph.graph_id;
