@@ -287,15 +287,19 @@ export default class ComputeWorker {
       ...(graphNode ? { executionId: payload.execution_id, nodeName: payload.node_name } : {}),
     });
 
-    const fn = await this.discovery.resolve(task_identifier);
+    // For graph nodes, the task_identifier is 'fbp:eval:context:functionName'.
+    // Strip the prefix to resolve the actual function definition.
+    const functionName = graphNode ? payload.node_type : task_identifier;
+
+    const fn = await this.discovery.resolve(functionName);
     if (!fn) {
-      throw new Error(`Function "${task_identifier}" is not registered in platform_function_definitions`);
+      throw new Error(`Function "${functionName}" is not registered in platform_function_definitions`);
     }
     if (!fn.is_invocable) {
-      throw new Error(`Function "${fn.name}" (${task_identifier}) is not invocable`);
+      throw new Error(`Function "${fn.name}" (${functionName}) is not invocable`);
     }
 
-    const url = this.resolveUrl(fn.service_url, task_identifier);
+    const url = this.resolveUrl(fn.service_url, functionName);
     if (!url) {
       throw new Error(
         `No service URL for "${task_identifier}". Set service_url in platform_function_definitions or COMPUTE_GATEWAY_URL env var.`
@@ -305,7 +309,7 @@ export default class ComputeWorker {
     const databaseId = job.database_id || this.platformDatabaseId;
     const scope = job.entity_id ? 'org' : 'platform';
     const billingEntityId = job.entity_id || job.organization_id;
-    const meterSlug = task_identifier;
+    const meterSlug = functionName;
 
     // For graph nodes, send inputs as the HTTP body; for standalone, send the full payload
     const httpBody = graphNode ? payload.inputs : payload;

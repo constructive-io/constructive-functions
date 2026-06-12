@@ -25,7 +25,7 @@ BEGIN
     (platform_create_function_graph.database_id, platform_create_function_graph.name)
   RETURNING id INTO v_store_id;
   PERFORM "constructive_platform_function_graph_public".init_empty_repo(platform_create_function_graph.database_id, v_store_id);
-  INSERT INTO "constructive_platform_function_graph_public".platform_function_graphs (
+  INSERT INTO "constructive_compute_public".platform_function_graphs (
     database_id,
     store_id,
     name,

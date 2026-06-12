@@ -5,6 +5,7 @@ import {
   compute_request,
   FunctionDiscovery,
   InvocationTracker,
+  isGraphNodePayload,
 } from '@constructive-io/compute-worker';
 import type {
   ComputeJobRow,
@@ -15,6 +16,8 @@ import { Pool } from 'pg';
 export interface TestWorkerOptions {
   /** The function server URL to dispatch to (e.g. mock server URL) */
   functionUrl: string;
+  /** Per-function URL overrides (used for graph node dispatch, keyed by function name) */
+  functionUrlMap?: Record<string, string>;
   /** Platform database ID (default: '00000000-0000-0000-0000-000000000000') */
   databaseId?: string;
   /** Worker ID (default: 'test-worker') */
@@ -89,6 +92,7 @@ export async function createTestWorker(
   const workerId = opts.workerId ?? 'test-worker';
   const cacheTtlMs = opts.cacheTtlMs ?? 0;
   const functionUrl = opts.functionUrl;
+  const functionUrlMap = opts.functionUrlMap ?? {};
 
   const pool = new Pool({
     host: pgClient.config.host ?? 'localhost',
@@ -120,10 +124,21 @@ export async function createTestWorker(
 
   async function dispatchJob(job: ComputeJobRow): Promise<DispatchResult> {
     const { task_identifier, payload } = job;
+    const graphNode = isGraphNodePayload(payload);
+    const fnName = graphNode ? payload.node_type : task_identifier;
     const jobDatabaseId = (job.database_id as string) || databaseId;
     const scope = job.entity_id ? 'org' : 'platform';
     const billingEntityId = job.entity_id || job.organization_id;
-    const meterSlug = task_identifier;
+    const meterSlug = fnName;
+
+    // Resolve function URL: use per-function URL map if provided, else default
+    let targetUrl = functionUrl;
+    if (graphNode && functionUrlMap[fnName]) {
+      targetUrl = functionUrlMap[fnName];
+    }
+
+    // For graph nodes, send inputs as HTTP body; for standalone, full payload
+    const httpBody = graphNode ? payload.inputs : payload;
 
     // 1. Set GUCs
     await setJobGUCs(job);
@@ -138,7 +153,7 @@ export async function createTestWorker(
 
     // 3. Create invocation record
     const { id: invocationId } = await tracker.create({
-      task_identifier,
+      task_identifier: fnName,
       payload,
       job_id: job.id,
       database_id: jobDatabaseId,
@@ -150,7 +165,7 @@ export async function createTestWorker(
     const reqStart = process.hrtime();
     try {
       const reqOpts: ComputeRequestOptions = {
-        body: payload,
+        body: httpBody,
         database_id: jobDatabaseId,
         actor_id: job.actor_id,
         entity_id: job.entity_id,
@@ -158,8 +173,12 @@ export async function createTestWorker(
         worker_id: workerId,
         job_id: job.id,
         invocation_id: invocationId,
+        ...(graphNode ? {
+          execution_id: payload.execution_id,
+          node_name: payload.node_name,
+        } : {}),
       };
-      await compute_request(functionUrl, reqOpts);
+      const result = await compute_request(targetUrl, reqOpts);
 
       const elapsed = process.hrtime(reqStart);
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
@@ -182,7 +201,7 @@ export async function createTestWorker(
 
       // 7. Write compute log
       await computeLog.log({
-        task_identifier,
+        task_identifier: fnName,
         job_id: job.id,
         invocation_id: invocationId,
         database_id: jobDatabaseId,
@@ -193,6 +212,14 @@ export async function createTestWorker(
         status: 'completed',
         duration_ms: ms,
       });
+
+      // 8. Graph node completion
+      if (graphNode) {
+        await pool.query(
+          `SELECT constructive_compute_private.platform_complete_node($1::uuid, $2, $3::jsonb)`,
+          [payload.execution_id, payload.node_name, JSON.stringify(result.body ?? {})]
+        );
+      }
 
       return { invocationId, durationMs: ms, status: 'completed' };
     } catch (err: unknown) {
@@ -206,7 +233,7 @@ export async function createTestWorker(
       );
 
       await computeLog.log({
-        task_identifier,
+        task_identifier: fnName,
         job_id: job.id,
         invocation_id: invocationId,
         database_id: jobDatabaseId,
@@ -218,6 +245,18 @@ export async function createTestWorker(
         duration_ms: ms,
         error: errorMsg,
       });
+
+      // Mark graph execution as failed
+      if (graphNode) {
+        try {
+          await pool.query(
+            `UPDATE constructive_compute_private.platform_function_graph_executions
+             SET status = 'failed', error_message = $1
+             WHERE id = $2`,
+            [errorMsg, payload.execution_id]
+          );
+        } catch { /* best-effort */ }
+      }
 
       return { invocationId, durationMs: ms, status: 'failed', error: errorMsg };
     }

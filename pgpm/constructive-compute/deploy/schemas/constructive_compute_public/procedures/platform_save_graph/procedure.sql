@@ -43,7 +43,7 @@ BEGIN
   commit_id = v_commit_id
   WHERE
     (r.database_id = v_graph.database_id AND r.store_id = v_graph.store_id) AND r.name = 'main';
-  UPDATE "constructive_platform_function_graph_public".platform_function_graphs SET
+  UPDATE "constructive_compute_public".platform_function_graphs SET
   is_valid = false, validation_errors = NULL, updated_at = now()
   WHERE
     id = platform_save_graph.graph_id;

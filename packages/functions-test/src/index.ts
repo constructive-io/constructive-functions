@@ -8,5 +8,21 @@ export { createMockFunctionServer } from './mock-server';
 export type { CapturedRequest, MockFunctionServer, MockFunctionServerOptions } from './mock-server';
 export { createTestWorker } from './worker';
 export type { TestWorker, TestWorkerOptions, DispatchResult } from './worker';
+export {
+  importGraphJson,
+  startExecution,
+  getExecution,
+  completeNode,
+  getGraphJobs,
+  registerFunction,
+  buildCalculatorGraph,
+} from './graph';
+export type {
+  GraphNode,
+  GraphEdge,
+  GraphJson,
+  GraphExecution,
+  GraphJob,
+} from './graph';
 
 export type { PgTestClient } from 'pgsql-test/test-client';
