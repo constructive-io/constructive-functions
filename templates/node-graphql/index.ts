@@ -1,4 +1,5 @@
 import { createFunctionServer } from '@constructive-io/fn-runtime';
+
 import handler from './handler';
 
 const app = createFunctionServer(handler, { name: '{{name}}' });
