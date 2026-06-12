@@ -24,6 +24,8 @@ export type {
   GraphJson,
   GraphExecution,
   GraphJob,
+  PortDef,
+  PropDef,
 } from './graph';
 
 export type { PgTestClient } from 'pgsql-test/test-client';

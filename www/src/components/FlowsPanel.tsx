@@ -118,16 +118,76 @@ function definitionToNode(def: NodeDefinition, position: { x: number; y: number 
 
 const MOCK_FUNCTIONS: FunctionNode[] = [
   {
-    name: 'send-email', taskIdentifier: 'email:send_email', serviceUrl: '', isInvocable: true, isBuiltIn: true,
-    scope: 'platform', description: 'Sends transactional emails via SMTP or Mailgun',
-    requiredSecrets: [{ name: 'MAILGUN_API_KEY', required: true }, { name: 'SMTP_PASSWORD', required: false }],
-    requiredConfigs: [{ name: 'SMTP_HOST', required: true }],
+    name: 'send-email', taskIdentifier: 'send-email', serviceUrl: '', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Sends transactional emails via Mailgun or SMTP',
+    requiredSecrets: [{ name: 'MAILGUN_API_KEY', required: false }],
+    requiredConfigs: [{ name: 'SMTP_HOST', required: false }],
+    inputs: [
+      { name: 'to', type: 'string', description: 'Recipient email address' },
+      { name: 'subject', type: 'string', description: 'Email subject line' },
+      { name: 'html', type: 'string', description: 'HTML body content', optional: true },
+      { name: 'text', type: 'string', description: 'Plain text body content', optional: true },
+      { name: 'from', type: 'string', description: 'Sender email address', optional: true },
+      { name: 'replyTo', type: 'string', description: 'Reply-to email address', optional: true },
+    ],
+    outputs: [{ name: 'result', type: 'json', description: 'Send result with status and message ID' }],
+    volatile: true, icon: 'mail', category: 'email',
   },
   {
-    name: 'send-verification-link', taskIdentifier: 'email:send_verification_link', serviceUrl: '', isInvocable: true, isBuiltIn: true,
-    scope: 'platform', description: 'Sends invite, password reset, and verification emails',
-    requiredSecrets: [{ name: 'MAILGUN_API_KEY', required: true }],
-    requiredConfigs: [{ name: 'SMTP_HOST', required: true }, { name: 'FROM_EMAIL', required: true }],
+    name: 'json-transform', taskIdentifier: 'json-transform', serviceUrl: '', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Transforms JSON data using a JSONPath expression and optional mapping',
+    inputs: [
+      { name: 'data', type: 'json', description: 'Input JSON data to transform' },
+      { name: 'mapping', type: 'json', description: 'Key mapping object (old_key → new_key)', optional: true },
+    ],
+    outputs: [
+      { name: 'result', type: 'json', description: 'Transformed JSON output' },
+      { name: 'count', type: 'number', description: 'Number of keys processed' },
+    ],
+    props: [
+      { name: 'path', type: 'string', default: '$', description: 'JSONPath expression to select data' },
+      { name: 'flatten', type: 'boolean', default: false, description: 'Whether to flatten nested objects' },
+      { name: 'removeNulls', type: 'boolean', default: true, description: 'Strip null values from output' },
+    ],
+    icon: 'braces', category: 'data',
+  },
+  {
+    name: 'http-request', taskIdentifier: 'http-request', serviceUrl: '', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Makes an HTTP request to an external URL',
+    requiredSecrets: [{ name: 'AUTH_TOKEN', required: false }],
+    inputs: [
+      { name: 'url', type: 'string', description: 'Request URL' },
+      { name: 'body', type: 'json', description: 'Request body (for POST/PUT/PATCH)', optional: true },
+      { name: 'headers', type: 'json', description: 'Additional request headers', optional: true },
+    ],
+    outputs: [
+      { name: 'data', type: 'json', description: 'Response body parsed as JSON' },
+      { name: 'status', type: 'number', description: 'HTTP status code' },
+      { name: 'headers', type: 'json', description: 'Response headers' },
+    ],
+    props: [
+      { name: 'method', type: 'string', default: 'GET', description: 'HTTP method (GET, POST, PUT, PATCH, DELETE)' },
+      { name: 'timeout', type: 'number', default: 30000, description: 'Request timeout in milliseconds' },
+      { name: 'retries', type: 'number', default: 0, description: 'Number of retry attempts on failure' },
+    ],
+    volatile: true, icon: 'globe', category: 'network',
+  },
+  {
+    name: 'text-template', taskIdentifier: 'text-template', serviceUrl: '', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Renders a text template with {{variable}} substitution',
+    inputs: [
+      { name: 'variables', type: 'json', description: 'Key-value pairs for template substitution' },
+    ],
+    outputs: [
+      { name: 'text', type: 'string', description: 'Rendered template output' },
+      { name: 'missingVars', type: 'json', description: 'Array of template variables with no value' },
+    ],
+    props: [
+      { name: 'template', type: 'string', default: '', description: 'Template string with {{variable}} placeholders', required: true },
+      { name: 'strict', type: 'boolean', default: false, description: 'Fail if any template variable is missing' },
+      { name: 'fallback', type: 'string', default: '', description: 'Default value for missing variables' },
+    ],
+    icon: 'file-text', category: 'string',
   },
 ];
 
@@ -137,8 +197,12 @@ const DEFAULT_GRAPH: Graph = {
   edges: [],
 };
 
-const CATEGORY_ORDER = ['functions', 'graph', 'const', 'math', 'json', 'flow', 'string', 'layout', 'form', 'content', 'graphql'];
+const CATEGORY_ORDER = ['email', 'data', 'network', 'custom', 'functions', 'graph', 'const', 'math', 'json', 'flow', 'string', 'layout', 'form', 'content', 'graphql'];
 const CATEGORY_LABELS: Record<string, string> = {
+  email: 'Email',
+  data: 'Data',
+  network: 'Network',
+  custom: 'Custom',
   functions: 'Functions',
   graph: 'Graph I/O',
   const: 'Constants',

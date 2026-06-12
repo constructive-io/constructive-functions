@@ -17,5 +17,14 @@
       }
     },
     "additionalProperties": true
-  }
+  },
+  "inputs": [
+    { "name": "message", "type": "string", "description": "A message to process" }
+  ],
+  "outputs": [
+    { "name": "status", "type": "string", "description": "Processing status" },
+    { "name": "echo", "type": "string", "description": "Echo of the input message" }
+  ],
+  "icon": "code",
+  "category": "custom"
 }

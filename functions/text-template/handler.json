@@ -1,0 +1,26 @@
+{
+  "name": "text-template",
+  "version": "1.0.0",
+  "type": "node-graphql",
+  "port": 8087,
+  "taskIdentifier": "text-template",
+  "scope": "platform",
+  "description": "Renders a text template with variable substitution using {{variable}} syntax",
+  "requiredSecrets": [],
+  "requiredConfigs": [],
+  "inputs": [
+    { "name": "variables", "type": "json", "description": "Key-value pairs for template substitution" }
+  ],
+  "outputs": [
+    { "name": "text", "type": "string", "description": "Rendered template output" },
+    { "name": "missingVars", "type": "json", "description": "Array of template variables that had no value" }
+  ],
+  "props": [
+    { "name": "template", "type": "string", "default": "", "description": "Template string with {{variable}} placeholders", "required": true },
+    { "name": "strict", "type": "boolean", "default": false, "description": "Fail if any template variable is missing", "required": false },
+    { "name": "fallback", "type": "string", "default": "", "description": "Default value for missing variables (when not strict)", "required": false }
+  ],
+  "icon": "file-text",
+  "category": "string",
+  "dependencies": {}
+}

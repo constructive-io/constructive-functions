@@ -63,10 +63,26 @@ beforeAll(async () => {
   });
 
   // Register functions once (visible to worker pool and graph SQL)
-  await registerFunction(ctx.pg, databaseId, 'add', addServer.url);
-  await registerFunction(ctx.pg, databaseId, 'double', doubleServer.url);
-  await registerFunction(ctx.pg, databaseId, 'triple', tripleServer.url);
-  await registerFunction(ctx.pg, databaseId, 'merge', mergeServer.url);
+  await registerFunction(ctx.pg, databaseId, 'add', addServer.url, {
+    inputs: [{ name: 'a', type: 'number' }, { name: 'b', type: 'number' }],
+    outputs: [{ name: 'result', type: 'number' }],
+    category: 'math',
+  });
+  await registerFunction(ctx.pg, databaseId, 'double', doubleServer.url, {
+    inputs: [{ name: 'value', type: 'number' }],
+    outputs: [{ name: 'result', type: 'number' }],
+    category: 'math',
+  });
+  await registerFunction(ctx.pg, databaseId, 'triple', tripleServer.url, {
+    inputs: [{ name: 'value', type: 'number' }],
+    outputs: [{ name: 'result', type: 'number' }],
+    category: 'math',
+  });
+  await registerFunction(ctx.pg, databaseId, 'merge', mergeServer.url, {
+    inputs: [{ name: 'a', type: 'json' }, { name: 'b', type: 'json' }],
+    outputs: [{ name: 'result', type: 'json' }],
+    category: 'data',
+  });
 });
 
 afterAll(async () => {

@@ -26,5 +26,7 @@
     { "name": "received", "type": "json", "description": "Echo of the received params" },
     { "name": "timestamp", "type": "string", "description": "ISO timestamp of processing" }
   ],
+  "icon": "code",
+  "category": "custom",
   "dependencies": {}
 }

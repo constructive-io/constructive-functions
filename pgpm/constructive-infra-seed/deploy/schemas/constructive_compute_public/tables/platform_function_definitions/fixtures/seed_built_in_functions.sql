@@ -11,7 +11,8 @@ BEGIN;
 
 INSERT INTO constructive_compute_public.platform_function_definitions
   (name, task_identifier, service_url, is_invocable, is_built_in, scope, description,
-   namespace_id, required_secrets, required_configs)
+   namespace_id, required_secrets, required_configs,
+   inputs, outputs, props, volatile, icon, category)
 VALUES
   (
     'node-example',
@@ -21,7 +22,47 @@ VALUES
     'Example Node.js function — copy this to create a new function',
     (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
     ARRAY[]::constructive_compute_public.function_requirement[],
-    ARRAY[]::constructive_compute_public.function_requirement[]
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[{"name":"payload","type":"json","description":"Incoming job payload"}]'::jsonb,
+    '[{"name":"status","type":"string","description":"Processing status"},{"name":"received","type":"json","description":"Echo of the received params"},{"name":"timestamp","type":"string","description":"ISO timestamp of processing"}]'::jsonb,
+    '[]'::jsonb,
+    false,
+    'code',
+    'custom'
+  ),
+  (
+    'http-request',
+    'http-request',
+    'http://localhost:8086',
+    true, true, 'platform',
+    'Makes an HTTP request to an external URL and returns the response',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[
+      ROW('AUTH_TOKEN', false)
+    ]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[{"name":"url","type":"string","description":"Request URL"},{"name":"body","type":"json","description":"Request body (for POST/PUT/PATCH)","optional":true},{"name":"headers","type":"json","description":"Additional request headers","optional":true}]'::jsonb,
+    '[{"name":"data","type":"json","description":"Response body parsed as JSON"},{"name":"status","type":"number","description":"HTTP status code"},{"name":"headers","type":"json","description":"Response headers"}]'::jsonb,
+    '[{"name":"method","type":"string","default":"GET","description":"HTTP method (GET, POST, PUT, PATCH, DELETE)","required":false},{"name":"timeout","type":"number","default":30000,"description":"Request timeout in milliseconds","required":false},{"name":"retries","type":"number","default":0,"description":"Number of retry attempts on failure","required":false}]'::jsonb,
+    true,
+    'globe',
+    'network'
+  ),
+  (
+    'json-transform',
+    'json-transform',
+    'http://localhost:8085',
+    true, true, 'platform',
+    'Transforms JSON data using a JSONPath expression and optional mapping',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[{"name":"data","type":"json","description":"Input JSON data to transform"},{"name":"mapping","type":"json","description":"Key mapping object (old_key → new_key)","optional":true}]'::jsonb,
+    '[{"name":"result","type":"json","description":"Transformed JSON output"},{"name":"count","type":"number","description":"Number of keys processed"}]'::jsonb,
+    '[{"name":"path","type":"string","default":"$","description":"JSONPath expression to select data","required":false},{"name":"flatten","type":"boolean","default":false,"description":"Whether to flatten nested objects","required":false},{"name":"removeNulls","type":"boolean","default":true,"description":"Strip null values from output","required":false}]'::jsonb,
+    false,
+    'braces',
+    'data'
   ),
   (
     'python-example',
@@ -31,7 +72,13 @@ VALUES
     'Example Python function — copy this to create a new Python function',
     (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
     ARRAY[]::constructive_compute_public.function_requirement[],
-    ARRAY[]::constructive_compute_public.function_requirement[]
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[{"name":"message","type":"string","description":"A message to process"}]'::jsonb,
+    '[{"name":"status","type":"string","description":"Processing status"},{"name":"echo","type":"string","description":"Echo of the input message"}]'::jsonb,
+    '[]'::jsonb,
+    false,
+    'code',
+    'custom'
   ),
   (
     'send-email',
@@ -51,7 +98,13 @@ VALUES
       ROW('SMTP_PORT', false),
       ROW('SMTP_FROM', false),
       ROW('SEND_EMAIL_DRY_RUN', false)
-    ]::constructive_compute_public.function_requirement[]
+    ]::constructive_compute_public.function_requirement[],
+    '[{"name":"to","type":"string","description":"Recipient email address"},{"name":"subject","type":"string","description":"Email subject line"},{"name":"html","type":"string","description":"HTML body content","optional":true},{"name":"text","type":"string","description":"Plain text body content","optional":true},{"name":"from","type":"string","description":"Sender email address","optional":true},{"name":"replyTo","type":"string","description":"Reply-to email address","optional":true}]'::jsonb,
+    '[{"name":"result","type":"json","description":"Send result with status and message ID"}]'::jsonb,
+    '[]'::jsonb,
+    true,
+    'mail',
+    'email'
   ),
   (
     'send-verification-link',
@@ -73,7 +126,29 @@ VALUES
       ROW('SMTP_FROM', false),
       ROW('LOCAL_APP_PORT', false),
       ROW('SEND_VERIFICATION_LINK_DRY_RUN', false)
-    ]::constructive_compute_public.function_requirement[]
+    ]::constructive_compute_public.function_requirement[],
+    '[{"name":"email_type","type":"string","description":"Type of verification email (invite_email, forgot_password, email_verification)"},{"name":"email","type":"string","description":"Recipient email address"},{"name":"invite_type","type":"string","description":"Invite type identifier","optional":true},{"name":"invite_token","type":"string","description":"Invitation token","optional":true},{"name":"sender_id","type":"string","description":"User ID of the sender","optional":true},{"name":"user_id","type":"string","description":"User ID for password reset","optional":true},{"name":"reset_token","type":"string","description":"Password reset token","optional":true},{"name":"email_id","type":"string","description":"Email record ID for verification","optional":true},{"name":"verification_token","type":"string","description":"Email verification token","optional":true}]'::jsonb,
+    '[{"name":"result","type":"json","description":"Send result with status and message ID"}]'::jsonb,
+    '[]'::jsonb,
+    true,
+    'mail',
+    'email'
+  ),
+  (
+    'text-template',
+    'text-template',
+    'http://localhost:8087',
+    true, true, 'platform',
+    'Renders a text template with variable substitution using {{variable}} syntax',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[{"name":"variables","type":"json","description":"Key-value pairs for template substitution"}]'::jsonb,
+    '[{"name":"text","type":"string","description":"Rendered template output"},{"name":"missingVars","type":"json","description":"Array of template variables that had no value"}]'::jsonb,
+    '[{"name":"template","type":"string","default":"","description":"Template string with {{variable}} placeholders","required":true},{"name":"strict","type":"boolean","default":false,"description":"Fail if any template variable is missing","required":false},{"name":"fallback","type":"string","default":"","description":"Default value for missing variables (when not strict)","required":false}]'::jsonb,
+    false,
+    'file-text',
+    'string'
   )
 ON CONFLICT (scope, name) DO UPDATE SET
   task_identifier  = EXCLUDED.task_identifier,
@@ -81,6 +156,12 @@ ON CONFLICT (scope, name) DO UPDATE SET
   namespace_id     = EXCLUDED.namespace_id,
   required_secrets = EXCLUDED.required_secrets,
   required_configs = EXCLUDED.required_configs,
-  description      = EXCLUDED.description;
+  description      = EXCLUDED.description,
+  inputs           = EXCLUDED.inputs,
+  outputs          = EXCLUDED.outputs,
+  props            = EXCLUDED.props,
+  volatile         = EXCLUDED.volatile,
+  icon             = EXCLUDED.icon,
+  category         = EXCLUDED.category;
 
 COMMIT;

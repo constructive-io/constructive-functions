@@ -64,6 +64,8 @@
     { "name": "result", "type": "json", "description": "Send result with status and message ID" }
   ],
   "volatile": true,
+  "icon": "mail",
+  "category": "email",
   "dependencies": {
     "@constructive-io/postmaster": "^1.5.2",
     "@pgpmjs/env": "^2.15.3",

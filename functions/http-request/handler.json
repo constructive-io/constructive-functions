@@ -1,0 +1,32 @@
+{
+  "name": "http-request",
+  "version": "1.0.0",
+  "type": "node-graphql",
+  "port": 8086,
+  "taskIdentifier": "http-request",
+  "scope": "platform",
+  "description": "Makes an HTTP request to an external URL and returns the response",
+  "requiredSecrets": [
+    { "name": "AUTH_TOKEN", "required": false }
+  ],
+  "requiredConfigs": [],
+  "inputs": [
+    { "name": "url", "type": "string", "description": "Request URL" },
+    { "name": "body", "type": "json", "description": "Request body (for POST/PUT/PATCH)", "optional": true },
+    { "name": "headers", "type": "json", "description": "Additional request headers", "optional": true }
+  ],
+  "outputs": [
+    { "name": "data", "type": "json", "description": "Response body parsed as JSON" },
+    { "name": "status", "type": "number", "description": "HTTP status code" },
+    { "name": "headers", "type": "json", "description": "Response headers" }
+  ],
+  "props": [
+    { "name": "method", "type": "string", "default": "GET", "description": "HTTP method (GET, POST, PUT, PATCH, DELETE)", "required": false },
+    { "name": "timeout", "type": "number", "default": 30000, "description": "Request timeout in milliseconds", "required": false },
+    { "name": "retries", "type": "number", "default": 0, "description": "Number of retry attempts on failure", "required": false }
+  ],
+  "volatile": true,
+  "icon": "globe",
+  "category": "network",
+  "dependencies": {}
+}

@@ -68,6 +68,23 @@
     },
     "additionalProperties": false
   },
+  "inputs": [
+    { "name": "email_type", "type": "string", "description": "Type of verification email (invite_email, forgot_password, email_verification)" },
+    { "name": "email", "type": "string", "description": "Recipient email address" },
+    { "name": "invite_type", "type": "string", "description": "Invite type identifier", "optional": true },
+    { "name": "invite_token", "type": "string", "description": "Invitation token", "optional": true },
+    { "name": "sender_id", "type": "string", "description": "User ID of the sender", "optional": true },
+    { "name": "user_id", "type": "string", "description": "User ID for password reset", "optional": true },
+    { "name": "reset_token", "type": "string", "description": "Password reset token", "optional": true },
+    { "name": "email_id", "type": "string", "description": "Email record ID for verification", "optional": true },
+    { "name": "verification_token", "type": "string", "description": "Email verification token", "optional": true }
+  ],
+  "outputs": [
+    { "name": "result", "type": "json", "description": "Send result with status and message ID" }
+  ],
+  "volatile": true,
+  "icon": "mail",
+  "category": "email",
   "dependencies": {
     "@constructive-io/postmaster": "^1.5.2",
     "@launchql/mjml": "0.1.1",

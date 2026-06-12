@@ -168,6 +168,21 @@ export async function getGraphJobs(
  * Register a function definition in the platform.
  * This is needed so the compute-worker can resolve function names.
  */
+export interface PortDef {
+  name: string;
+  type: string;
+  description?: string;
+  optional?: boolean;
+}
+
+export interface PropDef {
+  name: string;
+  type: string;
+  default?: unknown;
+  description?: string;
+  required?: boolean;
+}
+
 export async function registerFunction(
   client: PgTestClient,
   _databaseId: string,
@@ -176,19 +191,40 @@ export async function registerFunction(
   opts: {
     description?: string;
     isInvocable?: boolean;
+    inputs?: PortDef[];
+    outputs?: PortDef[];
+    props?: PropDef[];
+    volatile?: boolean;
+    icon?: string;
+    category?: string;
   } = {}
 ): Promise<string> {
   const result = await client.one<{ id: string }>(
     `INSERT INTO constructive_compute_public.platform_function_definitions
-       (name, task_identifier, service_url, is_invocable, scope, description)
-     VALUES ($1, $1, $2, $3, 'platform', $4)
-     ON CONFLICT (scope, name) DO UPDATE SET service_url = EXCLUDED.service_url
+       (name, task_identifier, service_url, is_invocable, scope, description,
+        inputs, outputs, props, volatile, icon, category)
+     VALUES ($1, $1, $2, $3, 'platform', $4,
+             $5::jsonb, $6::jsonb, $7::jsonb, $8, $9, $10)
+     ON CONFLICT (scope, name) DO UPDATE SET
+       service_url = EXCLUDED.service_url,
+       inputs = EXCLUDED.inputs,
+       outputs = EXCLUDED.outputs,
+       props = EXCLUDED.props,
+       volatile = EXCLUDED.volatile,
+       icon = EXCLUDED.icon,
+       category = EXCLUDED.category
      RETURNING id`,
     [
       name,
       serviceUrl,
       opts.isInvocable !== false,
       opts.description ?? name,
+      JSON.stringify(opts.inputs ?? []),
+      JSON.stringify(opts.outputs ?? []),
+      JSON.stringify(opts.props ?? []),
+      opts.volatile ?? false,
+      opts.icon ?? null,
+      opts.category ?? null,
     ]
   );
   return result.id;

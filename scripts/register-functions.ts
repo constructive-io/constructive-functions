@@ -33,6 +33,24 @@ interface Requirement {
   required: boolean;
 }
 
+interface PortDef {
+  name: string;
+  type: string;
+  description?: string;
+  optional?: boolean;
+  multi?: boolean;
+  schema?: Record<string, unknown>;
+}
+
+interface PropDef {
+  name: string;
+  type: string;
+  default?: unknown;
+  description?: string;
+  required?: boolean;
+  schema?: Record<string, unknown>;
+}
+
 interface FunctionManifest {
   name: string;
   version: string;
@@ -44,6 +62,12 @@ interface FunctionManifest {
   requiredSecrets?: Requirement[];
   requiredConfigs?: Requirement[];
   payloadSchema?: Record<string, unknown>;
+  inputs?: PortDef[];
+  outputs?: PortDef[];
+  props?: PropDef[];
+  volatile?: boolean;
+  icon?: string;
+  category?: string;
   dependencies?: Record<string, string>;
 }
 
@@ -78,8 +102,10 @@ function sqlArray(items: Requirement[] | undefined, typeCast: string): string {
   return `ARRAY[\n${rows.join(',\n')}\n    ]::${typeCast}[]`;
 }
 
-function sqlJsonb(obj: Record<string, unknown> | undefined): string {
-  if (!obj || Object.keys(obj).length === 0) return 'NULL';
+function sqlJsonb(obj: Record<string, unknown> | unknown[] | undefined): string {
+  if (obj === undefined || obj === null) return 'NULL';
+  if (Array.isArray(obj) && obj.length === 0) return "'[]'::jsonb";
+  if (typeof obj === 'object' && !Array.isArray(obj) && Object.keys(obj).length === 0) return 'NULL';
   return `'${JSON.stringify(obj).replace(/'/g, "''")}'::jsonb`;
 }
 
@@ -91,6 +117,13 @@ function generateValueBlock(m: FunctionManifest): string {
   const secrets = sqlArray(m.requiredSecrets, 'constructive_compute_public.function_requirement');
   const configs = sqlArray(m.requiredConfigs, 'constructive_compute_public.function_requirement');
 
+  const inputs = sqlJsonb(m.inputs || []);
+  const outputs = sqlJsonb(m.outputs || []);
+  const props = sqlJsonb(m.props || []);
+  const isVolatile = m.volatile === true ? 'true' : 'false';
+  const icon = m.icon ? `'${m.icon.replace(/'/g, "''")}'` : 'NULL';
+  const category = m.category ? `'${m.category.replace(/'/g, "''")}'` : 'NULL';
+
   return `  (
     '${m.name}',
     '${taskId}',
@@ -99,7 +132,13 @@ function generateValueBlock(m: FunctionManifest): string {
     '${desc}',
     (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
     ${secrets},
-    ${configs}
+    ${configs},
+    ${inputs},
+    ${outputs},
+    ${props},
+    ${isVolatile},
+    ${icon},
+    ${category}
   )`;
 }
 
@@ -121,7 +160,8 @@ BEGIN;
 
 INSERT INTO constructive_compute_public.platform_function_definitions
   (name, task_identifier, service_url, is_invocable, is_built_in, scope, description,
-   namespace_id, required_secrets, required_configs)
+   namespace_id, required_secrets, required_configs,
+   inputs, outputs, props, volatile, icon, category)
 VALUES
 ${values}
 ON CONFLICT (scope, name) DO UPDATE SET
@@ -130,7 +170,13 @@ ON CONFLICT (scope, name) DO UPDATE SET
   namespace_id     = EXCLUDED.namespace_id,
   required_secrets = EXCLUDED.required_secrets,
   required_configs = EXCLUDED.required_configs,
-  description      = EXCLUDED.description;
+  description      = EXCLUDED.description,
+  inputs           = EXCLUDED.inputs,
+  outputs          = EXCLUDED.outputs,
+  props            = EXCLUDED.props,
+  volatile         = EXCLUDED.volatile,
+  icon             = EXCLUDED.icon,
+  category         = EXCLUDED.category;
 
 COMMIT;
 `;
