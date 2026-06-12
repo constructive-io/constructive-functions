@@ -307,7 +307,9 @@ export async function createTestWorker(
       if (jobs.length === 0) break;
       waves++;
 
+      const processedIds: string[] = [];
       for (const job of jobs) {
+        processedIds.push(job.id);
         await dispatchJob({
           id: job.id,
           task_identifier: job.task_identifier,
@@ -317,11 +319,23 @@ export async function createTestWorker(
         totalJobsProcessed++;
       }
 
-      // Clean up ALL jobs for this execution (processed + any duplicates re-enqueued during the wave)
+      // Delete only the jobs we fetched this wave (and any duplicates for the
+      // same node_name). We must NOT sweep-delete all execution jobs because
+      // complete_node → tick_execution may have enqueued the NEXT wave's jobs.
       await pgClient.query(
-        `DELETE FROM app_jobs.jobs WHERE (payload::jsonb->>'execution_id')::uuid = $1::uuid`,
-        [executionId]
+        `DELETE FROM app_jobs.jobs WHERE id = ANY($1::text[])`,
+        [processedIds]
       );
+      // Also remove duplicates that were re-enqueued for nodes we just completed
+      const completedNodeNames = jobs.map((j: any) => j.payload.node_name);
+      if (completedNodeNames.length > 0) {
+        await pgClient.query(
+          `DELETE FROM app_jobs.jobs
+           WHERE (payload::jsonb->>'execution_id')::uuid = $1::uuid
+             AND (payload::jsonb->>'node_name') = ANY($2::text[])`,
+          [executionId, completedNodeNames]
+        );
+      }
 
       // Check execution status after processing wave
       const { rows: [exec] } = await pgClient.query(
