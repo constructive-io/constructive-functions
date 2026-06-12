@@ -21,6 +21,7 @@ export interface ComputeRequestOptions {
   database_id?: string;
   actor_id?: string;
   entity_id?: string;
+  organization_id?: string;
   worker_id: string;
   job_id: string | number;
   invocation_id: string;
@@ -73,6 +74,7 @@ export function compute_request(
           ...(opts.database_id ? { 'X-Database-Id': opts.database_id } : {}),
           ...(opts.actor_id ? { 'X-Actor-Id': opts.actor_id } : {}),
           ...(opts.entity_id ? { 'X-Entity-Id': opts.entity_id } : {}),
+          ...(opts.organization_id ? { 'X-Organization-Id': opts.organization_id } : {}),
           ...(opts.callback_url ? { 'X-Callback-Url': opts.callback_url } : {}),
         },
       },

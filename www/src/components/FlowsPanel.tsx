@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { GraphEditor, NodeIcon } from '@fbp/graph-editor';
 import { evaluate } from '@fbp/evaluator';
 import {
@@ -13,9 +13,9 @@ import {
 import type { NodeDefinitionWithImpl } from '@fbp/evaluator';
 import type { Graph, NodeDefinition, Node } from '@fbp/types';
 import { compute } from '@constructive-functions/constructive-functions-hooks';
-import { RefreshCw, Save, Trash2, Plus, Play, Zap, ChevronDown, ChevronRight } from 'lucide-react';
+import { RefreshCw, Save, Trash2, Plus, Play, Zap, ChevronDown, ChevronRight, Cloud } from 'lucide-react';
 
-const STORAGE_KEY = 'constructive-flows-v2';
+const DATABASE_ID = '00000000-0000-0000-0000-000000000000';
 const BOUNDARY_NAMES = ['graph/input', 'graph/output', 'graph/prop'];
 
 interface FunctionRequirement {
@@ -35,23 +35,12 @@ type FunctionNode = {
   requiredConfigs?: FunctionRequirement[] | null;
 };
 
-interface SavedFlow {
+interface StoreEntry {
+  id: string;
   name: string;
-  graph: Graph;
+  hash?: string | null;
 }
 
-function loadFlows(): SavedFlow[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveFlows(flows: SavedFlow[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(flows));
-}
 
 function platformFnToDefinition(fn: FunctionNode): NodeDefinition {
   return {
@@ -99,12 +88,6 @@ const MOCK_FUNCTIONS: FunctionNode[] = [
     requiredSecrets: [{ name: 'MAILGUN_API_KEY', required: true }],
     requiredConfigs: [{ name: 'SMTP_HOST', required: true }, { name: 'FROM_EMAIL', required: true }],
   },
-  {
-    name: 'process-webhook', taskIdentifier: 'webhook:process', serviceUrl: '', isInvocable: true, isBuiltIn: false,
-    scope: 'tenant', description: 'Processes incoming webhook payloads and routes to handlers',
-    requiredSecrets: [{ name: 'WEBHOOK_SECRET', required: true }],
-    requiredConfigs: [],
-  },
 ];
 
 const DEFAULT_GRAPH: Graph = {
@@ -112,7 +95,6 @@ const DEFAULT_GRAPH: Graph = {
   nodes: [],
   edges: [],
 };
-
 
 const CATEGORY_ORDER = ['functions', 'graph', 'const', 'math', 'json', 'flow', 'string', 'layout', 'form', 'content', 'graphql'];
 const CATEGORY_LABELS: Record<string, string> = {
@@ -138,47 +120,235 @@ const FUNCTION_FIELDS = {
   isBuiltIn: true,
   scope: true,
   description: true,
-  // requiredSecrets/requiredConfigs are composite types not yet supported by ORM
 } as const;
+
+const STORE_FIELDS = { id: true, name: true, hash: true } as const;
+
+// ─── GraphQL client helper ──────────────────────────────────────────────
+
+async function gqlFetch(endpoint: string, query: string, variables: Record<string, unknown> = {}) {
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, variables }),
+  });
+  const json = await res.json();
+  if (json.errors?.length) throw new Error(json.errors[0].message);
+  return json.data;
+}
+
+async function loadGraphFromStore(storeId: string): Promise<{ graph: Graph; commitId: string | null } | null> {
+  const endpoint = '/graphql/compute';
+
+  // Get the 'main' ref for this store
+  const refData = await gqlFetch(endpoint, `
+    query ($where: PlatformFunctionGraphRefFilter) {
+      platformFunctionGraphRefs(where: $where, first: 1) {
+        nodes { id name commitId storeId }
+      }
+    }
+  `, { where: { storeId: { equalTo: storeId } } });
+  const ref = refData?.platformFunctionGraphRefs?.nodes?.[0];
+  if (!ref?.commitId) return null;
+
+  // Get the commit
+  const commitData = await gqlFetch(endpoint, `
+    query ($where: PlatformFunctionGraphCommitFilter) {
+      platformFunctionGraphCommits(where: $where, first: 1) {
+        nodes { id treeId message date parentIds }
+      }
+    }
+  `, { where: { id: { equalTo: ref.commitId } } });
+  const commit = commitData?.platformFunctionGraphCommits?.nodes?.[0];
+  if (!commit?.treeId) return null;
+
+  // Get the object (tree)
+  const objData = await gqlFetch(endpoint, `
+    query ($where: PlatformFunctionGraphObjectFilter) {
+      platformFunctionGraphObjects(where: $where, first: 1) {
+        nodes { id data }
+      }
+    }
+  `, { where: { id: { equalTo: commit.treeId } } });
+  const obj = objData?.platformFunctionGraphObjects?.nodes?.[0];
+  if (!obj?.data) return null;
+
+  return { graph: obj.data as unknown as Graph, commitId: ref.commitId };
+}
+
+async function saveGraphToStore(
+  storeId: string,
+  graph: Graph,
+  parentCommitId: string | null
+): Promise<{ commitId: string; objectId: string }> {
+  const endpoint = '/graphql/compute';
+
+  // Create object (content-addressed blob)
+  const objData = await gqlFetch(endpoint, `
+    mutation ($input: CreatePlatformFunctionGraphObjectInput!) {
+      createPlatformFunctionGraphObject(input: $input) {
+        platformFunctionGraphObject { id }
+      }
+    }
+  `, {
+    input: {
+      platformFunctionGraphObject: {
+        id: crypto.randomUUID(),
+        databaseId: DATABASE_ID,
+        data: graph as unknown as Record<string, unknown>,
+      },
+    },
+  });
+  const objectId = objData.createPlatformFunctionGraphObject.platformFunctionGraphObject.id;
+
+  // Create commit pointing to the object
+  const commitData = await gqlFetch(endpoint, `
+    mutation ($input: CreatePlatformFunctionGraphCommitInput!) {
+      createPlatformFunctionGraphCommit(input: $input) {
+        platformFunctionGraphCommit { id }
+      }
+    }
+  `, {
+    input: {
+      platformFunctionGraphCommit: {
+        databaseId: DATABASE_ID,
+        storeId,
+        treeId: objectId,
+        message: `Save: ${graph.name || 'untitled'}`,
+        parentIds: parentCommitId ? [parentCommitId] : [],
+      },
+    },
+  });
+  const commitId = commitData.createPlatformFunctionGraphCommit.platformFunctionGraphCommit.id;
+
+  // Upsert ref: find existing 'main' ref, update or create
+  const refData = await gqlFetch(endpoint, `
+    query ($where: PlatformFunctionGraphRefFilter) {
+      platformFunctionGraphRefs(where: $where, first: 1) {
+        nodes { id }
+      }
+    }
+  `, { where: { storeId: { equalTo: storeId } } });
+  const existingRef = refData?.platformFunctionGraphRefs?.nodes?.[0];
+
+  if (existingRef) {
+    await gqlFetch(endpoint, `
+      mutation ($input: UpdatePlatformFunctionGraphRefInput!) {
+        updatePlatformFunctionGraphRef(input: $input) {
+          platformFunctionGraphRef { id }
+        }
+      }
+    `, {
+      input: { id: existingRef.id, databaseId: DATABASE_ID, platformFunctionGraphRefPatch: { commitId } },
+    });
+  } else {
+    await gqlFetch(endpoint, `
+      mutation ($input: CreatePlatformFunctionGraphRefInput!) {
+        createPlatformFunctionGraphRef(input: $input) {
+          platformFunctionGraphRef { id }
+        }
+      }
+    `, {
+      input: {
+        platformFunctionGraphRef: {
+          databaseId: DATABASE_ID,
+          storeId,
+          name: 'main',
+          commitId,
+        },
+      },
+    });
+  }
+
+  return { commitId, objectId };
+}
+
+async function createStore(name: string): Promise<StoreEntry> {
+  const endpoint = '/graphql/compute';
+  const data = await gqlFetch(endpoint, `
+    mutation ($input: CreatePlatformFunctionGraphStoreInput!) {
+      createPlatformFunctionGraphStore(input: $input) {
+        platformFunctionGraphStore { id name hash }
+      }
+    }
+  `, {
+    input: {
+      platformFunctionGraphStore: { databaseId: DATABASE_ID, name },
+    },
+  });
+  return data.createPlatformFunctionGraphStore.platformFunctionGraphStore;
+}
+
+async function deleteStore(id: string): Promise<void> {
+  const endpoint = '/graphql/compute';
+  await gqlFetch(endpoint, `
+    mutation ($input: DeletePlatformFunctionGraphStoreInput!) {
+      deletePlatformFunctionGraphStore(input: $input) { deletedPlatformFunctionGraphStoreNodeId }
+    }
+  `, { input: { id } });
+}
+
+// ─── Component ──────────────────────────────────────────────────────────
 
 export function FlowsPanel() {
   const { data, isLoading } = compute.usePlatformFunctionDefinitionsQuery({
     selection: { fields: FUNCTION_FIELDS },
   });
 
+  const { data: storesData, isLoading: storesLoading, refetch: refetchStores } = compute.usePlatformFunctionGraphStoresQuery({
+    selection: { fields: STORE_FIELDS },
+  });
+
   const apiFunctions = data?.platformFunctionDefinitions?.nodes ?? [];
   const functions: FunctionNode[] = apiFunctions.length > 0 ? apiFunctions : MOCK_FUNCTIONS;
   const loading = isLoading;
 
-  const [flows, setFlowsList] = useState<SavedFlow[]>(loadFlows);
-  const [activeFlowIdx, setActiveFlowIdx] = useState<number | null>(
-    loadFlows().length > 0 ? 0 : null
-  );
+  const stores: StoreEntry[] = (storesData?.platformFunctionGraphStores?.nodes ?? []) as StoreEntry[];
+
+  const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
+  const [activeCommitId, setActiveCommitId] = useState<string | null>(null);
   const [flowName, setFlowName] = useState('');
   const [currentGraph, setCurrentGraph] = useState<Graph>(DEFAULT_GRAPH);
   const [evaluationResult, setEvaluationResult] = useState<unknown>(undefined);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingFlow, setIsLoadingFlow] = useState(false);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
   const graphRef = useRef<Graph>(currentGraph);
   graphRef.current = currentGraph;
 
-  // Load active flow
-  const loadActiveFlow = useCallback((idx: number | null) => {
-    if (idx !== null && flows[idx]) {
-      setCurrentGraph(flows[idx].graph);
-      setFlowName(flows[idx].name);
-      setEvaluationResult(undefined);
+  // Load a flow from a store
+  const handleLoadStore = useCallback(async (store: StoreEntry) => {
+    setActiveStoreId(store.id);
+    setFlowName(store.name);
+    setIsLoadingFlow(true);
+    setEvaluationResult(undefined);
+    try {
+      const result = await loadGraphFromStore(store.id);
+      if (result) {
+        setCurrentGraph(result.graph);
+        setActiveCommitId(result.commitId);
+      } else {
+        setCurrentGraph({ ...DEFAULT_GRAPH, name: store.name });
+        setActiveCommitId(null);
+      }
+    } catch (err: any) {
+      console.error('Failed to load flow:', err);
+      setCurrentGraph({ ...DEFAULT_GRAPH, name: store.name });
+      setActiveCommitId(null);
+    } finally {
+      setIsLoadingFlow(false);
     }
-  }, [flows]);
+  }, []);
 
-  // Sync active flow on index change
-  useState(() => {
-    if (activeFlowIdx !== null && flows[activeFlowIdx]) {
-      setCurrentGraph(flows[activeFlowIdx].graph);
-      setFlowName(flows[activeFlowIdx].name);
+  // Auto-load first store when stores arrive
+  useEffect(() => {
+    if (stores.length > 0 && !activeStoreId) {
+      handleLoadStore(stores[0]);
     }
-  });
+  }, [stores, activeStoreId, handleLoadStore]);
 
   const definitions: NodeDefinition[] = useMemo(() => [
     ...functions.map(platformFnToDefinition),
@@ -256,40 +426,54 @@ export function FlowsPanel() {
     }
   }, [implDefinitions]);
 
-  const handleSave = useCallback(() => {
-    const name = flowName.trim() || `Flow ${flows.length + 1}`;
-    const flowData: SavedFlow = { name, graph: graphRef.current };
+  const handleSave = useCallback(async () => {
+    const name = flowName.trim() || `Flow ${stores.length + 1}`;
+    const graph = graphRef.current;
+    setIsSaving(true);
+    setSaveStatus(null);
 
-    const updated = [...flows];
-    if (activeFlowIdx !== null) {
-      updated[activeFlowIdx] = flowData;
-    } else {
-      updated.push(flowData);
-      setActiveFlowIdx(updated.length - 1);
+    try {
+      let storeId = activeStoreId;
+
+      // Create a new store if none is active
+      if (!storeId) {
+        const store = await createStore(name);
+        storeId = store.id;
+        setActiveStoreId(storeId);
+      }
+
+      const { commitId } = await saveGraphToStore(storeId, graph, activeCommitId);
+      setActiveCommitId(commitId);
+      setFlowName(name);
+      setSaveStatus('Saved');
+      setTimeout(() => setSaveStatus(null), 2000);
+      refetchStores();
+    } catch (err: any) {
+      console.error('Failed to save flow:', err);
+      setSaveStatus(`Error: ${err.message}`);
+    } finally {
+      setIsSaving(false);
     }
-    setFlowsList(updated);
-    saveFlows(updated);
-    setFlowName(name);
-  }, [flowName, flows, activeFlowIdx]);
+  }, [flowName, stores.length, activeStoreId, activeCommitId, refetchStores]);
 
   const handleNew = useCallback(() => {
     setCurrentGraph({ ...DEFAULT_GRAPH, name: '' });
     setFlowName('');
-    setActiveFlowIdx(null);
+    setActiveStoreId(null);
+    setActiveCommitId(null);
     setEvaluationResult(undefined);
   }, []);
 
-  const handleDelete = useCallback(() => {
-    if (activeFlowIdx === null) return;
-    const updated = flows.filter((_, i) => i !== activeFlowIdx);
-    setFlowsList(updated);
-    saveFlows(updated);
-    if (updated.length > 0) {
-      setActiveFlowIdx(0);
-    } else {
+  const handleDelete = useCallback(async () => {
+    if (!activeStoreId) return;
+    try {
+      await deleteStore(activeStoreId);
+      refetchStores();
       handleNew();
+    } catch (err: any) {
+      console.error('Failed to delete store:', err);
     }
-  }, [activeFlowIdx, flows, handleNew]);
+  }, [activeStoreId, refetchStores, handleNew]);
 
   const handleAddNode = useCallback((def: NodeDefinition, fn?: FunctionNode) => {
     const position = { x: 300 + Math.random() * 200, y: 100 + Math.random() * 200 };
@@ -338,10 +522,11 @@ export function FlowsPanel() {
         />
         <button
           onClick={handleSave}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-green-600 hover:bg-green-500 text-white transition-colors"
+          disabled={isSaving}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-green-600 hover:bg-green-500 text-white transition-colors disabled:opacity-50"
         >
-          <Save size={14} />
-          Save
+          {isSaving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+          {isSaving ? 'Saving...' : 'Save'}
         </button>
         <button
           onClick={handleEvaluate}
@@ -351,13 +536,24 @@ export function FlowsPanel() {
           <Play size={14} />
           {isEvaluating ? 'Running...' : 'Evaluate'}
         </button>
-        {activeFlowIdx !== null && (
+        {activeStoreId && (
           <button
             onClick={handleDelete}
             className="flex items-center gap-1 px-2 py-1.5 rounded-md text-sm text-zinc-500 hover:text-red-400 hover:bg-zinc-800 transition-colors"
           >
             <Trash2 size={14} />
           </button>
+        )}
+        {saveStatus && (
+          <span className={`text-xs ${saveStatus.startsWith('Error') ? 'text-red-400' : 'text-green-400'}`}>
+            {saveStatus}
+          </span>
+        )}
+        {activeStoreId && (
+          <span className="flex items-center gap-1 text-xs text-zinc-600 ml-auto">
+            <Cloud size={12} />
+            stored in DB
+          </span>
         )}
       </div>
 
@@ -368,22 +564,26 @@ export function FlowsPanel() {
           <div className="p-3 border-b border-zinc-800">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Flows</h3>
-              {loading && <RefreshCw size={12} className="animate-spin text-zinc-500" />}
+              {(loading || storesLoading || isLoadingFlow) && <RefreshCw size={12} className="animate-spin text-zinc-500" />}
             </div>
             <div className="space-y-0.5 mb-2">
-              {flows.map((f, i) => (
+              {stores.map((store) => (
                 <button
-                  key={i}
-                  onClick={() => { setActiveFlowIdx(i); loadActiveFlow(i); }}
-                  className={`w-full text-left px-3 py-1.5 rounded-md text-sm truncate transition-colors ${
-                    activeFlowIdx === i
+                  key={store.id}
+                  onClick={() => handleLoadStore(store)}
+                  className={`w-full text-left px-3 py-1.5 rounded-md text-sm truncate transition-colors flex items-center gap-2 ${
+                    activeStoreId === store.id
                       ? 'bg-zinc-800 text-zinc-200'
                       : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'
                   }`}
                 >
-                  {f.name}
+                  <Cloud size={12} className="flex-shrink-0 text-zinc-600" />
+                  {store.name}
                 </button>
               ))}
+              {stores.length === 0 && !storesLoading && (
+                <p className="text-xs text-zinc-600 px-3 py-1">No saved flows yet</p>
+              )}
             </div>
             <button
               onClick={handleNew}

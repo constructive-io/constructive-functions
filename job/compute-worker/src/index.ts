@@ -18,6 +18,7 @@ import * as jobs from '@constructive-io/job-utils';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool, PoolClient } from 'pg';
 
+import { BillingTracker } from './billing';
 import { FunctionDiscovery } from './discovery';
 import { InvocationTracker } from './invocation';
 import { ComputeModuleLoader } from './module-loader';
@@ -26,6 +27,7 @@ import type { ComputeJobRow, ComputeWorkerOptions } from './types';
 
 const DEFAULT_DATABASE_ID = '00000000-0000-0000-0000-000000000000';
 
+export { BillingTracker } from './billing';
 export { TtlCache } from './cache';
 export { FunctionDiscovery } from './discovery';
 export { InvocationTracker } from './invocation';
@@ -33,6 +35,8 @@ export { ComputeModuleLoader } from './module-loader';
 export type { ComputeRequestOptions } from './req';
 export { compute_request } from './req';
 export type {
+  BillingContext,
+  BillingModuleConfig,
   ComputeJobRow,
   ComputeModuleConfig,
   ComputeWorkerOptions,
@@ -59,6 +63,7 @@ export default class ComputeWorker {
   readonly loader: ComputeModuleLoader;
   readonly discovery: FunctionDiscovery;
   readonly tracker: InvocationTracker;
+  readonly billing: BillingTracker;
 
   private callbackUrl?: string;
   private gatewayUrl?: string;
@@ -73,6 +78,7 @@ export default class ComputeWorker {
     this.loader = new ComputeModuleLoader(this.pgPool, opts.cacheTtlMs);
     this.discovery = new FunctionDiscovery(this.pgPool, this.loader, this.platformDatabaseId, opts.cacheTtlMs);
     this.tracker = new InvocationTracker(this.pgPool, this.loader, this.platformDatabaseId);
+    this.billing = new BillingTracker(this.pgPool, this.platformDatabaseId, opts.cacheTtlMs);
 
     this.callbackUrl = process.env.COMPUTE_CALLBACK_URL
       || process.env.INTERNAL_JOBS_CALLBACK_URL;
@@ -236,6 +242,26 @@ export default class ComputeWorker {
     }
   }
 
+  // ─── GUC propagation ───────────────────────────────────────────────
+
+  /**
+   * Set PostgreSQL session variables (GUCs) from the job's context.
+   * These are visible to triggers, RLS policies, and functions via current_setting().
+   */
+  private async setJobGUCs(job: ComputeJobRow): Promise<void> {
+    const gucs: [string, string][] = [];
+    const databaseId = job.database_id || this.platformDatabaseId;
+    gucs.push(['jwt.claims.database_id', databaseId]);
+    if (job.actor_id) gucs.push(['jwt.claims.user_id', job.actor_id]);
+    if (job.entity_id) gucs.push(['jwt.claims.entity_id', job.entity_id]);
+    if (job.organization_id) gucs.push(['jwt.claims.organization_id', job.organization_id]);
+
+    const sets = gucs.map(([k, v]) => `set_config('${k}', '${v}', true)`).join(', ');
+    if (sets) {
+      await this.pgPool.query(`SELECT ${sets}`);
+    }
+  }
+
   // ─── Work dispatch ───────────────────────────────────────────────────
 
   async doWork(job: ComputeJobRow): Promise<void> {
@@ -244,7 +270,9 @@ export default class ComputeWorker {
       id: job.id,
       task: task_identifier,
       databaseId: job.database_id,
+      actorId: job.actor_id,
       entityId: job.entity_id,
+      organizationId: job.organization_id,
     });
 
     const fn = await this.discovery.resolve(task_identifier);
@@ -264,6 +292,19 @@ export default class ComputeWorker {
 
     const databaseId = job.database_id || this.platformDatabaseId;
     const scope = job.entity_id ? 'org' : 'platform';
+    const billingEntityId = job.entity_id || job.organization_id;
+    const meterSlug = task_identifier;
+
+    // Set GUCs so triggers/RLS can see the job's user context
+    await this.setJobGUCs(job);
+
+    // Billing quota check (no-ops if billing not provisioned)
+    if (billingEntityId) {
+      const allowed = await this.billing.checkQuota(billingEntityId, meterSlug, 1, databaseId);
+      if (!allowed) {
+        throw new Error(`Billing quota exceeded for meter="${meterSlug}" entity=${billingEntityId}`);
+      }
+    }
 
     const { id: invocationId } = await this.tracker.create({
       task_identifier,
@@ -281,6 +322,7 @@ export default class ComputeWorker {
         database_id: databaseId,
         actor_id: job.actor_id,
         entity_id: job.entity_id,
+        organization_id: job.organization_id,
         worker_id: this.workerId,
         job_id: job.id,
         invocation_id: invocationId,
@@ -293,6 +335,16 @@ export default class ComputeWorker {
         invocationId, ms, undefined,
         scope, scope === 'org' ? databaseId : undefined
       );
+
+      // Record billing usage on success
+      if (billingEntityId) {
+        await this.billing.recordUsage(billingEntityId, meterSlug, 1, {
+          task_identifier,
+          duration_ms: ms,
+          invocation_id: invocationId,
+          job_id: String(job.id),
+        }, databaseId);
+      }
     } catch (err: any) {
       const elapsed = process.hrtime(reqStart);
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);

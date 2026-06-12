@@ -80,6 +80,22 @@ export interface ComputeJobRow {
   database_id?: string;
   actor_id?: string;
   entity_id?: string;
+  organization_id?: string;
+  entity_type?: string;
+}
+
+// ─── Billing ──────────────────────────────────────────────────────────────────
+
+export interface BillingModuleConfig {
+  publicSchema: string;
+  privateSchema: string;
+  recordUsageFunction: string;
+}
+
+export interface BillingContext {
+  config: BillingModuleConfig;
+  entityId: string;
+  meterSlug: string;
 }
 
 // ─── Worker Options ──────────────────────────────────────────────────────────
