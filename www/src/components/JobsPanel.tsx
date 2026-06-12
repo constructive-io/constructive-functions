@@ -91,8 +91,7 @@ const JOB_FUNCTION_FIELDS = {
   taskIdentifier: true,
   isInvocable: true,
   description: true,
-  requiredSecrets: true,
-  requiredConfigs: true,
+  // requiredSecrets/requiredConfigs are composite types not yet supported by ORM
 } as const;
 
 function NewJobForm({ onCreated }: { onCreated: () => void }) {

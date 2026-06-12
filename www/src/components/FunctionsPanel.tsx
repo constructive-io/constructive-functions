@@ -19,8 +19,8 @@ const FUNCTION_FIELDS = {
   isBuiltIn: true,
   scope: true,
   description: true,
-  requiredSecrets: true,
-  requiredConfigs: true,
+  // requiredSecrets/requiredConfigs are composite types (FunctionRequirement)
+  // that need subfield selection which the ORM doesn't support yet — omit for now
   createdAt: true,
   updatedAt: true,
 } as const;

@@ -19,14 +19,6 @@ const SECRET_FIELDS = {
   updatedAt: true,
 } as const;
 
-const FUNCTION_FIELDS = {
-  id: true,
-  name: true,
-  isInvocable: true,
-  requiredSecrets: true,
-  requiredConfigs: true,
-} as const;
-
 const NAMESPACE_FIELDS = {
   id: true,
   name: true,
@@ -39,16 +31,19 @@ export function SecretsPanel() {
   const { data: secretsData, refetch: refetchSecrets } = compute.usePlatformSecretDefinitionsQuery({
     selection: { fields: SECRET_FIELDS },
   });
-  const { data: functionsData, refetch: refetchFunctions } = compute.usePlatformFunctionDefinitionsQuery({
-    selection: { fields: FUNCTION_FIELDS },
-  });
   const { data: namespacesData, refetch: refetchNamespaces } = apiHooks.usePlatformNamespacesQuery({
     selection: { fields: NAMESPACE_FIELDS },
   });
 
   const secrets = secretsData?.platformSecretDefinitions?.nodes ?? [];
-  const functions = functionsData?.platformFunctionDefinitions?.nodes ?? [];
   const namespaces = namespacesData?.platformNamespaces?.nodes ?? [];
+
+  // Fetch function requirement data via REST (composite types not yet supported by ORM)
+  const [restFunctions, setRestFunctions] = useState<import('../lib/api').PlatformFunction[]>([]);
+  const loadFunctions = useCallback(() => {
+    api.getFunctions().then(setRestFunctions).catch(() => {});
+  }, []);
+  useEffect(() => { loadFunctions(); }, [loadFunctions]);
 
   const [envVars, setEnvVars] = useState<Record<string, string>>({});
   const [envPath, setEnvPath] = useState('');
@@ -78,17 +73,17 @@ export function SecretsPanel() {
 
   const refresh = useCallback(() => {
     refetchSecrets();
-    refetchFunctions();
     refetchNamespaces();
+    loadFunctions();
     loadEnv();
-  }, [refetchSecrets, refetchFunctions, refetchNamespaces, loadEnv]);
+  }, [refetchSecrets, refetchNamespaces, loadFunctions, loadEnv]);
 
   const secretUsage = useMemo(() => {
     const map: Record<string, string[]> = {};
-    for (const fn of functions) {
+    for (const fn of restFunctions) {
       const reqs = [
-        ...((fn.requiredSecrets ?? []) as FunctionRequirement[]),
-        ...((fn.requiredConfigs ?? []) as FunctionRequirement[]),
+        ...(fn.required_secrets ?? []),
+        ...(fn.required_configs ?? []),
       ];
       for (const r of reqs) {
         if (!r.name) continue;
@@ -97,18 +92,18 @@ export function SecretsPanel() {
       }
     }
     return map;
-  }, [functions]);
+  }, [restFunctions]);
 
   const allKeys = useMemo(() => {
     const keys = new Set<string>();
     for (const s of secrets) if (s.name) keys.add(s.name);
-    for (const fn of functions) {
-      for (const s of (fn.requiredSecrets ?? []) as FunctionRequirement[]) if (s.name) keys.add(s.name);
-      for (const c of (fn.requiredConfigs ?? []) as FunctionRequirement[]) if (c.name) keys.add(c.name);
+    for (const fn of restFunctions) {
+      for (const s of (fn.required_secrets ?? [])) if (s.name) keys.add(s.name);
+      for (const c of (fn.required_configs ?? [])) if (c.name) keys.add(c.name);
     }
     for (const k of Object.keys(envVars)) keys.add(k);
     return Array.from(keys).sort();
-  }, [secrets, functions, envVars]);
+  }, [secrets, restFunctions, envVars]);
 
   const secretDefs = useMemo(() => {
     const map: Record<string, typeof secrets[number]> = {};

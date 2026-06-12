@@ -138,8 +138,7 @@ const FUNCTION_FIELDS = {
   isBuiltIn: true,
   scope: true,
   description: true,
-  requiredSecrets: true,
-  requiredConfigs: true,
+  // requiredSecrets/requiredConfigs are composite types not yet supported by ORM
 } as const;
 
 export function FlowsPanel() {

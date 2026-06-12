@@ -2,14 +2,13 @@
 #
 # start-graphql-server.sh — Start the Constructive GraphQL server as a background process.
 #
-# Uses @constructive-io/graphql-server from the sibling constructive repo.
+# Uses @constructive-io/graphql-server installed from npm.
 # Resolves the API routing chain seeded by constructive-platform-seed.
 #
 # Usage:
 #   ./scripts/start-graphql-server.sh [db-name] [port]
 #
 # Environment:
-#   CONSTRUCTIVE_REPO  Path to constructive monorepo (default: ../constructive)
 #   GRAPHQL_PORT       Server port (default: 6464)
 #   PGHOST, PGPORT, PGUSER, PGPASSWORD — from pgpm env
 #
@@ -22,16 +21,6 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 DB_NAME="${1:-${DB_NAME:-constructive-functions-db1}}"
 GRAPHQL_PORT="${2:-${GRAPHQL_PORT:-6464}}"
-
-# Resolve constructive repo path
-CONSTRUCTIVE_REPO="${CONSTRUCTIVE_REPO:-$(cd "$ROOT_DIR/../constructive" 2>/dev/null && pwd || echo "")}"
-
-if [ -z "$CONSTRUCTIVE_REPO" ] || [ ! -f "$CONSTRUCTIVE_REPO/graphql/server/dist/index.js" ]; then
-  echo "  Cannot find constructive repo with built graphql-server."
-  echo "  Set CONSTRUCTIVE_REPO or ensure ../constructive is built."
-  echo "  Skipping GraphQL server."
-  exit 1
-fi
 
 PID_FILE="$ROOT_DIR/.graphql-server.pid"
 LOG_FILE="$ROOT_DIR/.graphql-server.log"
@@ -47,7 +36,10 @@ if [ -f "$PID_FILE" ]; then
 fi
 
 # Check if port is already in use
-if fuser "$GRAPHQL_PORT/tcp" 2>/dev/null | grep -q .; then
+if command -v fuser >/dev/null 2>&1 && fuser "$GRAPHQL_PORT/tcp" 2>/dev/null | grep -q .; then
+  echo "  Port $GRAPHQL_PORT is already in use."
+  exit 1
+elif command -v lsof >/dev/null 2>&1 && lsof -i :"$GRAPHQL_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
   echo "  Port $GRAPHQL_PORT is already in use."
   exit 1
 fi
@@ -55,7 +47,7 @@ fi
 # Load pgpm env for PG connection
 eval "$(pgpm env 2>/dev/null)" || true
 
-# Start the server as a background process
+# Start the server using the npm-installed package
 GRAPHILE_ENV=development \
 PGDATABASE="$DB_NAME" \
 PGHOST="${PGHOST:-localhost}" \
@@ -63,7 +55,7 @@ PGPORT="${PGPORT:-5432}" \
 PGUSER="${PGUSER:-postgres}" \
 PGPASSWORD="${PGPASSWORD:-password}" \
 node -e "
-const { GraphQLServer } = require('$CONSTRUCTIVE_REPO/graphql/server/dist/index.js');
+const { GraphQLServer } = require('@constructive-io/graphql-server');
 GraphQLServer({
   pg: {
     database: '$DB_NAME',
