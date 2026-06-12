@@ -242,23 +242,46 @@ async function saveGraphToStore(
 ): Promise<{ commitId: string; objectId: string }> {
   const endpoint = '/graphql/compute';
 
-  // Create object (content-addressed blob)
-  const objData = await gqlFetch(endpoint, `
-    mutation ($input: CreatePlatformFunctionGraphObjectInput!) {
-      createPlatformFunctionGraphObject(input: $input) {
-        platformFunctionGraphObject { id }
+  // Create object (content-addressed blob) — ID is a deterministic hash of content,
+  // so saving the same graph twice will collide. Catch and reuse existing object.
+  let objectId: string;
+  try {
+    const objData = await gqlFetch(endpoint, `
+      mutation ($input: CreatePlatformFunctionGraphObjectInput!) {
+        createPlatformFunctionGraphObject(input: $input) {
+          platformFunctionGraphObject { id }
+        }
       }
-    }
-  `, {
-    input: {
-      platformFunctionGraphObject: {
-        id: crypto.randomUUID(),
-        databaseId: DATABASE_ID,
-        data: graph as unknown as Record<string, unknown>,
+    `, {
+      input: {
+        platformFunctionGraphObject: {
+          id: crypto.randomUUID(),
+          databaseId: DATABASE_ID,
+          data: graph as unknown as Record<string, unknown>,
+        },
       },
-    },
-  });
-  const objectId = objData.createPlatformFunctionGraphObject.platformFunctionGraphObject.id;
+    });
+    objectId = objData.createPlatformFunctionGraphObject.platformFunctionGraphObject.id;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('duplicate key') || msg.includes('unique constraint')) {
+      // Object already exists with this content hash — look up the existing ref's tree
+      const refData = await gqlFetch(endpoint, `
+        query ($where: PlatformFunctionGraphRefFilter) {
+          platformFunctionGraphRefs(where: $where, first: 1) {
+            nodes { id commitId }
+          }
+        }
+      `, { where: { storeId: { equalTo: storeId } } });
+      const existingRef = refData?.platformFunctionGraphRefs?.nodes?.[0];
+      if (existingRef?.commitId) {
+        // Content unchanged — return existing commit, no new save needed
+        return { commitId: existingRef.commitId, objectId: '' };
+      }
+      throw err;
+    }
+    throw err;
+  }
 
   // Create commit pointing to the object
   const commitData = await gqlFetch(endpoint, `
