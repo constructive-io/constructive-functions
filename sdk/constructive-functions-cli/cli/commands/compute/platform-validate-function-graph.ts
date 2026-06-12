@@ -4,10 +4,11 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { CLIOptions, Inquirerer } from 'inquirerer';
-import { getClient } from '../../executor';
-import { unflattenDotNotation, buildSelectFromPaths } from '../../utils';
-import type { PlatformValidateFunctionGraphVariables } from '../../../orm/mutation';
+
 import type { PlatformValidateFunctionGraphPayloadSelect } from '../../../orm/input-types';
+import type { PlatformValidateFunctionGraphVariables } from '../../../orm/mutation';
+import { getClient } from '../../executor';
+import { buildSelectFromPaths,unflattenDotNotation } from '../../utils';
 export default async (
   argv: Partial<Record<string, unknown>>,
   prompter: Inquirerer,

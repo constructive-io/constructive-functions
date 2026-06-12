@@ -1,9 +1,0 @@
--- Deploy: schemas/constructive_compute_public/tables/platform_secret_definitions/columns/labels/alterations/alt0000002095
--- made with <3 @ constructive.io
-
--- requires: schemas/constructive_compute_public/schema
--- requires: schemas/constructive_compute_public/tables/platform_secret_definitions/columns/labels/column
-
-
-COMMENT ON COLUMN "constructive_compute_public".platform_secret_definitions.labels IS E'Key-value metadata for filtering and grouping secret definitions';
-

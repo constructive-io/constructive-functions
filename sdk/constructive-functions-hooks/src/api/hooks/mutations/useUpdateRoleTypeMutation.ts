@@ -4,16 +4,17 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import type { RoleTypePatch,RoleTypeSelect, RoleTypeWithRelations } from '../../orm/input-types';
+import type { HookStrictSelect,InferSelectResult } from '../../orm/select-types';
 import { getClient } from '../client';
-import { buildSelectionArgs } from '../selection';
-import type { SelectionConfig } from '../selection';
-import { roleTypeKeys } from '../query-keys';
 import { roleTypeMutationKeys } from '../mutation-keys';
-import type { RoleTypeSelect, RoleTypeWithRelations, RoleTypePatch } from '../../orm/input-types';
-import type { InferSelectResult, HookStrictSelect } from '../../orm/select-types';
-export type { RoleTypeSelect, RoleTypeWithRelations, RoleTypePatch } from '../../orm/input-types';
+import { roleTypeKeys } from '../query-keys';
+import type { SelectionConfig } from '../selection';
+import { buildSelectionArgs } from '../selection';
+export type { RoleTypePatch,RoleTypeSelect, RoleTypeWithRelations } from '../../orm/input-types';
 /**
  * Mutation hook for updating a RoleType
  *

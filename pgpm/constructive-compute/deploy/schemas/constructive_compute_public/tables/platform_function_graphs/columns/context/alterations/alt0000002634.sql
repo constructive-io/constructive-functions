@@ -1,0 +1,9 @@
+-- Deploy: schemas/constructive_compute_public/tables/platform_function_graphs/columns/context/alterations/alt0000002634
+-- made with <3 @ constructive.io
+
+-- requires: schemas/constructive_compute_public/schema
+-- requires: schemas/constructive_compute_public/tables/platform_function_graphs/columns/context/column
+
+
+COMMENT ON COLUMN "constructive_compute_public".platform_function_graphs.context IS E'Evaluator/runtime context (function, js, sql, system)';
+

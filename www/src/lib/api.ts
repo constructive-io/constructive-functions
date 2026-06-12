@@ -10,7 +10,12 @@ export interface PlatformFunction {
   description: string;
   required_secrets: Array<{ name: string; required: boolean }>;
   required_configs: Array<{ name: string; required: boolean }>;
-  payload_schema: Record<string, unknown> | null;
+  inputs: PortDef[];
+  outputs: PortDef[];
+  props: PropDef[];
+  volatile: boolean;
+  icon: string | null;
+  category: string | null;
   created_at: string;
   updated_at: string;
 }

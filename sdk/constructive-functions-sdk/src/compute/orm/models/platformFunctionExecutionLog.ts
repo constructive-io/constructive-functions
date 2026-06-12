@@ -4,36 +4,33 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { OrmClient } from '../client';
+import type {
+  CreatePlatformFunctionExecutionLogInput,
+  PlatformFunctionExecutionLogFilter,
+  PlatformFunctionExecutionLogOrderBy,
+  PlatformFunctionExecutionLogPatch,
+  PlatformFunctionExecutionLogSelect,
+  PlatformFunctionExecutionLogWithRelations,
+} from '../input-types';
+import { connectionFieldsMap } from '../input-types';
 import {
-  QueryBuilder,
-  buildFindManyDocument,
-  buildFindFirstDocument,
-  buildFindOneDocument,
   buildCreateDocument,
-  buildUpdateByPkDocument,
   buildDeleteByPkDocument,
+  buildFindFirstDocument,
+  buildFindManyDocument,
+  buildUpdateByPkDocument,
+  QueryBuilder,
 } from '../query-builder';
 import type {
   ConnectionResult,
-  FindManyArgs,
-  FindFirstArgs,
   CreateArgs,
-  UpdateArgs,
   DeleteArgs,
+  FindFirstArgs,
+  FindManyArgs,
   InferSelectResult,
   StrictSelect,
+  UpdateArgs,
 } from '../select-types';
-import type {
-  PlatformFunctionExecutionLog,
-  PlatformFunctionExecutionLogWithRelations,
-  PlatformFunctionExecutionLogSelect,
-  PlatformFunctionExecutionLogFilter,
-  PlatformFunctionExecutionLogOrderBy,
-  CreatePlatformFunctionExecutionLogInput,
-  UpdatePlatformFunctionExecutionLogInput,
-  PlatformFunctionExecutionLogPatch,
-} from '../input-types';
-import { connectionFieldsMap } from '../input-types';
 export class PlatformFunctionExecutionLogModel {
   constructor(private client: OrmClient) {}
   findMany<S extends PlatformFunctionExecutionLogSelect>(

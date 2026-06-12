@@ -33,6 +33,24 @@ interface FunctionRequirement {
   required?: boolean;
 }
 
+interface PortDef {
+  name: string;
+  type: string;
+  description?: string;
+  optional?: boolean;
+  multi?: boolean;
+  schema?: Record<string, unknown>;
+}
+
+interface PropDef {
+  name: string;
+  type: string;
+  default?: unknown;
+  description?: string;
+  required?: boolean;
+  schema?: Record<string, unknown>;
+}
+
 type FunctionNode = {
   name?: string | null;
   taskIdentifier?: string | null;
@@ -43,6 +61,12 @@ type FunctionNode = {
   description?: string | null;
   requiredSecrets?: FunctionRequirement[] | null;
   requiredConfigs?: FunctionRequirement[] | null;
+  inputs?: PortDef[] | null;
+  outputs?: PortDef[] | null;
+  props?: PropDef[] | null;
+  volatile?: boolean | null;
+  icon?: string | null;
+  category?: string | null;
 };
 
 interface StoreEntry {
@@ -53,15 +77,21 @@ interface StoreEntry {
 
 
 function platformFnToDefinition(fn: FunctionNode): NodeDefinition {
+  const inputs = (fn.inputs && fn.inputs.length > 0)
+    ? fn.inputs.map(p => ({ name: p.name, type: p.type, description: p.description }))
+    : [{ name: 'payload', type: 'json' }];
+  const outputs = (fn.outputs && fn.outputs.length > 0)
+    ? fn.outputs.map(p => ({ name: p.name, type: p.type, description: p.description }))
+    : [{ name: 'result', type: 'json' }];
   return {
     context: fn.scope || 'platform',
     name: fn.taskIdentifier || fn.name || '',
-    category: 'functions',
+    category: fn.category || 'functions',
     description: fn.description || undefined,
-    // TODO: pull typed ports from handler.json inputs/outputs once stored in DB
-    inputs: [{ name: 'payload', type: 'json' }],
-    outputs: [{ name: 'result', type: 'json' }],
-    icon: fn.isInvocable ? 'zap' : 'circle',
+    inputs,
+    outputs,
+    props: fn.props?.map(p => ({ name: p.name, type: p.type, default: p.default, description: p.description, required: p.required })),
+    icon: fn.icon || (fn.isInvocable ? 'zap' : 'circle'),
   };
 }
 
@@ -131,6 +161,12 @@ const FUNCTION_FIELDS = {
   isBuiltIn: true,
   scope: true,
   description: true,
+  inputs: true,
+  outputs: true,
+  props: true,
+  volatile: true,
+  icon: true,
+  category: true,
 } as const;
 
 const STORE_FIELDS = { id: true, name: true, hash: true } as const;

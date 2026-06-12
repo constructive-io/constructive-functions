@@ -156,8 +156,8 @@ BEGIN
       FROM "constructive_platform_function_graph_public".get_node_at_path(v_graph.database_id, v_tree_id, ARRAY[v_graph.context, 'definitions', v_node_name]) AS def INTO v_def_data;
     END IF;
     IF v_def_data IS NOT NULL AND v_def_data ? 'graph' THEN
-      SELECT "constructive_compute_public".platform_import_graph_json(v_graph.database_id, ('def_' || platform_tick_execution.execution_id) || ('_' || v_node_name), v_def_data->'graph') INTO v_sub_graph_id;
-      PERFORM "constructive_compute_public".platform_start_execution(graph_id:=v_sub_graph_id, input_payload:=v_inputs, parent_execution_id:=platform_tick_execution.execution_id, parent_node_name:=v_node_name);
+      SELECT "constructive_platform_function_graph_public".platform_import_graph_json(v_graph.database_id, ('def_' || platform_tick_execution.execution_id) || ('_' || v_node_name), v_def_data->'graph') INTO v_sub_graph_id;
+      PERFORM "constructive_platform_function_graph_public".platform_start_execution(graph_id:=v_sub_graph_id, input_payload:=v_inputs, parent_execution_id:=platform_tick_execution.execution_id, parent_node_name:=v_node_name);
       v_jobs_enqueued := v_jobs_enqueued + 1;
       CONTINUE;
     END IF;

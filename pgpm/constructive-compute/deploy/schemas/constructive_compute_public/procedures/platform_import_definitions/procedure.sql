@@ -31,7 +31,7 @@ BEGIN
     v_ctx := (platform_import_definitions.contexts)[v_i];
     v_root_hash := "constructive_compute_private".platform_copy_subtree(platform_import_definitions.source_scope_id, platform_import_definitions.source_commit_id, ARRAY[v_ctx, 'definitions'], v_graph.database_id, v_root_hash, ARRAY[v_ctx, 'definitions']);
   END LOOP;
-  PERFORM "constructive_compute_public".platform_save_graph(platform_import_definitions.graph_id, v_root_hash, 'import definitions');
+  PERFORM "constructive_platform_function_graph_public".platform_save_graph(platform_import_definitions.graph_id, v_root_hash, 'import definitions');
   RETURN;
 END;
 $_PGFN_$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;

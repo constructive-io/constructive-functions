@@ -1,6 +1,0 @@
--- Revert: schemas/constructive_compute_private/tables/platform_function_graph_executions/columns/max_ticks/alterations/alt0000002686
-
-
-COMMENT ON COLUMN "constructive_compute_private".platform_function_graph_executions.max_ticks IS NULL;
-
-

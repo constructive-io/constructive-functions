@@ -1,0 +1,9 @@
+-- Deploy: schemas/constructive_compute_public/tables/platform_function_definitions/columns/icon/alterations/alt0000002093
+-- made with <3 @ constructive.io
+
+-- requires: schemas/constructive_compute_public/schema
+-- requires: schemas/constructive_compute_public/tables/platform_function_definitions/columns/icon/column
+
+
+COMMENT ON COLUMN "constructive_compute_public".platform_function_definitions.icon IS E'Icon identifier for UI palette display (e.g. zap, mail, code)';
+

@@ -1,13 +1,13 @@
 ---
 name: orm-compute
-description: ORM client for the compute API — provides typed CRUD operations for 12 tables and 16 custom operations
+description: ORM client for the compute API — provides typed CRUD operations for 14 tables and 16 custom operations
 ---
 
 # orm-compute
 
 <!-- @constructive-io/graphql-codegen - DO NOT EDIT -->
 
-ORM client for the compute API — provides typed CRUD operations for 12 tables and 16 custom operations
+ORM client for the compute API — provides typed CRUD operations for 14 tables and 16 custom operations
 
 ## Usage
 
@@ -46,6 +46,8 @@ See the `references/` directory for detailed per-entity API documentation:
 - [platform-secret-definition](references/platform-secret-definition.md)
 - [platform-function-execution-log](references/platform-function-execution-log.md)
 - [platform-function-graph](references/platform-function-graph.md)
+- [platform-compute-log](references/platform-compute-log.md)
+- [platform-usage-daily](references/platform-usage-daily.md)
 - [org-function-invocation](references/org-function-invocation.md)
 - [platform-function-invocation](references/platform-function-invocation.md)
 - [platform-function-definition](references/platform-function-definition.md)

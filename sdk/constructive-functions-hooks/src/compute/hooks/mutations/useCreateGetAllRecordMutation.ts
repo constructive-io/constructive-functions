@@ -4,23 +4,24 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
-import { getClient } from '../client';
-import { buildSelectionArgs } from '../selection';
-import type { SelectionConfig } from '../selection';
-import { getAllRecordKeys } from '../query-keys';
-import { getAllRecordMutationKeys } from '../mutation-keys';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import type {
+  CreateGetAllRecordInput,
   GetAllRecordSelect,
   GetAllRecordWithRelations,
-  CreateGetAllRecordInput,
 } from '../../orm/input-types';
-import type { InferSelectResult, HookStrictSelect } from '../../orm/select-types';
+import type { HookStrictSelect,InferSelectResult } from '../../orm/select-types';
+import { getClient } from '../client';
+import { getAllRecordMutationKeys } from '../mutation-keys';
+import { getAllRecordKeys } from '../query-keys';
+import type { SelectionConfig } from '../selection';
+import { buildSelectionArgs } from '../selection';
 export type {
+  CreateGetAllRecordInput,
   GetAllRecordSelect,
   GetAllRecordWithRelations,
-  CreateGetAllRecordInput,
 } from '../../orm/input-types';
 /**
  * Mutation hook for creating a GetAllRecord

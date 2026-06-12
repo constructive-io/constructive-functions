@@ -4,36 +4,33 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { OrmClient } from '../client';
+import type {
+  CreateStoreInput,
+  StoreFilter,
+  StoreOrderBy,
+  StorePatch,
+  StoreSelect,
+  StoreWithRelations,
+} from '../input-types';
+import { connectionFieldsMap } from '../input-types';
 import {
-  QueryBuilder,
-  buildFindManyDocument,
-  buildFindFirstDocument,
-  buildFindOneDocument,
   buildCreateDocument,
-  buildUpdateByPkDocument,
   buildDeleteByPkDocument,
+  buildFindFirstDocument,
+  buildFindManyDocument,
+  buildUpdateByPkDocument,
+  QueryBuilder,
 } from '../query-builder';
 import type {
   ConnectionResult,
-  FindManyArgs,
-  FindFirstArgs,
   CreateArgs,
-  UpdateArgs,
   DeleteArgs,
+  FindFirstArgs,
+  FindManyArgs,
   InferSelectResult,
   StrictSelect,
+  UpdateArgs,
 } from '../select-types';
-import type {
-  Store,
-  StoreWithRelations,
-  StoreSelect,
-  StoreFilter,
-  StoreOrderBy,
-  CreateStoreInput,
-  UpdateStoreInput,
-  StorePatch,
-} from '../input-types';
-import { connectionFieldsMap } from '../input-types';
 export class StoreModel {
   constructor(private client: OrmClient) {}
   findMany<S extends StoreSelect>(

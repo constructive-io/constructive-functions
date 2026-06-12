@@ -1,13 +1,13 @@
 ---
 name: cli-compute
-description: CLI commands for the compute API target — 12 tables and 16 custom operations via constructive-functions
+description: CLI commands for the compute API target — 14 tables and 16 custom operations via constructive-functions
 ---
 
 # cli-compute
 
 <!-- @constructive-io/graphql-codegen - DO NOT EDIT -->
 
-CLI commands for the compute API target — 12 tables and 16 custom operations via constructive-functions
+CLI commands for the compute API target — 14 tables and 16 custom operations via constructive-functions
 
 ## Usage
 
@@ -48,6 +48,8 @@ See the `references/` directory for detailed per-entity API documentation:
 - [platform-secret-definition](references/platform-secret-definition.md)
 - [platform-function-execution-log](references/platform-function-execution-log.md)
 - [platform-function-graph](references/platform-function-graph.md)
+- [platform-compute-log](references/platform-compute-log.md)
+- [platform-usage-daily](references/platform-usage-daily.md)
 - [org-function-invocation](references/org-function-invocation.md)
 - [platform-function-invocation](references/platform-function-invocation.md)
 - [platform-function-definition](references/platform-function-definition.md)

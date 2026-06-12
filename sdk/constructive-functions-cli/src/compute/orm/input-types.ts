@@ -511,6 +511,18 @@ export interface PlatformFunctionDefinition {
   requiredConfigs?: FunctionRequirement[] | null;
   /** Embedded secret requirements: array of (name, required) tuples */
   requiredSecrets?: FunctionRequirement[] | null;
+  /** Input port definitions: [{name, type, description?, optional?, multi?, schema?}] */
+  inputs?: Record<string, unknown> | null;
+  /** Output port definitions: [{name, type, description?, optional?, multi?, schema?}] */
+  outputs?: Record<string, unknown> | null;
+  /** Property definitions: [{name, type, default?, description?, required?, schema?}] */
+  props?: Record<string, unknown> | null;
+  /** Whether this function has side effects (cannot be cached or memoized) */
+  volatile?: boolean | null;
+  /** Icon identifier for UI palette display (e.g. zap, mail, code) */
+  icon?: string | null;
+  /** UI palette category for grouping (e.g. email, data, ai) */
+  category?: string | null;
 }
 // ============ Relation Helper Types ============
 export interface ConnectionResult<T> {
@@ -730,6 +742,12 @@ export type PlatformFunctionDefinitionSelect = {
   updatedAt?: boolean;
   requiredConfigs?: boolean;
   requiredSecrets?: boolean;
+  inputs?: boolean;
+  outputs?: boolean;
+  props?: boolean;
+  volatile?: boolean;
+  icon?: boolean;
+  category?: boolean;
 };
 // ============ Table Filter Types ============
 export interface GetAllRecordFilter {
@@ -1102,6 +1120,12 @@ export interface PlatformFunctionDefinitionFilter {
   taskIdentifier?: StringFilter;
   /** Filter by the object’s `updatedAt` field. */
   updatedAt?: DatetimeFilter;
+  /** Filter by the object's `volatile` field. */
+  volatile?: BooleanFilter;
+  /** Filter by the object's `icon` field. */
+  icon?: StringFilter;
+  /** Filter by the object's `category` field. */
+  category?: StringFilter;
   /** Checks for all expressions in this list. */
   and?: PlatformFunctionDefinitionFilter[];
   /** Checks for any expressions in this list. */
@@ -1439,7 +1463,13 @@ export type PlatformFunctionDefinitionOrderBy =
   | 'REQUIRED_CONFIGS_ASC'
   | 'REQUIRED_CONFIGS_DESC'
   | 'REQUIRED_SECRETS_ASC'
-  | 'REQUIRED_SECRETS_DESC';
+  | 'REQUIRED_SECRETS_DESC'
+  | 'VOLATILE_ASC'
+  | 'VOLATILE_DESC'
+  | 'ICON_ASC'
+  | 'ICON_DESC'
+  | 'CATEGORY_ASC'
+  | 'CATEGORY_DESC';
 // ============ CRUD Input Types ============
 export interface CreateGetAllRecordInput {
   clientMutationId?: string;
@@ -1863,6 +1893,12 @@ export interface CreatePlatformFunctionDefinitionInput {
     taskIdentifier: string;
     requiredConfigs?: FunctionRequirementInput[];
     requiredSecrets?: FunctionRequirementInput[];
+    inputs?: Record<string, unknown>;
+    outputs?: Record<string, unknown>;
+    props?: Record<string, unknown>;
+    volatile?: boolean;
+    icon?: string;
+    category?: string;
   };
 }
 export interface PlatformFunctionDefinitionPatch {
@@ -1879,6 +1915,12 @@ export interface PlatformFunctionDefinitionPatch {
   taskIdentifier?: string | null;
   requiredConfigs?: FunctionRequirementInput[] | null;
   requiredSecrets?: FunctionRequirementInput[] | null;
+  inputs?: Record<string, unknown> | null;
+  outputs?: Record<string, unknown> | null;
+  props?: Record<string, unknown> | null;
+  volatile?: boolean | null;
+  icon?: string | null;
+  category?: string | null;
 }
 export interface UpdatePlatformFunctionDefinitionInput {
   clientMutationId?: string;
@@ -2294,6 +2336,18 @@ export interface PlatformFunctionDefinitionInput {
   requiredConfigs?: FunctionRequirementInput[];
   /** Embedded secret requirements: array of (name, required) tuples */
   requiredSecrets?: FunctionRequirementInput[];
+  /** Input port definitions: [{name, type, description?, optional?, multi?, schema?}] */
+  inputs?: Record<string, unknown>;
+  /** Output port definitions: [{name, type, description?, optional?, multi?, schema?}] */
+  outputs?: Record<string, unknown>;
+  /** Property definitions: [{name, type, default?, description?, required?, schema?}] */
+  props?: Record<string, unknown>;
+  /** Whether this function has side effects (cannot be cached or memoized) */
+  volatile?: boolean;
+  /** Icon identifier for UI palette display (e.g. zap, mail, code) */
+  icon?: string;
+  /** UI palette category for grouping (e.g. email, data, ai) */
+  category?: string;
 }
 /** An input for mutations affecting `FunctionRequirement` */
 export interface FunctionRequirementInput {

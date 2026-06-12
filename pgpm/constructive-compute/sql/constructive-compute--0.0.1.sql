@@ -1,606 +1,6 @@
 \echo Use "CREATE EXTENSION constructive-compute" to load this file. \quit
 CREATE SCHEMA constructive_compute_private;
 
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_private
-  GRANT ALL ON FUNCTIONS TO administrator;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_private
-  GRANT ALL ON FUNCTIONS TO anonymous;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_private
-  GRANT ALL ON FUNCTIONS TO authenticated;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_private
-  GRANT USAGE ON SEQUENCES TO administrator;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_private
-  GRANT USAGE ON SEQUENCES TO authenticated;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_private
-  GRANT ALL ON TABLES TO administrator;
-
-CREATE TABLE constructive_compute_private.platform_function_graph_execution_outputs (
-  created_at timestamptz NOT NULL DEFAULT now()
-) PARTITION BY RANGE (created_at);
-
-ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
-  DISABLE ROW LEVEL SECURITY;
-
-COMMENT ON TABLE constructive_compute_private.platform_function_graph_execution_outputs IS 'Content-addressed store for execution outputs — hash-referenced from node_outputs';
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_execution_outputs.created_at IS 'Timestamp of output creation';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
-  ADD COLUMN data jsonb;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
-  ALTER COLUMN data SET NOT NULL;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_execution_outputs.data IS 'The actual output payload from a completed node';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
-  ADD COLUMN database_id uuid;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
-  ALTER COLUMN database_id SET NOT NULL;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_execution_outputs.database_id IS 'Database scope for multi-tenant isolation';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
-  ADD COLUMN hash bytea;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
-  ALTER COLUMN hash SET NOT NULL;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_execution_outputs.hash IS 'SHA-256 hash of the data JSONB — content-addressed deduplication';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
-  ADD COLUMN id uuid;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
-  ALTER COLUMN id SET NOT NULL;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
-  ALTER COLUMN id SET DEFAULT uuidv7();
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_execution_outputs.id IS 'Unique execution output identifier';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
-  ADD CONSTRAINT platform_function_graph_execution_outputs_pkey PRIMARY KEY (created_at, id);
-
-CREATE UNIQUE INDEX idx_platform_function_graph_execution_outputs_unique_hash ON constructive_compute_private.platform_function_graph_execution_outputs (database_id, hash, created_at);
-
-CREATE TABLE constructive_compute_private.platform_function_graph_executions (
-  started_at timestamptz NOT NULL DEFAULT now()
-) PARTITION BY RANGE (started_at);
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  DISABLE ROW LEVEL SECURITY;
-
-COMMENT ON TABLE constructive_compute_private.platform_function_graph_executions IS 'Ephemeral execution state for flow graph evaluation';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN completed_at timestamptz;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.completed_at IS 'Execution completion timestamp';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN current_wave int;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN current_wave SET NOT NULL;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN current_wave SET DEFAULT 0;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.current_wave IS 'Index into execution_plan — tick only processes this wave';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN database_id uuid;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN database_id SET NOT NULL;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.database_id IS 'Database scope for multi-tenant isolation';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN definitions_commit_id uuid;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.definitions_commit_id IS 'Pinned definitions store commit for deterministic evaluation';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN entity_id uuid;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.entity_id IS 'Entity context (org/team) for scoped billing';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN error_code text;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.error_code IS 'Machine-readable error code when status = failed';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN error_message text;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.error_message IS 'Human-readable error description when status = failed';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN execution_plan jsonb;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.execution_plan IS 'Pre-computed topological sort as array of wave objects';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN graph_id uuid;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN graph_id SET NOT NULL;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.graph_id IS 'FK to the graph definition being executed';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN id uuid;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN id SET NOT NULL;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN id SET DEFAULT uuidv7();
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.id IS 'Unique execution identifier';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN input_payload jsonb;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.input_payload IS 'Initial inputs provided at invocation time';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN invocation_id uuid;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.invocation_id IS 'Parent function_invocations row (for metering)';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN max_pending_jobs int;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN max_pending_jobs SET NOT NULL;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN max_pending_jobs SET DEFAULT 50;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.max_pending_jobs IS 'Maximum pending jobs before execution is failed (default 50)';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN max_ticks int;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN max_ticks SET NOT NULL;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN max_ticks SET DEFAULT 100;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.max_ticks IS 'Maximum ticks before execution is failed (default 100)';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN node_outputs jsonb;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN node_outputs SET NOT NULL;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN node_outputs SET DEFAULT '{}'::jsonb;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.node_outputs IS 'Map of node_name → execution output id (content-addressed hash reference)';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN output_node text;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN output_node SET NOT NULL;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.output_node IS 'Target output boundary node name to resolve';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN output_payload jsonb;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.output_payload IS 'Final result extracted from terminal output node';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN output_port text;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN output_port SET NOT NULL;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN output_port SET DEFAULT 'value';
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.output_port IS 'Target output port name (default: value)';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN parent_execution_id uuid;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.parent_execution_id IS 'Parent execution when this is a sub-execution';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN parent_node_name text;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.parent_node_name IS 'Node name in parent execution that spawned this sub-execution';
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.started_at IS 'Execution start timestamp';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN status text;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN status SET NOT NULL;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN status SET DEFAULT 'pending';
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.status IS 'Lifecycle: pending → running → completed/failed/cancelled';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD CONSTRAINT platform_function_graph_executions_status_chk 
-    CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled'));
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN tick_count int;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN tick_count SET NOT NULL;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN tick_count SET DEFAULT 0;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.tick_count IS 'Number of evaluate_step ticks executed';
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD COLUMN timeout_at timestamptz;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN timeout_at SET NOT NULL;
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ALTER COLUMN timeout_at SET DEFAULT now() + '5 minutes'::interval;
-
-COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.timeout_at IS 'Absolute deadline — execution fails if still running after this time';
-
-CREATE SCHEMA constructive_compute_public;
-
-CREATE TABLE constructive_compute_public.platform_function_graphs ();
-
-ALTER TABLE constructive_compute_private.platform_function_graph_executions 
-  ADD CONSTRAINT platform_function_graph_executions_pkey PRIMARY KEY (started_at, id);
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
-  GRANT ALL ON FUNCTIONS TO administrator;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
-  GRANT ALL ON FUNCTIONS TO anonymous;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
-  GRANT ALL ON FUNCTIONS TO authenticated;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
-  GRANT USAGE ON SEQUENCES TO administrator;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
-  GRANT USAGE ON SEQUENCES TO authenticated;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
-  GRANT ALL ON TABLES TO administrator;
-
-CREATE TABLE constructive_compute_public.org_function_execution_logs (
-  created_at timestamptz NOT NULL DEFAULT now()
-) PARTITION BY RANGE (created_at);
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  DISABLE ROW LEVEL SECURITY;
-
-COMMENT ON TABLE constructive_compute_public.org_function_execution_logs IS 'Function execution logs — structured console output per invocation';
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  ADD COLUMN actor_id uuid;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.actor_id IS 'User who triggered the execution (NULL for system/cron)';
-
-COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.created_at IS 'Log entry timestamp (partition key)';
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  ADD COLUMN id uuid;
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  ALTER COLUMN id SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  ALTER COLUMN id SET DEFAULT uuidv7();
-
-COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.id IS 'Unique log entry identifier';
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  ADD COLUMN invocation_id uuid;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.invocation_id IS 'Invocation this log entry belongs to (NULL for standalone job logs)';
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  ADD COLUMN log_level text;
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  ALTER COLUMN log_level SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  ALTER COLUMN log_level SET DEFAULT 'info';
-
-COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.log_level IS 'Log severity: debug, info, warn, error';
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  ADD CONSTRAINT org_function_execution_logs_log_level_chk 
-    CHECK (log_level IN ('debug', 'info', 'warn', 'error'));
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  ADD COLUMN message text;
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  ALTER COLUMN message SET NOT NULL;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.message IS 'Log message text';
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  ADD COLUMN metadata jsonb;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.metadata IS 'Structured context (labels, trace data, extra fields)';
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  ADD COLUMN task_identifier text;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.task_identifier IS 'Function routing key (NULL for generic job logs)';
-
-ALTER TABLE constructive_compute_public.org_function_execution_logs 
-  ADD CONSTRAINT org_function_execution_logs_pkey PRIMARY KEY (created_at, id);
-
-CREATE INDEX org_function_execution_logs_invocation_id_created_at_idx ON constructive_compute_public.org_function_execution_logs (invocation_id, created_at);
-
-CREATE TABLE constructive_compute_public.org_function_invocations (
-  created_at timestamptz NOT NULL DEFAULT now()
-) PARTITION BY RANGE (created_at);
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  DISABLE ROW LEVEL SECURITY;
-
-COMMENT ON TABLE constructive_compute_public.org_function_invocations IS 'Function invocation log — INSERT to call a function (business-layer, metered). Linked to definitions by task_identifier string.';
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD COLUMN actor_id uuid;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_invocations.actor_id IS 'Who triggered the invocation (NULL for system/cron)';
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD COLUMN completed_at timestamptz;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_invocations.completed_at IS 'When execution completed';
-
-COMMENT ON COLUMN constructive_compute_public.org_function_invocations.created_at IS 'Invocation creation timestamp (partition key)';
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD COLUMN duration_ms int;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_invocations.duration_ms IS 'Wall-clock execution time in milliseconds';
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD COLUMN error text;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_invocations.error IS 'Error message when status is failed';
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD COLUMN graph_execution_id uuid;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_invocations.graph_execution_id IS 'Groups all node invocations from a single flow graph execution';
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD COLUMN id uuid;
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ALTER COLUMN id SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ALTER COLUMN id SET DEFAULT uuidv7();
-
-COMMENT ON COLUMN constructive_compute_public.org_function_invocations.id IS 'Unique invocation identifier';
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD COLUMN job_id bigint;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_invocations.job_id IS 'FK to app_jobs.jobs — the underlying transport';
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD COLUMN parent_invocation_id uuid;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_invocations.parent_invocation_id IS 'Parent invocation when this is a child node of a flow graph execution';
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD COLUMN payload jsonb;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_invocations.payload IS 'Function input payload';
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD COLUMN result jsonb;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_invocations.result IS 'Function return value (success) or structured error (failure)';
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD COLUMN started_at timestamptz;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_invocations.started_at IS 'When execution started';
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD COLUMN status text;
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ALTER COLUMN status SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ALTER COLUMN status SET DEFAULT 'pending';
-
-COMMENT ON COLUMN constructive_compute_public.org_function_invocations.status IS 'Lifecycle: pending → running → completed/failed/cancelled';
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD CONSTRAINT org_function_invocations_status_chk 
-    CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled'));
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD COLUMN task_identifier text;
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ALTER COLUMN task_identifier SET NOT NULL;
-
-COMMENT ON COLUMN constructive_compute_public.org_function_invocations.task_identifier IS 'Function routing slug (scope:name). Links to function_definitions.task_identifier by convention — no FK.';
-
-ALTER TABLE constructive_compute_public.org_function_invocations 
-  ADD CONSTRAINT org_function_invocations_pkey PRIMARY KEY (created_at, id);
-
-CREATE INDEX org_function_invocations_actor_id_created_at_idx ON constructive_compute_public.org_function_invocations (actor_id, created_at);
-
-CREATE INDEX org_function_invocations_graph_execution_id_created_at_idx ON constructive_compute_public.org_function_invocations (graph_execution_id, created_at);
-
-CREATE INDEX org_function_invocations_task_identifier_created_at_idx ON constructive_compute_public.org_function_invocations (task_identifier, created_at);
-
-CREATE TABLE constructive_compute_public.platform_function_definitions ();
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  DISABLE ROW LEVEL SECURITY;
-
-COMMENT ON TABLE constructive_compute_public.platform_function_definitions IS 'Function definitions — registered cloud functions with routing, queue, and retry configuration';
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD COLUMN created_at timestamptz;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN created_at SET DEFAULT now();
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD COLUMN description text;
-
-COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.description IS 'Human-readable description of what this function does';
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD COLUMN id uuid;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN id SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN id SET DEFAULT uuidv7();
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD COLUMN is_built_in boolean;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN is_built_in SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN is_built_in SET DEFAULT false;
-
-COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.is_built_in IS 'Whether this function is a built-in platform function (synced from platform) vs user-created';
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD COLUMN is_invocable boolean;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN is_invocable SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN is_invocable SET DEFAULT false;
-
-COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.is_invocable IS 'Whether this function can be called via function_invocations (public API). Default false = internal-only via add_job()';
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD COLUMN max_attempts int;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN max_attempts SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN max_attempts SET DEFAULT 25;
-
-COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.max_attempts IS 'Maximum retry attempts for the underlying job';
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD COLUMN name text;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN name SET NOT NULL;
-
-COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.name IS 'Function name within scope (e.g. send_verification_link, process_file_embedding)';
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD COLUMN namespace_id uuid;
-
-COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.namespace_id IS 'Namespace this function belongs to (FK to namespaces table)';
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD COLUMN priority int;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN priority SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN priority SET DEFAULT 0;
-
-COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.priority IS 'Job priority (lower = higher priority)';
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD COLUMN queue_name text;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN queue_name SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN queue_name SET DEFAULT 'default';
-
-COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.queue_name IS 'Job queue name for serialization (e.g. email, ai, default)';
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD COLUMN scope text;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN scope SET NOT NULL;
-
-COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.scope IS 'Function grouping scope (e.g. email, embed, chunk, custom)';
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD COLUMN service_url text;
-
-COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.service_url IS 'Optional service URL override for function dispatch. NULL = use gateway convention (gatewayUrl/task_identifier). Set for customer-deployed functions or external endpoints.';
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD COLUMN task_identifier text;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN task_identifier SET NOT NULL;
-
-COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.task_identifier IS 'Computed routing slug: scope:name (used by Knative job worker for dispatch)';
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD COLUMN updated_at timestamptz;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ALTER COLUMN updated_at SET DEFAULT now();
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD CONSTRAINT platform_function_definitions_namespace_id_fkey
-    FOREIGN KEY(namespace_id)
-    REFERENCES constructive_infra_public.platform_namespaces (id)
-    ON DELETE SET NULL;
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD CONSTRAINT platform_function_definitions_pkey PRIMARY KEY (id);
-
-ALTER TABLE constructive_compute_public.platform_function_definitions 
-  ADD CONSTRAINT platform_function_definitions_scope_name_key 
-    UNIQUE (scope, name);
-
-CREATE INDEX platform_function_definitions_created_at_idx ON constructive_compute_public.platform_function_definitions (created_at);
-
-CREATE INDEX platform_function_definitions_updated_at_idx ON constructive_compute_public.platform_function_definitions (updated_at);
-
 CREATE FUNCTION constructive_compute_private.platform_complete_node(
   IN execution_id uuid,
   IN node_name text,
@@ -967,8 +367,8 @@ BEGIN
       FROM "constructive_platform_function_graph_public".get_node_at_path(v_graph.database_id, v_tree_id, ARRAY[v_graph.context, 'definitions', v_node_name]) AS def INTO v_def_data;
     END IF;
     IF v_def_data IS NOT NULL AND v_def_data ? 'graph' THEN
-      SELECT "constructive_compute_public".platform_import_graph_json(v_graph.database_id, ('def_' || platform_tick_execution.execution_id) || ('_' || v_node_name), v_def_data->'graph') INTO v_sub_graph_id;
-      PERFORM "constructive_compute_public".platform_start_execution(graph_id:=v_sub_graph_id, input_payload:=v_inputs, parent_execution_id:=platform_tick_execution.execution_id, parent_node_name:=v_node_name);
+      SELECT "constructive_platform_function_graph_public".platform_import_graph_json(v_graph.database_id, ('def_' || platform_tick_execution.execution_id) || ('_' || v_node_name), v_def_data->'graph') INTO v_sub_graph_id;
+      PERFORM "constructive_platform_function_graph_public".platform_start_execution(graph_id:=v_sub_graph_id, input_payload:=v_inputs, parent_execution_id:=platform_tick_execution.execution_id, parent_node_name:=v_node_name);
       v_jobs_enqueued := v_jobs_enqueued + 1;
       CONTINUE;
     END IF;
@@ -1015,6 +415,303 @@ BEGIN
   RETURN v_jobs_enqueued;
 END;
 $EOFCODE$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_private
+  GRANT ALL ON FUNCTIONS TO administrator;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_private
+  GRANT ALL ON FUNCTIONS TO anonymous;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_private
+  GRANT ALL ON FUNCTIONS TO authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_private
+  GRANT USAGE ON SEQUENCES TO administrator;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_private
+  GRANT USAGE ON SEQUENCES TO authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_private
+  GRANT ALL ON TABLES TO administrator;
+
+CREATE TABLE constructive_compute_private.platform_function_graph_execution_outputs (
+  created_at timestamptz NOT NULL DEFAULT now()
+) PARTITION BY RANGE (created_at);
+
+ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
+  DISABLE ROW LEVEL SECURITY;
+
+COMMENT ON TABLE constructive_compute_private.platform_function_graph_execution_outputs IS 'Content-addressed store for execution outputs — hash-referenced from node_outputs';
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_execution_outputs.created_at IS 'Timestamp of output creation';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
+  ADD COLUMN data jsonb;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
+  ALTER COLUMN data SET NOT NULL;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_execution_outputs.data IS 'The actual output payload from a completed node';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
+  ADD COLUMN database_id uuid;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
+  ALTER COLUMN database_id SET NOT NULL;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_execution_outputs.database_id IS 'Database scope for multi-tenant isolation';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
+  ADD COLUMN hash bytea;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
+  ALTER COLUMN hash SET NOT NULL;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_execution_outputs.hash IS 'SHA-256 hash of the data JSONB — content-addressed deduplication';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
+  ADD COLUMN id uuid;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
+  ALTER COLUMN id SET NOT NULL;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
+  ALTER COLUMN id SET DEFAULT uuidv7();
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_execution_outputs.id IS 'Unique execution output identifier';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_execution_outputs 
+  ADD CONSTRAINT platform_function_graph_execution_outputs_pkey PRIMARY KEY (created_at, id);
+
+CREATE UNIQUE INDEX idx_platform_function_graph_execution_outputs_unique_hash ON constructive_compute_private.platform_function_graph_execution_outputs (database_id, hash, created_at);
+
+INSERT INTO metaschema_public.partition (
+  id,
+  database_id,
+  table_id,
+  strategy,
+  partition_key_id,
+  "interval",
+  retention,
+  retention_keep_table,
+  premake,
+  naming_pattern
+) VALUES
+  ('be29cb5b-1998-7dcb-56f3-61e8f55a8c7c', '028752cb-510b-1438-2f39-64534bd1cbd7', '64cd7926-8f47-0e02-f4f7-302c82eb3c17', 'range', 'bf0ea379-9fa4-ea53-67e3-9b5585acae15', '1 month', '12 months', true, 2, '{parent}_{bounds}') ON CONFLICT (table_id) DO NOTHING;
+
+CREATE TABLE constructive_compute_private.platform_function_graph_executions (
+  started_at timestamptz NOT NULL DEFAULT now()
+) PARTITION BY RANGE (started_at);
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  DISABLE ROW LEVEL SECURITY;
+
+COMMENT ON TABLE constructive_compute_private.platform_function_graph_executions IS 'Ephemeral execution state for flow graph evaluation';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN completed_at timestamptz;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.completed_at IS 'Execution completion timestamp';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN current_wave int;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN current_wave SET NOT NULL;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN current_wave SET DEFAULT 0;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.current_wave IS 'Index into execution_plan — tick only processes this wave';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN database_id uuid;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN database_id SET NOT NULL;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.database_id IS 'Database scope for multi-tenant isolation';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN definitions_commit_id uuid;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.definitions_commit_id IS 'Pinned definitions store commit for deterministic evaluation';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN entity_id uuid;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.entity_id IS 'Entity context (org/team) for scoped billing';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN error_code text;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.error_code IS 'Machine-readable error code when status = failed';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN error_message text;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.error_message IS 'Human-readable error description when status = failed';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN execution_plan jsonb;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.execution_plan IS 'Pre-computed topological sort as array of wave objects';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN graph_id uuid;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN graph_id SET NOT NULL;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.graph_id IS 'FK to the graph definition being executed';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN id uuid;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN id SET NOT NULL;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN id SET DEFAULT uuidv7();
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.id IS 'Unique execution identifier';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN input_payload jsonb;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.input_payload IS 'Initial inputs provided at invocation time';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN invocation_id uuid;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.invocation_id IS 'Parent function_invocations row (for metering)';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN max_pending_jobs int;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN max_pending_jobs SET NOT NULL;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN max_pending_jobs SET DEFAULT 50;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.max_pending_jobs IS 'Maximum pending jobs before execution is failed (default 50)';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN max_ticks int;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN max_ticks SET NOT NULL;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN max_ticks SET DEFAULT 100;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.max_ticks IS 'Maximum ticks before execution is failed (default 100)';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN node_outputs jsonb;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN node_outputs SET NOT NULL;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN node_outputs SET DEFAULT '{}'::jsonb;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.node_outputs IS 'Map of node_name → execution output id (content-addressed hash reference)';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN output_node text;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN output_node SET NOT NULL;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.output_node IS 'Target output boundary node name to resolve';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN output_payload jsonb;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.output_payload IS 'Final result extracted from terminal output node';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN output_port text;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN output_port SET NOT NULL;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN output_port SET DEFAULT 'value';
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.output_port IS 'Target output port name (default: value)';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN parent_execution_id uuid;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.parent_execution_id IS 'Parent execution when this is a sub-execution';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN parent_node_name text;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.parent_node_name IS 'Node name in parent execution that spawned this sub-execution';
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.started_at IS 'Execution start timestamp';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN status text;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN status SET NOT NULL;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN status SET DEFAULT 'pending';
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.status IS 'Lifecycle: pending → running → completed/failed/cancelled';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD CONSTRAINT platform_function_graph_executions_status_chk 
+    CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled'));
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN tick_count int;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN tick_count SET NOT NULL;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN tick_count SET DEFAULT 0;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.tick_count IS 'Number of evaluate_step ticks executed';
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD COLUMN timeout_at timestamptz;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN timeout_at SET NOT NULL;
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ALTER COLUMN timeout_at SET DEFAULT now() + '5 minutes'::interval;
+
+COMMENT ON COLUMN constructive_compute_private.platform_function_graph_executions.timeout_at IS 'Absolute deadline — execution fails if still running after this time';
+
+CREATE SCHEMA constructive_compute_public;
+
+CREATE TABLE constructive_compute_public.platform_function_graphs ();
+
+ALTER TABLE constructive_compute_private.platform_function_graph_executions 
+  ADD CONSTRAINT platform_function_graph_executions_pkey PRIMARY KEY (started_at, id);
+
+INSERT INTO metaschema_public.partition (
+  id,
+  database_id,
+  table_id,
+  strategy,
+  partition_key_id,
+  "interval",
+  retention,
+  retention_keep_table,
+  premake,
+  naming_pattern
+) VALUES
+  ('38249da6-1578-f91e-0c4a-8c74297f2ada', '028752cb-510b-1438-2f39-64534bd1cbd7', '1e6f6b7e-271e-2d01-3fea-f38c589b3ff7', 'range', '91e0e56f-af9a-d1ba-ca35-760528a7c59a', '1 month', '12 months', true, 2, '{parent}_{bounds}') ON CONFLICT (table_id) DO NOTHING;
 
 CREATE FUNCTION constructive_compute_public.platform_add_edge(
   IN database_id uuid,
@@ -1069,8 +766,8 @@ BEGIN
   FROM "constructive_platform_function_graph_public".platform_function_graph_ref AS r INNER JOIN "constructive_platform_function_graph_public".platform_function_graph_commit AS c ON c.id = r.commit_id AND c.database_id = r.database_id
   WHERE
     (r.database_id = v_graph.database_id AND r.store_id = v_graph.store_id) AND r.name = 'main' INTO v_root_hash;
-  v_root_hash := "constructive_compute_public".platform_add_edge(v_graph.database_id, v_root_hash, platform_add_edge_and_save.src_node, platform_add_edge_and_save.src_port, platform_add_edge_and_save.dst_node, platform_add_edge_and_save.dst_port, v_graph.context, v_graph.name);
-  PERFORM "constructive_compute_public".platform_save_graph(platform_add_edge_and_save.graph_id, v_root_hash, coalesce(platform_add_edge_and_save.message, 'add edge' || platform_add_edge_and_save.src_node));
+  v_root_hash := "constructive_platform_function_graph_public".platform_add_edge(v_graph.database_id, v_root_hash, platform_add_edge_and_save.src_node, platform_add_edge_and_save.src_port, platform_add_edge_and_save.dst_node, platform_add_edge_and_save.dst_port, v_graph.context, v_graph.name);
+  PERFORM "constructive_platform_function_graph_public".platform_save_graph(platform_add_edge_and_save.graph_id, v_root_hash, coalesce(platform_add_edge_and_save.message, 'add edge' || platform_add_edge_and_save.src_node));
   RETURN platform_add_edge_and_save.graph_id;
 END;
 $EOFCODE$ LANGUAGE plpgsql VOLATILE SECURITY INVOKER;
@@ -1130,8 +827,8 @@ BEGIN
   FROM "constructive_platform_function_graph_public".platform_function_graph_ref AS r INNER JOIN "constructive_platform_function_graph_public".platform_function_graph_commit AS c ON c.id = r.commit_id AND c.database_id = r.database_id
   WHERE
     (r.database_id = v_graph.database_id AND r.store_id = v_graph.store_id) AND r.name = 'main' INTO v_root_hash;
-  v_root_hash := "constructive_compute_public".platform_add_node(v_graph.database_id, v_root_hash, platform_add_node_and_save.node_name, platform_add_node_and_save.node_type, v_graph.context, v_graph.name, platform_add_node_and_save.props, platform_add_node_and_save.meta);
-  PERFORM "constructive_compute_public".platform_save_graph(platform_add_node_and_save.graph_id, v_root_hash, coalesce(platform_add_node_and_save.message, 'add node: ' || platform_add_node_and_save.node_name));
+  v_root_hash := "constructive_platform_function_graph_public".platform_add_node(v_graph.database_id, v_root_hash, platform_add_node_and_save.node_name, platform_add_node_and_save.node_type, v_graph.context, v_graph.name, platform_add_node_and_save.props, platform_add_node_and_save.meta);
+  PERFORM "constructive_platform_function_graph_public".platform_save_graph(platform_add_node_and_save.graph_id, v_root_hash, coalesce(platform_add_node_and_save.message, 'add node: ' || platform_add_node_and_save.node_name));
   RETURN platform_add_node_and_save.graph_id;
 END;
 $EOFCODE$ LANGUAGE plpgsql VOLATILE SECURITY INVOKER;
@@ -1170,7 +867,7 @@ BEGIN
     (platform_create_function_graph.database_id, platform_create_function_graph.name)
   RETURNING id INTO v_store_id;
   PERFORM "constructive_platform_function_graph_public".init_empty_repo(platform_create_function_graph.database_id, v_store_id);
-  INSERT INTO "constructive_compute_public".platform_function_graphs (
+  INSERT INTO "constructive_platform_function_graph_public".platform_function_graphs (
     database_id,
     store_id,
     name,
@@ -1214,7 +911,7 @@ BEGIN
     v_ctx := (platform_import_definitions.contexts)[v_i];
     v_root_hash := "constructive_compute_private".platform_copy_subtree(platform_import_definitions.source_scope_id, platform_import_definitions.source_commit_id, ARRAY[v_ctx, 'definitions'], v_graph.database_id, v_root_hash, ARRAY[v_ctx, 'definitions']);
   END LOOP;
-  PERFORM "constructive_compute_public".platform_save_graph(platform_import_definitions.graph_id, v_root_hash, 'import definitions');
+  PERFORM "constructive_platform_function_graph_public".platform_save_graph(platform_import_definitions.graph_id, v_root_hash, 'import definitions');
   RETURN;
 END;
 $EOFCODE$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
@@ -1241,7 +938,7 @@ DECLARE
   v_def jsonb;
 BEGIN
   v_context := coalesce(platform_import_graph_json.context, platform_import_graph_json.graph_json->>'context', 'function');
-  v_graph_id := "constructive_compute_public".platform_create_function_graph(platform_import_graph_json.database_id, platform_import_graph_json.name, v_context, platform_import_graph_json.description, platform_import_graph_json.entity_id, platform_import_graph_json.created_by, platform_import_graph_json.definitions_commit_id);
+  v_graph_id := "constructive_platform_function_graph_public".platform_create_function_graph(platform_import_graph_json.database_id, platform_import_graph_json.name, v_context, platform_import_graph_json.description, platform_import_graph_json.entity_id, platform_import_graph_json.created_by, platform_import_graph_json.definitions_commit_id);
   SELECT *
   FROM "constructive_compute_public".platform_function_graphs
   WHERE
@@ -1254,7 +951,7 @@ BEGIN
     FOR v_node IN SELECT *
     FROM jsonb_array_elements(platform_import_graph_json.graph_json->'nodes') LOOP
       v_node_name := v_node->>'name';
-      v_root_hash := "constructive_compute_public".platform_add_node(v_graph.database_id, v_root_hash, v_node_name, v_node->>'type', v_graph.context, v_graph.name, v_node->'props', v_node->'meta');
+      v_root_hash := "constructive_platform_function_graph_public".platform_add_node(v_graph.database_id, v_root_hash, v_node_name, v_node->>'type', v_graph.context, v_graph.name, v_node->'props', v_node->'meta');
       IF v_node ? 'nodes' THEN
         v_root_hash := "constructive_compute_private".platform_insert_subnet_nodes(v_graph.database_id, v_root_hash, ARRAY[v_graph.context, 'graphs', v_graph.name, 'nodes', v_node_name], v_node->'nodes', v_node->'edges');
         v_root_hash := "constructive_platform_function_graph_public".insert_node_at_path(v_graph.database_id, v_root_hash, ARRAY[v_context, 'definitions', v_node_name], jsonb_build_object('name', v_node_name, 'context', v_graph.context, 'graph', jsonb_build_object('name', v_node_name || '_subnet', 'context', v_graph.context, 'nodes', v_node->'nodes', 'edges', v_node->'edges')), '{}'::uuid[], '{}'::text[]);
@@ -1274,7 +971,7 @@ BEGIN
       v_root_hash := "constructive_platform_function_graph_public".insert_node_at_path(v_graph.database_id, v_root_hash, ARRAY[v_context, 'definitions', v_def->>'name'], v_def, '{}'::uuid[], '{}'::text[]);
     END LOOP;
   END IF;
-  PERFORM "constructive_compute_public".platform_save_graph(v_graph_id, v_root_hash, 'import from JSON');
+  PERFORM "constructive_platform_function_graph_public".platform_save_graph(v_graph_id, v_root_hash, 'import from JSON');
   RETURN v_graph_id;
 END;
 $EOFCODE$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
@@ -1386,7 +1083,7 @@ BEGIN
   commit_id = v_commit_id
   WHERE
     (r.database_id = v_graph.database_id AND r.store_id = v_graph.store_id) AND r.name = 'main';
-  UPDATE "constructive_compute_public".platform_function_graphs SET
+  UPDATE "constructive_platform_function_graph_public".platform_function_graphs SET
   is_valid = false, validation_errors = NULL, updated_at = now()
   WHERE
     id = platform_save_graph.graph_id;
@@ -1660,6 +1357,425 @@ BEGIN
 END;
 $EOFCODE$ LANGUAGE plpgsql VOLATILE SECURITY INVOKER;
 
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
+  GRANT ALL ON FUNCTIONS TO administrator;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
+  GRANT ALL ON FUNCTIONS TO anonymous;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
+  GRANT ALL ON FUNCTIONS TO authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
+  GRANT USAGE ON SEQUENCES TO administrator;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
+  GRANT USAGE ON SEQUENCES TO authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
+  GRANT ALL ON TABLES TO administrator;
+
+CREATE TABLE constructive_compute_public.org_function_execution_logs (
+  created_at timestamptz NOT NULL DEFAULT now()
+) PARTITION BY RANGE (created_at);
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  DISABLE ROW LEVEL SECURITY;
+
+COMMENT ON TABLE constructive_compute_public.org_function_execution_logs IS 'Function execution logs — structured console output per invocation';
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  ADD COLUMN actor_id uuid;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.actor_id IS 'User who triggered the execution (NULL for system/cron)';
+
+COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.created_at IS 'Log entry timestamp (partition key)';
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  ADD COLUMN id uuid;
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  ALTER COLUMN id SET NOT NULL;
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  ALTER COLUMN id SET DEFAULT uuidv7();
+
+COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.id IS 'Unique log entry identifier';
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  ADD COLUMN invocation_id uuid;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.invocation_id IS 'Invocation this log entry belongs to (NULL for standalone job logs)';
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  ADD COLUMN log_level text;
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  ALTER COLUMN log_level SET NOT NULL;
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  ALTER COLUMN log_level SET DEFAULT 'info';
+
+COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.log_level IS 'Log severity: debug, info, warn, error';
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  ADD CONSTRAINT org_function_execution_logs_log_level_chk 
+    CHECK (log_level IN ('debug', 'info', 'warn', 'error'));
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  ADD COLUMN message text;
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  ALTER COLUMN message SET NOT NULL;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.message IS 'Log message text';
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  ADD COLUMN metadata jsonb;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.metadata IS 'Structured context (labels, trace data, extra fields)';
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  ADD COLUMN task_identifier text;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_execution_logs.task_identifier IS 'Function routing key (NULL for generic job logs)';
+
+ALTER TABLE constructive_compute_public.org_function_execution_logs 
+  ADD CONSTRAINT org_function_execution_logs_pkey PRIMARY KEY (created_at, id);
+
+CREATE INDEX org_function_execution_logs_invocation_id_created_at_idx ON constructive_compute_public.org_function_execution_logs (invocation_id, created_at);
+
+INSERT INTO metaschema_public.partition (
+  id,
+  database_id,
+  table_id,
+  strategy,
+  partition_key_id,
+  "interval",
+  retention,
+  retention_keep_table,
+  premake,
+  naming_pattern
+) VALUES
+  ('65f412a7-ad98-0422-e289-c1645c3e2524', '028752cb-510b-1438-2f39-64534bd1cbd7', '573ffbad-c132-a16b-bcf9-9b9e705c050e', 'range', '37248364-46c9-ce93-ebbb-481991760b76', '1 month', '12 months', true, 2, '{parent}_{bounds}') ON CONFLICT (table_id) DO NOTHING;
+
+CREATE TABLE constructive_compute_public.org_function_invocations (
+  created_at timestamptz NOT NULL DEFAULT now()
+) PARTITION BY RANGE (created_at);
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  DISABLE ROW LEVEL SECURITY;
+
+COMMENT ON TABLE constructive_compute_public.org_function_invocations IS 'Function invocation log — INSERT to call a function (business-layer, metered). Linked to definitions by task_identifier string.';
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD COLUMN actor_id uuid;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_invocations.actor_id IS 'Who triggered the invocation (NULL for system/cron)';
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD COLUMN completed_at timestamptz;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_invocations.completed_at IS 'When execution completed';
+
+COMMENT ON COLUMN constructive_compute_public.org_function_invocations.created_at IS 'Invocation creation timestamp (partition key)';
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD COLUMN duration_ms int;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_invocations.duration_ms IS 'Wall-clock execution time in milliseconds';
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD COLUMN error text;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_invocations.error IS 'Error message when status is failed';
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD COLUMN graph_execution_id uuid;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_invocations.graph_execution_id IS 'Groups all node invocations from a single flow graph execution';
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD COLUMN id uuid;
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ALTER COLUMN id SET NOT NULL;
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ALTER COLUMN id SET DEFAULT uuidv7();
+
+COMMENT ON COLUMN constructive_compute_public.org_function_invocations.id IS 'Unique invocation identifier';
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD COLUMN job_id bigint;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_invocations.job_id IS 'FK to app_jobs.jobs — the underlying transport';
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD COLUMN parent_invocation_id uuid;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_invocations.parent_invocation_id IS 'Parent invocation when this is a child node of a flow graph execution';
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD COLUMN payload jsonb;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_invocations.payload IS 'Function input payload';
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD COLUMN result jsonb;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_invocations.result IS 'Function return value (success) or structured error (failure)';
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD COLUMN started_at timestamptz;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_invocations.started_at IS 'When execution started';
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD COLUMN status text;
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ALTER COLUMN status SET NOT NULL;
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ALTER COLUMN status SET DEFAULT 'pending';
+
+COMMENT ON COLUMN constructive_compute_public.org_function_invocations.status IS 'Lifecycle: pending → running → completed/failed/cancelled';
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD CONSTRAINT org_function_invocations_status_chk 
+    CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled'));
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD COLUMN task_identifier text;
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ALTER COLUMN task_identifier SET NOT NULL;
+
+COMMENT ON COLUMN constructive_compute_public.org_function_invocations.task_identifier IS 'Function routing slug (scope:name). Links to function_definitions.task_identifier by convention — no FK.';
+
+ALTER TABLE constructive_compute_public.org_function_invocations 
+  ADD CONSTRAINT org_function_invocations_pkey PRIMARY KEY (created_at, id);
+
+CREATE INDEX org_function_invocations_actor_id_created_at_idx ON constructive_compute_public.org_function_invocations (actor_id, created_at);
+
+CREATE INDEX org_function_invocations_graph_execution_id_created_at_idx ON constructive_compute_public.org_function_invocations (graph_execution_id, created_at);
+
+CREATE INDEX org_function_invocations_task_identifier_created_at_idx ON constructive_compute_public.org_function_invocations (task_identifier, created_at);
+
+INSERT INTO metaschema_public.partition (
+  id,
+  database_id,
+  table_id,
+  strategy,
+  partition_key_id,
+  "interval",
+  retention,
+  retention_keep_table,
+  premake,
+  naming_pattern
+) VALUES
+  ('0e892fa3-af9b-807f-866b-5bf74775fa08', '028752cb-510b-1438-2f39-64534bd1cbd7', '8799acf7-0878-c41d-47f7-0855ca3ec3e9', 'range', 'cc0a0f86-06a7-c34f-3b9e-c6988c51d987', '1 month', '12 months', true, 2, '{parent}_{bounds}') ON CONFLICT (table_id) DO NOTHING;
+
+CREATE TABLE constructive_compute_public.platform_function_definitions ();
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  DISABLE ROW LEVEL SECURITY;
+
+COMMENT ON TABLE constructive_compute_public.platform_function_definitions IS 'Function definitions — registered cloud functions with routing, queue, and retry configuration';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN category text;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.category IS 'UI palette category for grouping (e.g. email, data, ai)';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN created_at timestamptz;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN created_at SET DEFAULT now();
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN description text;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.description IS 'Human-readable description of what this function does';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN icon text;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.icon IS 'Icon identifier for UI palette display (e.g. zap, mail, code)';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN id uuid;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN id SET NOT NULL;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN id SET DEFAULT uuidv7();
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN inputs jsonb;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN inputs SET NOT NULL;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN inputs SET DEFAULT '[]'::jsonb;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.inputs IS 'Input port definitions: [{name, type, description?, optional?, multi?, schema?}]';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN is_built_in boolean;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN is_built_in SET NOT NULL;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN is_built_in SET DEFAULT false;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.is_built_in IS 'Whether this function is a built-in platform function (synced from platform) vs user-created';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN is_invocable boolean;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN is_invocable SET NOT NULL;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN is_invocable SET DEFAULT false;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.is_invocable IS 'Whether this function can be called via function_invocations (public API). Default false = internal-only via add_job()';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN max_attempts int;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN max_attempts SET NOT NULL;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN max_attempts SET DEFAULT 25;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.max_attempts IS 'Maximum retry attempts for the underlying job';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN name text;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN name SET NOT NULL;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.name IS 'Function name within scope (e.g. send_verification_link, process_file_embedding)';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN namespace_id uuid;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.namespace_id IS 'Namespace this function belongs to (FK to namespaces table)';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN outputs jsonb;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN outputs SET NOT NULL;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN outputs SET DEFAULT '[]'::jsonb;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.outputs IS 'Output port definitions: [{name, type, description?, optional?, multi?, schema?}]';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN priority int;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN priority SET NOT NULL;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN priority SET DEFAULT 0;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.priority IS 'Job priority (lower = higher priority)';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN props jsonb;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN props SET NOT NULL;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN props SET DEFAULT '[]'::jsonb;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.props IS 'Property definitions: [{name, type, default?, description?, required?, schema?}]';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN queue_name text;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN queue_name SET NOT NULL;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN queue_name SET DEFAULT 'default';
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.queue_name IS 'Job queue name for serialization (e.g. email, ai, default)';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN scope text;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN scope SET NOT NULL;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.scope IS 'Function grouping scope (e.g. email, embed, chunk, custom)';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN service_url text;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.service_url IS 'Optional service URL override for function dispatch. NULL = use gateway convention (gatewayUrl/task_identifier). Set for customer-deployed functions or external endpoints.';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN task_identifier text;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN task_identifier SET NOT NULL;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.task_identifier IS 'Computed routing slug: scope:name (used by Knative job worker for dispatch)';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN updated_at timestamptz;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN updated_at SET DEFAULT now();
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN volatile boolean;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN volatile SET NOT NULL;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN volatile SET DEFAULT false;
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.volatile IS 'Whether this function has side effects (cannot be cached or memoized)';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD CONSTRAINT platform_function_definitions_namespace_id_fkey
+    FOREIGN KEY(namespace_id)
+    REFERENCES constructive_infra_public.platform_namespaces (id)
+    ON DELETE SET NULL;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD CONSTRAINT platform_function_definitions_pkey PRIMARY KEY (id);
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD CONSTRAINT platform_function_definitions_scope_name_key 
+    UNIQUE (scope, name);
+
+CREATE INDEX platform_function_definitions_created_at_idx ON constructive_compute_public.platform_function_definitions (created_at);
+
+CREATE INDEX platform_function_definitions_updated_at_idx ON constructive_compute_public.platform_function_definitions (updated_at);
+
+CREATE TRIGGER platform_function_definitions_job_functionprovision_insert_tg
+  AFTER INSERT
+  ON constructive_compute_public.platform_function_definitions
+  FOR EACH ROW
+  EXECUTE PROCEDURE constructive_private.platform_function_definitions_job_functionprovision_insert();
+
 CREATE TRIGGER timestamps_tg
   BEFORE INSERT OR UPDATE
   ON constructive_compute_public.platform_function_definitions
@@ -1743,6 +1859,20 @@ ALTER TABLE constructive_compute_public.platform_function_execution_logs
   ADD CONSTRAINT platform_function_execution_logs_pkey PRIMARY KEY (created_at, id);
 
 CREATE INDEX platform_function_execution_logs_invocation_id_created_at_idx ON constructive_compute_public.platform_function_execution_logs (invocation_id, created_at);
+
+INSERT INTO metaschema_public.partition (
+  id,
+  database_id,
+  table_id,
+  strategy,
+  partition_key_id,
+  "interval",
+  retention,
+  retention_keep_table,
+  premake,
+  naming_pattern
+) VALUES
+  ('80203546-1307-d2b7-3203-b304f3ce2c61', '028752cb-510b-1438-2f39-64534bd1cbd7', '68c9e260-c7d4-de5d-237b-ab26ac862465', 'range', 'be79aea3-c893-e16f-d03b-0b9e56c859a1', '1 month', '12 months', true, 2, '{parent}_{bounds}') ON CONFLICT (table_id) DO NOTHING;
 
 ALTER TABLE constructive_compute_public.platform_function_graphs 
   DISABLE ROW LEVEL SECURITY;
@@ -1975,6 +2105,20 @@ CREATE INDEX platform_function_invocations_graph_execution_id_created_at_idx ON 
 
 CREATE INDEX platform_function_invocations_task_identifier_created_at_idx ON constructive_compute_public.platform_function_invocations (task_identifier, created_at);
 
+INSERT INTO metaschema_public.partition (
+  id,
+  database_id,
+  table_id,
+  strategy,
+  partition_key_id,
+  "interval",
+  retention,
+  retention_keep_table,
+  premake,
+  naming_pattern
+) VALUES
+  ('4febb492-b8bc-f579-863e-faff0c29e895', '028752cb-510b-1438-2f39-64534bd1cbd7', '8b7f9797-b828-d5a9-7a22-35d32a76e301', 'range', '740747f7-b504-8365-8c61-b98eee1ed795', '1 month', '12 months', true, 2, '{parent}_{bounds}') ON CONFLICT (table_id) DO NOTHING;
+
 CREATE TABLE constructive_compute_public.platform_secret_definitions ();
 
 ALTER TABLE constructive_compute_public.platform_secret_definitions 
@@ -2097,191 +2241,3 @@ ALTER TABLE constructive_compute_public.platform_function_definitions
   ALTER COLUMN required_secrets SET DEFAULT CAST(ARRAY[] AS constructive_compute_public.function_requirement[]);
 
 COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.required_secrets IS 'Embedded secret requirements: array of (name, required) tuples';
-
-CREATE TABLE constructive_compute_public.platform_compute_log (
-  completed_at timestamptz NOT NULL DEFAULT now()
-) PARTITION BY RANGE (completed_at);
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ADD COLUMN id uuid;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ALTER COLUMN id SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ALTER COLUMN id SET DEFAULT gen_random_uuid();
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ADD COLUMN database_id uuid;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ADD COLUMN entity_id uuid;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ADD COLUMN organization_id uuid;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ADD COLUMN entity_type text;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ADD COLUMN actor_id uuid;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ADD COLUMN task_identifier text;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ALTER COLUMN task_identifier SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ADD COLUMN job_id bigint;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ALTER COLUMN job_id SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ADD COLUMN invocation_id uuid;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ADD COLUMN status text;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ALTER COLUMN status SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ADD COLUMN duration_ms int;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ALTER COLUMN duration_ms SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ADD COLUMN error text;
-
-ALTER TABLE constructive_compute_public.platform_compute_log 
-  ADD CONSTRAINT platform_compute_log_pkey PRIMARY KEY (completed_at, id);
-
-CREATE INDEX platform_compute_log_task_completed_idx ON constructive_compute_public.platform_compute_log (task_identifier, completed_at);
-
-CREATE INDEX platform_compute_log_db_completed_idx ON constructive_compute_public.platform_compute_log (database_id, completed_at);
-
-CREATE INDEX platform_compute_log_actor_completed_idx ON constructive_compute_public.platform_compute_log (actor_id, completed_at);
-
-CREATE TABLE constructive_compute_public.platform_usage_daily (
-  id uuid NOT NULL DEFAULT gen_random_uuid()
-);
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ADD COLUMN database_id uuid;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ADD COLUMN entity_id uuid;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ADD COLUMN organization_id uuid;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ADD COLUMN entity_type text;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ADD COLUMN task_identifier text;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ALTER COLUMN task_identifier SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ADD COLUMN date date;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ALTER COLUMN date SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ADD COLUMN total_calls bigint;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ALTER COLUMN total_calls SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ALTER COLUMN total_calls SET DEFAULT 0;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ADD COLUMN successful bigint;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ALTER COLUMN successful SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ALTER COLUMN successful SET DEFAULT 0;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ADD COLUMN failed bigint;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ALTER COLUMN failed SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ALTER COLUMN failed SET DEFAULT 0;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ADD COLUMN total_duration_ms bigint;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ALTER COLUMN total_duration_ms SET NOT NULL;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ALTER COLUMN total_duration_ms SET DEFAULT 0;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ADD COLUMN min_duration_ms int;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ADD COLUMN max_duration_ms int;
-
-ALTER TABLE constructive_compute_public.platform_usage_daily 
-  ADD CONSTRAINT platform_usage_daily_pkey PRIMARY KEY (id);
-
-CREATE UNIQUE INDEX platform_usage_daily_entity_task_date_idx ON constructive_compute_public.platform_usage_daily (database_id, entity_id, task_identifier, date);
-
-CREATE FUNCTION constructive_compute_private.rollup_compute_daily(
-  since timestamptz DEFAULT now() - '2 days'::interval
-) RETURNS int LANGUAGE sql AS $EOFCODE$
-  WITH agg AS (
-    SELECT
-      database_id,
-      entity_id,
-      organization_id,
-      entity_type,
-      task_identifier,
-      completed_at::date AS date,
-      count(*)           AS total_calls,
-      count(*) FILTER (WHERE status = 'completed') AS successful,
-      count(*) FILTER (WHERE status = 'failed')    AS failed,
-      coalesce(sum(duration_ms), 0)                AS total_duration_ms,
-      min(duration_ms)                             AS min_duration_ms,
-      max(duration_ms)                             AS max_duration_ms
-    FROM constructive_compute_public.platform_compute_log
-    WHERE completed_at >= since
-    GROUP BY database_id, entity_id, organization_id, entity_type,
-             task_identifier, completed_at::date
-  )
-  INSERT INTO constructive_compute_public.platform_usage_daily
-    (database_id, entity_id, organization_id, entity_type,
-     task_identifier, date,
-     total_calls, successful, failed,
-     total_duration_ms, min_duration_ms, max_duration_ms)
-  SELECT
-    database_id, entity_id, organization_id, entity_type,
-    task_identifier, date,
-    total_calls, successful, failed,
-    total_duration_ms, min_duration_ms, max_duration_ms
-  FROM agg
-  ON CONFLICT (database_id, entity_id, task_identifier, date)
-  DO UPDATE SET
-    total_calls       = EXCLUDED.total_calls,
-    successful        = EXCLUDED.successful,
-    failed            = EXCLUDED.failed,
-    total_duration_ms = EXCLUDED.total_duration_ms,
-    min_duration_ms   = EXCLUDED.min_duration_ms,
-    max_duration_ms   = EXCLUDED.max_duration_ms,
-    organization_id   = EXCLUDED.organization_id,
-    entity_type       = EXCLUDED.entity_type
-  RETURNING 1
-$EOFCODE$;

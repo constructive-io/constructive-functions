@@ -1,6 +1,6 @@
 import {
-  generateMulti,
   expandSchemaDirToMultiTarget,
+  generateMulti,
 } from '@constructive-io/graphql-codegen';
 
 const SCHEMA_DIR = '../constructive-functions-schema/schemas';

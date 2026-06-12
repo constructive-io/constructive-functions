@@ -1037,9 +1037,15 @@ CRUD operations for PlatformFunctionDefinition records.
 | `updatedAt` | Datetime |
 | `requiredConfigs` | FunctionRequirement |
 | `requiredSecrets` | FunctionRequirement |
+| `inputs` | JSON |
+| `outputs` | JSON |
+| `props` | JSON |
+| `volatile` | Boolean |
+| `icon` | String |
+| `category` | String |
 
 **Required create fields:** `name`, `scope`, `taskIdentifier`
-**Optional create fields (backend defaults):** `description`, `isBuiltIn`, `isInvocable`, `maxAttempts`, `namespaceId`, `priority`, `queueName`, `serviceUrl`, `requiredConfigs`, `requiredSecrets`
+**Optional create fields (backend defaults):** `description`, `isBuiltIn`, `isInvocable`, `maxAttempts`, `namespaceId`, `priority`, `queueName`, `serviceUrl`, `requiredConfigs`, `requiredSecrets`, `inputs`, `outputs`, `props`, `volatile`, `icon`, `category`
 
 ### `compute:platform-read-function-graph`
 

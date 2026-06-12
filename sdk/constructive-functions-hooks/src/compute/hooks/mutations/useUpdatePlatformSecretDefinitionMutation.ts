@@ -4,23 +4,24 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
-import { getClient } from '../client';
-import { buildSelectionArgs } from '../selection';
-import type { SelectionConfig } from '../selection';
-import { platformSecretDefinitionKeys } from '../query-keys';
-import { platformSecretDefinitionMutationKeys } from '../mutation-keys';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import type {
+  PlatformSecretDefinitionPatch,
   PlatformSecretDefinitionSelect,
   PlatformSecretDefinitionWithRelations,
-  PlatformSecretDefinitionPatch,
 } from '../../orm/input-types';
-import type { InferSelectResult, HookStrictSelect } from '../../orm/select-types';
+import type { HookStrictSelect,InferSelectResult } from '../../orm/select-types';
+import { getClient } from '../client';
+import { platformSecretDefinitionMutationKeys } from '../mutation-keys';
+import { platformSecretDefinitionKeys } from '../query-keys';
+import type { SelectionConfig } from '../selection';
+import { buildSelectionArgs } from '../selection';
 export type {
+  PlatformSecretDefinitionPatch,
   PlatformSecretDefinitionSelect,
   PlatformSecretDefinitionWithRelations,
-  PlatformSecretDefinitionPatch,
 } from '../../orm/input-types';
 /**
  * Global secret name registry — declares which secrets the platform recognizes. Actual values live in app_secrets.

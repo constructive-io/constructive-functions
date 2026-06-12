@@ -4,38 +4,38 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { OrmClient } from '../client';
-import { QueryBuilder, buildCustomDocument } from '../query-builder';
-import type { InferSelectResult, StrictSelect } from '../select-types';
 import type {
-  PlatformSecretsDelInput,
-  PlatformSecretsSetInput,
   OrgSecretsDelInput,
-  OrgSecretsSetInput,
-  OrgSecretsRemoveArrayInput,
-  PlatformFilesRenameInput,
-  UploadPlatformFileInput,
-  UploadPlatformFileBulkInput,
-  ProvisionBucketInput,
-  PlatformSecretsDelPayload,
-  PlatformSecretsSetPayload,
   OrgSecretsDelPayload,
-  OrgSecretsSetPayload,
-  OrgSecretsRemoveArrayPayload,
-  PlatformFilesRenamePayload,
-  UploadPlatformFilePayload,
-  UploadPlatformFileBulkPayload,
-  ProvisionBucketPayload,
-  PlatformSecretsDelPayloadSelect,
-  PlatformSecretsSetPayloadSelect,
   OrgSecretsDelPayloadSelect,
-  OrgSecretsSetPayloadSelect,
+  OrgSecretsRemoveArrayInput,
+  OrgSecretsRemoveArrayPayload,
   OrgSecretsRemoveArrayPayloadSelect,
+  OrgSecretsSetInput,
+  OrgSecretsSetPayload,
+  OrgSecretsSetPayloadSelect,
+  PlatformFilesRenameInput,
+  PlatformFilesRenamePayload,
   PlatformFilesRenamePayloadSelect,
-  UploadPlatformFilePayloadSelect,
-  UploadPlatformFileBulkPayloadSelect,
+  PlatformSecretsDelInput,
+  PlatformSecretsDelPayload,
+  PlatformSecretsDelPayloadSelect,
+  PlatformSecretsSetInput,
+  PlatformSecretsSetPayload,
+  PlatformSecretsSetPayloadSelect,
+  ProvisionBucketInput,
+  ProvisionBucketPayload,
   ProvisionBucketPayloadSelect,
+  UploadPlatformFileBulkInput,
+  UploadPlatformFileBulkPayload,
+  UploadPlatformFileBulkPayloadSelect,
+  UploadPlatformFileInput,
+  UploadPlatformFilePayload,
+  UploadPlatformFilePayloadSelect,
 } from '../input-types';
 import { connectionFieldsMap } from '../input-types';
+import { buildCustomDocument,QueryBuilder } from '../query-builder';
+import type { InferSelectResult, StrictSelect } from '../select-types';
 export interface PlatformSecretsDelVariables {
   input: PlatformSecretsDelInput;
 }

@@ -1,8 +1,8 @@
-import fs from 'fs';
 import * as http from 'node:http';
-import path from 'path';
 
+import fs from 'fs';
 import { buildClientSchema, getIntrospectionQuery, printSchema } from 'graphql';
+import path from 'path';
 
 const SCHEMAS_DIR = path.resolve(__dirname, '../schemas');
 const INDEX_PATH = path.resolve(__dirname, '../src/index.ts');

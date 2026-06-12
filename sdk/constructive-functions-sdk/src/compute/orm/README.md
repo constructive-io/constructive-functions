@@ -547,18 +547,24 @@ CRUD operations for PlatformFunctionDefinition records.
 | `updatedAt` | Datetime | No |
 | `requiredConfigs` | FunctionRequirement | Yes |
 | `requiredSecrets` | FunctionRequirement | Yes |
+| `inputs` | JSON | Yes |
+| `outputs` | JSON | Yes |
+| `props` | JSON | Yes |
+| `volatile` | Boolean | Yes |
+| `icon` | String | Yes |
+| `category` | String | Yes |
 
 **Operations:**
 
 ```typescript
 // List all platformFunctionDefinition records
-const items = await db.platformFunctionDefinition.findMany({ select: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true } }).execute();
+const items = await db.platformFunctionDefinition.findMany({ select: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true, inputs: true, outputs: true, props: true, volatile: true, icon: true, category: true } }).execute();
 
 // Get one by id
-const item = await db.platformFunctionDefinition.findOne({ id: '<UUID>', select: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true } }).execute();
+const item = await db.platformFunctionDefinition.findOne({ id: '<UUID>', select: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true, inputs: true, outputs: true, props: true, volatile: true, icon: true, category: true } }).execute();
 
 // Create
-const created = await db.platformFunctionDefinition.create({ data: { description: '<String>', isBuiltIn: '<Boolean>', isInvocable: '<Boolean>', maxAttempts: '<Int>', name: '<String>', namespaceId: '<UUID>', priority: '<Int>', queueName: '<String>', scope: '<String>', serviceUrl: '<String>', taskIdentifier: '<String>', requiredConfigs: '<FunctionRequirement>', requiredSecrets: '<FunctionRequirement>' }, select: { id: true } }).execute();
+const created = await db.platformFunctionDefinition.create({ data: { description: '<String>', isBuiltIn: '<Boolean>', isInvocable: '<Boolean>', maxAttempts: '<Int>', name: '<String>', namespaceId: '<UUID>', priority: '<Int>', queueName: '<String>', scope: '<String>', serviceUrl: '<String>', taskIdentifier: '<String>', requiredConfigs: '<FunctionRequirement>', requiredSecrets: '<FunctionRequirement>', inputs: '<JSON>', outputs: '<JSON>', props: '<JSON>', volatile: '<Boolean>', icon: '<String>', category: '<String>' }, select: { id: true } }).execute();
 
 // Update
 const updated = await db.platformFunctionDefinition.update({ where: { id: '<UUID>' }, data: { description: '<String>' }, select: { id: true } }).execute();

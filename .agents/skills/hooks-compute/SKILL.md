@@ -1,13 +1,13 @@
 ---
 name: hooks-compute
-description: React Query hooks for the compute API — provides typed query and mutation hooks for 12 tables and 16 custom operations
+description: React Query hooks for the compute API — provides typed query and mutation hooks for 14 tables and 16 custom operations
 ---
 
 # hooks-compute
 
 <!-- @constructive-io/graphql-codegen - DO NOT EDIT -->
 
-React Query hooks for the compute API — provides typed query and mutation hooks for 12 tables and 16 custom operations
+React Query hooks for the compute API — provides typed query and mutation hooks for 14 tables and 16 custom operations
 
 ## Usage
 
@@ -47,6 +47,8 @@ See the `references/` directory for detailed per-entity API documentation:
 - [platform-secret-definition](references/platform-secret-definition.md)
 - [platform-function-execution-log](references/platform-function-execution-log.md)
 - [platform-function-graph](references/platform-function-graph.md)
+- [platform-compute-log](references/platform-compute-log.md)
+- [platform-usage-daily](references/platform-usage-daily.md)
 - [org-function-invocation](references/org-function-invocation.md)
 - [platform-function-invocation](references/platform-function-invocation.md)
 - [platform-function-definition](references/platform-function-definition.md)

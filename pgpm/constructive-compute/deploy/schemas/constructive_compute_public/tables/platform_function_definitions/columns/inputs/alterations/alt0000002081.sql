@@ -1,0 +1,11 @@
+-- Deploy: schemas/constructive_compute_public/tables/platform_function_definitions/columns/inputs/alterations/alt0000002081
+-- made with <3 @ constructive.io
+
+-- requires: schemas/constructive_compute_public/schema
+-- requires: schemas/constructive_compute_public/tables/platform_function_definitions/table
+-- requires: schemas/constructive_compute_public/tables/platform_function_definitions/columns/inputs/column
+
+
+ALTER TABLE "constructive_compute_public".platform_function_definitions 
+  ALTER COLUMN inputs SET NOT NULL;
+
