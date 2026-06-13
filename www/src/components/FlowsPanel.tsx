@@ -13,7 +13,7 @@ import {
 import type { NodeDefinitionWithImpl } from '@fbp/evaluator';
 import type { Graph, NodeDefinition, Node } from '@fbp/types';
 import { compute } from '@constructive-functions/constructive-functions-hooks';
-import { RefreshCw, Save, Trash2, Plus, Play, Zap, ChevronDown, ChevronRight, Cloud, Server } from 'lucide-react';
+import { RefreshCw, Save, Trash2, Plus, Play, Zap, ChevronDown, ChevronRight, Cloud, Server, Download, Upload } from 'lucide-react';
 
 const DATABASE_ID = '00000000-0000-0000-0000-000000000000';
 const BOUNDARY_NAMES = ['graph/input', 'graph/output', 'graph/prop'];
@@ -908,6 +908,36 @@ export function FlowsPanel() {
     e.dataTransfer.effectAllowed = 'copy';
   }, []);
 
+  const handleExportGraph = useCallback(() => {
+    const graph = graphRef.current;
+    const blob = new Blob([JSON.stringify(graph, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${flowName.trim() || 'graph'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [flowName]);
+
+  const handleImportGraph = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const graph = JSON.parse(text) as Graph;
+        setCurrentGraph(graph);
+        if (graph.name) setFlowName(graph.name);
+      } catch (err) {
+        console.error('Failed to import graph:', err);
+      }
+    };
+    input.click();
+  }, []);
+
   const toggleCategory = useCallback((cat: string) => {
     setCollapsedCategories(prev => {
       const next = new Set(prev);
@@ -969,6 +999,20 @@ export function FlowsPanel() {
             <Trash2 size={14} />
           </button>
         )}
+        <button
+          onClick={handleExportGraph}
+          className="flex items-center gap-1 px-2 py-1.5 rounded-md text-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+          title="Export graph as JSON"
+        >
+          <Download size={14} />
+        </button>
+        <button
+          onClick={handleImportGraph}
+          className="flex items-center gap-1 px-2 py-1.5 rounded-md text-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+          title="Import graph from JSON"
+        >
+          <Upload size={14} />
+        </button>
         {saveStatus && (
           <span className={`text-xs ${saveStatus.startsWith('Error') ? 'text-red-400' : 'text-green-400'}`}>
             {saveStatus}

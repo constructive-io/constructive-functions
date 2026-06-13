@@ -35,8 +35,8 @@ export { TtlCache } from './cache';
 export type { ComputeLogEntry } from './compute-log';
 export { ComputeLogTracker } from './compute-log';
 export { FunctionDiscovery } from './discovery';
-export { executeInline, getInlineImpl, listInlineNodes } from './inline';
 export type { InlineImplFn, InlineNodeDef } from './inline';
+export { executeInline, getInlineImpl, listInlineNodes } from './inline';
 export { InvocationTracker } from './invocation';
 export { ComputeModuleLoader } from './module-loader';
 export type { ComputeRequestOptions, ComputeRequestResult } from './req';
@@ -330,6 +330,15 @@ export default class ComputeWorker {
     // Inline nodes use inputs directly; props come from the graph node definition
     const inputs = graphNode ? (payload.inputs as Record<string, unknown>) : (payload as Record<string, unknown>);
 
+    // Convert props from array format [{name, type, value}, ...] to flat {name: value}
+    const propsArray = (graphNode && Array.isArray(payload.props)) ? payload.props : [];
+    const props: Record<string, unknown> = {};
+    for (const p of propsArray) {
+      if (p && typeof p === 'object' && 'name' in p) {
+        props[p.name as string] = p.value;
+      }
+    }
+
     await this.setJobGUCs(job);
 
     const { id: invocationId } = await this.tracker.create({
@@ -343,7 +352,7 @@ export default class ComputeWorker {
 
     const reqStart = process.hrtime();
     try {
-      const result = await executeInline(functionName, inputs, {});
+      const result = await executeInline(functionName, inputs, props);
 
       const elapsed = process.hrtime(reqStart);
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
@@ -400,6 +409,9 @@ export default class ComputeWorker {
         } catch (graphErr) {
           log.error('Failed to mark graph execution as failed', graphErr);
         }
+        // Don't re-throw for graph nodes — execution is already marked failed.
+        // Re-throwing would cause the job queue to retry with the same permanent error.
+        return;
       }
       throw err;
     }
@@ -538,6 +550,9 @@ export default class ComputeWorker {
         } catch (graphErr) {
           log.error('Failed to mark graph execution as failed', graphErr);
         }
+        // Don't re-throw for graph nodes — execution is already marked failed.
+        // Re-throwing would cause the job queue to retry with the same permanent error.
+        return;
       }
       throw err;
     }
