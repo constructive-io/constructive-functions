@@ -152,6 +152,17 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
         onMouseDown={handleMouseDown}
         style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
       >
+        {/* Node name label above */}
+        <text
+          x={width / 2}
+          y={-8}
+          textAnchor="middle"
+          fill="#52525b"
+          fontSize={10}
+          fontFamily="system-ui, sans-serif"
+        >
+          {node.name}
+        </text>
         {/* Shadow */}
         <rect
           x={3} y={3}
@@ -238,13 +249,14 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
           const isValidDrop = state.connecting.active && state.connecting.isOutput && state.connecting.sourceNode !== node.name;
           const isHov = hoveredPort?.name === port.name && !hoveredPort?.isOutput;
           const highlight = isValidDrop && isHov;
+          const isOptional = 'optional' in port && port.optional;
           return (
             <g key={`input-${port.name}`}>
               <circle
                 cx={0} cy={portY}
                 r={PORT_RADIUS}
-                fill={highlight ? '#60a5fa' : '#3b82f6'}
-                stroke="#18181b"
+                fill={highlight ? '#60a5fa' : isOptional ? '#18181b' : '#3b82f6'}
+                stroke={isOptional ? '#3b82f6' : '#18181b'}
                 strokeWidth={2}
                 style={{ cursor: 'crosshair' }}
                 onMouseDown={(e) => handlePortMouseDown(e, port.name, false, y + portY, x)}
@@ -255,7 +267,7 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
               <text
                 x={12} y={portY}
                 dominantBaseline="middle"
-                fill="#a1a1aa"
+                fill={isOptional ? '#64748b' : '#a1a1aa'}
                 fontSize={11}
                 fontFamily="system-ui, sans-serif"
               >
@@ -312,6 +324,17 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
       onMouseDown={handleMouseDown}
       style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
     >
+      {/* Node name label above */}
+      <text
+        x={NODE_WIDTH / 2}
+        y={-8}
+        textAnchor="middle"
+        fill="#52525b"
+        fontSize={10}
+        fontFamily="system-ui, sans-serif"
+      >
+        {node.name}
+      </text>
       {/* Shadow */}
       <rect
         x={3} y={3}
@@ -394,14 +417,16 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
         const isValidDropTarget = state.connecting.active && state.connecting.isOutput && state.connecting.sourceNode !== node.name;
         const isHovered = hoveredPort?.name === port.name && hoveredPort?.isOutput === false;
         const highlight = isValidDropTarget && isHovered;
+        const isOptional = 'optional' in port && port.optional;
+        const portColor = getPortColor(port.type);
         return (
           <g key={`input-${port.name}`} transform={`translate(0, ${NODE_HEADER_HEIGHT + i * PORT_HEIGHT})`}>
             <circle
               cx={0}
               cy={PORT_HEIGHT / 2}
               r={PORT_RADIUS}
-              fill={highlight ? '#60a5fa' : getPortColor(port.type)}
-              stroke="#18181b"
+              fill={highlight ? '#60a5fa' : isOptional ? '#18181b' : portColor}
+              stroke={isOptional ? portColor : '#18181b'}
               strokeWidth={2}
               style={{ cursor: 'crosshair' }}
               onMouseDown={(e) => handlePortMouseDown(e, port.name, false, y + NODE_HEADER_HEIGHT + i * PORT_HEIGHT + PORT_HEIGHT / 2, x)}
@@ -413,7 +438,7 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
               x={12}
               y={PORT_HEIGHT / 2}
               dominantBaseline="middle"
-              fill="#a1a1aa"
+              fill={isOptional ? '#64748b' : '#a1a1aa'}
               fontSize={11}
               fontFamily="system-ui, sans-serif"
             >

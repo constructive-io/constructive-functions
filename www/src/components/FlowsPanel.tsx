@@ -78,9 +78,9 @@ interface StoreEntry {
 
 
 function platformFnToDefinition(fn: FunctionNode): NodeDefinition {
-  const inputs = (fn.inputs && fn.inputs.length > 0)
-    ? fn.inputs.map(p => ({ name: p.name, type: p.type, description: p.description }))
-    : [{ name: 'payload', type: 'json' }];
+  const inputs = fn.inputs
+    ? fn.inputs.map(p => ({ name: p.name, type: p.type, description: p.description, optional: p.optional }))
+    : [];
   const outputs = (fn.outputs && fn.outputs.length > 0)
     ? fn.outputs.map(p => ({ name: p.name, type: p.type, description: p.description }))
     : [{ name: 'result', type: 'json' }];
