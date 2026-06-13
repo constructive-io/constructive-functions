@@ -117,6 +117,7 @@ export interface GraphNodePayload {
   node_type: string;
   inputs: Record<string, unknown>;
   props?: Array<{ name: string; type?: string; value: unknown }>;
+  node_path?: string[];
 }
 
 /**

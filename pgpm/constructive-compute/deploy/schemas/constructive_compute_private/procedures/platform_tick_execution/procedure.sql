@@ -32,6 +32,7 @@ DECLARE
   v_pending_jobs int;
   v_def_data jsonb;
   v_sub_graph_id uuid;
+  v_node_path text[];
 BEGIN
   SELECT *
   FROM "constructive_compute_private".platform_function_graph_executions
@@ -68,7 +69,7 @@ BEGIN
   IF v_tree_id IS NULL THEN
     RAISE EXCEPTION 'no tree found for graph';
   END IF;
-  FOR v_node IN SELECT jsonb_build_object('name', (path)[5], 'type', data->>'type', 'props', data->'props')
+  FOR v_node IN SELECT jsonb_build_object('name', (path)[5], 'type', data->>'type', 'props', data->'props', 'path', to_jsonb(path))
   FROM "constructive_platform_function_graph_public".get_all(v_graph.database_id, v_tree_id)
   WHERE
     (cardinality(path) = 5 AND (path)[4] = 'nodes') AND ((path)[1] = v_graph.context AND ((path)[2] = 'graphs' AND (path)[3] = v_graph.name)) LOOP
@@ -172,13 +173,14 @@ BEGIN
         id = platform_tick_execution.execution_id;
       RETURN v_jobs_enqueued;
     END IF;
+    v_node_path := ARRAY(SELECT jsonb_array_elements_text(v_node->'path'));
     INSERT INTO app_jobs.jobs (
       database_id,
       task_identifier,
       payload
     )
     VALUES
-      (v_exec.database_id, v_node_type, (json_build_object('execution_id', v_exec.id, 'node_name', v_node_name, 'node_type', v_node_type, 'inputs', v_inputs, 'props', v_node->'props'))::json);
+      (v_exec.database_id, v_node_type, (json_build_object('execution_id', v_exec.id, 'node_name', v_node_name, 'node_type', v_node_type, 'inputs', v_inputs, 'props', v_node->'props', 'node_path', to_jsonb(v_node_path)))::json);
     UPDATE "constructive_compute_private".platform_function_graph_executions SET
     node_outputs = node_outputs || jsonb_build_object(v_node_name, NULL)
     WHERE
@@ -188,11 +190,12 @@ BEGIN
       execution_id,
       database_id,
       node_name,
+      node_path,
       status,
       started_at
     )
     VALUES
-      (v_exec.id, v_exec.database_id, v_node_name, 'queued', now());
+      (v_exec.id, v_exec.database_id, v_node_name, v_node_path, 'queued', now());
     v_jobs_enqueued := v_jobs_enqueued + 1;
   END LOOP;
   UPDATE "constructive_compute_private".platform_function_graph_executions SET
