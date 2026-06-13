@@ -7,8 +7,8 @@ Function definitions — registered cloud functions with routing, queue, and ret
 ## Usage
 
 ```typescript
-usePlatformFunctionDefinitionsQuery({ selection: { fields: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true, inputs: true, outputs: true, props: true, volatile: true, icon: true, category: true } } })
-usePlatformFunctionDefinitionQuery({ id: '<UUID>', selection: { fields: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true, inputs: true, outputs: true, props: true, volatile: true, icon: true, category: true } } })
+usePlatformFunctionDefinitionsQuery({ selection: { fields: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true, category: true, icon: true, inputs: true, outputs: true, props: true, volatile: true, runtime: true } } })
+usePlatformFunctionDefinitionQuery({ id: '<UUID>', selection: { fields: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true, category: true, icon: true, inputs: true, outputs: true, props: true, volatile: true, runtime: true } } })
 useCreatePlatformFunctionDefinitionMutation({ selection: { fields: { id: true } } })
 useUpdatePlatformFunctionDefinitionMutation({ selection: { fields: { id: true } } })
 useDeletePlatformFunctionDefinitionMutation({})
@@ -20,7 +20,7 @@ useDeletePlatformFunctionDefinitionMutation({})
 
 ```typescript
 const { data, isLoading } = usePlatformFunctionDefinitionsQuery({
-  selection: { fields: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true, inputs: true, outputs: true, props: true, volatile: true, icon: true, category: true } },
+  selection: { fields: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true, category: true, icon: true, inputs: true, outputs: true, props: true, volatile: true, runtime: true } },
 });
 ```
 
@@ -30,5 +30,5 @@ const { data, isLoading } = usePlatformFunctionDefinitionsQuery({
 const { mutate } = useCreatePlatformFunctionDefinitionMutation({
   selection: { fields: { id: true } },
 });
-mutate({ description: '<String>', isBuiltIn: '<Boolean>', isInvocable: '<Boolean>', maxAttempts: '<Int>', name: '<String>', namespaceId: '<UUID>', priority: '<Int>', queueName: '<String>', scope: '<String>', serviceUrl: '<String>', taskIdentifier: '<String>', requiredConfigs: '<FunctionRequirement>', requiredSecrets: '<FunctionRequirement>', inputs: '<JSON>', outputs: '<JSON>', props: '<JSON>', volatile: '<Boolean>', icon: '<String>', category: '<String>' });
+mutate({ description: '<String>', isBuiltIn: '<Boolean>', isInvocable: '<Boolean>', maxAttempts: '<Int>', name: '<String>', namespaceId: '<UUID>', priority: '<Int>', queueName: '<String>', scope: '<String>', serviceUrl: '<String>', taskIdentifier: '<String>', requiredConfigs: '<FunctionRequirement>', requiredSecrets: '<FunctionRequirement>', category: '<String>', icon: '<String>', inputs: '<JSON>', outputs: '<JSON>', props: '<JSON>', volatile: '<Boolean>', runtime: '<String>' });
 ```
