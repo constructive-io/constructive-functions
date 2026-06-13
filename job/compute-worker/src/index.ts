@@ -304,6 +304,11 @@ export default class ComputeWorker {
       throw new Error(`Function "${fn.name}" (${functionName}) is not invocable`);
     }
 
+    // Mark node as running in node_states (queued → running)
+    if (graphNode) {
+      await this.markNodeRunning(payload.execution_id, payload.node_name);
+    }
+
     // Determine dispatch mode: inline (in-process) vs HTTP
     const isInline = fn.runtime === 'inline' || getInlineImpl(functionName) !== null;
 
@@ -553,6 +558,22 @@ export default class ComputeWorker {
   // ─── Graph execution ──────────────────────────────────────────────────
 
   /**
+   * Transition a node from queued → running when the worker picks up the job.
+   */
+  private async markNodeRunning(
+    executionId: string,
+    nodeName: string
+  ): Promise<void> {
+    log.debug('marking graph node running', { executionId, nodeName });
+    await this.pgPool.query(
+      `UPDATE constructive_compute_private.platform_function_graph_execution_node_states
+       SET status = 'running', started_at = now()
+       WHERE execution_id = $1::uuid AND node_name = $2 AND status = 'queued'`,
+      [executionId, nodeName]
+    );
+  }
+
+  /**
    * Complete a graph node after its function returns successfully.
    * Calls the SQL complete_node procedure which stores the output and
    * triggers tick_execution to cascade to downstream nodes.
@@ -570,31 +591,26 @@ export default class ComputeWorker {
   }
 
   /**
-   * Mark a graph execution as failed when a node errors.
-   * Records both the failing node name and the error message.
-   * Handles the race where execution may already be completed/failed
-   * (e.g. graphOutput finished before a late node failure arrives).
+   * Mark a graph node and its execution as failed.
+   * Calls the SQL fail_node procedure which updates node_states
+   * (status=failed, error fields) and marks the execution as failed.
    */
   private async failGraphExecution(
     executionId: string,
     nodeName: string,
     errorMessage: string
   ): Promise<void> {
-    const nodeError = `[${nodeName}] ${errorMessage}`;
     log.error('graph node failed', { executionId, nodeName, error: errorMessage });
-    const { rowCount } = await this.pgPool.query(
-      `UPDATE constructive_compute_private.platform_function_graph_executions
-       SET status = 'failed',
-           error_message = $1,
-           error_code = 'NODE_EXECUTION_FAILED',
-           completed_at = now()
-       WHERE id = $2 AND status = 'running'`,
-      [nodeError, executionId]
-    );
-    if (rowCount === 0) {
-      // Execution already completed or failed — log so the error is never invisible
-      log.warn('graph execution already finished; node failure not recorded in status', {
-        executionId, nodeName, error: errorMessage,
+    try {
+      await this.pgPool.query(
+        `SELECT constructive_compute_private.platform_fail_node($1::uuid, $2, $3, $4)`,
+        [executionId, nodeName, 'NODE_EXECUTION_FAILED', errorMessage]
+      );
+    } catch (err: any) {
+      // Execution may already be completed/failed (race with graphOutput).
+      // Log so the error is never invisible.
+      log.warn('platform_fail_node raised; execution may already be finished', {
+        executionId, nodeName, error: errorMessage, sqlError: err.message,
       });
     }
   }

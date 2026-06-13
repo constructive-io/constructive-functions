@@ -14,7 +14,7 @@
  * unique graph names and filter by execution_id to avoid collision.
  */
 
-import type { FunctionsTestResult, MockFunctionServer, TestWorker, GraphJob } from '../src';
+import type { FunctionsTestResult, MockFunctionServer, TestWorker, GraphJob, NodeState } from '../src';
 import {
   getConnections,
   createMockFunctionServer,
@@ -23,6 +23,7 @@ import {
   startExecution,
   getExecution,
   getGraphJobs,
+  getNodeStates,
   registerFunction,
   buildCalculatorGraph,
   buildParallelGraph,
@@ -116,7 +117,7 @@ describe('graph infrastructure', () => {
   });
 
   test('graph execution tables exist', async () => {
-    for (const t of ['platform_function_graph_executions', 'platform_function_graph_execution_outputs']) {
+    for (const t of ['platform_function_graph_executions', 'platform_function_graph_execution_outputs', 'platform_function_graph_execution_node_states']) {
       const row = await ctx.pg.oneOrNone(
         `SELECT 1 FROM information_schema.tables
          WHERE table_schema = 'constructive_compute_private' AND table_name = $1`,
@@ -143,6 +144,7 @@ describe('graph infrastructure', () => {
       { schema: 'constructive_compute_public', name: 'platform_import_graph_json' },
       { schema: 'constructive_compute_private', name: 'platform_tick_execution' },
       { schema: 'constructive_compute_private', name: 'platform_complete_node' },
+      { schema: 'constructive_compute_private', name: 'platform_fail_node' },
     ];
     for (const p of procs) {
       const row = await ctx.pg.oneOrNone(
@@ -549,5 +551,71 @@ describe('parallel branch execution', () => {
     expect(tripleServer.requests).toHaveLength(1);
     // merge should never have been called
     expect(mergeServer.requests).toHaveLength(0);
+  });
+});
+
+// ─── Node state tracking ───────────────────────────────────────────────────
+
+describe('node state tracking', () => {
+  test('start_execution creates node_states for enqueued nodes', async () => {
+    const graphId = await importGraphJson(ctx.pg, databaseId, 'ns-enqueue', buildCalculatorGraph());
+    const execId = await startExecution(ctx.pg, graphId, { a: 1, b: 2 });
+
+    const states = await getNodeStates(ctx.pg, execId);
+    // tick_execution enqueues add_node (both inputs ready from graphInput)
+    const addState = states.find((s: NodeState) => s.node_name === 'add_node');
+    expect(addState).toBeTruthy();
+    expect(addState!.status).toBe('queued');
+    expect(addState!.started_at).toBeTruthy();
+
+    // Cleanup
+    await ctx.pg.query(
+      `DELETE FROM app_jobs.jobs WHERE (payload::jsonb->>'execution_id')::uuid = $1::uuid`,
+      [execId]
+    );
+  });
+
+  test('completed flow has node_states for all dispatched nodes', async () => {
+    const graphId = await importGraphJson(ctx.pg, databaseId, 'ns-complete', buildCalculatorGraph());
+
+    addServer.setResponse({ responseBody: { result: 3 } });
+    doubleServer.setResponse({ responseBody: { result: 6 } });
+
+    const execId = await startExecution(ctx.pg, graphId, { a: 1, b: 2 });
+    const result = await worker.runToCompletion(ctx.pg, execId);
+    expect(result.status).toBe('completed');
+
+    const states = await getNodeStates(ctx.pg, execId);
+    const addState = states.find((s: NodeState) => s.node_name === 'add_node');
+    const doubleState = states.find((s: NodeState) => s.node_name === 'double_node');
+
+    expect(addState).toBeTruthy();
+    expect(addState!.status).toBe('completed');
+    expect(addState!.completed_at).toBeTruthy();
+    expect(addState!.output_id).toBeTruthy();
+
+    expect(doubleState).toBeTruthy();
+    expect(doubleState!.status).toBe('completed');
+    expect(doubleState!.completed_at).toBeTruthy();
+    expect(doubleState!.output_id).toBeTruthy();
+  });
+
+  test('failed node has error details in node_states', async () => {
+    const graphId = await importGraphJson(ctx.pg, databaseId, 'ns-fail', buildCalculatorGraph());
+
+    addServer.setResponse({ statusCode: 500, responseBody: { error: 'node error' } });
+
+    const execId = await startExecution(ctx.pg, graphId, { a: 1, b: 2 });
+    const result = await worker.runToCompletion(ctx.pg, execId);
+    expect(result.status).toBe('failed');
+
+    const states = await getNodeStates(ctx.pg, execId);
+    const addState = states.find((s: NodeState) => s.node_name === 'add_node');
+
+    expect(addState).toBeTruthy();
+    expect(addState!.status).toBe('failed');
+    expect(addState!.completed_at).toBeTruthy();
+    expect(addState!.error_code).toBe('NODE_EXECUTION_FAILED');
+    expect(addState!.error_message).toBeTruthy();
   });
 });

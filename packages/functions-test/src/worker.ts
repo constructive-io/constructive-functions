@@ -159,6 +159,16 @@ export async function createTestWorker(
     // For graph nodes, send inputs as HTTP body; for standalone, full payload
     const httpBody = graphNode ? payload.inputs : payload;
 
+    // 0. Mark node as running in node_states (queued → running)
+    if (graphNode) {
+      await pool.query(
+        `UPDATE constructive_compute_private.platform_function_graph_execution_node_states
+         SET status = 'running', started_at = now()
+         WHERE execution_id = $1::uuid AND node_name = $2 AND status = 'queued'`,
+        [payload.execution_id, payload.node_name]
+      );
+    }
+
     // 1. Set GUCs
     await setJobGUCs(job);
 
@@ -265,16 +275,14 @@ export async function createTestWorker(
         error: errorMsg,
       });
 
-      // Mark graph execution as failed
+      // Mark graph node + execution as failed via platform_fail_node
       if (graphNode) {
         try {
           await pool.query(
-            `UPDATE constructive_compute_private.platform_function_graph_executions
-             SET status = 'failed', error_message = $1
-             WHERE id = $2`,
-            [errorMsg, payload.execution_id]
+            `SELECT constructive_compute_private.platform_fail_node($1::uuid, $2, $3, $4)`,
+            [payload.execution_id, payload.node_name, 'NODE_EXECUTION_FAILED', errorMsg]
           );
-        } catch { /* best-effort */ }
+        } catch { /* best-effort: execution may already be finished */ }
       }
 
       return { invocationId, durationMs: ms, status: 'failed', error: errorMsg };
