@@ -32,42 +32,6 @@ VALUES
     'http'
   ),
   (
-    'http-request',
-    'http-request',
-    'http://localhost:8086',
-    true, true, 'platform',
-    'Makes an HTTP request to an external URL and returns the response',
-    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
-    ARRAY[
-      ROW('AUTH_TOKEN', false)
-    ]::constructive_compute_public.function_requirement[],
-    ARRAY[]::constructive_compute_public.function_requirement[],
-    '[{"name":"url","type":"string","description":"Request URL"},{"name":"body","type":"json","description":"Request body (for POST/PUT/PATCH)","optional":true},{"name":"headers","type":"json","description":"Additional request headers","optional":true}]'::jsonb,
-    '[{"name":"data","type":"json","description":"Response body parsed as JSON"},{"name":"status","type":"number","description":"HTTP status code"},{"name":"headers","type":"json","description":"Response headers"}]'::jsonb,
-    '[{"name":"method","type":"string","default":"GET","description":"HTTP method (GET, POST, PUT, PATCH, DELETE)","required":false},{"name":"timeout","type":"number","default":30000,"description":"Request timeout in milliseconds","required":false},{"name":"retries","type":"number","default":0,"description":"Number of retry attempts on failure","required":false}]'::jsonb,
-    true,
-    'globe',
-    'network',
-    'http'
-  ),
-  (
-    'json-transform',
-    'json-transform',
-    'http://localhost:8085',
-    true, true, 'platform',
-    'Transforms JSON data using a JSONPath expression and optional mapping',
-    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
-    ARRAY[]::constructive_compute_public.function_requirement[],
-    ARRAY[]::constructive_compute_public.function_requirement[],
-    '[{"name":"data","type":"json","description":"Input JSON data to transform"},{"name":"mapping","type":"json","description":"Key mapping object (old_key → new_key)","optional":true}]'::jsonb,
-    '[{"name":"result","type":"json","description":"Transformed JSON output"},{"name":"count","type":"number","description":"Number of keys processed"}]'::jsonb,
-    '[{"name":"path","type":"string","default":"$","description":"JSONPath expression to select data","required":false},{"name":"flatten","type":"boolean","default":false,"description":"Whether to flatten nested objects","required":false},{"name":"removeNulls","type":"boolean","default":true,"description":"Strip null values from output","required":false}]'::jsonb,
-    false,
-    'braces',
-    'data',
-    'http'
-  ),
-  (
     'python-example',
     'python-example',
     'http://localhost:8084',
@@ -138,23 +102,6 @@ VALUES
     true,
     'mail',
     'email',
-    'http'
-  ),
-  (
-    'text-template',
-    'text-template',
-    'http://localhost:8087',
-    true, true, 'platform',
-    'Renders a text template with variable substitution using {{variable}} syntax',
-    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
-    ARRAY[]::constructive_compute_public.function_requirement[],
-    ARRAY[]::constructive_compute_public.function_requirement[],
-    '[{"name":"variables","type":"json","description":"Key-value pairs for template substitution"}]'::jsonb,
-    '[{"name":"text","type":"string","description":"Rendered template output"},{"name":"missingVars","type":"json","description":"Array of template variables that had no value"}]'::jsonb,
-    '[{"name":"template","type":"string","default":"","description":"Template string with {{variable}} placeholders","required":true},{"name":"strict","type":"boolean","default":false,"description":"Fail if any template variable is missing","required":false},{"name":"fallback","type":"string","default":"","description":"Default value for missing variables (when not strict)","required":false}]'::jsonb,
-    false,
-    'file-text',
-    'string',
     'http'
   ),
   (

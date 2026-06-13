@@ -8,12 +8,6 @@ SELECT 1 FROM constructive_compute_public.platform_function_definitions
 WHERE name = 'node-example' AND is_built_in = true;
 
 SELECT 1 FROM constructive_compute_public.platform_function_definitions
-WHERE name = 'http-request' AND is_built_in = true;
-
-SELECT 1 FROM constructive_compute_public.platform_function_definitions
-WHERE name = 'json-transform' AND is_built_in = true;
-
-SELECT 1 FROM constructive_compute_public.platform_function_definitions
 WHERE name = 'python-example' AND is_built_in = true;
 
 SELECT 1 FROM constructive_compute_public.platform_function_definitions
@@ -21,9 +15,6 @@ WHERE name = 'send-email' AND is_built_in = true;
 
 SELECT 1 FROM constructive_compute_public.platform_function_definitions
 WHERE name = 'send-verification-link' AND is_built_in = true;
-
-SELECT 1 FROM constructive_compute_public.platform_function_definitions
-WHERE name = 'text-template' AND is_built_in = true;
 
 SELECT 1 FROM constructive_compute_public.platform_function_definitions
 WHERE name = 'math/add' AND is_built_in = true;
