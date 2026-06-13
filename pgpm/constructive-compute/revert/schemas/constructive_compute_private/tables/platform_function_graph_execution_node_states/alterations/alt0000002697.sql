@@ -1,0 +1,4 @@
+-- Revert: schemas/constructive_compute_private/tables/platform_function_graph_execution_node_states/alterations/alt0000002697
+
+
+COMMENT ON TABLE "constructive_compute_private".platform_function_graph_execution_node_states IS NULL;
