@@ -656,13 +656,19 @@ export function FlowsPanel() {
     }
   }, [stores, handleLoadStore]);
 
-  const definitions: NodeDefinition[] = useMemo(() => [
-    ...functions.map(platformFnToDefinition),
-    ...mathDefinitions.map(({ impl, ...rest }) => rest as NodeDefinition),
-    ...coreDefinitions.map(({ impl, ...rest }) => rest as NodeDefinition),
-    ...uiDefinitions.map(({ impl, ...rest }) => rest as NodeDefinition),
-    ...netDefinitions.map(({ impl, ...rest }) => rest as NodeDefinition),
-  ], [functions]);
+  const definitions: NodeDefinition[] = useMemo(() => {
+    const platformDefs = functions.map(platformFnToDefinition);
+    const platformNames = new Set(platformDefs.map(d => d.name));
+    const evaluatorDefs = [
+      ...mathDefinitions,
+      ...coreDefinitions,
+      ...uiDefinitions,
+      ...netDefinitions,
+    ]
+      .filter(d => !platformNames.has(d.name))
+      .map(({ impl, ...rest }) => rest as NodeDefinition);
+    return [...platformDefs, ...evaluatorDefs];
+  }, [functions]);
 
   const implDefinitions: NodeDefinitionWithImpl[] = useMemo(() => [
     ...mathDefinitions,
