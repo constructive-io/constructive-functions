@@ -17,11 +17,11 @@ DECLARE
   v_store_id uuid;
   v_graph_id uuid;
 BEGIN
-  SELECT id
-  FROM "constructive_platform_function_graph_public".platform_function_graph_store
+  SELECT s.id
+  FROM "constructive_platform_function_graph_public".platform_function_graph_store AS s
   WHERE
-    database_id = platform_create_function_graph.database_id
-    AND name = platform_create_function_graph.name
+    s.database_id = platform_create_function_graph.database_id
+    AND s.name = platform_create_function_graph.name
   INTO v_store_id;
   IF v_store_id IS NULL THEN
     INSERT INTO "constructive_platform_function_graph_public".platform_function_graph_store (
