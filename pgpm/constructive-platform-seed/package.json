@@ -1,0 +1,29 @@
+{
+  "name": "@constructive-io/constructive-platform-seed",
+  "version": "0.1.0",
+  "description": "Platform metadata seed: database, schemas, compute API, domain, and site",
+  "author": "Constructive <developers@constructive.io>",
+  "keywords": [
+    "postgresql",
+    "pgpm",
+    "constructive-platform-seed"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "bundle": "pgpm package"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/constructive-io/constructive-functions"
+  },
+  "dependencies": {
+    "@pgpm/metaschema-modules": "0.28.0",
+    "@pgpm/metaschema-schema": "0.28.0",
+    "@pgpm/services": "0.28.0"
+  },
+  "devDependencies": {
+    "pgpm": "^4.26.1"
+  }
+}
