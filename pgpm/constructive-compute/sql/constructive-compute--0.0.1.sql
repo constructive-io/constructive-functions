@@ -842,14 +842,22 @@ DECLARE
   v_store_id uuid;
   v_graph_id uuid;
 BEGIN
-  INSERT INTO "constructive_platform_function_graph_public".platform_function_graph_store (
-    database_id,
-    name
-  )
-  VALUES
-    (platform_create_function_graph.database_id, platform_create_function_graph.name)
-  RETURNING id INTO v_store_id;
-  PERFORM "constructive_platform_function_graph_public".init_empty_repo(platform_create_function_graph.database_id, v_store_id);
+  SELECT id
+  FROM "constructive_platform_function_graph_public".platform_function_graph_store
+  WHERE
+    database_id = platform_create_function_graph.database_id
+    AND name = platform_create_function_graph.name
+  INTO v_store_id;
+  IF v_store_id IS NULL THEN
+    INSERT INTO "constructive_platform_function_graph_public".platform_function_graph_store (
+      database_id,
+      name
+    )
+    VALUES
+      (platform_create_function_graph.database_id, platform_create_function_graph.name)
+    RETURNING id INTO v_store_id;
+    PERFORM "constructive_platform_function_graph_public".init_empty_repo(platform_create_function_graph.database_id, v_store_id);
+  END IF;
   INSERT INTO "constructive_compute_public".platform_function_graphs (
     database_id,
     store_id,
