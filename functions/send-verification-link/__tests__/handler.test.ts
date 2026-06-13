@@ -15,7 +15,7 @@ describe('send-verification-link handler (validation)', () => {
       ctx
     );
     expect(result).toEqual({
-      error: 'Missing X-Database-Id header or DEFAULT_DATABASE_ID'
+      result: { error: 'Missing X-Database-Id header or DEFAULT_DATABASE_ID' }
     });
   });
 

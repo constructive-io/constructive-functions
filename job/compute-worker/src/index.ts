@@ -404,11 +404,7 @@ export default class ComputeWorker {
       });
 
       if (graphNode) {
-        try {
-          await this.failGraphExecution(payload.execution_id, err.message);
-        } catch (graphErr) {
-          log.error('Failed to mark graph execution as failed', graphErr);
-        }
+        await this.failGraphExecution(payload.execution_id, payload.node_name, err.message);
         // Don't re-throw for graph nodes — execution is already marked failed.
         // Re-throwing would cause the job queue to retry with the same permanent error.
         return;
@@ -545,11 +541,7 @@ export default class ComputeWorker {
 
       // Graph node failure: mark execution as failed
       if (graphNode) {
-        try {
-          await this.failGraphExecution(payload.execution_id, err.message);
-        } catch (graphErr) {
-          log.error('Failed to mark graph execution as failed', graphErr);
-        }
+        await this.failGraphExecution(payload.execution_id, payload.node_name, err.message);
         // Don't re-throw for graph nodes — execution is already marked failed.
         // Re-throwing would cause the job queue to retry with the same permanent error.
         return;
@@ -579,18 +571,32 @@ export default class ComputeWorker {
 
   /**
    * Mark a graph execution as failed when a node errors.
+   * Records both the failing node name and the error message.
+   * Handles the race where execution may already be completed/failed
+   * (e.g. graphOutput finished before a late node failure arrives).
    */
   private async failGraphExecution(
     executionId: string,
+    nodeName: string,
     errorMessage: string
   ): Promise<void> {
-    log.debug('failing graph execution', { executionId, error: errorMessage });
-    await this.pgPool.query(
+    const nodeError = `[${nodeName}] ${errorMessage}`;
+    log.error('graph node failed', { executionId, nodeName, error: errorMessage });
+    const { rowCount } = await this.pgPool.query(
       `UPDATE constructive_compute_private.platform_function_graph_executions
-       SET status = 'failed', error_message = $1
-       WHERE id = $2`,
-      [errorMessage, executionId]
+       SET status = 'failed',
+           error_message = $1,
+           error_code = 'NODE_EXECUTION_FAILED',
+           completed_at = now()
+       WHERE id = $2 AND status = 'running'`,
+      [nodeError, executionId]
     );
+    if (rowCount === 0) {
+      // Execution already completed or failed — log so the error is never invisible
+      log.warn('graph execution already finished; node failure not recorded in status', {
+        executionId, nodeName, error: errorMessage,
+      });
+    }
   }
 
   /**

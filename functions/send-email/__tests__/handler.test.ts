@@ -47,18 +47,18 @@ describe('send-email handler', () => {
         { to: 'a@b.com', subject: 'Hi', text: 'hello' },
         createMockContext()
       );
-      expect(result).toEqual({ complete: true });
+      expect(result).toEqual({ result: { complete: true } });
     });
   });
 
   describe('sending', () => {
-    it('returns { complete: true } on valid payload', async () => {
+    it('returns port-named output on valid payload', async () => {
       const handler = loadHandler();
       const result = await handler(
         { to: 'a@b.com', subject: 'Hi', html: '<p>hi</p>' },
         createMockContext()
       );
-      expect(result).toEqual({ complete: true });
+      expect(result).toEqual({ result: { complete: true } });
     });
 
     it('calls postmaster.send by default (not SMTP)', async () => {
@@ -121,13 +121,13 @@ describe('send-email handler', () => {
       process.env.SEND_EMAIL_DRY_RUN = 'true';
     });
 
-    it('returns { complete: true } without sending', async () => {
+    it('returns port-named output without sending', async () => {
       const handler = loadHandler();
       const result = await handler(
         { to: 'a@b.com', subject: 'Hi', html: '<p>hi</p>' },
         createMockContext()
       );
-      expect(result).toEqual({ complete: true });
+      expect(result).toEqual({ result: { complete: true } });
       const postmaster = require('@constructive-io/postmaster');
       const smtp = require('simple-smtp-server');
       expect(postmaster.send).not.toHaveBeenCalled();

@@ -81,7 +81,7 @@ const handler: FunctionHandler<SendEmailPayload> = async (params) => {
     logger.info('Sent email', logContext);
   }
 
-  return { complete: true };
+  return { result: { complete: true } };
 };
 
 export default handler;

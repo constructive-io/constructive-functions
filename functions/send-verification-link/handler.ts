@@ -280,8 +280,10 @@ const sendEmailLink = async (
   }
 
   return {
-    complete: true,
-    ...(isDryRun ? { dryRun: true } : null)
+    result: {
+      complete: true,
+      ...(isDryRun ? { dryRun: true } : null)
+    }
   };
 };
 
@@ -290,7 +292,7 @@ const handler: FunctionHandler<SendEmailParams> = async (params, context) => {
 
   const databaseId = job.databaseId;
   if (!databaseId) {
-    return { error: 'Missing X-Database-Id header or DEFAULT_DATABASE_ID' };
+    return { result: { error: 'Missing X-Database-Id header or DEFAULT_DATABASE_ID' } };
   }
 
   log.info('[send-verification-link] Processing request', {
