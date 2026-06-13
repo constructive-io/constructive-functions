@@ -73,4 +73,4 @@ jobs:
           done
 
       - name: Run pgpm full-cycle test (deploy/verify/revert/deploy)
-        run: pgpm test-packages --full-cycle --exclude constructive-infra-services,constructive-infra-seed
+        run: pgpm test-packages --full-cycle --exclude constructive-infra-services
