@@ -1057,7 +1057,26 @@ export function FlowsPanel() {
                 </button>
               ))}
               {stores.length === 0 && !storesLoading && (
-                <p className="text-xs text-zinc-600 px-3 py-1">No saved flows yet</p>
+                <div className="px-3 py-2">
+                  <p className="text-xs text-zinc-600 mb-2">No stores yet</p>
+                  <button
+                    onClick={async () => {
+                      const name = flowName.trim() || 'default';
+                      try {
+                        const store = await createStore(name);
+                        setActiveStoreId(store.id);
+                        setFlowName(name);
+                        refetchStores();
+                      } catch (err: any) {
+                        console.error('Failed to create store:', err);
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition-colors w-full justify-center"
+                  >
+                    <Plus size={12} />
+                    Create Store
+                  </button>
+                </div>
               )}
             </div>
             <button
