@@ -29,6 +29,23 @@ CREATE TABLE IF NOT EXISTS constructive_compute_private.platform_function_graph_
 CREATE TABLE IF NOT EXISTS constructive_compute_private.platform_function_graph_execution_outputs_default
   PARTITION OF constructive_compute_private.platform_function_graph_execution_outputs DEFAULT;
 
+-- Execution node states (partitioned by created_at)
+CREATE TABLE IF NOT EXISTS constructive_compute_private.platform_function_graph_execution_node_states_default
+  PARTITION OF constructive_compute_private.platform_function_graph_execution_node_states DEFAULT;
+
+-- Execution tree tables (partitioned by created_at)
+CREATE TABLE IF NOT EXISTS constructive_compute_private.platform_execution_tree_object_default
+  PARTITION OF constructive_compute_private.platform_execution_tree_object DEFAULT;
+
+CREATE TABLE IF NOT EXISTS constructive_compute_private.platform_execution_tree_store_default
+  PARTITION OF constructive_compute_private.platform_execution_tree_store DEFAULT;
+
+CREATE TABLE IF NOT EXISTS constructive_compute_private.platform_execution_tree_commit_default
+  PARTITION OF constructive_compute_private.platform_execution_tree_commit DEFAULT;
+
+CREATE TABLE IF NOT EXISTS constructive_compute_private.platform_execution_tree_ref_default
+  PARTITION OF constructive_compute_private.platform_execution_tree_ref DEFAULT;
+
 -- Compute usage logging (partitioned by completed_at)
 CREATE TABLE IF NOT EXISTS constructive_compute_public.platform_compute_log_default
   PARTITION OF constructive_compute_public.platform_compute_log DEFAULT;
