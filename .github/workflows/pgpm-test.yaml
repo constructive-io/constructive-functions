@@ -64,7 +64,13 @@ jobs:
         run: pgpm admin-users bootstrap --yes
 
       - name: Install pgpm module dependencies
-        run: pgpm install
+        run: |
+          for mod in pgpm/*/; do
+            if [ -f "$mod"/*.control ]; then
+              echo "Installing deps for $mod"
+              cd "$mod" && pgpm install && cd ../.. || cd ../..
+            fi
+          done
 
       - name: Run pgpm full-cycle test (deploy/verify/revert/deploy)
         run: pgpm test-packages --full-cycle --exclude constructive-infra-services
