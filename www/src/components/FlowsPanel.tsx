@@ -286,7 +286,7 @@ async function gqlFetch(endpoint: string, query: string, variables: Record<strin
     body: JSON.stringify({ query, variables }),
   });
   const contentType = res.headers.get('content-type') || '';
-  if (!contentType.includes('application/json')) {
+  if (!contentType.includes('json')) {
     throw new Error(`GraphQL server returned ${res.status} (${contentType || 'no content-type'}). Is the server running on port 6464? Run: make up`);
   }
   const json = await res.json();
