@@ -7,5 +7,5 @@
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
-  ALTER COLUMN current_wave SET DEFAULT 0;
+  ALTER COLUMN current_wave SET NOT NULL;
 

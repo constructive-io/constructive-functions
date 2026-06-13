@@ -1,0 +1,6 @@
+-- Verify: schemas/constructive_compute_private/tables/platform_execution_tree_commit/indexes/platform_execution_tree_commits_store_id_created_at_idx
+
+
+SELECT verify_index('constructive_compute_private.platform_execution_tree_commit', 'platform_execution_tree_commits_store_id_created_at_idx');
+
+

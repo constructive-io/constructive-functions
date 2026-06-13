@@ -5,9 +5,6 @@
 -- requires: schemas/constructive_compute_private/schema
 -- requires: schemas/constructive_compute_public/tables/platform_function_graphs/table
 -- requires: schemas/constructive_compute_private/tables/platform_function_graph_executions/table
--- requires: schemas/constructive_compute_private/tables/platform_function_graph_executions/columns/graph_id/column
--- requires: schemas/constructive_compute_public/tables/platform_function_graphs/columns/id/column
--- requires: schemas/constructive_compute_public/tables/platform_function_graphs/constraints/platform_function_graphs_pkey/constraint
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_executions 

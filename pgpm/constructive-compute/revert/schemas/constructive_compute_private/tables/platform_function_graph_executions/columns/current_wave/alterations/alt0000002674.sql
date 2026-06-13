@@ -2,6 +2,6 @@
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
-  ALTER COLUMN current_wave DROP DEFAULT;
+  ALTER COLUMN current_wave DROP NOT NULL;
 
 

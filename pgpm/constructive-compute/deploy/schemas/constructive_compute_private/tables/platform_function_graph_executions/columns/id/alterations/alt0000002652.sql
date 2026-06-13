@@ -2,8 +2,10 @@
 -- made with <3 @ constructive.io
 
 -- requires: schemas/constructive_compute_private/schema
+-- requires: schemas/constructive_compute_private/tables/platform_function_graph_executions/table
 -- requires: schemas/constructive_compute_private/tables/platform_function_graph_executions/columns/id/column
 
 
-COMMENT ON COLUMN "constructive_compute_private".platform_function_graph_executions.id IS 'Unique execution identifier';
+ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
+  ALTER COLUMN id SET DEFAULT uuidv7();
 

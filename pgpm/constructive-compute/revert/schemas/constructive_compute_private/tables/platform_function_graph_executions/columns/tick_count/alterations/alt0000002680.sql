@@ -2,6 +2,6 @@
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
-  ALTER COLUMN tick_count DROP DEFAULT;
+  ALTER COLUMN tick_count DROP NOT NULL;
 
 

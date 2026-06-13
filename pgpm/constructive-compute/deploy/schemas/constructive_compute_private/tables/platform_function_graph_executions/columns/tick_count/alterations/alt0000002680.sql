@@ -7,5 +7,5 @@
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
-  ALTER COLUMN tick_count SET DEFAULT 0;
+  ALTER COLUMN tick_count SET NOT NULL;
 

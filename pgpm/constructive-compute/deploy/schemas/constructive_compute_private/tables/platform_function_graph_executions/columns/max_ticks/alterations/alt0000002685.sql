@@ -7,5 +7,5 @@
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
-  ALTER COLUMN max_ticks SET DEFAULT 100;
+  ALTER COLUMN max_ticks SET NOT NULL;
 

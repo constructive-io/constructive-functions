@@ -2,6 +2,6 @@
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
-  ALTER COLUMN max_pending_jobs DROP DEFAULT;
+  ALTER COLUMN max_pending_jobs DROP NOT NULL;
 
 

@@ -2,8 +2,10 @@
 -- made with <3 @ constructive.io
 
 -- requires: schemas/constructive_compute_private/schema
+-- requires: schemas/constructive_compute_private/tables/platform_function_graph_executions/table
 -- requires: schemas/constructive_compute_private/tables/platform_function_graph_executions/columns/max_ticks/column
 
 
-COMMENT ON COLUMN "constructive_compute_private".platform_function_graph_executions.max_ticks IS E'Maximum ticks before execution is failed (default 100)';
+ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
+  ALTER COLUMN max_ticks SET DEFAULT 100;
 

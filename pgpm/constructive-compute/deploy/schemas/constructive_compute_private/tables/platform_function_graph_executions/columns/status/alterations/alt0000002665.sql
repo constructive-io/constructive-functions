@@ -7,5 +7,5 @@
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
-  ALTER COLUMN status SET DEFAULT 'pending';
+  ALTER COLUMN status SET NOT NULL;
 

@@ -7,5 +7,5 @@
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
-  ALTER COLUMN output_port SET DEFAULT 'value';
+  ALTER COLUMN output_port SET NOT NULL;
 

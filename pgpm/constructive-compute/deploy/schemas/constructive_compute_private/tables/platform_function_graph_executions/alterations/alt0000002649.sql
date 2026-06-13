@@ -5,5 +5,6 @@
 -- requires: schemas/constructive_compute_private/tables/platform_function_graph_executions/table
 
 
-COMMENT ON TABLE "constructive_compute_private".platform_function_graph_executions IS 'Ephemeral execution state for flow graph evaluation';
+ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
+  DISABLE ROW LEVEL SECURITY;
 

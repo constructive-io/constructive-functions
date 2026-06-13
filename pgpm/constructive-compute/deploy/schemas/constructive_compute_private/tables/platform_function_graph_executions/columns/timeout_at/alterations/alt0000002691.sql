@@ -7,5 +7,5 @@
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
-  ALTER COLUMN timeout_at SET DEFAULT now() + '5 minutes'::interval;
+  ALTER COLUMN timeout_at SET NOT NULL;
 

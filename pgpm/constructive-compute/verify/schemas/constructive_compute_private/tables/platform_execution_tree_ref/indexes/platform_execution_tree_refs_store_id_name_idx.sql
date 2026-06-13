@@ -1,0 +1,6 @@
+-- Verify: schemas/constructive_compute_private/tables/platform_execution_tree_ref/indexes/platform_execution_tree_refs_store_id_name_idx
+
+
+SELECT verify_index('constructive_compute_private.platform_execution_tree_ref', 'platform_execution_tree_refs_store_id_name_idx');
+
+

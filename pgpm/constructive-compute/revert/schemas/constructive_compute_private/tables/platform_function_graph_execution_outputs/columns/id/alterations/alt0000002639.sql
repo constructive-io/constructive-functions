@@ -2,6 +2,6 @@
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_execution_outputs 
-  ALTER COLUMN id DROP DEFAULT;
+  ALTER COLUMN id DROP NOT NULL;
 
 

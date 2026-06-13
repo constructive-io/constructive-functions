@@ -7,5 +7,5 @@
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
-  ALTER COLUMN id SET DEFAULT uuidv7();
+  ALTER COLUMN id SET NOT NULL;
 

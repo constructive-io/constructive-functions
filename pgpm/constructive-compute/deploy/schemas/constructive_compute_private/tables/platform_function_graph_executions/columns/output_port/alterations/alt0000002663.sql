@@ -2,8 +2,10 @@
 -- made with <3 @ constructive.io
 
 -- requires: schemas/constructive_compute_private/schema
+-- requires: schemas/constructive_compute_private/tables/platform_function_graph_executions/table
 -- requires: schemas/constructive_compute_private/tables/platform_function_graph_executions/columns/output_port/column
 
 
-COMMENT ON COLUMN "constructive_compute_private".platform_function_graph_executions.output_port IS E'Target output port name (default: value)';
+ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
+  ALTER COLUMN output_port SET DEFAULT 'value';
 

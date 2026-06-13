@@ -3,8 +3,6 @@
 
 -- requires: schemas/constructive_compute_private/schema
 -- requires: schemas/constructive_compute_private/tables/platform_function_graph_execution_outputs/table
--- requires: schemas/constructive_compute_private/tables/platform_function_graph_execution_outputs/columns/created_at/column
--- requires: schemas/constructive_compute_private/tables/platform_function_graph_execution_outputs/columns/id/column
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_execution_outputs 

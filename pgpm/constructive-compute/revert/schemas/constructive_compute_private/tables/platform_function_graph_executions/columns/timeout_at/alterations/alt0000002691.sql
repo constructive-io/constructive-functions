@@ -2,6 +2,6 @@
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
-  ALTER COLUMN timeout_at DROP DEFAULT;
+  ALTER COLUMN timeout_at DROP NOT NULL;
 
 

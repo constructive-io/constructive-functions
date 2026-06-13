@@ -3,8 +3,6 @@
 
 -- requires: schemas/constructive_compute_private/schema
 -- requires: schemas/constructive_compute_private/tables/platform_function_graph_execution_node_states/table
--- requires: schemas/constructive_compute_private/tables/platform_function_graph_execution_node_states/columns/created_at/column
--- requires: schemas/constructive_compute_private/tables/platform_function_graph_execution_node_states/columns/id/column
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_execution_node_states 

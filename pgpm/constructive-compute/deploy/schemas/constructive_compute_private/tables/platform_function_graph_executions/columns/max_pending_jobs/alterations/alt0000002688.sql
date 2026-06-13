@@ -7,5 +7,5 @@
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
-  ALTER COLUMN max_pending_jobs SET DEFAULT 50;
+  ALTER COLUMN max_pending_jobs SET NOT NULL;
 

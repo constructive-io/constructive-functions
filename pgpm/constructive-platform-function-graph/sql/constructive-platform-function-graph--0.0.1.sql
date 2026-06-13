@@ -1,6 +1,174 @@
 \echo Use "CREATE EXTENSION constructive-platform-function-graph" to load this file. \quit
 CREATE SCHEMA constructive_platform_function_graph_private;
 
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_private
+  GRANT ALL ON FUNCTIONS TO administrator;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_private
+  GRANT ALL ON FUNCTIONS TO anonymous;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_private
+  GRANT ALL ON FUNCTIONS TO authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_private
+  GRANT USAGE ON SEQUENCES TO administrator;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_private
+  GRANT USAGE ON SEQUENCES TO authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_private
+  GRANT ALL ON TABLES TO administrator;
+
+CREATE SCHEMA constructive_platform_function_graph_public;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
+  GRANT ALL ON FUNCTIONS TO administrator;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
+  GRANT ALL ON FUNCTIONS TO anonymous;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
+  GRANT ALL ON FUNCTIONS TO authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
+  GRANT USAGE ON SEQUENCES TO administrator;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
+  GRANT USAGE ON SEQUENCES TO authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
+  GRANT ALL ON TABLES TO administrator;
+
+CREATE TABLE constructive_platform_function_graph_public.platform_function_graph_commit ();
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  DISABLE ROW LEVEL SECURITY;
+
+COMMENT ON TABLE constructive_platform_function_graph_public.platform_function_graph_commit IS 'Commit history — each commit snapshots a tree root for a store';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ADD COLUMN author_id uuid;
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.author_id IS 'User who authored the changes';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ADD COLUMN committer_id uuid;
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.committer_id IS 'User who committed (may differ from author)';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ADD COLUMN database_id uuid;
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ALTER COLUMN database_id SET NOT NULL;
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.database_id IS 'Database scope for multi-tenant isolation';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ADD COLUMN date timestamptz;
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ALTER COLUMN date SET NOT NULL;
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ALTER COLUMN date SET DEFAULT CURRENT_TIMESTAMP;
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.date IS 'Commit timestamp';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ADD COLUMN id uuid;
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ALTER COLUMN id SET NOT NULL;
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ALTER COLUMN id SET DEFAULT uuidv7();
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.id IS 'Unique commit identifier';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ADD COLUMN message text;
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.message IS 'Optional commit message';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ADD COLUMN parent_ids uuid[];
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.parent_ids IS 'Parent commit IDs (supports merge commits)';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ADD COLUMN store_id uuid;
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ALTER COLUMN store_id SET NOT NULL;
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.store_id IS 'Store this commit belongs to';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ADD COLUMN tree_id uuid;
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.tree_id IS 'Root object ID of the tree snapshot at this commit';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
+  ADD CONSTRAINT platform_function_graph_commits_pkey PRIMARY KEY (id, database_id);
+
+CREATE TABLE constructive_platform_function_graph_public.platform_function_graph_object ();
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
+  DISABLE ROW LEVEL SECURITY;
+
+COMMENT ON TABLE constructive_platform_function_graph_public.platform_function_graph_object IS 'Content-addressed Merkle tree objects keyed by UUID v5 hash of data + children';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
+  ADD COLUMN created_at timestamptz;
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
+  ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP;
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_object.created_at IS 'Timestamp of object creation';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
+  ADD COLUMN data jsonb;
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_object.data IS 'Payload data for this object node';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
+  ADD COLUMN database_id uuid;
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
+  ALTER COLUMN database_id SET NOT NULL;
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_object.database_id IS 'Database scope for multi-tenant isolation';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
+  ADD COLUMN id uuid;
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
+  ALTER COLUMN id SET NOT NULL;
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_object.id IS 'Content-addressed UUID v5 — deterministic hash of (data, kids, ktree)';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
+  ADD COLUMN kids uuid[];
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_object.kids IS 'Ordered array of child object IDs';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
+  ADD COLUMN ktree text[];
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
+  ADD CONSTRAINT platform_function_graph_objects_kids_ktree_chk 
+    CHECK (
+    cardinality(kids) = cardinality(ktree)
+      OR (kids IS NULL
+      AND ktree IS NULL)
+  );
+
+COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_object.ktree IS 'Ordered array of child path names (parallel to kids)';
+
+ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
+  ADD CONSTRAINT platform_function_graph_objects_pkey PRIMARY KEY (id, database_id);
+
 CREATE FUNCTION constructive_platform_function_graph_private.object_hash_uuid(
   IN obj constructive_platform_function_graph_public.platform_function_graph_object
 ) RETURNS uuid AS $EOFCODE$
@@ -20,32 +188,12 @@ BEGIN
 END;
 $EOFCODE$ LANGUAGE plpgsql IMMUTABLE SECURITY INVOKER;
 
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_private
-  GRANT ALL ON FUNCTIONS TO administrator;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_private
-  GRANT ALL ON FUNCTIONS TO anonymous;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_private
-  GRANT ALL ON FUNCTIONS TO authenticated;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_private
-  GRANT USAGE ON SEQUENCES TO administrator;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_private
-  GRANT USAGE ON SEQUENCES TO authenticated;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_private
-  GRANT ALL ON TABLES TO administrator;
-
 CREATE FUNCTION constructive_platform_function_graph_private.tg_object_generate_id_hash() RETURNS trigger AS $EOFCODE$
 BEGIN
   NEW.id := "constructive_platform_function_graph_private".object_hash_uuid(NEW);
   RETURN NEW;
 END;
 $EOFCODE$ LANGUAGE plpgsql VOLATILE SECURITY INVOKER;
-
-CREATE SCHEMA constructive_platform_function_graph_public;
 
 CREATE FUNCTION constructive_platform_function_graph_public.get_all(
   IN s_id uuid,
@@ -309,154 +457,6 @@ BEGIN
   RETURN "constructive_platform_function_graph_public".insert_node_at_path(s_id, root, path, data, _kids, _ktree);
 END;
 $EOFCODE$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
-  GRANT ALL ON FUNCTIONS TO administrator;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
-  GRANT ALL ON FUNCTIONS TO anonymous;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
-  GRANT ALL ON FUNCTIONS TO authenticated;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
-  GRANT USAGE ON SEQUENCES TO administrator;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
-  GRANT USAGE ON SEQUENCES TO authenticated;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
-  GRANT ALL ON TABLES TO administrator;
-
-CREATE TABLE constructive_platform_function_graph_public.platform_function_graph_commit ();
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  DISABLE ROW LEVEL SECURITY;
-
-COMMENT ON TABLE constructive_platform_function_graph_public.platform_function_graph_commit IS 'Commit history — each commit snapshots a tree root for a store';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ADD COLUMN author_id uuid;
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.author_id IS 'User who authored the changes';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ADD COLUMN committer_id uuid;
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.committer_id IS 'User who committed (may differ from author)';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ADD COLUMN database_id uuid;
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ALTER COLUMN database_id SET NOT NULL;
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.database_id IS 'Database scope for multi-tenant isolation';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ADD COLUMN date timestamptz;
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ALTER COLUMN date SET NOT NULL;
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ALTER COLUMN date SET DEFAULT CURRENT_TIMESTAMP;
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.date IS 'Commit timestamp';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ADD COLUMN id uuid;
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ALTER COLUMN id SET NOT NULL;
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ALTER COLUMN id SET DEFAULT uuidv7();
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.id IS 'Unique commit identifier';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ADD COLUMN message text;
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.message IS 'Optional commit message';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ADD COLUMN parent_ids uuid[];
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.parent_ids IS 'Parent commit IDs (supports merge commits)';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ADD COLUMN store_id uuid;
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ALTER COLUMN store_id SET NOT NULL;
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.store_id IS 'Store this commit belongs to';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ADD COLUMN tree_id uuid;
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_commit.tree_id IS 'Root object ID of the tree snapshot at this commit';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 
-  ADD CONSTRAINT platform_function_graph_commits_pkey PRIMARY KEY (id, database_id);
-
-CREATE TABLE constructive_platform_function_graph_public.platform_function_graph_object ();
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
-  DISABLE ROW LEVEL SECURITY;
-
-COMMENT ON TABLE constructive_platform_function_graph_public.platform_function_graph_object IS 'Content-addressed Merkle tree objects keyed by UUID v5 hash of data + children';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
-  ADD COLUMN created_at timestamptz;
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
-  ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP;
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_object.created_at IS 'Timestamp of object creation';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
-  ADD COLUMN data jsonb;
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_object.data IS 'Payload data for this object node';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
-  ADD COLUMN database_id uuid;
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
-  ALTER COLUMN database_id SET NOT NULL;
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_object.database_id IS 'Database scope for multi-tenant isolation';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
-  ADD COLUMN id uuid;
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
-  ALTER COLUMN id SET NOT NULL;
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_object.id IS 'Content-addressed UUID v5 — deterministic hash of (data, kids, ktree)';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
-  ADD COLUMN kids uuid[];
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_object.kids IS 'Ordered array of child object IDs';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
-  ADD COLUMN ktree text[];
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
-  ADD CONSTRAINT platform_function_graph_objects_kids_ktree_chk 
-    CHECK (
-    cardinality(kids) = cardinality(ktree)
-      OR (kids IS NULL
-      AND ktree IS NULL)
-  );
-
-COMMENT ON COLUMN constructive_platform_function_graph_public.platform_function_graph_object.ktree IS 'Ordered array of child path names (parallel to kids)';
-
-ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_object 
-  ADD CONSTRAINT platform_function_graph_objects_pkey PRIMARY KEY (id, database_id);
 
 CREATE TRIGGER generate_id_hash
   BEFORE INSERT

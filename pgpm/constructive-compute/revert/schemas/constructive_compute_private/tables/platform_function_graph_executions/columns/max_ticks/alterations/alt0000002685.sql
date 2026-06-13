@@ -2,6 +2,6 @@
 
 
 ALTER TABLE "constructive_compute_private".platform_function_graph_executions 
-  ALTER COLUMN max_ticks DROP DEFAULT;
+  ALTER COLUMN max_ticks DROP NOT NULL;
 
 
