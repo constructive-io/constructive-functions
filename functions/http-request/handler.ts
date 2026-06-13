@@ -1,6 +1,6 @@
 import type { FunctionHandler } from '@constructive-io/fn-runtime';
 
-const handler: FunctionHandler = async (params, context) => {
+const handler: FunctionHandler<Record<string, any>> = async (params) => {
   const { url, body, headers: extraHeaders } = params;
   const method = (params.method ?? 'GET').toUpperCase();
   const timeout = params.timeout ?? 30000;
@@ -19,9 +19,9 @@ const handler: FunctionHandler = async (params, context) => {
       signal: controller.signal,
     });
 
-    const data = await res.json().catch(() => null);
+    const data = await res.json().catch((): null => null);
     const responseHeaders: Record<string, string> = {};
-    res.headers.forEach((v, k) => { responseHeaders[k] = v; });
+    res.headers.forEach((v: string, k: string) => { responseHeaders[k] = v; });
 
     return { data, status: res.status, headers: responseHeaders };
   } finally {

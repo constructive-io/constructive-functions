@@ -1,9 +1,7 @@
 import type { FunctionHandler } from '@constructive-io/fn-runtime';
 
-const handler: FunctionHandler = async (params, context) => {
+const handler: FunctionHandler<Record<string, any>> = async (params) => {
   const { data, mapping } = params;
-  const path = params.path ?? '$';
-  const flatten = params.flatten ?? false;
   const removeNulls = params.removeNulls ?? true;
 
   let result = data;

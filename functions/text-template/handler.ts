@@ -1,6 +1,6 @@
 import type { FunctionHandler } from '@constructive-io/fn-runtime';
 
-const handler: FunctionHandler = async (params) => {
+const handler: FunctionHandler<Record<string, any>> = async (params) => {
   const template: string = params.template ?? '';
   const variables = (params.variables ?? {}) as Record<string, unknown>;
   const strict: boolean = params.strict ?? false;
@@ -8,7 +8,7 @@ const handler: FunctionHandler = async (params) => {
 
   const missingVars: string[] = [];
 
-  const text = template.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => {
+  const text = template.replace(/\{\{(\w+)\}\}/g, (_match: string, key: string) => {
     if (key in variables) {
       return String(variables[key]);
     }

@@ -86,6 +86,38 @@ importers:
         specifier: ^5.1.6
         version: 5.9.3
 
+  generated/http-request:
+    dependencies:
+      '@constructive-io/fn-runtime':
+        specifier: workspace:^
+        version: link:../../packages/fn-runtime
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      makage:
+        specifier: ^0.1.10
+        version: 0.1.12
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+
+  generated/json-transform:
+    dependencies:
+      '@constructive-io/fn-runtime':
+        specifier: workspace:^
+        version: link:../../packages/fn-runtime
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      makage:
+        specifier: ^0.1.10
+        version: 0.1.12
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+
   generated/send-email:
     dependencies:
       '@constructive-io/fn-runtime':
@@ -143,6 +175,22 @@ importers:
       simple-smtp-server:
         specifier: ^0.7.3
         version: 0.7.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      makage:
+        specifier: ^0.1.10
+        version: 0.1.12
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+
+  generated/text-template:
+    dependencies:
+      '@constructive-io/fn-runtime':
+        specifier: workspace:^
+        version: link:../../packages/fn-runtime
     devDependencies:
       '@types/node':
         specifier: ^22.10.4
