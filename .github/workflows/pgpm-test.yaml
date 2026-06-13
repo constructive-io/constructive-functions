@@ -64,9 +64,7 @@ jobs:
         run: pgpm admin-users bootstrap --yes
 
       - name: Install pgpm module dependencies
-        run: |
-          cd pgpm/constructive-infra && pgpm install
-          cd ../constructive-users && pgpm install || true
+        run: pgpm install
 
       - name: Run pgpm full-cycle test (deploy/verify/revert/deploy)
         run: pgpm test-packages --full-cycle --exclude constructive-infra-services
