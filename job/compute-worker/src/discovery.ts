@@ -21,7 +21,8 @@ const COLUMNS = `
     id, name, task_identifier, service_url,
     is_invocable, is_built_in, max_attempts,
     priority, queue_name, scope, namespace_id,
-    required_configs, required_secrets, description`;
+    required_configs, required_secrets, description,
+    runtime`;
 
 export class FunctionDiscovery {
   private cache: TtlCache<PlatformFunctionDefinition | null>;

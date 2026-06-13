@@ -67,6 +67,7 @@ type FunctionNode = {
   volatile?: boolean | null;
   icon?: string | null;
   category?: string | null;
+  runtime?: string | null;
 };
 
 interface StoreEntry {
@@ -189,6 +190,73 @@ const MOCK_FUNCTIONS: FunctionNode[] = [
     ],
     icon: 'file-text', category: 'string',
   },
+  // ─── Inline nodes (run in-process, no HTTP) ────────────────────────
+  {
+    name: 'math/add', taskIdentifier: 'math/add', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Adds two numbers', runtime: 'inline',
+    inputs: [{ name: 'a', type: 'number' }, { name: 'b', type: 'number' }],
+    outputs: [{ name: 'sum', type: 'number' }],
+    icon: 'plus', category: 'math',
+  },
+  {
+    name: 'math/multiply', taskIdentifier: 'math/multiply', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Multiplies two numbers', runtime: 'inline',
+    inputs: [{ name: 'a', type: 'number' }, { name: 'b', type: 'number' }],
+    outputs: [{ name: 'product', type: 'number' }],
+    icon: 'x', category: 'math',
+  },
+  {
+    name: 'math/subtract', taskIdentifier: 'math/subtract', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Subtracts b from a', runtime: 'inline',
+    inputs: [{ name: 'a', type: 'number' }, { name: 'b', type: 'number' }],
+    outputs: [{ name: 'difference', type: 'number' }],
+    icon: 'minus', category: 'math',
+  },
+  {
+    name: 'json/select', taskIdentifier: 'json/select', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Extract a value from JSON by dot-path', runtime: 'inline',
+    inputs: [{ name: 'obj', type: 'json' }],
+    outputs: [{ name: 'value', type: 'any' }],
+    props: [{ name: 'path', type: 'string', default: '' }],
+    icon: 'circle', category: 'json',
+  },
+  {
+    name: 'json/merge', taskIdentifier: 'json/merge', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Merge two JSON objects', runtime: 'inline',
+    inputs: [{ name: 'a', type: 'json' }, { name: 'b', type: 'json' }],
+    outputs: [{ name: 'value', type: 'json' }],
+    icon: 'git-merge', category: 'json',
+  },
+  {
+    name: 'json/split', taskIdentifier: 'json/split', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Split a JSON object by key list', runtime: 'inline',
+    inputs: [{ name: 'obj', type: 'json' }],
+    outputs: [{ name: 'selected', type: 'json' }, { name: 'rest', type: 'json' }],
+    props: [{ name: 'keys', type: 'json', default: [] }],
+    icon: 'scissors', category: 'json',
+  },
+  {
+    name: 'string/template', taskIdentifier: 'string/template', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Build a string from a {{placeholder}} template', runtime: 'inline',
+    outputs: [{ name: 'value', type: 'string' }],
+    props: [{ name: 'template', type: 'string', default: '' }],
+    icon: 'quote', category: 'string',
+  },
+  {
+    name: 'flow/guard', taskIdentifier: 'flow/guard', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Stop the flow if a condition fails', runtime: 'inline',
+    inputs: [{ name: 'ok', type: 'boolean' }, { name: 'error', type: 'json', optional: true }],
+    outputs: [{ name: 'pass', type: 'signal' }, { name: 'fail', type: 'signal' }, { name: 'error', type: 'json' }],
+    icon: 'shield', category: 'flow',
+  },
+  {
+    name: 'coerce', taskIdentifier: 'coerce', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Convert a value to a different type', runtime: 'inline',
+    inputs: [{ name: 'value', type: 'any' }],
+    outputs: [{ name: 'value', type: 'any' }],
+    props: [{ name: 'type', type: 'string', default: 'string' }],
+    icon: 'repeat', category: 'flow',
+  },
 ];
 
 const DEFAULT_GRAPH: Graph = {
@@ -231,6 +299,7 @@ const FUNCTION_FIELDS = {
   volatile: true,
   icon: true,
   category: true,
+  runtime: true,
 } as const;
 
 const STORE_FIELDS = { id: true, name: true, hash: true } as const;
@@ -1018,6 +1087,9 @@ export function FlowsPanel() {
                               <span className="text-sm text-zinc-300 truncate">
                                 {def.name.split('/').pop()}
                               </span>
+                              {fn?.runtime === 'inline' && (
+                                <Zap size={10} className="text-amber-500 flex-shrink-0 ml-auto" title="Inline (in-process)" />
+                              )}
                             </div>
                           </button>
                         ))}

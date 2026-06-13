@@ -68,6 +68,7 @@ interface FunctionManifest {
   volatile?: boolean;
   icon?: string;
   category?: string;
+  runtime?: 'http' | 'inline';
   dependencies?: Record<string, string>;
 }
 
@@ -124,10 +125,13 @@ function generateValueBlock(m: FunctionManifest): string {
   const icon = m.icon ? `'${m.icon.replace(/'/g, "''")}'` : 'NULL';
   const category = m.category ? `'${m.category.replace(/'/g, "''")}'` : 'NULL';
 
+  const serviceUrl = m.runtime === 'inline' ? 'NULL' : `'http://localhost:${port}'`;
+  const runtime = m.runtime ? `'${m.runtime}'` : "'http'";
+
   return `  (
     '${m.name}',
     '${taskId}',
-    'http://localhost:${port}',
+    ${serviceUrl},
     true, true, '${scope}',
     '${desc}',
     (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
@@ -138,7 +142,8 @@ function generateValueBlock(m: FunctionManifest): string {
     ${props},
     ${isVolatile},
     ${icon},
-    ${category}
+    ${category},
+    ${runtime}
   )`;
 }
 
@@ -161,7 +166,7 @@ BEGIN;
 INSERT INTO constructive_compute_public.platform_function_definitions
   (name, task_identifier, service_url, is_invocable, is_built_in, scope, description,
    namespace_id, required_secrets, required_configs,
-   inputs, outputs, props, volatile, icon, category)
+   inputs, outputs, props, volatile, icon, category, runtime)
 VALUES
 ${values}
 ON CONFLICT (scope, name) DO UPDATE SET
@@ -176,7 +181,8 @@ ON CONFLICT (scope, name) DO UPDATE SET
   props            = EXCLUDED.props,
   volatile         = EXCLUDED.volatile,
   icon             = EXCLUDED.icon,
-  category         = EXCLUDED.category;
+  category         = EXCLUDED.category,
+  runtime          = EXCLUDED.runtime;
 
 COMMIT;
 `;
@@ -232,6 +238,92 @@ function applyToDatabase(sql: string, dbName: string): boolean {
   }
 }
 
+// ── Inline Node Definitions ──────────────────────────────────────────────────
+// These run in-process on the compute-worker (no HTTP service needed).
+
+const INLINE_NODES: FunctionManifest[] = [
+  {
+    name: 'math/add', version: '1.0.0', taskIdentifier: 'math/add', scope: 'platform', runtime: 'inline',
+    description: 'Adds two numbers', icon: 'plus', category: 'math',
+    inputs: [{ name: 'a', type: 'number' }, { name: 'b', type: 'number' }],
+    outputs: [{ name: 'sum', type: 'number' }],
+  },
+  {
+    name: 'math/multiply', version: '1.0.0', taskIdentifier: 'math/multiply', scope: 'platform', runtime: 'inline',
+    description: 'Multiplies two numbers', icon: 'x', category: 'math',
+    inputs: [{ name: 'a', type: 'number' }, { name: 'b', type: 'number' }],
+    outputs: [{ name: 'product', type: 'number' }],
+  },
+  {
+    name: 'math/subtract', version: '1.0.0', taskIdentifier: 'math/subtract', scope: 'platform', runtime: 'inline',
+    description: 'Subtracts b from a', icon: 'minus', category: 'math',
+    inputs: [{ name: 'a', type: 'number' }, { name: 'b', type: 'number' }],
+    outputs: [{ name: 'difference', type: 'number' }],
+  },
+  {
+    name: 'const/number', version: '1.0.0', taskIdentifier: 'const/number', scope: 'platform', runtime: 'inline',
+    description: 'Outputs a constant number', icon: 'hash', category: 'const',
+    outputs: [{ name: 'value', type: 'number' }],
+    props: [{ name: 'value', type: 'number', default: 0 }],
+  },
+  {
+    name: 'const/string', version: '1.0.0', taskIdentifier: 'const/string', scope: 'platform', runtime: 'inline',
+    description: 'Outputs a constant string', icon: 'type', category: 'const',
+    outputs: [{ name: 'value', type: 'string' }],
+    props: [{ name: 'value', type: 'string', default: '' }],
+  },
+  {
+    name: 'const/boolean', version: '1.0.0', taskIdentifier: 'const/boolean', scope: 'platform', runtime: 'inline',
+    description: 'Outputs a constant boolean', icon: 'toggle-left', category: 'const',
+    outputs: [{ name: 'value', type: 'boolean' }],
+    props: [{ name: 'value', type: 'boolean', default: false }],
+  },
+  {
+    name: 'json/select', version: '1.0.0', taskIdentifier: 'json/select', scope: 'platform', runtime: 'inline',
+    description: 'Extract a value from JSON by dot-path', icon: 'circle', category: 'json',
+    inputs: [{ name: 'obj', type: 'json' }],
+    outputs: [{ name: 'value', type: 'any' }],
+    props: [{ name: 'path', type: 'string', default: '' }],
+  },
+  {
+    name: 'json/object', version: '1.0.0', taskIdentifier: 'json/object', scope: 'platform', runtime: 'inline',
+    description: 'Build a JSON object from named inputs', icon: 'braces', category: 'json',
+    outputs: [{ name: 'value', type: 'json' }],
+  },
+  {
+    name: 'json/merge', version: '1.0.0', taskIdentifier: 'json/merge', scope: 'platform', runtime: 'inline',
+    description: 'Merge two JSON objects', icon: 'git-merge', category: 'json',
+    inputs: [{ name: 'a', type: 'json' }, { name: 'b', type: 'json' }],
+    outputs: [{ name: 'value', type: 'json' }],
+  },
+  {
+    name: 'json/split', version: '1.0.0', taskIdentifier: 'json/split', scope: 'platform', runtime: 'inline',
+    description: 'Split a JSON object by key list', icon: 'scissors', category: 'json',
+    inputs: [{ name: 'obj', type: 'json' }],
+    outputs: [{ name: 'selected', type: 'json' }, { name: 'rest', type: 'json' }],
+    props: [{ name: 'keys', type: 'json', default: [] }],
+  },
+  {
+    name: 'string/template', version: '1.0.0', taskIdentifier: 'string/template', scope: 'platform', runtime: 'inline',
+    description: 'Build a string from a template with {{placeholder}} syntax', icon: 'quote', category: 'string',
+    outputs: [{ name: 'value', type: 'string' }],
+    props: [{ name: 'template', type: 'string', default: '' }],
+  },
+  {
+    name: 'flow/guard', version: '1.0.0', taskIdentifier: 'flow/guard', scope: 'platform', runtime: 'inline',
+    description: 'Stop the flow if a condition fails', icon: 'shield', category: 'flow',
+    inputs: [{ name: 'ok', type: 'boolean' }, { name: 'error', type: 'json', optional: true }],
+    outputs: [{ name: 'pass', type: 'signal' }, { name: 'fail', type: 'signal' }, { name: 'error', type: 'json' }],
+  },
+  {
+    name: 'coerce', version: '1.0.0', taskIdentifier: 'coerce', scope: 'platform', runtime: 'inline',
+    description: 'Convert a value to a different type', icon: 'repeat', category: 'flow',
+    inputs: [{ name: 'value', type: 'any' }],
+    outputs: [{ name: 'value', type: 'any' }],
+    props: [{ name: 'type', type: 'string', default: 'string' }],
+  },
+];
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 const REVERT_PATH = SEED_PATH.replace('/deploy/', '/revert/');
@@ -244,24 +336,28 @@ function main(): void {
   const dbName = dbArg ? dbArg.split('=')[1] : process.env.PGDATABASE || 'constructive-functions-db1';
 
   const functions = findFunctions();
+  const httpManifests = functions.map(readManifest);
+  const manifests = [...httpManifests, ...INLINE_NODES];
 
-  if (functions.length === 0) {
+  if (manifests.length === 0) {
     console.log('No functions found to register.');
     return;
   }
 
-  const manifests = functions.map(readManifest);
   const deploySql = generateSeedSQL(manifests);
   const revertSql = generateRevertSQL(manifests);
   const verifySql = generateVerifySQL(manifests);
 
-  console.log(`Found ${manifests.length} function(s):`);
-  for (const m of manifests) {
+  console.log(`Found ${httpManifests.length} HTTP function(s) + ${INLINE_NODES.length} inline node(s):`);
+  for (const m of httpManifests) {
     const port = m.port || 8080;
     const secrets = (m.requiredSecrets || []).length;
     const configs = (m.requiredConfigs || []).length;
     const hasSchema = m.payloadSchema && Object.keys(m.payloadSchema).length > 0;
     console.log(`  ${m.name} → :${port} (${secrets} secrets, ${configs} configs${hasSchema ? ', has schema' : ''})`);
+  }
+  for (const m of INLINE_NODES) {
+    console.log(`  ${m.name} → inline (${m.category})`);
   }
 
   if (dryRun) {

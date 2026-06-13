@@ -21,10 +21,11 @@ import type { Pool, PoolClient } from 'pg';
 import { BillingTracker } from './billing';
 import { ComputeLogTracker } from './compute-log';
 import { FunctionDiscovery } from './discovery';
+import { executeInline, getInlineImpl } from './inline';
 import { InvocationTracker } from './invocation';
 import { ComputeModuleLoader } from './module-loader';
 import { compute_request } from './req';
-import type { ComputeJobRow, ComputeWorkerOptions } from './types';
+import type { ComputeJobRow, ComputeWorkerOptions, PlatformFunctionDefinition } from './types';
 import { isGraphNodePayload } from './types';
 
 const DEFAULT_DATABASE_ID = '00000000-0000-0000-0000-000000000000';
@@ -34,6 +35,8 @@ export { TtlCache } from './cache';
 export type { ComputeLogEntry } from './compute-log';
 export { ComputeLogTracker } from './compute-log';
 export { FunctionDiscovery } from './discovery';
+export { executeInline, getInlineImpl, listInlineNodes } from './inline';
+export type { InlineImplFn, InlineNodeDef } from './inline';
 export { InvocationTracker } from './invocation';
 export { ComputeModuleLoader } from './module-loader';
 export type { ComputeRequestOptions, ComputeRequestResult } from './req';
@@ -48,6 +51,7 @@ export type {
   CreateInvocationInput,
   FunctionModuleConfig,
   FunctionRequirement,
+  FunctionRuntime,
   GraphNodePayload,
   InvocationModuleConfig,
   InvocationStatus,
@@ -299,6 +303,118 @@ export default class ComputeWorker {
     if (!fn.is_invocable) {
       throw new Error(`Function "${fn.name}" (${functionName}) is not invocable`);
     }
+
+    // Determine dispatch mode: inline (in-process) vs HTTP
+    const isInline = fn.runtime === 'inline' || getInlineImpl(functionName) !== null;
+
+    if (isInline) {
+      await this.doWorkInline(job, fn, graphNode, payload);
+    } else {
+      await this.doWorkHttp(job, fn, graphNode, payload);
+    }
+  }
+
+  // ─── Inline dispatch (in-process, no HTTP) ──────────────────────────────
+
+  private async doWorkInline(
+    job: ComputeJobRow,
+    fn: PlatformFunctionDefinition,
+    graphNode: boolean,
+    payload: any
+  ): Promise<void> {
+    const { task_identifier } = job;
+    const functionName = fn.task_identifier;
+    const databaseId = job.database_id || this.platformDatabaseId;
+    const scope = job.entity_id ? 'org' : 'platform';
+
+    // Inline nodes use inputs directly; props come from the graph node definition
+    const inputs = graphNode ? (payload.inputs as Record<string, unknown>) : (payload as Record<string, unknown>);
+
+    await this.setJobGUCs(job);
+
+    const { id: invocationId } = await this.tracker.create({
+      task_identifier,
+      payload,
+      job_id: job.id,
+      database_id: databaseId,
+      actor_id: job.actor_id,
+      scope,
+    });
+
+    const reqStart = process.hrtime();
+    try {
+      const result = await executeInline(functionName, inputs, {});
+
+      const elapsed = process.hrtime(reqStart);
+      const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
+      await this.tracker.complete(
+        invocationId, ms, undefined,
+        scope, scope === 'org' ? databaseId : undefined
+      );
+
+      await this.computeLog.log({
+        task_identifier,
+        job_id: job.id,
+        invocation_id: invocationId,
+        database_id: databaseId,
+        entity_id: job.entity_id,
+        organization_id: job.organization_id,
+        entity_type: job.entity_type,
+        actor_id: job.actor_id,
+        status: 'completed',
+        duration_ms: ms,
+      });
+
+      if (graphNode) {
+        await this.completeGraphNode(
+          payload.execution_id,
+          payload.node_name,
+          result
+        );
+      }
+    } catch (err: any) {
+      const elapsed = process.hrtime(reqStart);
+      const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
+      await this.tracker.fail(
+        invocationId, ms, err.message,
+        scope, scope === 'org' ? databaseId : undefined
+      );
+
+      await this.computeLog.log({
+        task_identifier,
+        job_id: job.id,
+        invocation_id: invocationId,
+        database_id: databaseId,
+        entity_id: job.entity_id,
+        organization_id: job.organization_id,
+        entity_type: job.entity_type,
+        actor_id: job.actor_id,
+        status: 'failed',
+        duration_ms: ms,
+        error: err.message,
+      });
+
+      if (graphNode) {
+        try {
+          await this.failGraphExecution(payload.execution_id, err.message);
+        } catch (graphErr) {
+          log.error('Failed to mark graph execution as failed', graphErr);
+        }
+      }
+      throw err;
+    }
+  }
+
+  // ─── HTTP dispatch (external function service) ──────────────────────────
+
+  private async doWorkHttp(
+    job: ComputeJobRow,
+    fn: PlatformFunctionDefinition,
+    graphNode: boolean,
+    payload: any
+  ): Promise<void> {
+    const { task_identifier } = job;
+    const functionName = fn.task_identifier;
 
     const url = this.resolveUrl(fn.service_url, functionName);
     if (!url) {

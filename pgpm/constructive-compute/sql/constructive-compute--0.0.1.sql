@@ -1706,6 +1706,14 @@ ALTER TABLE constructive_compute_public.platform_function_definitions
 COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.volatile IS 'Whether this function has side effects (cannot be cached or memoized)';
 
 ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ADD COLUMN runtime text;
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
+  ALTER COLUMN runtime SET DEFAULT 'http';
+
+COMMENT ON COLUMN constructive_compute_public.platform_function_definitions.runtime IS 'Dispatch mode: http (external service) or inline (in-process on compute-worker)';
+
+ALTER TABLE constructive_compute_public.platform_function_definitions 
   ADD CONSTRAINT platform_function_definitions_namespace_id_fkey
     FOREIGN KEY(namespace_id)
     REFERENCES constructive_infra_public.platform_namespaces (id)

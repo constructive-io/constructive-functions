@@ -197,14 +197,15 @@ export async function registerFunction(
     volatile?: boolean;
     icon?: string;
     category?: string;
+    runtime?: 'http' | 'inline';
   } = {}
 ): Promise<string> {
   const result = await client.one<{ id: string }>(
     `INSERT INTO constructive_compute_public.platform_function_definitions
        (name, task_identifier, service_url, is_invocable, scope, description,
-        inputs, outputs, props, volatile, icon, category)
+        inputs, outputs, props, volatile, icon, category, runtime)
      VALUES ($1, $1, $2, $3, 'platform', $4,
-             $5::jsonb, $6::jsonb, $7::jsonb, $8, $9, $10)
+             $5::jsonb, $6::jsonb, $7::jsonb, $8, $9, $10, $11)
      ON CONFLICT (scope, name) DO UPDATE SET
        service_url = EXCLUDED.service_url,
        inputs = EXCLUDED.inputs,
@@ -212,7 +213,8 @@ export async function registerFunction(
        props = EXCLUDED.props,
        volatile = EXCLUDED.volatile,
        icon = EXCLUDED.icon,
-       category = EXCLUDED.category
+       category = EXCLUDED.category,
+       runtime = EXCLUDED.runtime
      RETURNING id`,
     [
       name,
@@ -225,6 +227,7 @@ export async function registerFunction(
       opts.volatile ?? false,
       opts.icon ?? null,
       opts.category ?? null,
+      opts.runtime ?? 'http',
     ]
   );
   return result.id;

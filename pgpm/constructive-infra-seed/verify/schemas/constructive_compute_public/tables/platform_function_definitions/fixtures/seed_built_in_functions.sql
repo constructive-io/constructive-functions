@@ -25,4 +25,43 @@ WHERE name = 'send-verification-link' AND is_built_in = true;
 SELECT 1 FROM constructive_compute_public.platform_function_definitions
 WHERE name = 'text-template' AND is_built_in = true;
 
+SELECT 1 FROM constructive_compute_public.platform_function_definitions
+WHERE name = 'math/add' AND is_built_in = true;
+
+SELECT 1 FROM constructive_compute_public.platform_function_definitions
+WHERE name = 'math/multiply' AND is_built_in = true;
+
+SELECT 1 FROM constructive_compute_public.platform_function_definitions
+WHERE name = 'math/subtract' AND is_built_in = true;
+
+SELECT 1 FROM constructive_compute_public.platform_function_definitions
+WHERE name = 'const/number' AND is_built_in = true;
+
+SELECT 1 FROM constructive_compute_public.platform_function_definitions
+WHERE name = 'const/string' AND is_built_in = true;
+
+SELECT 1 FROM constructive_compute_public.platform_function_definitions
+WHERE name = 'const/boolean' AND is_built_in = true;
+
+SELECT 1 FROM constructive_compute_public.platform_function_definitions
+WHERE name = 'json/select' AND is_built_in = true;
+
+SELECT 1 FROM constructive_compute_public.platform_function_definitions
+WHERE name = 'json/object' AND is_built_in = true;
+
+SELECT 1 FROM constructive_compute_public.platform_function_definitions
+WHERE name = 'json/merge' AND is_built_in = true;
+
+SELECT 1 FROM constructive_compute_public.platform_function_definitions
+WHERE name = 'json/split' AND is_built_in = true;
+
+SELECT 1 FROM constructive_compute_public.platform_function_definitions
+WHERE name = 'string/template' AND is_built_in = true;
+
+SELECT 1 FROM constructive_compute_public.platform_function_definitions
+WHERE name = 'flow/guard' AND is_built_in = true;
+
+SELECT 1 FROM constructive_compute_public.platform_function_definitions
+WHERE name = 'coerce' AND is_built_in = true;
+
 ROLLBACK;

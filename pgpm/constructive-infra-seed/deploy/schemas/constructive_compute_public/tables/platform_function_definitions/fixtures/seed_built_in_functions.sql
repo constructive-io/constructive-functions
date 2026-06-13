@@ -12,7 +12,7 @@ BEGIN;
 INSERT INTO constructive_compute_public.platform_function_definitions
   (name, task_identifier, service_url, is_invocable, is_built_in, scope, description,
    namespace_id, required_secrets, required_configs,
-   inputs, outputs, props, volatile, icon, category)
+   inputs, outputs, props, volatile, icon, category, runtime)
 VALUES
   (
     'node-example',
@@ -28,7 +28,8 @@ VALUES
     '[]'::jsonb,
     false,
     'code',
-    'custom'
+    'custom',
+    'http'
   ),
   (
     'http-request',
@@ -46,7 +47,8 @@ VALUES
     '[{"name":"method","type":"string","default":"GET","description":"HTTP method (GET, POST, PUT, PATCH, DELETE)","required":false},{"name":"timeout","type":"number","default":30000,"description":"Request timeout in milliseconds","required":false},{"name":"retries","type":"number","default":0,"description":"Number of retry attempts on failure","required":false}]'::jsonb,
     true,
     'globe',
-    'network'
+    'network',
+    'http'
   ),
   (
     'json-transform',
@@ -62,7 +64,8 @@ VALUES
     '[{"name":"path","type":"string","default":"$","description":"JSONPath expression to select data","required":false},{"name":"flatten","type":"boolean","default":false,"description":"Whether to flatten nested objects","required":false},{"name":"removeNulls","type":"boolean","default":true,"description":"Strip null values from output","required":false}]'::jsonb,
     false,
     'braces',
-    'data'
+    'data',
+    'http'
   ),
   (
     'python-example',
@@ -78,7 +81,8 @@ VALUES
     '[]'::jsonb,
     false,
     'code',
-    'custom'
+    'custom',
+    'http'
   ),
   (
     'send-email',
@@ -104,7 +108,8 @@ VALUES
     '[]'::jsonb,
     true,
     'mail',
-    'email'
+    'email',
+    'http'
   ),
   (
     'send-verification-link',
@@ -132,7 +137,8 @@ VALUES
     '[]'::jsonb,
     true,
     'mail',
-    'email'
+    'email',
+    'http'
   ),
   (
     'text-template',
@@ -148,7 +154,229 @@ VALUES
     '[{"name":"template","type":"string","default":"","description":"Template string with {{variable}} placeholders","required":true},{"name":"strict","type":"boolean","default":false,"description":"Fail if any template variable is missing","required":false},{"name":"fallback","type":"string","default":"","description":"Default value for missing variables (when not strict)","required":false}]'::jsonb,
     false,
     'file-text',
-    'string'
+    'string',
+    'http'
+  ),
+  (
+    'math/add',
+    'math/add',
+    NULL,
+    true, true, 'platform',
+    'Adds two numbers',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[{"name":"a","type":"number"},{"name":"b","type":"number"}]'::jsonb,
+    '[{"name":"sum","type":"number"}]'::jsonb,
+    '[]'::jsonb,
+    false,
+    'plus',
+    'math',
+    'inline'
+  ),
+  (
+    'math/multiply',
+    'math/multiply',
+    NULL,
+    true, true, 'platform',
+    'Multiplies two numbers',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[{"name":"a","type":"number"},{"name":"b","type":"number"}]'::jsonb,
+    '[{"name":"product","type":"number"}]'::jsonb,
+    '[]'::jsonb,
+    false,
+    'x',
+    'math',
+    'inline'
+  ),
+  (
+    'math/subtract',
+    'math/subtract',
+    NULL,
+    true, true, 'platform',
+    'Subtracts b from a',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[{"name":"a","type":"number"},{"name":"b","type":"number"}]'::jsonb,
+    '[{"name":"difference","type":"number"}]'::jsonb,
+    '[]'::jsonb,
+    false,
+    'minus',
+    'math',
+    'inline'
+  ),
+  (
+    'const/number',
+    'const/number',
+    NULL,
+    true, true, 'platform',
+    'Outputs a constant number',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[]'::jsonb,
+    '[{"name":"value","type":"number"}]'::jsonb,
+    '[{"name":"value","type":"number","default":0}]'::jsonb,
+    false,
+    'hash',
+    'const',
+    'inline'
+  ),
+  (
+    'const/string',
+    'const/string',
+    NULL,
+    true, true, 'platform',
+    'Outputs a constant string',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[]'::jsonb,
+    '[{"name":"value","type":"string"}]'::jsonb,
+    '[{"name":"value","type":"string","default":""}]'::jsonb,
+    false,
+    'type',
+    'const',
+    'inline'
+  ),
+  (
+    'const/boolean',
+    'const/boolean',
+    NULL,
+    true, true, 'platform',
+    'Outputs a constant boolean',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[]'::jsonb,
+    '[{"name":"value","type":"boolean"}]'::jsonb,
+    '[{"name":"value","type":"boolean","default":false}]'::jsonb,
+    false,
+    'toggle-left',
+    'const',
+    'inline'
+  ),
+  (
+    'json/select',
+    'json/select',
+    NULL,
+    true, true, 'platform',
+    'Extract a value from JSON by dot-path',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[{"name":"obj","type":"json"}]'::jsonb,
+    '[{"name":"value","type":"any"}]'::jsonb,
+    '[{"name":"path","type":"string","default":""}]'::jsonb,
+    false,
+    'circle',
+    'json',
+    'inline'
+  ),
+  (
+    'json/object',
+    'json/object',
+    NULL,
+    true, true, 'platform',
+    'Build a JSON object from named inputs',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[]'::jsonb,
+    '[{"name":"value","type":"json"}]'::jsonb,
+    '[]'::jsonb,
+    false,
+    'braces',
+    'json',
+    'inline'
+  ),
+  (
+    'json/merge',
+    'json/merge',
+    NULL,
+    true, true, 'platform',
+    'Merge two JSON objects',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[{"name":"a","type":"json"},{"name":"b","type":"json"}]'::jsonb,
+    '[{"name":"value","type":"json"}]'::jsonb,
+    '[]'::jsonb,
+    false,
+    'git-merge',
+    'json',
+    'inline'
+  ),
+  (
+    'json/split',
+    'json/split',
+    NULL,
+    true, true, 'platform',
+    'Split a JSON object by key list',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[{"name":"obj","type":"json"}]'::jsonb,
+    '[{"name":"selected","type":"json"},{"name":"rest","type":"json"}]'::jsonb,
+    '[{"name":"keys","type":"json","default":[]}]'::jsonb,
+    false,
+    'scissors',
+    'json',
+    'inline'
+  ),
+  (
+    'string/template',
+    'string/template',
+    NULL,
+    true, true, 'platform',
+    'Build a string from a template with {{placeholder}} syntax',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[]'::jsonb,
+    '[{"name":"value","type":"string"}]'::jsonb,
+    '[{"name":"template","type":"string","default":""}]'::jsonb,
+    false,
+    'quote',
+    'string',
+    'inline'
+  ),
+  (
+    'flow/guard',
+    'flow/guard',
+    NULL,
+    true, true, 'platform',
+    'Stop the flow if a condition fails',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[{"name":"ok","type":"boolean"},{"name":"error","type":"json","optional":true}]'::jsonb,
+    '[{"name":"pass","type":"signal"},{"name":"fail","type":"signal"},{"name":"error","type":"json"}]'::jsonb,
+    '[]'::jsonb,
+    false,
+    'shield',
+    'flow',
+    'inline'
+  ),
+  (
+    'coerce',
+    'coerce',
+    NULL,
+    true, true, 'platform',
+    'Convert a value to a different type',
+    (SELECT id FROM constructive_infra_public.platform_namespaces WHERE name = 'default' AND database_id = '00000000-0000-0000-0000-000000000000'),
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    ARRAY[]::constructive_compute_public.function_requirement[],
+    '[{"name":"value","type":"any"}]'::jsonb,
+    '[{"name":"value","type":"any"}]'::jsonb,
+    '[{"name":"type","type":"string","default":"string"}]'::jsonb,
+    false,
+    'repeat',
+    'flow',
+    'inline'
   )
 ON CONFLICT (scope, name) DO UPDATE SET
   task_identifier  = EXCLUDED.task_identifier,
@@ -162,6 +390,7 @@ ON CONFLICT (scope, name) DO UPDATE SET
   props            = EXCLUDED.props,
   volatile         = EXCLUDED.volatile,
   icon             = EXCLUDED.icon,
-  category         = EXCLUDED.category;
+  category         = EXCLUDED.category,
+  runtime          = EXCLUDED.runtime;
 
 COMMIT;

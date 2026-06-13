@@ -7,6 +7,8 @@ export interface FunctionRequirement {
   required: boolean;
 }
 
+export type FunctionRuntime = 'http' | 'inline';
+
 export interface PlatformFunctionDefinition {
   id: string;
   name: string;
@@ -22,6 +24,7 @@ export interface PlatformFunctionDefinition {
   required_configs: FunctionRequirement[] | null;
   required_secrets: FunctionRequirement[] | null;
   description: string | null;
+  runtime: FunctionRuntime | null;
 }
 
 // ─── Compute Module Config ────────────────────────────────────────────────────

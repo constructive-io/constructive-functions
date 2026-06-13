@@ -7,6 +7,6 @@ BEGIN;
 DELETE FROM constructive_compute_public.platform_function_definitions
 WHERE is_built_in = true
   AND scope = 'platform'
-  AND name IN ('node-example', 'http-request', 'json-transform', 'python-example', 'send-email', 'send-verification-link', 'text-template');
+  AND name IN ('node-example', 'http-request', 'json-transform', 'python-example', 'send-email', 'send-verification-link', 'text-template', 'math/add', 'math/multiply', 'math/subtract', 'const/number', 'const/string', 'const/boolean', 'json/select', 'json/object', 'json/merge', 'json/split', 'string/template', 'flow/guard', 'coerce');
 
 COMMIT;
