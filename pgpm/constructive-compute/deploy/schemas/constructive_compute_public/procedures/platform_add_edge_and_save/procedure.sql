@@ -27,8 +27,8 @@ BEGIN
   FROM "constructive_platform_function_graph_public".platform_function_graph_ref AS r INNER JOIN "constructive_platform_function_graph_public".platform_function_graph_commit AS c ON c.id = r.commit_id AND c.database_id = r.database_id
   WHERE
     (r.database_id = v_graph.database_id AND r.store_id = v_graph.store_id) AND r.name = 'main' INTO v_root_hash;
-  v_root_hash := "constructive_platform_function_graph_public".platform_add_edge(v_graph.database_id, v_root_hash, platform_add_edge_and_save.src_node, platform_add_edge_and_save.src_port, platform_add_edge_and_save.dst_node, platform_add_edge_and_save.dst_port, v_graph.context, v_graph.name);
-  PERFORM "constructive_platform_function_graph_public".platform_save_graph(platform_add_edge_and_save.graph_id, v_root_hash, coalesce(platform_add_edge_and_save.message, 'add edge' || platform_add_edge_and_save.src_node));
+  v_root_hash := "constructive_compute_public".platform_add_edge(v_graph.database_id, v_root_hash, platform_add_edge_and_save.src_node, platform_add_edge_and_save.src_port, platform_add_edge_and_save.dst_node, platform_add_edge_and_save.dst_port, v_graph.context, v_graph.name);
+  PERFORM "constructive_compute_public".platform_save_graph(platform_add_edge_and_save.graph_id, v_root_hash, coalesce(platform_add_edge_and_save.message, 'add edge' || platform_add_edge_and_save.src_node));
   RETURN platform_add_edge_and_save.graph_id;
 END;
 $_PGFN_$ LANGUAGE plpgsql VOLATILE SECURITY INVOKER;

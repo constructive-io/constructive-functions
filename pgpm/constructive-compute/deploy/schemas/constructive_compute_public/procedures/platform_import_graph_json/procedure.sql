@@ -26,7 +26,7 @@ DECLARE
   v_def jsonb;
 BEGIN
   v_context := coalesce(platform_import_graph_json.context, platform_import_graph_json.graph_json->>'context', 'function');
-  v_graph_id := "constructive_platform_function_graph_public".platform_create_function_graph(platform_import_graph_json.database_id, platform_import_graph_json.name, v_context, platform_import_graph_json.description, platform_import_graph_json.entity_id, platform_import_graph_json.created_by, platform_import_graph_json.definitions_commit_id);
+  v_graph_id := "constructive_compute_public".platform_create_function_graph(platform_import_graph_json.database_id, platform_import_graph_json.name, v_context, platform_import_graph_json.description, platform_import_graph_json.entity_id, platform_import_graph_json.created_by, platform_import_graph_json.definitions_commit_id);
   SELECT *
   FROM "constructive_compute_public".platform_function_graphs
   WHERE
@@ -39,7 +39,7 @@ BEGIN
     FOR v_node IN SELECT *
     FROM jsonb_array_elements(platform_import_graph_json.graph_json->'nodes') LOOP
       v_node_name := v_node->>'name';
-      v_root_hash := "constructive_platform_function_graph_public".platform_add_node(v_graph.database_id, v_root_hash, v_node_name, v_node->>'type', v_graph.context, v_graph.name, v_node->'props', v_node->'meta');
+      v_root_hash := "constructive_compute_public".platform_add_node(v_graph.database_id, v_root_hash, v_node_name, v_node->>'type', v_graph.context, v_graph.name, v_node->'props', v_node->'meta');
       IF v_node ? 'nodes' THEN
         v_root_hash := "constructive_compute_private".platform_insert_subnet_nodes(v_graph.database_id, v_root_hash, ARRAY[v_graph.context, 'graphs', v_graph.name, 'nodes', v_node_name], v_node->'nodes', v_node->'edges');
         v_root_hash := "constructive_platform_function_graph_public".insert_node_at_path(v_graph.database_id, v_root_hash, ARRAY[v_context, 'definitions', v_node_name], jsonb_build_object('name', v_node_name, 'context', v_graph.context, 'graph', jsonb_build_object('name', v_node_name || '_subnet', 'context', v_graph.context, 'nodes', v_node->'nodes', 'edges', v_node->'edges')), '{}'::uuid[], '{}'::text[]);
@@ -59,7 +59,7 @@ BEGIN
       v_root_hash := "constructive_platform_function_graph_public".insert_node_at_path(v_graph.database_id, v_root_hash, ARRAY[v_context, 'definitions', v_def->>'name'], v_def, '{}'::uuid[], '{}'::text[]);
     END LOOP;
   END IF;
-  PERFORM "constructive_platform_function_graph_public".platform_save_graph(v_graph_id, v_root_hash, 'import from JSON');
+  PERFORM "constructive_compute_public".platform_save_graph(v_graph_id, v_root_hash, 'import from JSON');
   RETURN v_graph_id;
 END;
 $_PGFN_$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
