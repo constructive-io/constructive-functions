@@ -44,7 +44,7 @@ VALUES
     '[{"name":"status","type":"string","description":"Processing status"},{"name":"echo","type":"string","description":"Echo of the input message"}]'::jsonb,
     '[]'::jsonb,
     false,
-    'code',
+    'terminal',
     'custom',
     'http'
   ),
@@ -100,7 +100,7 @@ VALUES
     '[{"name":"result","type":"json","description":"Send result with status and message ID"}]'::jsonb,
     '[]'::jsonb,
     true,
-    'mail',
+    'send',
     'email',
     'http'
   ),

@@ -157,12 +157,33 @@ const MOCK_FUNCTIONS: FunctionNode[] = [
     icon: 'minus', category: 'math',
   },
   {
+    name: 'const/number', taskIdentifier: 'const/number', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Emit a constant number', runtime: 'inline',
+    outputs: [{ name: 'value', type: 'number' }],
+    props: [{ name: 'value', type: 'number', default: 0 }],
+    icon: 'hash', category: 'const',
+  },
+  {
+    name: 'const/string', taskIdentifier: 'const/string', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Emit a constant string', runtime: 'inline',
+    outputs: [{ name: 'value', type: 'string' }],
+    props: [{ name: 'value', type: 'string', default: '' }],
+    icon: 'type', category: 'const',
+  },
+  {
+    name: 'const/boolean', taskIdentifier: 'const/boolean', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Emit a constant boolean', runtime: 'inline',
+    outputs: [{ name: 'value', type: 'boolean' }],
+    props: [{ name: 'value', type: 'boolean', default: false }],
+    icon: 'toggle', category: 'const',
+  },
+  {
     name: 'json/select', taskIdentifier: 'json/select', isInvocable: true, isBuiltIn: true,
     scope: 'platform', description: 'Extract a value from JSON by dot-path', runtime: 'inline',
     inputs: [{ name: 'obj', type: 'json' }],
     outputs: [{ name: 'value', type: 'any' }],
     props: [{ name: 'path', type: 'string', default: '' }],
-    icon: 'circle', category: 'json',
+    icon: 'filter', category: 'json',
   },
   {
     name: 'json/merge', taskIdentifier: 'json/merge', isInvocable: true, isBuiltIn: true,
@@ -170,6 +191,13 @@ const MOCK_FUNCTIONS: FunctionNode[] = [
     inputs: [{ name: 'a', type: 'json' }, { name: 'b', type: 'json' }],
     outputs: [{ name: 'value', type: 'json' }],
     icon: 'git-merge', category: 'json',
+  },
+  {
+    name: 'json/object', taskIdentifier: 'json/object', isInvocable: true, isBuiltIn: true,
+    scope: 'platform', description: 'Wrap all inputs into a JSON object', runtime: 'inline',
+    inputs: [{ name: 'value', type: 'any' }],
+    outputs: [{ name: 'value', type: 'json' }],
+    icon: 'braces', category: 'json',
   },
   {
     name: 'json/split', taskIdentifier: 'json/split', isInvocable: true, isBuiltIn: true,
@@ -1023,10 +1051,10 @@ export function FlowsPanel() {
                             className="w-full text-left px-2.5 py-1.5 rounded-md hover:bg-zinc-800/70 transition-colors cursor-grab active:cursor-grabbing"
                           >
                             <div className="flex items-center gap-2">
-                              {isFunction ? (
-                                <Zap size={14} className="text-cyan-400 flex-shrink-0" />
+                              {def.icon ? (
+                                <NodeIcon icon={def.icon} size={14} className={fn?.runtime === 'inline' ? 'text-amber-500 flex-shrink-0' : isFunction ? 'text-cyan-400 flex-shrink-0' : 'text-zinc-500 flex-shrink-0'} />
                               ) : (
-                                def.icon && <NodeIcon icon={def.icon} size={14} className="text-zinc-500 flex-shrink-0" />
+                                <Zap size={14} className={isFunction ? 'text-cyan-400 flex-shrink-0' : 'text-zinc-500 flex-shrink-0'} />
                               )}
                               <span className="text-sm text-zinc-300 truncate">
                                 {def.name.split('/').pop()}
