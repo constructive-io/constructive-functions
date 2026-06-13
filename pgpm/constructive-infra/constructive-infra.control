@@ -1,0 +1,5 @@
+# constructive-infra extension
+comment = 'Platform infrastructure stubs — namespaces and namespace events'
+default_version = '0.0.1'
+relocatable = false
+requires = 'plpgsql,pgpm-inflection,pgpm-stamps'

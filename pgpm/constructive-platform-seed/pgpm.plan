@@ -1,0 +1,13 @@
+%syntax-version=1.0.0
+%project=constructive-platform-seed
+%uri=constructive-platform-seed
+
+fixtures/seed_database [metaschema-schema:schemas/metaschema_public/tables/database/table] 2026-06-08T05:00:00Z Constructive <developers@constructive.io> # seed platform database row
+fixtures/seed_schemas [fixtures/seed_database metaschema-schema:schemas/metaschema_public/tables/schema/table] 2026-06-08T05:00:00Z Constructive <developers@constructive.io> # register public schemas in metaschema
+fixtures/seed_tables [fixtures/seed_schemas metaschema-schema:schemas/metaschema_public/tables/table/table] 2026-06-08T05:00:00Z Constructive <developers@constructive.io> # register compute tables in metaschema for module FK references
+fixtures/seed_invocation_tables [fixtures/seed_schemas metaschema-schema:schemas/metaschema_public/tables/table/table] 2026-06-08T05:00:00Z Constructive <developers@constructive.io> # register invocation + execution_logs tables in metaschema for module FK references
+fixtures/seed_compute_api [fixtures/seed_schemas services:schemas/services_public/tables/apis/table services:schemas/services_public/tables/api_schemas/table] 2026-06-08T05:00:00Z Constructive <developers@constructive.io> # create compute API and link schemas
+fixtures/seed_domain [fixtures/seed_compute_api services:schemas/services_public/tables/domains/table] 2026-06-08T05:00:00Z Constructive <developers@constructive.io> # create compute domain
+fixtures/seed_site [fixtures/seed_database services:schemas/services_public/tables/sites/table services:schemas/services_public/tables/domains/table] 2026-06-08T05:00:00Z Constructive <developers@constructive.io> # create platform site and site domain
+fixtures/seed_compute_log_tables [fixtures/seed_schemas metaschema-schema:schemas/metaschema_public/tables/table/table] 2026-06-08T05:00:00Z Constructive <developers@constructive.io> # register compute_log + usage_daily tables in metaschema
+fixtures/register_compute_log_module [fixtures/seed_compute_log_tables metaschema-modules:schemas/metaschema_modules_public/tables/compute_log_module/table] 2026-06-08T05:00:00Z Constructive <developers@constructive.io> # register compute_log_module for usage tracking

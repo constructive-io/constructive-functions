@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_infra_public/tables/platform_namespace_events/indexes/platform_namespace_events_namespace_id_created_at_idx
+
+
+DROP INDEX "constructive_infra_public".platform_namespace_events_namespace_id_created_at_idx;
+
+

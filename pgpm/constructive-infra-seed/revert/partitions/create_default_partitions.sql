@@ -1,0 +1,13 @@
+-- Revert: partitions/create_default_partitions
+
+BEGIN;
+
+DROP TABLE IF EXISTS constructive_compute_public.app_function_invocations_default;
+DROP TABLE IF EXISTS constructive_compute_public.app_function_execution_logs_default;
+DROP TABLE IF EXISTS constructive_compute_public.org_function_invocations_default;
+DROP TABLE IF EXISTS constructive_compute_public.org_function_execution_logs_default;
+DROP TABLE IF EXISTS constructive_infra_public.platform_namespace_events_default;
+DROP TABLE IF EXISTS constructive_compute_private.platform_function_graph_executions_default;
+DROP TABLE IF EXISTS constructive_compute_private.platform_function_graph_execution_outputs_default;
+
+COMMIT;

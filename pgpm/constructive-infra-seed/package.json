@@ -1,0 +1,30 @@
+{
+  "name": "@constructive-io/constructive-infra-seed",
+  "version": "0.0.1",
+  "description": "Built-in platform function seed data for constructive-infra",
+  "author": "Constructive <developers@constructive.io>",
+  "keywords": [
+    "postgresql",
+    "pgpm",
+    "constructive-infra",
+    "seed"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "bundle": "pgpm package",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/constructive-io/constructive-functions"
+  },
+  "dependencies": {
+    "@constructive-io/constructive-infra": "0.0.1"
+  },
+  "devDependencies": {
+    "pgpm": "^4.26.1"
+  }
+}

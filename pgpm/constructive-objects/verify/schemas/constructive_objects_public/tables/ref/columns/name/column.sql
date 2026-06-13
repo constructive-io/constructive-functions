@@ -1,0 +1,6 @@
+-- Verify: schemas/constructive_objects_public/tables/ref/columns/name/column
+
+
+
+
+

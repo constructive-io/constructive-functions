@@ -1,0 +1,22 @@
+{
+  "name": "constructive-infra-services",
+  "version": "0.1.0",
+  "description": "MetaSchema service registration for constructive-infra function tables",
+  "author": "Constructive <developers@constructive.io>",
+  "keywords": [
+    "postgresql",
+    "pgpm",
+    "constructive",
+    "infra",
+    "services",
+    "metaschema"
+  ],
+  "scripts": {
+    "bundle": "pgpm package"
+  },
+  "dependencies": {
+    "constructive-infra": "file:../constructive-infra",
+    "@pgpm/metaschema-modules": "0.26.5",
+    "@pgpm/services": "0.26.5"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "name": "@constructive-functions/constructive-functions-sdk",
+  "version": "0.0.1",
+  "author": "Constructive <developers@constructive.io>",
+  "description": "Constructive Functions SDK - Multi-target GraphQL types and ORM client from schema files",
+  "main": "index.js",
+  "module": "esm/index.js",
+  "types": "index.d.ts",
+  "homepage": "https://github.com/constructive-io/constructive-functions",
+  "private": true,
+  "license": "All Rights Reserved. Interweb, Inc.",
+  "publishConfig": {
+    "access": "restricted",
+    "directory": "dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/constructive-io/constructive-functions"
+  },
+  "bugs": {
+    "url": "https://github.com/constructive-io/constructive-functions/issues"
+  },
+  "scripts": {
+    "clean": "makage clean",
+    "prepack": "pnpm run build",
+    "build": "makage build",
+    "build:dev": "makage build --dev",
+    "generate": "rimraf src/index.ts && tsx scripts/generate-sdk.ts",
+    "lint": "eslint . --fix",
+    "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [
+    "graphql",
+    "sdk",
+    "orm",
+    "constructive",
+    "postgraphile",
+    "schema-dir"
+  ],
+  "dependencies": {
+    "@0no-co/graphql.web": "^1.1.2",
+    "@constructive-io/graphql-query": "^3.27.1",
+    "@constructive-io/graphql-types": "^3.12.0",
+    "gql-ast": "^3.11.0",
+    "graphql": "16.13.0"
+  },
+  "devDependencies": {
+    "@constructive-io/graphql-codegen": "^4.47.7",
+    "@types/node": "^20.19.27",
+    "makage": "^0.3.0",
+    "rimraf": "^5.0.5",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3"
+  }
+}

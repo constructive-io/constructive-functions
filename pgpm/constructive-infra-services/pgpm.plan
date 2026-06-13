@@ -1,0 +1,6 @@
+%syntax-version=1.0.0
+%project=constructive-infra-services
+%uri=constructive-infra-services
+
+register_function_module/register [constructive-compute:schemas/constructive_compute_public/schema metaschema-modules:schemas/metaschema_modules_public/tables/function_module/table constructive-platform-seed:fixtures/seed_tables] 2026-06-08T00:00:00Z Constructive <developers@constructive.io> # register compute function tables as MetaSchema module (app + org scopes)
+register_invocation_module/register [constructive-compute:schemas/constructive_compute_public/schema metaschema-modules:schemas/metaschema_modules_public/tables/function_invocation_module/table constructive-platform-seed:fixtures/seed_invocation_tables] 2026-06-08T00:00:00Z Constructive <developers@constructive.io> # register invocation tables as MetaSchema module (platform + org scopes)

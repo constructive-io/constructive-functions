@@ -1,0 +1,10 @@
+-- Deploy: schemas/constructive_compute_public/tables/platform_function_invocations/columns/database_id/column
+-- made with <3 @ constructive.io
+
+-- requires: schemas/constructive_compute_public/schema
+-- requires: schemas/constructive_compute_public/tables/platform_function_invocations/table
+
+
+ALTER TABLE "constructive_compute_public".platform_function_invocations 
+  ADD COLUMN database_id uuid;
+

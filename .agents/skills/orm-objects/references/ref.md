@@ -1,0 +1,34 @@
+# ref
+
+<!-- @constructive-io/graphql-codegen - DO NOT EDIT -->
+
+Branch heads — mutable pointers into the commit chain
+
+## Usage
+
+```typescript
+db.ref.findMany({ select: { id: true } }).execute()
+db.ref.findOne({ id: '<UUID>', select: { id: true } }).execute()
+db.ref.create({ data: { commitId: '<UUID>', databaseId: '<UUID>', name: '<String>', storeId: '<UUID>' }, select: { id: true } }).execute()
+db.ref.update({ where: { id: '<UUID>' }, data: { commitId: '<UUID>' }, select: { id: true } }).execute()
+db.ref.delete({ where: { id: '<UUID>' } }).execute()
+```
+
+## Examples
+
+### List all ref records
+
+```typescript
+const items = await db.ref.findMany({
+  select: { id: true, commitId: true }
+}).execute();
+```
+
+### Create a ref
+
+```typescript
+const item = await db.ref.create({
+  data: { commitId: '<UUID>', databaseId: '<UUID>', name: '<String>', storeId: '<UUID>' },
+  select: { id: true }
+}).execute();
+```
