@@ -154,11 +154,10 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
       >
         {/* Node name label above */}
         <text
-          x={width / 2}
+          x={4}
           y={-8}
-          textAnchor="middle"
           fill="#52525b"
-          fontSize={10}
+          fontSize={11}
           fontFamily="system-ui, sans-serif"
         >
           {node.name}
@@ -326,11 +325,10 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
     >
       {/* Node name label above */}
       <text
-        x={NODE_WIDTH / 2}
+        x={4}
         y={-8}
-        textAnchor="middle"
         fill="#52525b"
-        fontSize={10}
+        fontSize={11}
         fontFamily="system-ui, sans-serif"
       >
         {node.name}
