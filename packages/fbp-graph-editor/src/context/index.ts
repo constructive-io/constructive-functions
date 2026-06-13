@@ -3,6 +3,7 @@ export {
   useGraph,
   useSelection,
   useNavigation,
+  nextNodeName,
   type GraphEditorState,
   type ViewState,
   type SelectionState,

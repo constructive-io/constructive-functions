@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, useState } from 'react';
-import { useGraph, useSelection, useNavigation, useScopedGraph, Point } from '../context/GraphContext';
+import { useGraph, useSelection, useNavigation, useScopedGraph, Point, nextNodeName } from '../context/GraphContext';
 import { GraphNode } from './GraphNode';
 import { GraphEdge, TempEdge } from './GraphEdge';
 import { screenToCanvas, clamp } from '../utils/geometry';
@@ -300,8 +300,9 @@ export function GraphCanvas() {
           : 'prop';
         dispatch({ type: 'ADD_BOUNDARY_NODE', boundaryType, position });
       } else {
+        const existingNames = scopedNodesRef.current.map(n => n.name);
         const newNode = {
-          name: `${definitionName.split('/').pop()}_${Date.now().toString(36)}`,
+          name: nextNodeName(definitionName, existingNames),
           type: definitionName,
           meta: position
         };

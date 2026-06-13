@@ -16,6 +16,25 @@ import {
 } from '../utils/graphTransform';
 import { BOUNDARY_NODE_KINDS, isBoundaryNodeKind } from '../types';
 
+/**
+ * Generate the next node name for a given type using {shortType}{N} pattern.
+ * e.g. "const/string" → "string1", "string2", etc.
+ * Scans existing names to find the highest N and increments.
+ */
+export function nextNodeName(nodeType: string, existingNames: string[]): string {
+  const base = nodeType.includes('/') ? nodeType.split('/').pop()! : nodeType;
+  const pattern = new RegExp(`^${base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)$`);
+  let max = 0;
+  for (const name of existingNames) {
+    const m = pattern.exec(name);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > max) max = n;
+    }
+  }
+  return `${base}${max + 1}`;
+}
+
 // Built-in definitions for boundary node kinds
 // These ensure graphInput/graphOutput/graphProp nodes render their ports
 const BOUNDARY_NODE_DEFINITIONS: NodeDefinition[] = [
@@ -428,9 +447,11 @@ function graphReducer(state: GraphEditorState, action: GraphAction): GraphEditor
       const scopedNodes = getNodesAtScope(state.graph, state.cwd);
       const scopedEdges = getEdgesAtScope(state.graph, state.cwd);
       const selectedNodes = scopedNodes.filter(n => state.selection.nodeIds.has(n.name));
+      const allNames = scopedNodes.map(n => n.name);
       const nameMap = new Map<string, string>();
       const duplicatedNodes = selectedNodes.map(n => {
-        const newName = `${n.name}_copy_${Date.now().toString(36)}`;
+        const newName = nextNodeName(n.type, allNames);
+        allNames.push(newName);
         nameMap.set(n.name, newName);
         return {
           ...n,
@@ -474,9 +495,12 @@ function graphReducer(state: GraphEditorState, action: GraphAction): GraphEditor
     case 'PASTE_SELECTION': {
       if (state.clipboard.nodes.length === 0) return state;
       
+      const scopedNodesPaste = getNodesAtScope(state.graph, state.cwd);
+      const allNamesPaste = scopedNodesPaste.map(n => n.name);
       const nameMap = new Map<string, string>();
       const pastedNodes = state.clipboard.nodes.map(n => {
-        const newName = `${n.name}_copy_${Date.now().toString(36)}`;
+        const newName = nextNodeName(n.type, allNamesPaste);
+        allNamesPaste.push(newName);
         nameMap.set(n.name, newName);
         return {
           ...n,

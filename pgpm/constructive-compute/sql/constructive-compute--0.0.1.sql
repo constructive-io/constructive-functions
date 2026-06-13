@@ -390,6 +390,13 @@ BEGIN
     )
     VALUES
       (v_exec.database_id, v_node_type, (json_build_object('execution_id', v_exec.id, 'node_name', v_node_name, 'node_type', v_node_type, 'inputs', v_inputs, 'props', v_node->'props'))::json);
+    -- Mark node as enqueued (null sentinel) so subsequent ticks don't re-enqueue it.
+    -- complete_node will overwrite with the real output UUID when the job finishes.
+    UPDATE "constructive_compute_private".platform_function_graph_executions SET
+    node_outputs = node_outputs || jsonb_build_object(v_node_name, null)
+    WHERE
+      id = platform_tick_execution.execution_id
+    RETURNING * INTO v_exec;
     v_jobs_enqueued := v_jobs_enqueued + 1;
   END LOOP;
   UPDATE "constructive_compute_private".platform_function_graph_executions SET

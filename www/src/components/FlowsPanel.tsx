@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { GraphEditor, NodeIcon } from '@fbp/graph-editor';
+import { GraphEditor, NodeIcon, nextNodeName } from '@fbp/graph-editor';
 import { evaluate } from '@fbp/evaluator';
 import {
   mathDefinitions,
@@ -96,10 +96,11 @@ function platformFnToDefinition(fn: FunctionNode): NodeDefinition {
   };
 }
 
-function functionToNode(fn: FunctionNode, position: { x: number; y: number }): Node {
+function functionToNode(fn: FunctionNode, position: { x: number; y: number }, existingNames: string[]): Node {
+  const nodeType = fn.taskIdentifier || fn.name || '';
   return {
-    name: `${fn.name}_${Date.now()}`,
-    type: fn.taskIdentifier || fn.name || '',
+    name: nextNodeName(nodeType, existingNames),
+    type: nodeType,
     meta: position,
     props: [
       { name: 'secretsCount', type: 'number', value: ((fn.requiredSecrets ?? []) as FunctionRequirement[]).length || 0 },
@@ -109,9 +110,9 @@ function functionToNode(fn: FunctionNode, position: { x: number; y: number }): N
   };
 }
 
-function definitionToNode(def: NodeDefinition, position: { x: number; y: number }): Node {
+function definitionToNode(def: NodeDefinition, position: { x: number; y: number }, existingNames: string[]): Node {
   return {
-    name: `${def.name.split('/').pop()}_${Date.now().toString(36)}`,
+    name: nextNodeName(def.name, existingNames),
     type: def.name,
     meta: position,
   };
@@ -742,7 +743,7 @@ export function FlowsPanel() {
   }, [implDefinitions]);
 
   const handleExecute = useCallback(async () => {
-    const graph = graphRef.current;
+    const graph = { ...graphRef.current, name: flowName.trim() || 'untitled' };
     if (!graph.nodes.length) return;
 
     setIsExecuting(true);
@@ -819,11 +820,11 @@ export function FlowsPanel() {
       setExecutionState({ executionId: '', status: 'failed', nodeStates: {}, error: msg });
       setIsExecuting(false);
     }
-  }, []);
+  }, [flowName]);
 
   const handleSave = useCallback(async () => {
     const name = flowName.trim() || `Flow ${stores.length + 1}`;
-    const graph = graphRef.current;
+    const graph = { ...graphRef.current, name };
     setIsSaving(true);
     setSaveStatus(null);
 
@@ -884,20 +885,25 @@ export function FlowsPanel() {
 
   const handleAddNode = useCallback((def: NodeDefinition, fn?: FunctionNode) => {
     const position = { x: 300 + Math.random() * 200, y: 100 + Math.random() * 200 };
-    if (fn) {
-      const node = functionToNode(fn, position);
-      setCurrentGraph(prev => ({ ...prev, nodes: [...prev.nodes, node] }));
-    } else {
-      const node = definitionToNode(def, position);
-      setCurrentGraph(prev => ({ ...prev, nodes: [...prev.nodes, node] }));
-    }
+    setCurrentGraph(prev => {
+      const existingNames = prev.nodes.map(n => n.name);
+      const node = fn
+        ? functionToNode(fn, position, existingNames)
+        : definitionToNode(def, position, existingNames);
+      return { ...prev, nodes: [...prev.nodes, node] };
+    });
   }, []);
 
   const handleLoadAll = useCallback(() => {
-    const newNodes = functions.map((fn, i) =>
-      functionToNode(fn, { x: 300, y: 50 + i * 200 })
-    );
-    setCurrentGraph(prev => ({ ...prev, nodes: [...prev.nodes, ...newNodes] }));
+    setCurrentGraph(prev => {
+      const existingNames = prev.nodes.map(n => n.name);
+      const newNodes = functions.map((fn, i) => {
+        const node = functionToNode(fn, { x: 300, y: 50 + i * 200 }, existingNames);
+        existingNames.push(node.name);
+        return node;
+      });
+      return { ...prev, nodes: [...prev.nodes, ...newNodes] };
+    });
   }, [functions]);
 
   const handleDragStart = useCallback((e: React.DragEvent, def: NodeDefinition) => {
