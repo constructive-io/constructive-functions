@@ -9,6 +9,13 @@ export interface FunctionRequirement {
 
 export type FunctionRuntime = 'http' | 'inline';
 
+export interface FunctionPortDefinition {
+  name: string;
+  type?: string;
+  description?: string;
+  optional?: boolean;
+}
+
 export interface PlatformFunctionDefinition {
   id: string;
   name: string;
@@ -25,6 +32,9 @@ export interface PlatformFunctionDefinition {
   required_secrets: FunctionRequirement[] | null;
   description: string | null;
   runtime: FunctionRuntime | null;
+  inputs: FunctionPortDefinition[] | null;
+  outputs: FunctionPortDefinition[] | null;
+  payload_schema: Record<string, unknown> | null;
 }
 
 // ─── Compute Module Config ────────────────────────────────────────────────────

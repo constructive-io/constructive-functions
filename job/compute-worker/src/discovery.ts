@@ -22,7 +22,7 @@ const COLUMNS = `
     is_invocable, is_built_in, max_attempts,
     priority, queue_name, scope, namespace_id,
     required_configs, required_secrets, description,
-    runtime`;
+    runtime, inputs, outputs, payload_schema`;
 
 export class FunctionDiscovery {
   private cache: TtlCache<PlatformFunctionDefinition | null>;

@@ -50,6 +50,7 @@ export type {
   ComputeWorkerOptions,
   CreateInvocationInput,
   FunctionModuleConfig,
+  FunctionPortDefinition,
   FunctionRequirement,
   FunctionRuntime,
   GraphNodePayload,
@@ -304,6 +305,11 @@ export default class ComputeWorker {
       throw new Error(`Function "${fn.name}" (${functionName}) is not invocable`);
     }
 
+    // Validate graph node inputs against function's declared input ports
+    if (graphNode) {
+      this.validateGraphInputs(fn, payload.inputs, payload.node_name);
+    }
+
     // Mark node as running in node_states (queued → running)
     if (graphNode) {
       await this.markNodeRunning(payload.execution_id, payload.node_name);
@@ -556,6 +562,63 @@ export default class ComputeWorker {
   }
 
   // ─── Graph execution ──────────────────────────────────────────────────
+
+  /**
+   * Validate graph node inputs against the function's declared input ports.
+   * Checks required ports are present and port types match expectations.
+   * Throws with a descriptive error before dispatch rather than letting
+   * the handler fail with a cryptic message.
+   */
+  private validateGraphInputs(
+    fn: PlatformFunctionDefinition,
+    inputs: Record<string, unknown>,
+    nodeName: string
+  ): void {
+    const ports = fn.inputs;
+    if (!ports || ports.length === 0) return;
+
+    const errors: string[] = [];
+
+    for (const port of ports) {
+      const value = inputs[port.name];
+      const missing = value === undefined || value === null;
+
+      // Check required ports
+      if (!port.optional && missing) {
+        errors.push(`missing required input '${port.name}'`);
+        continue;
+      }
+
+      if (missing) continue;
+
+      // Type validation
+      if (port.type) {
+        const actual = typeof value;
+        const expected = port.type;
+
+        if (expected === 'string' && actual !== 'string') {
+          errors.push(
+            `input '${port.name}' expects string but got ${actual}`
+          );
+        } else if (expected === 'number' && actual !== 'number') {
+          errors.push(
+            `input '${port.name}' expects number but got ${actual}`
+          );
+        } else if (expected === 'boolean' && actual !== 'boolean') {
+          errors.push(
+            `input '${port.name}' expects boolean but got ${actual}`
+          );
+        }
+        // 'json' and 'any' accept all types
+      }
+    }
+
+    if (errors.length > 0) {
+      throw new Error(
+        `${fn.name}[${nodeName}]: input validation failed — ${errors.join('; ')}`
+      );
+    }
+  }
 
   /**
    * Transition a node from queued → running when the worker picks up the job.
