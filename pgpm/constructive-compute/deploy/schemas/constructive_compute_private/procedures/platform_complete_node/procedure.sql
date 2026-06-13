@@ -44,6 +44,10 @@ BEGIN
   node_outputs = node_outputs || jsonb_build_object(platform_complete_node.node_name, v_obj_id)
   WHERE
     id = platform_complete_node.execution_id;
+  UPDATE "constructive_compute_private".platform_function_graph_execution_node_states AS ns SET
+  status = 'completed', completed_at = now(), output_id = v_obj_id
+  WHERE
+    ns.execution_id = platform_complete_node.execution_id AND ns.node_name = platform_complete_node.node_name;
   PERFORM "constructive_compute_private".platform_tick_execution(platform_complete_node.execution_id);
 END;
 $_PGFN_$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
