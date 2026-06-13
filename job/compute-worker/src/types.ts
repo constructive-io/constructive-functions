@@ -34,7 +34,6 @@ export interface PlatformFunctionDefinition {
   runtime: FunctionRuntime | null;
   inputs: FunctionPortDefinition[] | null;
   outputs: FunctionPortDefinition[] | null;
-  payload_schema: Record<string, unknown> | null;
 }
 
 // ─── Compute Module Config ────────────────────────────────────────────────────
