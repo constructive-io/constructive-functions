@@ -156,15 +156,15 @@ BEGIN
       FROM "constructive_platform_function_graph_public".get_node_at_path(v_graph.database_id, v_tree_id, ARRAY[v_graph.context, 'definitions', v_node_name]) AS def INTO v_def_data;
     END IF;
     IF v_def_data IS NOT NULL AND v_def_data ? 'graph' THEN
-      SELECT "constructive_compute_public".platform_import_graph_json(v_graph.database_id, ('def_' || platform_tick_execution.execution_id) || ('_' || v_node_name), v_def_data->'graph') INTO v_sub_graph_id;
-      PERFORM "constructive_compute_public".platform_start_execution(graph_id:=v_sub_graph_id, input_payload:=v_inputs, parent_execution_id:=platform_tick_execution.execution_id, parent_node_name:=v_node_name);
+      SELECT "constructive_platform_function_graph_public".platform_import_graph_json(v_graph.database_id, ('def_' || platform_tick_execution.execution_id) || ('_' || v_node_name), v_def_data->'graph') INTO v_sub_graph_id;
+      PERFORM "constructive_platform_function_graph_public".platform_start_execution(graph_id:=v_sub_graph_id, input_payload:=v_inputs, parent_execution_id:=platform_tick_execution.execution_id, parent_node_name:=v_node_name);
       v_jobs_enqueued := v_jobs_enqueued + 1;
       CONTINUE;
     END IF;
     SELECT (count(*))::integer
     FROM app_jobs.jobs
     WHERE
-      task_identifier LIKE ( 'fbp:eval:%' ) AND (payload::jsonb->>'execution_id')::uuid = platform_tick_execution.execution_id INTO v_pending_jobs;
+      (payload::jsonb->>'execution_id')::uuid = platform_tick_execution.execution_id INTO v_pending_jobs;
     IF (v_pending_jobs + v_jobs_enqueued) >= v_exec.max_pending_jobs THEN
       UPDATE "constructive_compute_private".platform_function_graph_executions SET
       status = 'failed', completed_at = now(), error_code = 'JOB_LIMIT_EXCEEDED', error_message = ('execution exceeded ' || v_exec.max_pending_jobs) || ' pending jobs'
@@ -178,14 +178,21 @@ BEGIN
       payload
     )
     VALUES
-      (v_exec.database_id, (('fbp:eval:' || v_graph.context) || ':') || v_node_type, (json_build_object('execution_id', v_exec.id, 'node_name', v_node_name, 'node_type', v_node_type, 'inputs', v_inputs, 'props', v_node->'props'))::json);
-    -- Mark node as enqueued (null sentinel) so subsequent ticks don't re-enqueue it.
-    -- complete_node will overwrite with the real output UUID when the job finishes.
+      (v_exec.database_id, v_node_type, (json_build_object('execution_id', v_exec.id, 'node_name', v_node_name, 'node_type', v_node_type, 'inputs', v_inputs))::json);
     UPDATE "constructive_compute_private".platform_function_graph_executions SET
-    node_outputs = node_outputs || jsonb_build_object(v_node_name, null)
+    node_outputs = node_outputs || jsonb_build_object(v_node_name, NULL)
     WHERE
       id = platform_tick_execution.execution_id
     RETURNING * INTO v_exec;
+    INSERT INTO "constructive_compute_private".platform_function_graph_execution_node_states (
+      execution_id,
+      database_id,
+      node_name,
+      status,
+      started_at
+    )
+    VALUES
+      (v_exec.id, v_exec.database_id, v_node_name, 'queued', now());
     v_jobs_enqueued := v_jobs_enqueued + 1;
   END LOOP;
   UPDATE "constructive_compute_private".platform_function_graph_executions SET
