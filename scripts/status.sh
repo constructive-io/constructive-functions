@@ -44,7 +44,7 @@ if command -v docker &>/dev/null; then
   if [ -n "$MAILPIT_UP" ]; then
     ok "Mailpit running ($MAILPIT_UP) — SMTP :1025, UI http://localhost:8025"
   else
-    warn "Mailpit not running (start with: make up:email-job)"
+    warn "Mailpit not running (start with: make up:compute)"
   fi
 else
   fail "Docker not available"

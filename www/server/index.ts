@@ -571,8 +571,8 @@ app.post('/api/run', (req, res) => {
     'make verify-platform',
     'make up',
     'make down',
-    'make up:email-job',
-    'make down:email-job',
+    'make up:compute',
+    'make down:compute',
     'make check-env',
   ];
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# email-job-down.sh — Stop mailpit and any running compute-service processes.
+# compute-down.sh — Stop mailpit and any running compute-service processes.
 #
 # Usage:
-#   make down:email-job
+#   make down:compute
 
 set -euo pipefail
 
@@ -18,7 +18,7 @@ ok() { echo -e "  ${GREEN}✓${NC} $1"; }
 
 echo ""
 echo -e "${BOLD}════════════════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}  Email Job Down${NC}"
+echo -e "${BOLD}  Compute Down${NC}"
 echo -e "${BOLD}════════════════════════════════════════════════════════════${NC}"
 echo ""
 
@@ -32,6 +32,6 @@ pkill -f "dev-compute.ts" 2>/dev/null && ok "Compute-service stopped" || ok "Com
 pkill -f "compute-service/dist/run.js" 2>/dev/null || true
 
 echo ""
-echo -e "${GREEN}${BOLD}  Email Job is down.${NC}"
+echo -e "${GREEN}${BOLD}  Compute is down.${NC}"
 echo "  PostgreSQL is still running. Use 'make down' to stop everything."
 echo ""

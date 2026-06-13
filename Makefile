@@ -1,6 +1,6 @@
 .PHONY: install build clean lint generate register register\:apply \
        up down kill status verify-platform check-env setup-platform \
-       up\:email-job down\:email-job \
+       up\:compute down\:compute \
        up\:www \
        generate\:schemas generate\:sdk generate\:cli generate\:hooks generate\:sdk-all \
        dev dev-fn dev-compute dev-down dev-logs setup-dev setup-check \
@@ -38,8 +38,8 @@ register\:apply:
 #
 #   make up                       # postgres + deploy infra + seed + verify
 #   make up DB_NAME=mydb          # same, custom DB name
-#   make up:email-job             # add mailpit + compute-service (SMTP mode)
-#   make down:email-job           # stop mailpit + compute-service
+#   make up:compute              # add mailpit + compute-service
+#   make down:compute             # stop mailpit + compute-service
 #   make down                     # stop everything (postgres, compose, etc.)
 #   make kill                     # make down + drop all constructive-functions databases
 #   DROP=1 make down DB_NAME=mydb # also drop the database
@@ -80,11 +80,11 @@ generate\:hooks:
 generate\:sdk-all:
 	pnpm run generate:sdk-all
 
-up\:email-job:
-	./scripts/email-job-up.sh $(DB_NAME)
+up\:compute:
+	./scripts/compute-up.sh $(DB_NAME)
 
-down\:email-job:
-	./scripts/email-job-down.sh
+down\:compute:
+	./scripts/compute-down.sh
 
 up\:www:
 	./scripts/www-up.sh $(DB_NAME)
@@ -97,7 +97,7 @@ up\:www:
 #
 # Quick start:
 #   make up                      # full setup
-#   make up:email-job            # start mailpit + compute-service
+#   make up:compute              # start mailpit + compute-service
 
 setup-platform:
 	./scripts/setup-platform-db.sh

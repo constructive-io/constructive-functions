@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #
-# email-job-up.sh — Start mailpit + compute-service for local email testing.
+# compute-up.sh — Start mailpit + compute-service for local development.
 #
 # Requires the platform to be up first (make up).
 # Starts mailpit (SMTP on :1025, web UI on :8025) then launches
 # the compute-service + functions with SMTP mode enabled.
 #
 # Usage:
-#   make up:email-job                    # default DB
-#   make up:email-job DB_NAME=db8        # custom DB
+#   make up:compute                     # default DB
+#   make up:compute DB_NAME=db8         # custom DB
 
 set -euo pipefail
 
@@ -32,7 +32,7 @@ TOTAL_STEPS=5
 
 echo ""
 echo -e "${BOLD}════════════════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}  Email Job Up — $DB_NAME${NC}"
+echo -e "${BOLD}  Compute Up — $DB_NAME${NC}"
 echo -e "${BOLD}════════════════════════════════════════════════════════════${NC}"
 
 # ─── Step 1: Verify platform is up ──────────────────────────────────────────
@@ -202,7 +202,7 @@ step 5 "Starting compute-service + functions"
 
 echo ""
 echo -e "${BOLD}════════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}${BOLD}  Email Job is up${NC}"
+echo -e "${GREEN}${BOLD}  Compute is up${NC}"
 echo ""
 echo "  Mailpit UI: http://localhost:8025"
 echo "  Database:   $DB_NAME"

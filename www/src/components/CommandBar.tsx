@@ -8,8 +8,8 @@ const COMMANDS = [
   { label: 'Check Env', command: 'make check-env' },
   { label: 'Up', command: 'make up' },
   { label: 'Down', command: 'make down' },
-  { label: 'Email Job Up', command: 'make up:email-job' },
-  { label: 'Email Job Down', command: 'make down:email-job' },
+  { label: 'Compute Up', command: 'make up:compute' },
+  { label: 'Compute Down', command: 'make down:compute' },
 ];
 
 const ANSI_COLORS: Record<string, string> = {

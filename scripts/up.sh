@@ -295,7 +295,7 @@ if [ -f "$ROOT_DIR/.graphql-server.pid" ]; then
 fi
 echo ""
 echo -e "  ${BOLD}Next:${NC}"
-echo "    make up:email-job    # start mailpit + compute-service"
+echo "    make up:compute      # start mailpit + compute-service"
 echo "    make dev-compute     # start compute-service only"
 echo "    make status          # show environment state"
 echo -e "${BOLD}════════════════════════════════════════════════════════════${NC}"
