@@ -178,7 +178,7 @@ BEGIN
       payload
     )
     VALUES
-      (v_exec.database_id, v_node_type, (json_build_object('execution_id', v_exec.id, 'node_name', v_node_name, 'node_type', v_node_type, 'inputs', v_inputs))::json);
+      (v_exec.database_id, v_node_type, (json_build_object('execution_id', v_exec.id, 'node_name', v_node_name, 'node_type', v_node_type, 'inputs', v_inputs, 'props', v_node->'props'))::json);
     UPDATE "constructive_compute_private".platform_function_graph_executions SET
     node_outputs = node_outputs || jsonb_build_object(v_node_name, NULL)
     WHERE
