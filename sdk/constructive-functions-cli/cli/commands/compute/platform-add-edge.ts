@@ -4,11 +4,10 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { CLIOptions, Inquirerer } from 'inquirerer';
-
-import type { PlatformAddEdgePayloadSelect } from '../../../orm/input-types';
-import type { PlatformAddEdgeVariables } from '../../../orm/mutation';
 import { getClient } from '../../executor';
-import { buildSelectFromPaths,unflattenDotNotation } from '../../utils';
+import { unflattenDotNotation, buildSelectFromPaths } from '../../utils';
+import type { PlatformAddEdgeVariables } from '../../../orm/mutation';
+import type { PlatformAddEdgePayloadSelect } from '../../../orm/input-types';
 export default async (
   argv: Partial<Record<string, unknown>>,
   prompter: Inquirerer,

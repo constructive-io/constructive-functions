@@ -4,33 +4,36 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { OrmClient } from '../client';
-import type {
-  CreatePlatformNamespaceEventInput,
-  PlatformNamespaceEventFilter,
-  PlatformNamespaceEventOrderBy,
-  PlatformNamespaceEventPatch,
-  PlatformNamespaceEventSelect,
-  PlatformNamespaceEventWithRelations,
-} from '../input-types';
-import { connectionFieldsMap } from '../input-types';
 import {
-  buildCreateDocument,
-  buildDeleteByPkDocument,
-  buildFindFirstDocument,
-  buildFindManyDocument,
-  buildUpdateByPkDocument,
   QueryBuilder,
+  buildFindManyDocument,
+  buildFindFirstDocument,
+  buildFindOneDocument,
+  buildCreateDocument,
+  buildUpdateByPkDocument,
+  buildDeleteByPkDocument,
 } from '../query-builder';
 import type {
   ConnectionResult,
-  CreateArgs,
-  DeleteArgs,
-  FindFirstArgs,
   FindManyArgs,
+  FindFirstArgs,
+  CreateArgs,
+  UpdateArgs,
+  DeleteArgs,
   InferSelectResult,
   StrictSelect,
-  UpdateArgs,
 } from '../select-types';
+import type {
+  PlatformNamespaceEvent,
+  PlatformNamespaceEventWithRelations,
+  PlatformNamespaceEventSelect,
+  PlatformNamespaceEventFilter,
+  PlatformNamespaceEventOrderBy,
+  CreatePlatformNamespaceEventInput,
+  UpdatePlatformNamespaceEventInput,
+  PlatformNamespaceEventPatch,
+} from '../input-types';
+import { connectionFieldsMap } from '../input-types';
 export class PlatformNamespaceEventModel {
   constructor(private client: OrmClient) {}
   findMany<S extends PlatformNamespaceEventSelect>(

@@ -4,8 +4,9 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { OrmClient } from '../client';
+import { QueryBuilder, buildCustomDocument } from '../query-builder';
+import type { InferSelectResult, StrictSelect } from '../select-types';
 import { connectionFieldsMap } from '../input-types';
-import { buildCustomDocument,QueryBuilder } from '../query-builder';
 export interface PlatformReadFunctionGraphVariables {
   graphId?: string;
 }

@@ -5,13 +5,7 @@
  */
 
 import type {
-  BigIntFilter,
-  BooleanFilter,
-  DateFilter,
-  DatetimeFilter,
   GetAllRecord,
-  IntFilter,
-  JSONFilter,
   OrgFunctionExecutionLog,
   OrgFunctionInvocation,
   PlatformComputeLog,
@@ -25,10 +19,23 @@ import type {
   PlatformFunctionInvocation,
   PlatformSecretDefinition,
   PlatformUsageDaily,
+  BigFloatFilter,
+  BigIntFilter,
+  BitStringFilter,
+  BooleanFilter,
+  DateFilter,
+  DatetimeFilter,
+  FloatFilter,
+  FullTextFilter,
+  IntFilter,
+  IntListFilter,
+  InternetAddressFilter,
+  JSONFilter,
   StringFilter,
   StringListFilter,
   UUIDFilter,
   UUIDListFilter,
+  VectorFilter,
 } from './types';
 /** Methods to use when ordering `PlatformFunctionGraphRef`. */
 export type PlatformFunctionGraphRefOrderBy =
@@ -365,12 +372,20 @@ export type PlatformFunctionDefinitionOrderBy =
   | 'REQUIRED_CONFIGS_DESC'
   | 'REQUIRED_SECRETS_ASC'
   | 'REQUIRED_SECRETS_DESC'
-  | 'VOLATILE_ASC'
-  | 'VOLATILE_DESC'
+  | 'CATEGORY_ASC'
+  | 'CATEGORY_DESC'
   | 'ICON_ASC'
   | 'ICON_DESC'
-  | 'CATEGORY_ASC'
-  | 'CATEGORY_DESC';
+  | 'INPUTS_ASC'
+  | 'INPUTS_DESC'
+  | 'OUTPUTS_ASC'
+  | 'OUTPUTS_DESC'
+  | 'PROPS_ASC'
+  | 'PROPS_DESC'
+  | 'VOLATILE_ASC'
+  | 'VOLATILE_DESC'
+  | 'RUNTIME_ASC'
+  | 'RUNTIME_DESC';
 /** A filter to be used against `PlatformFunctionGraphRef` object types. All fields are combined with a logical ‘and.’ */
 export interface PlatformFunctionGraphRefFilter {
   /** Filter by the object’s `commitId` field. */
@@ -747,12 +762,20 @@ export interface PlatformFunctionDefinitionFilter {
   taskIdentifier?: StringFilter;
   /** Filter by the object’s `updatedAt` field. */
   updatedAt?: DatetimeFilter;
-  /** Filter by the object's `volatile` field. */
-  volatile?: BooleanFilter;
-  /** Filter by the object's `icon` field. */
-  icon?: StringFilter;
-  /** Filter by the object's `category` field. */
+  /** Filter by the object’s `category` field. */
   category?: StringFilter;
+  /** Filter by the object’s `icon` field. */
+  icon?: StringFilter;
+  /** Filter by the object’s `inputs` field. */
+  inputs?: JSONFilter;
+  /** Filter by the object’s `outputs` field. */
+  outputs?: JSONFilter;
+  /** Filter by the object’s `props` field. */
+  props?: JSONFilter;
+  /** Filter by the object’s `volatile` field. */
+  volatile?: BooleanFilter;
+  /** Filter by the object’s `runtime` field. */
+  runtime?: StringFilter;
   /** Checks for all expressions in this list. */
   and?: PlatformFunctionDefinitionFilter[];
   /** Checks for any expressions in this list. */
@@ -1237,6 +1260,10 @@ export interface PlatformFunctionDefinitionInput {
   requiredConfigs?: FunctionRequirementInput[];
   /** Embedded secret requirements: array of (name, required) tuples */
   requiredSecrets?: FunctionRequirementInput[];
+  /** UI palette category for grouping (e.g. email, data, ai) */
+  category?: string;
+  /** Icon identifier for UI palette display (e.g. zap, mail, code) */
+  icon?: string;
   /** Input port definitions: [{name, type, description?, optional?, multi?, schema?}] */
   inputs?: unknown;
   /** Output port definitions: [{name, type, description?, optional?, multi?, schema?}] */
@@ -1245,10 +1272,8 @@ export interface PlatformFunctionDefinitionInput {
   props?: unknown;
   /** Whether this function has side effects (cannot be cached or memoized) */
   volatile?: boolean;
-  /** Icon identifier for UI palette display (e.g. zap, mail, code) */
-  icon?: string;
-  /** UI palette category for grouping (e.g. email, data, ai) */
-  category?: string;
+  /** Dispatch mode: http (external service) or inline (in-process on compute-worker) */
+  runtime?: string;
 }
 /** An input for mutations affecting `FunctionRequirement` */
 export interface FunctionRequirementInput {
@@ -1633,6 +1658,10 @@ export interface PlatformFunctionDefinitionPatch {
   requiredConfigs?: FunctionRequirementInput[];
   /** Embedded secret requirements: array of (name, required) tuples */
   requiredSecrets?: FunctionRequirementInput[];
+  /** UI palette category for grouping (e.g. email, data, ai) */
+  category?: string;
+  /** Icon identifier for UI palette display (e.g. zap, mail, code) */
+  icon?: string;
   /** Input port definitions: [{name, type, description?, optional?, multi?, schema?}] */
   inputs?: unknown;
   /** Output port definitions: [{name, type, description?, optional?, multi?, schema?}] */
@@ -1641,10 +1670,8 @@ export interface PlatformFunctionDefinitionPatch {
   props?: unknown;
   /** Whether this function has side effects (cannot be cached or memoized) */
   volatile?: boolean;
-  /** Icon identifier for UI palette display (e.g. zap, mail, code) */
-  icon?: string;
-  /** UI palette category for grouping (e.g. email, data, ai) */
-  category?: string;
+  /** Dispatch mode: http (external service) or inline (in-process on compute-worker) */
+  runtime?: string;
 }
 export interface DeletePlatformFunctionGraphRefInput {
   clientMutationId?: string;

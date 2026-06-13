@@ -4,16 +4,15 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-import type { PlatformConfigSelect, PlatformConfigWithRelations } from '../../orm/input-types';
-import type { HookStrictSelect,InferSelectResult } from '../../orm/select-types';
+import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { getClient } from '../client';
-import { platformConfigMutationKeys } from '../mutation-keys';
-import { platformConfigKeys } from '../query-keys';
-import type { SelectionConfig } from '../selection';
 import { buildSelectionArgs } from '../selection';
+import type { SelectionConfig } from '../selection';
+import { platformConfigKeys } from '../query-keys';
+import { platformConfigMutationKeys } from '../mutation-keys';
+import type { PlatformConfigSelect, PlatformConfigWithRelations } from '../../orm/input-types';
+import type { InferSelectResult, HookStrictSelect } from '../../orm/select-types';
 export type { PlatformConfigSelect, PlatformConfigWithRelations } from '../../orm/input-types';
 /**
  * App-level plaintext key-value config store (like a k8s ConfigMap); admin-only, fully CRUD-exposed

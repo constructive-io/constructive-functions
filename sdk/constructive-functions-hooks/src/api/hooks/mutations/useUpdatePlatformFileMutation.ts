@@ -4,24 +4,23 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-import type {
-  PlatformFilePatch,
-  PlatformFileSelect,
-  PlatformFileWithRelations,
-} from '../../orm/input-types';
-import type { HookStrictSelect,InferSelectResult } from '../../orm/select-types';
+import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { getClient } from '../client';
-import { platformFileMutationKeys } from '../mutation-keys';
-import { platformFileKeys } from '../query-keys';
-import type { SelectionConfig } from '../selection';
 import { buildSelectionArgs } from '../selection';
-export type {
-  PlatformFilePatch,
+import type { SelectionConfig } from '../selection';
+import { platformFileKeys } from '../query-keys';
+import { platformFileMutationKeys } from '../mutation-keys';
+import type {
   PlatformFileSelect,
   PlatformFileWithRelations,
+  PlatformFilePatch,
+} from '../../orm/input-types';
+import type { InferSelectResult, HookStrictSelect } from '../../orm/select-types';
+export type {
+  PlatformFileSelect,
+  PlatformFileWithRelations,
+  PlatformFilePatch,
 } from '../../orm/input-types';
 /**
  * Individual file records within buckets, with immutable identity fields and mutable metadata

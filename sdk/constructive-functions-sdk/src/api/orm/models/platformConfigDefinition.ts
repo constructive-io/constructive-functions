@@ -4,33 +4,36 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { OrmClient } from '../client';
-import type {
-  CreatePlatformConfigDefinitionInput,
-  PlatformConfigDefinitionFilter,
-  PlatformConfigDefinitionOrderBy,
-  PlatformConfigDefinitionPatch,
-  PlatformConfigDefinitionSelect,
-  PlatformConfigDefinitionWithRelations,
-} from '../input-types';
-import { connectionFieldsMap } from '../input-types';
 import {
-  buildCreateDocument,
-  buildDeleteByPkDocument,
-  buildFindFirstDocument,
-  buildFindManyDocument,
-  buildUpdateByPkDocument,
   QueryBuilder,
+  buildFindManyDocument,
+  buildFindFirstDocument,
+  buildFindOneDocument,
+  buildCreateDocument,
+  buildUpdateByPkDocument,
+  buildDeleteByPkDocument,
 } from '../query-builder';
 import type {
   ConnectionResult,
-  CreateArgs,
-  DeleteArgs,
-  FindFirstArgs,
   FindManyArgs,
+  FindFirstArgs,
+  CreateArgs,
+  UpdateArgs,
+  DeleteArgs,
   InferSelectResult,
   StrictSelect,
-  UpdateArgs,
 } from '../select-types';
+import type {
+  PlatformConfigDefinition,
+  PlatformConfigDefinitionWithRelations,
+  PlatformConfigDefinitionSelect,
+  PlatformConfigDefinitionFilter,
+  PlatformConfigDefinitionOrderBy,
+  CreatePlatformConfigDefinitionInput,
+  UpdatePlatformConfigDefinitionInput,
+  PlatformConfigDefinitionPatch,
+} from '../input-types';
+import { connectionFieldsMap } from '../input-types';
 export class PlatformConfigDefinitionModel {
   constructor(private client: OrmClient) {}
   findMany<S extends PlatformConfigDefinitionSelect>(
