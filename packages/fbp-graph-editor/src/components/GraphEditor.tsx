@@ -1,5 +1,6 @@
 import React from 'react';
 import { GraphProvider } from '../context/GraphContext';
+import type { NodeExecutionInfo } from '../context/GraphContext';
 import { GraphCanvas } from './GraphCanvas';
 import { PropertiesPanel } from './PropertiesPanel';
 import { NodePalette } from './NodePalette';
@@ -23,6 +24,7 @@ interface GraphEditorProps {
   evaluationResult?: unknown;
   onRefreshEvaluation?: () => void;
   evaluateFn?: EvaluateFn;
+  nodeStates?: Record<string, NodeExecutionInfo>;
 }
 
 export function GraphEditor({
@@ -38,10 +40,11 @@ export function GraphEditor({
   onSelectionChange,
   evaluationResult,
   onRefreshEvaluation,
-  evaluateFn
+  evaluateFn,
+  nodeStates
 }: GraphEditorProps) {
   return (
-    <GraphProvider initialGraph={graph} initialCwd={initialCwd} externalDefinitions={definitions} onSelectionChange={onSelectionChange} onGraphChange={onGraphChange}>
+    <GraphProvider initialGraph={graph} initialCwd={initialCwd} externalDefinitions={definitions} onSelectionChange={onSelectionChange} onGraphChange={onGraphChange} nodeStates={nodeStates}>
       <div className={`flex flex-col h-full bg-zinc-950 ${className}`}>
         {showHeader && (
           <div className="h-10 bg-zinc-900 border-b border-zinc-800 flex items-center px-4 flex-shrink-0">

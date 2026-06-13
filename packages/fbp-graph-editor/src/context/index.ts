@@ -3,9 +3,13 @@ export {
   useGraph,
   useSelection,
   useNavigation,
+  useNodeStates,
+  NodeStatesProvider,
   nextNodeName,
   type GraphEditorState,
   type ViewState,
   type SelectionState,
-  type Point
+  type Point,
+  type NodeExecutionState,
+  type NodeExecutionInfo,
 } from './GraphContext';

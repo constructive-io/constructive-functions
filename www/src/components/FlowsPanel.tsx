@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { GraphEditor, NodeIcon, nextNodeName } from '@fbp/graph-editor';
+import type { NodeExecutionInfo } from '@fbp/graph-editor';
 import { evaluate } from '@fbp/evaluator';
 import {
   mathDefinitions,
@@ -13,17 +14,31 @@ import {
 import type { NodeDefinitionWithImpl } from '@fbp/evaluator';
 import type { Graph, NodeDefinition, Node } from '@fbp/types';
 import { compute } from '@constructive-functions/constructive-functions-hooks';
-import { RefreshCw, Save, Trash2, Plus, Play, Zap, ChevronDown, ChevronRight, Cloud, Server, Download, Upload } from 'lucide-react';
+import { RefreshCw, Save, Trash2, Plus, Play, Zap, ChevronDown, ChevronRight, Cloud, Server, Download, Upload, Eye, EyeOff, X, AlertTriangle } from 'lucide-react';
 
 const DATABASE_ID = '00000000-0000-0000-0000-000000000000';
 const BOUNDARY_NAMES = ['graph/input', 'graph/output', 'graph/prop'];
 const EXECUTION_POLL_MS = 1500;
 
 type NodeState = 'pending' | 'running' | 'completed' | 'failed';
+
+interface InvocationDetail {
+  id: string;
+  taskIdentifier: string;
+  status: string;
+  durationMs: number | null;
+  error: string | null;
+  result: unknown;
+  payload: unknown;
+  createdAt: string;
+}
+
 type ExecutionState = {
   executionId: string;
   status: 'running' | 'completed' | 'failed' | 'unknown';
   nodeStates: Record<string, NodeState>;
+  nodeDetails: Record<string, NodeExecutionInfo>;
+  invocations: Record<string, InvocationDetail>;
   output?: unknown;
   error?: string;
 };
@@ -543,12 +558,13 @@ async function importAndExecuteGraph(
 async function pollExecutionStatus(executionId: string): Promise<{
   status: string;
   nodeStates: Record<string, NodeState>;
+  nodeDetails: Record<string, NodeExecutionInfo>;
+  invocations: Record<string, InvocationDetail>;
   output?: unknown;
   error?: string;
 }> {
   const endpoint = '/graphql/compute';
 
-  // Query invocations for this execution to get per-node status
   const invData = await gqlFetch(endpoint, `
     query ($where: PlatformFunctionInvocationFilter) {
       platformFunctionInvocations(where: $where, orderBy: CREATED_AT_ASC) {
@@ -557,7 +573,11 @@ async function pollExecutionStatus(executionId: string): Promise<{
           taskIdentifier
           status
           durationMs
+          error
+          result
           createdAt
+          startedAt
+          completedAt
           graphExecutionId
           payload
         }
@@ -567,22 +587,46 @@ async function pollExecutionStatus(executionId: string): Promise<{
     where: { graphExecutionId: { equalTo: executionId } },
   });
 
-  const invocations = invData?.platformFunctionInvocations?.nodes ?? [];
+  const invocationsArr = invData?.platformFunctionInvocations?.nodes ?? [];
   const nodeStates: Record<string, NodeState> = {};
+  const nodeDetails: Record<string, NodeExecutionInfo> = {};
+  const invocations: Record<string, InvocationDetail> = {};
   let hasRunning = false;
   let hasFailed = false;
 
-  for (const inv of invocations) {
+  for (const inv of invocationsArr) {
     const nodeName = inv.payload?.node_name;
     if (!nodeName) continue;
+
     const s = inv.status as string;
-    if (s === 'completed') nodeStates[nodeName] = 'completed';
-    else if (s === 'failed') { nodeStates[nodeName] = 'failed'; hasFailed = true; }
-    else { nodeStates[nodeName] = 'running'; hasRunning = true; }
+    let state: NodeState;
+    if (s === 'completed') state = 'completed';
+    else if (s === 'failed') { state = 'failed'; hasFailed = true; }
+    else { state = 'running'; hasRunning = true; }
+    nodeStates[nodeName] = state;
+
+    nodeDetails[nodeName] = {
+      state,
+      durationMs: inv.durationMs ?? undefined,
+      error: inv.error ?? undefined,
+      startedAt: inv.startedAt ?? undefined,
+      completedAt: inv.completedAt ?? undefined,
+    };
+
+    invocations[nodeName] = {
+      id: inv.id,
+      taskIdentifier: inv.taskIdentifier,
+      status: s,
+      durationMs: inv.durationMs,
+      error: inv.error,
+      result: inv.result,
+      payload: inv.payload,
+      createdAt: inv.createdAt,
+    };
   }
 
-  const overallStatus = hasFailed ? 'failed' : hasRunning ? 'running' : (invocations.length > 0 ? 'completed' : 'running');
-  return { status: overallStatus, nodeStates };
+  const overallStatus = hasFailed ? 'failed' : hasRunning ? 'running' : (invocationsArr.length > 0 ? 'completed' : 'running');
+  return { status: overallStatus, nodeStates, nodeDetails, invocations };
 }
 
 // ─── Component ──────────────────────────────────────────────────────────
@@ -616,6 +660,8 @@ export function FlowsPanel() {
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [executionState, setExecutionState] = useState<ExecutionState | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [showExecutionOverlay, setShowExecutionOverlay] = useState(true);
+  const [inspectedNode, setInspectedNode] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const didAutoLoad = useRef(false);
 
@@ -778,9 +824,11 @@ export function FlowsPanel() {
 
       // Initialize node states — mark all non-boundary nodes as pending
       const initialNodeStates: Record<string, NodeState> = {};
+      const initialDetails: Record<string, NodeExecutionInfo> = {};
       for (const node of graph.nodes) {
         if (!['graphInput', 'graphOutput', 'graphProp'].includes(node.type)) {
           initialNodeStates[node.name] = 'pending';
+          initialDetails[node.name] = { state: 'pending' };
         }
       }
 
@@ -788,7 +836,11 @@ export function FlowsPanel() {
         executionId,
         status: 'running',
         nodeStates: initialNodeStates,
+        nodeDetails: initialDetails,
+        invocations: {},
       });
+      setShowExecutionOverlay(true);
+      setInspectedNode(null);
 
       // Start polling for execution status
       pollRef.current = setInterval(async () => {
@@ -797,12 +849,22 @@ export function FlowsPanel() {
           setExecutionState(prev => {
             if (!prev || prev.executionId !== executionId) return prev;
             const merged: Record<string, NodeState> = { ...prev.nodeStates };
+            const mergedDetails: Record<string, NodeExecutionInfo> = { ...prev.nodeDetails };
+            const mergedInvocations: Record<string, InvocationDetail> = { ...prev.invocations };
             for (const [name, state] of Object.entries(pollResult.nodeStates)) {
               merged[name] = state;
+            }
+            for (const [name, detail] of Object.entries(pollResult.nodeDetails)) {
+              mergedDetails[name] = detail;
+            }
+            for (const [name, inv] of Object.entries(pollResult.invocations)) {
+              mergedInvocations[name] = inv;
             }
             return {
               ...prev,
               nodeStates: merged,
+              nodeDetails: mergedDetails,
+              invocations: mergedInvocations,
               status: pollResult.status as ExecutionState['status'],
               output: pollResult.output,
               error: pollResult.error,
@@ -821,7 +883,7 @@ export function FlowsPanel() {
       }, EXECUTION_POLL_MS);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setExecutionState({ executionId: '', status: 'failed', nodeStates: {}, error: msg });
+      setExecutionState({ executionId: '', status: 'failed', nodeStates: {}, nodeDetails: {}, invocations: {}, error: msg });
       setIsExecuting(false);
     }
   }, [flowName]);
@@ -1001,6 +1063,17 @@ export function FlowsPanel() {
           {isExecuting ? <RefreshCw size={14} className="animate-spin" /> : <Server size={14} />}
           {isExecuting ? 'Executing...' : 'Execute'}
         </button>
+        {executionState && (
+          <button
+            onClick={() => { setShowExecutionOverlay(v => !v); if (!showExecutionOverlay) setInspectedNode(null); }}
+            className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-sm transition-colors ${
+              showExecutionOverlay ? 'text-yellow-400 bg-zinc-800' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
+            }`}
+            title={showExecutionOverlay ? 'Hide execution overlay' : 'Show execution overlay'}
+          >
+            {showExecutionOverlay ? <Eye size={14} /> : <EyeOff size={14} />}
+          </button>
+        )}
         {activeStoreId && (
           <button
             onClick={handleDelete}
@@ -1165,31 +1238,104 @@ export function FlowsPanel() {
           {/* Execution state */}
           {executionState && (
             <div className="p-3 border-t border-zinc-800 flex-shrink-0">
-              <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-                Execution
-                <span className={`ml-2 inline-block w-2 h-2 rounded-full ${
-                  executionState.status === 'running' ? 'bg-yellow-400 animate-pulse' :
-                  executionState.status === 'completed' ? 'bg-green-400' :
-                  executionState.status === 'failed' ? 'bg-red-400' : 'bg-zinc-400'
-                }`} />
-              </h4>
-              <div className="space-y-1 mb-2">
-                {Object.entries(executionState.nodeStates).map(([name, state]) => (
-                  <div key={name} className="flex items-center gap-2 text-xs">
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                      state === 'completed' ? 'bg-green-400' :
-                      state === 'failed' ? 'bg-red-400' :
-                      state === 'running' ? 'bg-yellow-400 animate-pulse' : 'bg-zinc-600'
-                    }`} />
-                    <span className="text-zinc-400 truncate">{name}</span>
-                    <span className={`ml-auto text-[10px] ${
-                      state === 'completed' ? 'text-green-400' :
-                      state === 'failed' ? 'text-red-400' :
-                      state === 'running' ? 'text-yellow-400' : 'text-zinc-600'
-                    }`}>{state}</span>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                  Execution
+                  <span className={`ml-2 inline-block w-2 h-2 rounded-full ${
+                    executionState.status === 'running' ? 'bg-yellow-400 animate-pulse' :
+                    executionState.status === 'completed' ? 'bg-green-400' :
+                    executionState.status === 'failed' ? 'bg-red-400' : 'bg-zinc-400'
+                  }`} />
+                </h4>
+                <button
+                  onClick={() => { setExecutionState(null); setInspectedNode(null); }}
+                  className="text-zinc-600 hover:text-zinc-400 transition-colors"
+                  title="Clear execution state"
+                >
+                  <X size={12} />
+                </button>
               </div>
+              <div className="space-y-0.5 mb-2">
+                {Object.entries(executionState.nodeStates).map(([name, state]) => {
+                  const detail = executionState.nodeDetails[name];
+                  const isInspected = inspectedNode === name;
+                  return (
+                    <button
+                      key={name}
+                      onClick={() => setInspectedNode(isInspected ? null : name)}
+                      className={`w-full flex items-center gap-2 text-xs px-1.5 py-1 rounded transition-colors text-left ${
+                        isInspected ? 'bg-zinc-800 ring-1 ring-zinc-700' : 'hover:bg-zinc-800/50'
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                        state === 'completed' ? 'bg-green-400' :
+                        state === 'failed' ? 'bg-red-400' :
+                        state === 'running' ? 'bg-yellow-400 animate-pulse' :
+                        state === 'queued' ? 'bg-purple-400' : 'bg-zinc-600'
+                      }`} />
+                      <span className="text-zinc-400 truncate flex-1">{name}</span>
+                      {detail?.durationMs !== undefined && (
+                        <span className="text-[10px] text-zinc-500 flex-shrink-0">
+                          {detail.durationMs < 1000 ? `${detail.durationMs}ms` : `${(detail.durationMs / 1000).toFixed(1)}s`}
+                        </span>
+                      )}
+                      <span className={`text-[10px] flex-shrink-0 ${
+                        state === 'completed' ? 'text-green-400' :
+                        state === 'failed' ? 'text-red-400' :
+                        state === 'running' ? 'text-yellow-400' :
+                        state === 'queued' ? 'text-purple-400' : 'text-zinc-600'
+                      }`}>{state}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Node detail panel */}
+              {inspectedNode && executionState.invocations[inspectedNode] && (() => {
+                const inv = executionState.invocations[inspectedNode];
+                return (
+                  <div className="bg-zinc-900 rounded-md p-2 mb-2 space-y-2 border border-zinc-800">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-zinc-300">{inspectedNode}</span>
+                      <button onClick={() => setInspectedNode(null)} className="text-zinc-600 hover:text-zinc-400">
+                        <X size={10} />
+                      </button>
+                    </div>
+                    <div className="text-[10px] text-zinc-500 space-y-0.5">
+                      <div>Type: <span className="text-zinc-400">{inv.taskIdentifier}</span></div>
+                      <div>Status: <span className={inv.status === 'failed' ? 'text-red-400' : 'text-green-400'}>{inv.status}</span></div>
+                      {inv.durationMs != null && <div>Duration: <span className="text-zinc-400">{inv.durationMs}ms</span></div>}
+                    </div>
+                    {inv.error && (
+                      <div>
+                        <div className="flex items-center gap-1 text-[10px] text-red-400 mb-0.5">
+                          <AlertTriangle size={10} /> Error
+                        </div>
+                        <pre className="text-[10px] text-red-300 bg-zinc-950 rounded p-1.5 overflow-x-auto whitespace-pre-wrap break-all max-h-20 overflow-y-auto">
+                          {typeof inv.error === 'string' ? inv.error : JSON.stringify(inv.error, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                    {inv.payload && (
+                      <div>
+                        <div className="text-[10px] text-zinc-500 mb-0.5">Input Payload</div>
+                        <pre className="text-[10px] text-zinc-400 bg-zinc-950 rounded p-1.5 overflow-x-auto whitespace-pre-wrap break-all max-h-20 overflow-y-auto">
+                          {JSON.stringify((inv.payload as Record<string, unknown>)?.inputs ?? inv.payload, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                    {inv.result && (
+                      <div>
+                        <div className="text-[10px] text-zinc-500 mb-0.5">Result</div>
+                        <pre className="text-[10px] text-zinc-300 bg-zinc-950 rounded p-1.5 overflow-x-auto whitespace-pre-wrap break-all max-h-20 overflow-y-auto">
+                          {JSON.stringify(inv.result, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {executionState.error && (
                 <pre className="text-xs text-red-400 bg-zinc-900 rounded-md p-2 overflow-x-auto whitespace-pre-wrap break-all max-h-24 overflow-y-auto">
                   {executionState.error}
@@ -1228,6 +1374,7 @@ export function FlowsPanel() {
             showStatusBar={true}
             onGraphChange={handleGraphChange}
             evaluateFn={evaluate as any}
+            nodeStates={showExecutionOverlay && executionState ? executionState.nodeDetails : undefined}
           />
         </div>
       </div>

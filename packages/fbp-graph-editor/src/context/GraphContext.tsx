@@ -999,15 +999,40 @@ interface GraphContextValue {
   isChannelReference: (value: unknown) => boolean;
 }
 
+export type NodeExecutionState = 'pending' | 'queued' | 'running' | 'completed' | 'failed';
+
+export interface NodeExecutionInfo {
+  state: NodeExecutionState;
+  durationMs?: number;
+  error?: string;
+  startedAt?: string;
+  completedAt?: string;
+}
+
+const NodeStatesContext = createContext<Record<string, NodeExecutionInfo> | null>(null);
+
+export function NodeStatesProvider({ nodeStates, children }: { nodeStates?: Record<string, NodeExecutionInfo>; children: ReactNode }) {
+  return (
+    <NodeStatesContext.Provider value={nodeStates ?? null}>
+      {children}
+    </NodeStatesContext.Provider>
+  );
+}
+
+export function useNodeStates(): Record<string, NodeExecutionInfo> | null {
+  return useContext(NodeStatesContext);
+}
+
 const GraphContext = createContext<GraphContextValue | null>(null);
 
-export function GraphProvider({ children, initialGraph, initialCwd, externalDefinitions, onSelectionChange, onGraphChange }: {
+export function GraphProvider({ children, initialGraph, initialCwd, externalDefinitions, onSelectionChange, onGraphChange, nodeStates }: {
   children: ReactNode;
   initialGraph?: Graph;
   initialCwd?: string;
   externalDefinitions?: NodeDefinition[];
   onSelectionChange?: (selectedNodeIds: string[]) => void;
   onGraphChange?: (graph: Graph) => void;
+  nodeStates?: Record<string, NodeExecutionInfo>;
 }) {
   // Migrate legacy graphs on initialization to ensure boundary nodes are the source of truth
   const migratedInitialGraph = initialGraph ? migrateLegacyGraph(initialGraph) : initialState.graph;
@@ -1078,7 +1103,9 @@ export function GraphProvider({ children, initialGraph, initialCwd, externalDefi
 
   return (
     <GraphContext.Provider value={{ state, dispatch, getDefinition, getShortName, isChannelReference }}>
-      {children}
+      <NodeStatesProvider nodeStates={nodeStates}>
+        {children}
+      </NodeStatesProvider>
     </GraphContext.Provider>
   );
 }

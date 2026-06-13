@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { useGraph, useSelection } from '../context/GraphContext';
+import { useGraph, useSelection, useNodeStates } from '../context/GraphContext';
+import type { NodeExecutionState } from '../context/GraphContext';
 import type { Node, Port } from '@fbp/types';
 import { NodeIconSvg } from './NodeIcon';
 import { BOUNDARY_NODE_KINDS, getPortNameFromBoundary, getDataTypeFromBoundary } from '../types';
@@ -40,9 +41,18 @@ function getNodeProp(node: Node, propName: string): any {
   return prop?.value;
 }
 
+const EXEC_STATE_COLORS: Record<NodeExecutionState, { stroke: string; glow: string }> = {
+  pending: { stroke: '#71717a', glow: 'rgba(113,113,122,0.3)' },
+  queued: { stroke: '#a78bfa', glow: 'rgba(167,139,250,0.3)' },
+  running: { stroke: '#facc15', glow: 'rgba(250,204,21,0.4)' },
+  completed: { stroke: '#4ade80', glow: 'rgba(74,222,128,0.4)' },
+  failed: { stroke: '#f87171', glow: 'rgba(248,113,113,0.4)' },
+};
+
 export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps) {
   const { state, dispatch, getDefinition, getShortName } = useGraph();
   const { selection, selectNodes } = useSelection();
+  const nodeStatesMap = useNodeStates();
   const [isDragging, setIsDragging] = useState(false);
   const [hoveredPort, setHoveredPort] = useState<{ name: string; isOutput: boolean } | null>(null);
   const dragStart = useRef<{ x: number; y: number; nodeX: number; nodeY: number } | null>(null);
@@ -52,6 +62,8 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
   const isPreview = state.boxSelect.previewNodeIds.has(node.name);
   const isSubnet = node.nodes && node.nodes.length > 0;
   const isRichNode = definition?.category === 'functions';
+  const execInfo = nodeStatesMap?.[node.name];
+  const execColors = execInfo ? EXEC_STATE_COLORS[execInfo.state] : null;
 
   // For subnets, derive inputs/outputs from boundary nodes inside
   const inputs = isSubnet 
@@ -162,6 +174,22 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
         >
           {node.name}
         </text>
+        {/* Execution glow */}
+        {execColors && (
+          <rect
+            x={-4} y={-4}
+            width={width + 8} height={totalHeight + 8}
+            rx={14} ry={14}
+            fill="none"
+            stroke={execColors.glow}
+            strokeWidth={6}
+            opacity={execInfo?.state === 'running' ? 0.8 : 0.5}
+          >
+            {execInfo?.state === 'running' && (
+              <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite" />
+            )}
+          </rect>
+        )}
         {/* Shadow */}
         <rect
           x={3} y={3}
@@ -195,9 +223,38 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
           width={width} height={totalHeight}
           rx={10} ry={10}
           fill="none"
-          stroke={isSelected || isPreview ? '#3b82f6' : '#3f3f46'}
-          strokeWidth={isSelected || isPreview ? 2 : 1}
-        />
+          stroke={execColors ? execColors.stroke : (isSelected || isPreview ? '#3b82f6' : '#3f3f46')}
+          strokeWidth={execColors ? 2 : (isSelected || isPreview ? 2 : 1)}
+          strokeDasharray={execInfo?.state === 'queued' ? '8 4' : undefined}
+        >
+          {execInfo?.state === 'queued' && (
+            <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="1s" repeatCount="indefinite" />
+          )}
+        </rect>
+
+        {/* Duration badge */}
+        {execInfo?.durationMs !== undefined && (
+          <g transform={`translate(${width - 8}, -6)`}>
+            <rect
+              x={-36} y={-8}
+              width={44} height={16}
+              rx={8}
+              fill={execColors?.stroke || '#71717a'}
+              opacity={0.9}
+            />
+            <text
+              x={-14}
+              y={1}
+              textAnchor="middle"
+              fill="#18181b"
+              fontSize={9}
+              fontWeight={700}
+              fontFamily="system-ui, sans-serif"
+            >
+              {execInfo.durationMs < 1000 ? `${execInfo.durationMs}ms` : `${(execInfo.durationMs / 1000).toFixed(1)}s`}
+            </text>
+          </g>
+        )}
 
         {/* Header: icon + name (same layout as compact) */}
         <g transform={`translate(14, ${RICH_HEADER_HEIGHT / 2})`}>
@@ -333,6 +390,22 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
       >
         {node.name}
       </text>
+      {/* Execution glow */}
+      {execColors && (
+        <rect
+          x={-4} y={-4}
+          width={NODE_WIDTH + 8} height={nodeHeight + 8}
+          rx={14} ry={14}
+          fill="none"
+          stroke={execColors.glow}
+          strokeWidth={6}
+          opacity={execInfo?.state === 'running' ? 0.8 : 0.5}
+        >
+          {execInfo?.state === 'running' && (
+            <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite" />
+          )}
+        </rect>
+      )}
       {/* Shadow */}
       <rect
         x={3} y={3}
@@ -374,9 +447,38 @@ export function GraphNode({ node, onStartConnect, onEndConnect }: GraphNodeProps
         rx={10}
         ry={10}
         fill="none"
-        stroke={isSelected || isPreview ? '#3b82f6' : '#3f3f46'}
-        strokeWidth={isSelected || isPreview ? 2 : 1}
-      />
+        stroke={execColors ? execColors.stroke : (isSelected || isPreview ? '#3b82f6' : '#3f3f46')}
+        strokeWidth={execColors ? 2 : (isSelected || isPreview ? 2 : 1)}
+        strokeDasharray={execInfo?.state === 'queued' ? '8 4' : undefined}
+      >
+        {execInfo?.state === 'queued' && (
+          <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="1s" repeatCount="indefinite" />
+        )}
+      </rect>
+
+      {/* Duration badge */}
+      {execInfo?.durationMs !== undefined && (
+        <g transform={`translate(${NODE_WIDTH - 8}, -6)`}>
+          <rect
+            x={-36} y={-8}
+            width={44} height={16}
+            rx={8}
+            fill={execColors?.stroke || '#71717a'}
+            opacity={0.9}
+          />
+          <text
+            x={-14}
+            y={1}
+            textAnchor="middle"
+            fill="#18181b"
+            fontSize={9}
+            fontWeight={700}
+            fontFamily="system-ui, sans-serif"
+          >
+            {execInfo.durationMs < 1000 ? `${execInfo.durationMs}ms` : `${(execInfo.durationMs / 1000).toFixed(1)}s`}
+          </text>
+        </g>
+      )}
 
       {/* Header: icon + title aligned together */}
       <g transform={`translate(14, ${NODE_HEADER_HEIGHT / 2})`}>
