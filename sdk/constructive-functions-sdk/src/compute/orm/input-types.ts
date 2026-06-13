@@ -511,6 +511,10 @@ export interface PlatformFunctionDefinition {
   requiredConfigs?: FunctionRequirement[] | null;
   /** Embedded secret requirements: array of (name, required) tuples */
   requiredSecrets?: FunctionRequirement[] | null;
+  /** UI palette category for grouping (e.g. email, data, ai) */
+  category?: string | null;
+  /** Icon identifier for UI palette display (e.g. zap, mail, code) */
+  icon?: string | null;
   /** Input port definitions: [{name, type, description?, optional?, multi?, schema?}] */
   inputs?: Record<string, unknown> | null;
   /** Output port definitions: [{name, type, description?, optional?, multi?, schema?}] */
@@ -519,10 +523,8 @@ export interface PlatformFunctionDefinition {
   props?: Record<string, unknown> | null;
   /** Whether this function has side effects (cannot be cached or memoized) */
   volatile?: boolean | null;
-  /** Icon identifier for UI palette display (e.g. zap, mail, code) */
-  icon?: string | null;
-  /** UI palette category for grouping (e.g. email, data, ai) */
-  category?: string | null;
+  /** Dispatch mode: http (external service) or inline (in-process on compute-worker) */
+  runtime?: string | null;
 }
 // ============ Relation Helper Types ============
 export interface ConnectionResult<T> {
@@ -742,12 +744,13 @@ export type PlatformFunctionDefinitionSelect = {
   updatedAt?: boolean;
   requiredConfigs?: boolean;
   requiredSecrets?: boolean;
+  category?: boolean;
+  icon?: boolean;
   inputs?: boolean;
   outputs?: boolean;
   props?: boolean;
   volatile?: boolean;
-  icon?: boolean;
-  category?: boolean;
+  runtime?: boolean;
 };
 // ============ Table Filter Types ============
 export interface GetAllRecordFilter {
@@ -1120,12 +1123,20 @@ export interface PlatformFunctionDefinitionFilter {
   taskIdentifier?: StringFilter;
   /** Filter by the object’s `updatedAt` field. */
   updatedAt?: DatetimeFilter;
-  /** Filter by the object's `volatile` field. */
-  volatile?: BooleanFilter;
-  /** Filter by the object's `icon` field. */
-  icon?: StringFilter;
-  /** Filter by the object's `category` field. */
+  /** Filter by the object’s `category` field. */
   category?: StringFilter;
+  /** Filter by the object’s `icon` field. */
+  icon?: StringFilter;
+  /** Filter by the object’s `inputs` field. */
+  inputs?: JSONFilter;
+  /** Filter by the object’s `outputs` field. */
+  outputs?: JSONFilter;
+  /** Filter by the object’s `props` field. */
+  props?: JSONFilter;
+  /** Filter by the object’s `volatile` field. */
+  volatile?: BooleanFilter;
+  /** Filter by the object’s `runtime` field. */
+  runtime?: StringFilter;
   /** Checks for all expressions in this list. */
   and?: PlatformFunctionDefinitionFilter[];
   /** Checks for any expressions in this list. */
@@ -1464,12 +1475,20 @@ export type PlatformFunctionDefinitionOrderBy =
   | 'REQUIRED_CONFIGS_DESC'
   | 'REQUIRED_SECRETS_ASC'
   | 'REQUIRED_SECRETS_DESC'
-  | 'VOLATILE_ASC'
-  | 'VOLATILE_DESC'
+  | 'CATEGORY_ASC'
+  | 'CATEGORY_DESC'
   | 'ICON_ASC'
   | 'ICON_DESC'
-  | 'CATEGORY_ASC'
-  | 'CATEGORY_DESC';
+  | 'INPUTS_ASC'
+  | 'INPUTS_DESC'
+  | 'OUTPUTS_ASC'
+  | 'OUTPUTS_DESC'
+  | 'PROPS_ASC'
+  | 'PROPS_DESC'
+  | 'VOLATILE_ASC'
+  | 'VOLATILE_DESC'
+  | 'RUNTIME_ASC'
+  | 'RUNTIME_DESC';
 // ============ CRUD Input Types ============
 export interface CreateGetAllRecordInput {
   clientMutationId?: string;
@@ -1893,12 +1912,13 @@ export interface CreatePlatformFunctionDefinitionInput {
     taskIdentifier: string;
     requiredConfigs?: FunctionRequirementInput[];
     requiredSecrets?: FunctionRequirementInput[];
+    category?: string;
+    icon?: string;
     inputs?: Record<string, unknown>;
     outputs?: Record<string, unknown>;
     props?: Record<string, unknown>;
     volatile?: boolean;
-    icon?: string;
-    category?: string;
+    runtime?: string;
   };
 }
 export interface PlatformFunctionDefinitionPatch {
@@ -1915,12 +1935,13 @@ export interface PlatformFunctionDefinitionPatch {
   taskIdentifier?: string | null;
   requiredConfigs?: FunctionRequirementInput[] | null;
   requiredSecrets?: FunctionRequirementInput[] | null;
+  category?: string | null;
+  icon?: string | null;
   inputs?: Record<string, unknown> | null;
   outputs?: Record<string, unknown> | null;
   props?: Record<string, unknown> | null;
   volatile?: boolean | null;
-  icon?: string | null;
-  category?: string | null;
+  runtime?: string | null;
 }
 export interface UpdatePlatformFunctionDefinitionInput {
   clientMutationId?: string;
@@ -2336,6 +2357,10 @@ export interface PlatformFunctionDefinitionInput {
   requiredConfigs?: FunctionRequirementInput[];
   /** Embedded secret requirements: array of (name, required) tuples */
   requiredSecrets?: FunctionRequirementInput[];
+  /** UI palette category for grouping (e.g. email, data, ai) */
+  category?: string;
+  /** Icon identifier for UI palette display (e.g. zap, mail, code) */
+  icon?: string;
   /** Input port definitions: [{name, type, description?, optional?, multi?, schema?}] */
   inputs?: Record<string, unknown>;
   /** Output port definitions: [{name, type, description?, optional?, multi?, schema?}] */
@@ -2344,10 +2369,8 @@ export interface PlatformFunctionDefinitionInput {
   props?: Record<string, unknown>;
   /** Whether this function has side effects (cannot be cached or memoized) */
   volatile?: boolean;
-  /** Icon identifier for UI palette display (e.g. zap, mail, code) */
-  icon?: string;
-  /** UI palette category for grouping (e.g. email, data, ai) */
-  category?: string;
+  /** Dispatch mode: http (external service) or inline (in-process on compute-worker) */
+  runtime?: string;
 }
 /** An input for mutations affecting `FunctionRequirement` */
 export interface FunctionRequirementInput {

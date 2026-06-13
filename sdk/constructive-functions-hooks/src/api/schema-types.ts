@@ -5,12 +5,6 @@
  */
 
 import type {
-  BigIntFilter,
-  BooleanFilter,
-  DatetimeFilter,
-  FullTextFilter,
-  IntFilter,
-  JSONFilter,
   PlatformBucket,
   PlatformConfig,
   PlatformConfigDefinition,
@@ -18,10 +12,24 @@ import type {
   PlatformNamespace,
   PlatformNamespaceEvent,
   RoleType,
+  User,
+  BigFloatFilter,
+  BigIntFilter,
+  BitStringFilter,
+  BooleanFilter,
+  DateFilter,
+  DatetimeFilter,
+  FloatFilter,
+  FullTextFilter,
+  IntFilter,
+  IntListFilter,
+  InternetAddressFilter,
+  JSONFilter,
   StringFilter,
   StringListFilter,
-  User,
   UUIDFilter,
+  UUIDListFilter,
+  VectorFilter,
 } from './types';
 export type ConstructiveInternalTypeImage = unknown;
 export type ConstructiveInternalTypeUpload = unknown;

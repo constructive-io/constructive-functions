@@ -14,16 +14,15 @@
 // ============================================================================
 
 import type { QueryClient } from '@tanstack/react-query';
-
 import {
-  platformBucketKeys,
-  platformConfigDefinitionKeys,
-  platformConfigKeys,
-  platformFileKeys,
-  platformNamespaceEventKeys,
-  platformNamespaceKeys,
   roleTypeKeys,
+  platformConfigDefinitionKeys,
+  platformNamespaceKeys,
+  platformConfigKeys,
+  platformBucketKeys,
+  platformFileKeys,
   userKeys,
+  platformNamespaceEventKeys,
 } from './query-keys';
 /**
 // ============================================================================

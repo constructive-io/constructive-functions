@@ -6,16 +6,27 @@
 
 import type {
   Commit,
-  DatetimeFilter,
   GetAllRecord,
-  JSONFilter,
   Object,
   Ref,
   Store,
+  BigFloatFilter,
+  BigIntFilter,
+  BitStringFilter,
+  BooleanFilter,
+  DateFilter,
+  DatetimeFilter,
+  FloatFilter,
+  FullTextFilter,
+  IntFilter,
+  IntListFilter,
+  InternetAddressFilter,
+  JSONFilter,
   StringFilter,
   StringListFilter,
   UUIDFilter,
   UUIDListFilter,
+  VectorFilter,
 } from './types';
 /** Methods to use when ordering `Store`. */
 export type StoreOrderBy =

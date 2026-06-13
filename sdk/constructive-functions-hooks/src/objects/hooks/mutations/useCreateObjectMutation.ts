@@ -4,17 +4,16 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-import type { CreateObjectInput,ObjectSelect, ObjectWithRelations } from '../../orm/input-types';
-import type { HookStrictSelect,InferSelectResult } from '../../orm/select-types';
+import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { getClient } from '../client';
-import { objectMutationKeys } from '../mutation-keys';
-import { objectKeys } from '../query-keys';
-import type { SelectionConfig } from '../selection';
 import { buildSelectionArgs } from '../selection';
-export type { CreateObjectInput,ObjectSelect, ObjectWithRelations } from '../../orm/input-types';
+import type { SelectionConfig } from '../selection';
+import { objectKeys } from '../query-keys';
+import { objectMutationKeys } from '../mutation-keys';
+import type { ObjectSelect, ObjectWithRelations, CreateObjectInput } from '../../orm/input-types';
+import type { InferSelectResult, HookStrictSelect } from '../../orm/select-types';
+export type { ObjectSelect, ObjectWithRelations, CreateObjectInput } from '../../orm/input-types';
 /**
  * Content-addressed Merkle tree objects keyed by UUID v5 hash of data + children
  *

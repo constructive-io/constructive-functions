@@ -4,24 +4,23 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-import type {
-  CreatePlatformSecretDefinitionInput,
-  PlatformSecretDefinitionSelect,
-  PlatformSecretDefinitionWithRelations,
-} from '../../orm/input-types';
-import type { HookStrictSelect,InferSelectResult } from '../../orm/select-types';
+import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { getClient } from '../client';
-import { platformSecretDefinitionMutationKeys } from '../mutation-keys';
-import { platformSecretDefinitionKeys } from '../query-keys';
-import type { SelectionConfig } from '../selection';
 import { buildSelectionArgs } from '../selection';
-export type {
-  CreatePlatformSecretDefinitionInput,
+import type { SelectionConfig } from '../selection';
+import { platformSecretDefinitionKeys } from '../query-keys';
+import { platformSecretDefinitionMutationKeys } from '../mutation-keys';
+import type {
   PlatformSecretDefinitionSelect,
   PlatformSecretDefinitionWithRelations,
+  CreatePlatformSecretDefinitionInput,
+} from '../../orm/input-types';
+import type { InferSelectResult, HookStrictSelect } from '../../orm/select-types';
+export type {
+  PlatformSecretDefinitionSelect,
+  PlatformSecretDefinitionWithRelations,
+  CreatePlatformSecretDefinitionInput,
 } from '../../orm/input-types';
 /**
  * Global secret name registry — declares which secrets the platform recognizes. Actual values live in app_secrets.

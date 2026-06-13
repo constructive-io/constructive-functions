@@ -4,33 +4,36 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { OrmClient } from '../client';
-import type {
-  CreateRoleTypeInput,
-  RoleTypeFilter,
-  RoleTypeOrderBy,
-  RoleTypePatch,
-  RoleTypeSelect,
-  RoleTypeWithRelations,
-} from '../input-types';
-import { connectionFieldsMap } from '../input-types';
 import {
-  buildCreateDocument,
-  buildDeleteByPkDocument,
-  buildFindFirstDocument,
-  buildFindManyDocument,
-  buildUpdateByPkDocument,
   QueryBuilder,
+  buildFindManyDocument,
+  buildFindFirstDocument,
+  buildFindOneDocument,
+  buildCreateDocument,
+  buildUpdateByPkDocument,
+  buildDeleteByPkDocument,
 } from '../query-builder';
 import type {
   ConnectionResult,
-  CreateArgs,
-  DeleteArgs,
-  FindFirstArgs,
   FindManyArgs,
+  FindFirstArgs,
+  CreateArgs,
+  UpdateArgs,
+  DeleteArgs,
   InferSelectResult,
   StrictSelect,
-  UpdateArgs,
 } from '../select-types';
+import type {
+  RoleType,
+  RoleTypeWithRelations,
+  RoleTypeSelect,
+  RoleTypeFilter,
+  RoleTypeOrderBy,
+  CreateRoleTypeInput,
+  UpdateRoleTypeInput,
+  RoleTypePatch,
+} from '../input-types';
+import { connectionFieldsMap } from '../input-types';
 export class RoleTypeModel {
   constructor(private client: OrmClient) {}
   findMany<S extends RoleTypeSelect>(

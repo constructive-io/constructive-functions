@@ -4,9 +4,8 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { CLIOptions, Inquirerer } from 'inquirerer';
-
-import type { PlatformReadFunctionGraphVariables } from '../../../orm/query';
 import { getClient } from '../../executor';
+import type { PlatformReadFunctionGraphVariables } from '../../../orm/query';
 export default async (
   argv: Partial<Record<string, unknown>>,
   prompter: Inquirerer,

@@ -2679,23 +2679,34 @@ type PlatformFunctionDefinition {
   """Embedded secret requirements: array of (name, required) tuples"""
   requiredSecrets: [FunctionRequirement]!
 
-  """Input port definitions: [{name, type, description?, optional?, multi?, schema?}]"""
+  """UI palette category for grouping (e.g. email, data, ai)"""
+  category: String
+
+  """Icon identifier for UI palette display (e.g. zap, mail, code)"""
+  icon: String
+
+  """
+  Input port definitions: [{name, type, description?, optional?, multi?, schema?}]
+  """
   inputs: JSON!
 
-  """Output port definitions: [{name, type, description?, optional?, multi?, schema?}]"""
+  """
+  Output port definitions: [{name, type, description?, optional?, multi?, schema?}]
+  """
   outputs: JSON!
 
-  """Property definitions: [{name, type, default?, description?, required?, schema?}]"""
+  """
+  Property definitions: [{name, type, default?, description?, required?, schema?}]
+  """
   props: JSON!
 
   """Whether this function has side effects (cannot be cached or memoized)"""
   volatile: Boolean!
 
-  """Icon identifier for UI palette display (e.g. zap, mail, code)"""
-  icon: String
-
-  """UI palette category for grouping (e.g. email, data, ai)"""
-  category: String
+  """
+  Dispatch mode: http (external service) or inline (in-process on compute-worker)
+  """
+  runtime: String
 }
 
 type FunctionRequirement {
@@ -2758,14 +2769,26 @@ input PlatformFunctionDefinitionFilter {
   """Filter by the object’s `updatedAt` field."""
   updatedAt: DatetimeFilter
 
-  """Filter by the object's `volatile` field."""
-  volatile: BooleanFilter
+  """Filter by the object’s `category` field."""
+  category: StringFilter
 
-  """Filter by the object's `icon` field."""
+  """Filter by the object’s `icon` field."""
   icon: StringFilter
 
-  """Filter by the object's `category` field."""
-  category: StringFilter
+  """Filter by the object’s `inputs` field."""
+  inputs: JSONFilter
+
+  """Filter by the object’s `outputs` field."""
+  outputs: JSONFilter
+
+  """Filter by the object’s `props` field."""
+  props: JSONFilter
+
+  """Filter by the object’s `volatile` field."""
+  volatile: BooleanFilter
+
+  """Filter by the object’s `runtime` field."""
+  runtime: StringFilter
 
   """Checks for all expressions in this list."""
   and: [PlatformFunctionDefinitionFilter!]
@@ -2814,12 +2837,20 @@ enum PlatformFunctionDefinitionOrderBy {
   REQUIRED_CONFIGS_DESC
   REQUIRED_SECRETS_ASC
   REQUIRED_SECRETS_DESC
-  VOLATILE_ASC
-  VOLATILE_DESC
-  ICON_ASC
-  ICON_DESC
   CATEGORY_ASC
   CATEGORY_DESC
+  ICON_ASC
+  ICON_DESC
+  INPUTS_ASC
+  INPUTS_DESC
+  OUTPUTS_ASC
+  OUTPUTS_DESC
+  PROPS_ASC
+  PROPS_DESC
+  VOLATILE_ASC
+  VOLATILE_DESC
+  RUNTIME_ASC
+  RUNTIME_DESC
 }
 
 """Root meta schema type"""
@@ -4700,23 +4731,34 @@ input PlatformFunctionDefinitionInput {
   """Embedded secret requirements: array of (name, required) tuples"""
   requiredSecrets: [FunctionRequirementInput]
 
-  """Input port definitions: [{name, type, description?, optional?, multi?, schema?}]"""
+  """UI palette category for grouping (e.g. email, data, ai)"""
+  category: String
+
+  """Icon identifier for UI palette display (e.g. zap, mail, code)"""
+  icon: String
+
+  """
+  Input port definitions: [{name, type, description?, optional?, multi?, schema?}]
+  """
   inputs: JSON
 
-  """Output port definitions: [{name, type, description?, optional?, multi?, schema?}]"""
+  """
+  Output port definitions: [{name, type, description?, optional?, multi?, schema?}]
+  """
   outputs: JSON
 
-  """Property definitions: [{name, type, default?, description?, required?, schema?}]"""
+  """
+  Property definitions: [{name, type, default?, description?, required?, schema?}]
+  """
   props: JSON
 
   """Whether this function has side effects (cannot be cached or memoized)"""
   volatile: Boolean
 
-  """Icon identifier for UI palette display (e.g. zap, mail, code)"""
-  icon: String
-
-  """UI palette category for grouping (e.g. email, data, ai)"""
-  category: String
+  """
+  Dispatch mode: http (external service) or inline (in-process on compute-worker)
+  """
+  runtime: String
 }
 
 """An input for mutations affecting `FunctionRequirement`"""
@@ -5685,23 +5727,34 @@ input PlatformFunctionDefinitionPatch {
   """Embedded secret requirements: array of (name, required) tuples"""
   requiredSecrets: [FunctionRequirementInput]
 
-  """Input port definitions: [{name, type, description?, optional?, multi?, schema?}]"""
+  """UI palette category for grouping (e.g. email, data, ai)"""
+  category: String
+
+  """Icon identifier for UI palette display (e.g. zap, mail, code)"""
+  icon: String
+
+  """
+  Input port definitions: [{name, type, description?, optional?, multi?, schema?}]
+  """
   inputs: JSON
 
-  """Output port definitions: [{name, type, description?, optional?, multi?, schema?}]"""
+  """
+  Output port definitions: [{name, type, description?, optional?, multi?, schema?}]
+  """
   outputs: JSON
 
-  """Property definitions: [{name, type, default?, description?, required?, schema?}]"""
+  """
+  Property definitions: [{name, type, default?, description?, required?, schema?}]
+  """
   props: JSON
 
   """Whether this function has side effects (cannot be cached or memoized)"""
   volatile: Boolean
 
-  """Icon identifier for UI palette display (e.g. zap, mail, code)"""
-  icon: String
-
-  """UI palette category for grouping (e.g. email, data, ai)"""
-  category: String
+  """
+  Dispatch mode: http (external service) or inline (in-process on compute-worker)
+  """
+  runtime: String
 }
 
 """The output of our delete `PlatformFunctionGraphRef` mutation."""

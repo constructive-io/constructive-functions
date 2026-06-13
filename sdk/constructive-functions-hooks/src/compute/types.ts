@@ -168,12 +168,13 @@ export interface PlatformFunctionDefinition {
   updatedAt: string | null;
   requiredConfigs: FunctionRequirement[] | null;
   requiredSecrets: FunctionRequirement[] | null;
+  category: string | null;
+  icon: string | null;
   inputs: unknown | null;
   outputs: unknown | null;
   props: unknown | null;
   volatile: boolean | null;
-  icon: string | null;
-  category: string | null;
+  runtime: string | null;
 }
 export interface StringFilter {
   isNull?: boolean;

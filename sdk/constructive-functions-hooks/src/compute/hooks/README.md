@@ -393,20 +393,20 @@ create({ actorId: '<UUID>', completedAt: '<Datetime>', databaseId: '<UUID>', dur
 ```typescript
 // List all platformFunctionDefinitions
 const { data, isLoading } = usePlatformFunctionDefinitionsQuery({
-  selection: { fields: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true, inputs: true, outputs: true, props: true, volatile: true, icon: true, category: true } },
+  selection: { fields: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true, category: true, icon: true, inputs: true, outputs: true, props: true, volatile: true, runtime: true } },
 });
 
 // Get one platformFunctionDefinition
 const { data: item } = usePlatformFunctionDefinitionQuery({
   id: '<UUID>',
-  selection: { fields: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true, inputs: true, outputs: true, props: true, volatile: true, icon: true, category: true } },
+  selection: { fields: { createdAt: true, description: true, id: true, isBuiltIn: true, isInvocable: true, maxAttempts: true, name: true, namespaceId: true, priority: true, queueName: true, scope: true, serviceUrl: true, taskIdentifier: true, updatedAt: true, requiredConfigs: true, requiredSecrets: true, category: true, icon: true, inputs: true, outputs: true, props: true, volatile: true, runtime: true } },
 });
 
 // Create a platformFunctionDefinition
 const { mutate: create } = useCreatePlatformFunctionDefinitionMutation({
   selection: { fields: { id: true } },
 });
-create({ description: '<String>', isBuiltIn: '<Boolean>', isInvocable: '<Boolean>', maxAttempts: '<Int>', name: '<String>', namespaceId: '<UUID>', priority: '<Int>', queueName: '<String>', scope: '<String>', serviceUrl: '<String>', taskIdentifier: '<String>', requiredConfigs: '<FunctionRequirement>', requiredSecrets: '<FunctionRequirement>', inputs: '<JSON>', outputs: '<JSON>', props: '<JSON>', volatile: '<Boolean>', icon: '<String>', category: '<String>' });
+create({ description: '<String>', isBuiltIn: '<Boolean>', isInvocable: '<Boolean>', maxAttempts: '<Int>', name: '<String>', namespaceId: '<UUID>', priority: '<Int>', queueName: '<String>', scope: '<String>', serviceUrl: '<String>', taskIdentifier: '<String>', requiredConfigs: '<FunctionRequirement>', requiredSecrets: '<FunctionRequirement>', category: '<String>', icon: '<String>', inputs: '<JSON>', outputs: '<JSON>', props: '<JSON>', volatile: '<Boolean>', runtime: '<String>' });
 ```
 
 ## Custom Operation Hooks
