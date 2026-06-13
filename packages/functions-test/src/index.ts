@@ -13,7 +13,9 @@ export {
   startExecution,
   getExecution,
   completeNode,
+  failNode,
   getGraphJobs,
+  getNodeStates,
   registerFunction,
   buildCalculatorGraph,
   buildParallelGraph,
@@ -24,6 +26,7 @@ export type {
   GraphJson,
   GraphExecution,
   GraphJob,
+  NodeState,
   PortDef,
   PropDef,
 } from './graph';

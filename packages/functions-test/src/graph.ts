@@ -234,6 +234,50 @@ export async function registerFunction(
 }
 
 /**
+ * Call fail_node — marks a node as failed and the execution as failed.
+ */
+export async function failNode(
+  client: PgTestClient,
+  executionId: string,
+  nodeName: string,
+  errorCode: string,
+  errorMessage: string
+): Promise<void> {
+  await client.query(
+    `SELECT constructive_compute_private.platform_fail_node($1::uuid, $2, $3, $4)`,
+    [executionId, nodeName, errorCode, errorMessage]
+  );
+}
+
+/**
+ * Get node states for an execution.
+ */
+export interface NodeState {
+  id: string;
+  execution_id: string;
+  node_name: string;
+  status: string;
+  started_at: Date | null;
+  completed_at: Date | null;
+  output_id: string | null;
+  error_code: string | null;
+  error_message: string | null;
+}
+
+export async function getNodeStates(
+  client: PgTestClient,
+  executionId: string
+): Promise<NodeState[]> {
+  const result = await client.query<NodeState>(
+    `SELECT * FROM constructive_compute_private.platform_function_graph_execution_node_states
+     WHERE execution_id = $1::uuid
+     ORDER BY node_name`,
+    [executionId]
+  );
+  return result.rows;
+}
+
+/**
  * Build a simple calculator flow graph JSON:
  *   graphInput(a) → graphInput(b) → add(a+b) → double(result*2) → graphOutput
  *
