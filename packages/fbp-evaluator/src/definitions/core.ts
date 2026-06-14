@@ -220,7 +220,35 @@ export const stringConcatDef: NodeDefinitionWithImpl = {
   }
 };
 
+export const constStringDef: NodeDefinitionWithImpl = {
+  context: 'js',
+  name: 'string',
+  category: 'const',
+  icon: 'type',
+  outputs: [{ name: 'value', type: 'string' }],
+  props: [{ name: 'value', type: 'string', default: '' }],
+  description: 'Outputs a constant string value',
+  impl: (_inputs, props) => ({
+    value: props.value ?? ''
+  })
+};
+
+export const constBooleanDef: NodeDefinitionWithImpl = {
+  context: 'js',
+  name: 'boolean',
+  category: 'const',
+  icon: 'toggle',
+  outputs: [{ name: 'value', type: 'boolean' }],
+  props: [{ name: 'value', type: 'boolean', default: false }],
+  description: 'Outputs a constant boolean value',
+  impl: (_inputs, props) => ({
+    value: props.value ?? false
+  })
+};
+
 export const coreDefinitions: NodeDefinitionWithImpl[] = [
+  constStringDef,
+  constBooleanDef,
   jsonSelectDef,
   jsonObjectDef,
   flowGuardDef,
