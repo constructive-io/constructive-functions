@@ -4,6 +4,7 @@ import * as jobs from '@constructive-io/job-utils';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool, PoolClient } from 'pg';
 
+import { logComputeUsage } from './compute-meter';
 import { completeNode, failNode } from './graph-complete';
 import { extractNodeProps, getInlineImpl, isGraphJob } from './inline-nodes';
 import { request as req } from './req';
@@ -119,31 +120,99 @@ export default class Worker {
       throw new Error('Unsupported task');
     }
 
+    const startTime = process.hrtime.bigint();
+
     // Inline execution path: native FBP nodes with graph job payloads
     // are resolved in-process rather than dispatched via HTTP.
     const impl = getInlineImpl(task_identifier);
     if (impl && isGraphJob(payload)) {
       const { execution_id, node_name, inputs } = payload;
       const props = extractNodeProps(payload);
+      let output: Record<string, any> | undefined;
       try {
-        const output = await impl(inputs ?? {}, props);
+        output = await impl(inputs ?? {}, props);
         await completeNode(this.pgPool, execution_id, node_name, output);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         log.error(`inline node ${task_identifier} failed`, { node_name, message });
         await failNode(this.pgPool, execution_id, node_name, message);
+
+        const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
+        logComputeUsage(this.pgPool, {
+          jobId: job.id,
+          taskIdentifier: task_identifier,
+          databaseId: job.database_id,
+          actorId: job.actor_id,
+          entityId: job.entity_id,
+          durationMs,
+          status: 'error',
+          error: message,
+          payload,
+          graphExecutionId: execution_id,
+          nodeName: node_name,
+          dispatchType: 'inline'
+        });
+        return;
       }
+
+      const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
+      logComputeUsage(this.pgPool, {
+        jobId: job.id,
+        taskIdentifier: task_identifier,
+        databaseId: job.database_id,
+        actorId: job.actor_id,
+        entityId: job.entity_id,
+        durationMs,
+        status: 'ok',
+        payload,
+        result: output,
+        graphExecutionId: execution_id,
+        nodeName: node_name,
+        dispatchType: 'inline'
+      });
       return;
     }
 
     // HTTP dispatch path: cloud functions (send-email, etc.)
-    await req(task_identifier, {
-      body: payload,
+    let httpError: string | undefined;
+    try {
+      await req(task_identifier, {
+        body: payload,
+        databaseId: job.database_id,
+        actorId: job.actor_id,
+        entityId: job.entity_id,
+        workerId: this.workerId,
+        jobId: job.id
+      });
+    } catch (err: unknown) {
+      httpError = err instanceof Error ? err.message : String(err);
+      const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
+      logComputeUsage(this.pgPool, {
+        jobId: job.id,
+        taskIdentifier: task_identifier,
+        databaseId: job.database_id,
+        actorId: job.actor_id,
+        entityId: job.entity_id,
+        durationMs,
+        status: 'error',
+        error: httpError,
+        payload,
+        dispatchType: 'http'
+      });
+      throw err;
+    }
+
+    const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
+    logComputeUsage(this.pgPool, {
+      jobId: job.id,
+      taskIdentifier: task_identifier,
       databaseId: job.database_id,
       actorId: job.actor_id,
       entityId: job.entity_id,
-      workerId: this.workerId,
-      jobId: job.id
+      durationMs,
+      status: 'ok',
+      payload,
+      dispatchType: 'http'
     });
   }
   async doNext(client: PgClientLike): Promise<void> {
