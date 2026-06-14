@@ -92,7 +92,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install pgpm CLI
-        run: npm install -g pgpm
+        run: npm install -g pgpm@4.7.4
 
       - name: Install dependencies (constructive-functions)
         run: |

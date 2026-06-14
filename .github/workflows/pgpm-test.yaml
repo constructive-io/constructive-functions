@@ -58,7 +58,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install pgpm CLI
-        run: npm install -g pgpm
+        run: npm install -g pgpm@4.7.4
 
       - name: Seed pg users
         run: pgpm admin-users bootstrap --yes
