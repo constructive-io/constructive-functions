@@ -22,16 +22,16 @@ CREATE TABLE IF NOT EXISTS constructive_compute_public.org_function_execution_lo
 CREATE TABLE IF NOT EXISTS constructive_infra_public.platform_namespace_events_default
   PARTITION OF constructive_infra_public.platform_namespace_events DEFAULT;
 
--- FBP module partitioned tables (now in constructive_compute_private after schema consolidation)
-CREATE TABLE IF NOT EXISTS constructive_compute_private.platform_function_graph_executions_default
-  PARTITION OF constructive_compute_private.platform_function_graph_executions DEFAULT;
+-- FBP module partitioned tables (execution tables now in public schema)
+CREATE TABLE IF NOT EXISTS constructive_compute_public.platform_function_graph_executions_default
+  PARTITION OF constructive_compute_public.platform_function_graph_executions DEFAULT;
 
-CREATE TABLE IF NOT EXISTS constructive_compute_private.platform_function_graph_execution_outputs_default
-  PARTITION OF constructive_compute_private.platform_function_graph_execution_outputs DEFAULT;
+CREATE TABLE IF NOT EXISTS constructive_compute_public.platform_function_graph_execution_outputs_default
+  PARTITION OF constructive_compute_public.platform_function_graph_execution_outputs DEFAULT;
 
 -- Execution node states (partitioned by created_at)
-CREATE TABLE IF NOT EXISTS constructive_compute_private.platform_function_graph_execution_node_states_default
-  PARTITION OF constructive_compute_private.platform_function_graph_execution_node_states DEFAULT;
+CREATE TABLE IF NOT EXISTS constructive_compute_public.platform_function_graph_execution_node_states_default
+  PARTITION OF constructive_compute_public.platform_function_graph_execution_node_states DEFAULT;
 
 -- Compute usage logging (partitioned by completed_at)
 CREATE TABLE IF NOT EXISTS constructive_compute_public.platform_compute_log_default
