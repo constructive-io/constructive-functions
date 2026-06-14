@@ -4,24 +4,23 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-import type {
-  PlatformUsageDailyPatch,
-  PlatformUsageDailySelect,
-  PlatformUsageDailyWithRelations,
-} from '../../orm/input-types';
-import type { HookStrictSelect,InferSelectResult } from '../../orm/select-types';
+import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { getClient } from '../client';
-import { platformUsageDailyMutationKeys } from '../mutation-keys';
-import { platformUsageDailyKeys } from '../query-keys';
-import type { SelectionConfig } from '../selection';
 import { buildSelectionArgs } from '../selection';
-export type {
-  PlatformUsageDailyPatch,
+import type { SelectionConfig } from '../selection';
+import { platformUsageDailyKeys } from '../query-keys';
+import { platformUsageDailyMutationKeys } from '../mutation-keys';
+import type {
   PlatformUsageDailySelect,
   PlatformUsageDailyWithRelations,
+  PlatformUsageDailyPatch,
+} from '../../orm/input-types';
+import type { InferSelectResult, HookStrictSelect } from '../../orm/select-types';
+export type {
+  PlatformUsageDailySelect,
+  PlatformUsageDailyWithRelations,
+  PlatformUsageDailyPatch,
 } from '../../orm/input-types';
 /**
  * Mutation hook for updating a PlatformUsageDaily

@@ -4,20 +4,20 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { useMutation } from '@tanstack/react-query';
-
-import type {
-  PlatformFilesRenamePayload,
-  PlatformFilesRenamePayloadSelect,
-} from '../../orm/input-types';
-import type { PlatformFilesRenameVariables } from '../../orm/mutation';
-import type { HookStrictSelect, InferSelectResult, StrictSelect } from '../../orm/select-types';
+import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { getClient } from '../client';
-import { customMutationKeys } from '../mutation-keys';
 import { buildSelectionArgs } from '../selection';
-export type { PlatformFilesRenamePayloadSelect } from '../../orm/input-types';
+import type { SelectionConfig } from '../selection';
+import { customMutationKeys } from '../mutation-keys';
+import type { PlatformFilesRenameVariables } from '../../orm/mutation';
+import type {
+  PlatformFilesRenamePayloadSelect,
+  PlatformFilesRenamePayload,
+} from '../../orm/input-types';
+import type { InferSelectResult, HookStrictSelect, StrictSelect } from '../../orm/select-types';
 export type { PlatformFilesRenameVariables } from '../../orm/mutation';
+export type { PlatformFilesRenamePayloadSelect } from '../../orm/input-types';
 export function usePlatformFilesRenameMutation<S extends PlatformFilesRenamePayloadSelect>(
   params: {
     selection: {

@@ -4,19 +4,18 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
+import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
+import { getClient } from '../client';
+import { buildSelectionArgs } from '../selection';
+import type { SelectionConfig } from '../selection';
+import { platformFunctionGraphRefKeys } from '../query-keys';
+import { platformFunctionGraphRefMutationKeys } from '../mutation-keys';
 import type {
   PlatformFunctionGraphRefSelect,
   PlatformFunctionGraphRefWithRelations,
 } from '../../orm/input-types';
-import type { HookStrictSelect,InferSelectResult } from '../../orm/select-types';
-import { getClient } from '../client';
-import { platformFunctionGraphRefMutationKeys } from '../mutation-keys';
-import { platformFunctionGraphRefKeys } from '../query-keys';
-import type { SelectionConfig } from '../selection';
-import { buildSelectionArgs } from '../selection';
+import type { InferSelectResult, HookStrictSelect } from '../../orm/select-types';
 export type {
   PlatformFunctionGraphRefSelect,
   PlatformFunctionGraphRefWithRelations,

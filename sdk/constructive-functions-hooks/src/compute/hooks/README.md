@@ -54,6 +54,11 @@ function App() {
 | `useCreateOrgFunctionExecutionLogMutation` | Mutation | Function execution logs — structured console output per invocation |
 | `useUpdateOrgFunctionExecutionLogMutation` | Mutation | Function execution logs — structured console output per invocation |
 | `useDeleteOrgFunctionExecutionLogMutation` | Mutation | Function execution logs — structured console output per invocation |
+| `usePlatformFunctionGraphExecutionOutputsQuery` | Query | Content-addressed store for execution outputs — hash-referenced from node_outputs |
+| `usePlatformFunctionGraphExecutionOutputQuery` | Query | Content-addressed store for execution outputs — hash-referenced from node_outputs |
+| `useCreatePlatformFunctionGraphExecutionOutputMutation` | Mutation | Content-addressed store for execution outputs — hash-referenced from node_outputs |
+| `useUpdatePlatformFunctionGraphExecutionOutputMutation` | Mutation | Content-addressed store for execution outputs — hash-referenced from node_outputs |
+| `useDeletePlatformFunctionGraphExecutionOutputMutation` | Mutation | Content-addressed store for execution outputs — hash-referenced from node_outputs |
 | `usePlatformFunctionGraphCommitsQuery` | Query | Commit history — each commit snapshots a tree root for a store |
 | `usePlatformFunctionGraphCommitQuery` | Query | Commit history — each commit snapshots a tree root for a store |
 | `useCreatePlatformFunctionGraphCommitMutation` | Mutation | Commit history — each commit snapshots a tree root for a store |
@@ -69,6 +74,11 @@ function App() {
 | `useCreatePlatformFunctionExecutionLogMutation` | Mutation | Function execution logs — structured console output per invocation |
 | `useUpdatePlatformFunctionExecutionLogMutation` | Mutation | Function execution logs — structured console output per invocation |
 | `useDeletePlatformFunctionExecutionLogMutation` | Mutation | Function execution logs — structured console output per invocation |
+| `usePlatformFunctionGraphExecutionNodeStatesQuery` | Query | Per-node execution state — tracks individual node lifecycle for debugging |
+| `usePlatformFunctionGraphExecutionNodeStateQuery` | Query | Per-node execution state — tracks individual node lifecycle for debugging |
+| `useCreatePlatformFunctionGraphExecutionNodeStateMutation` | Mutation | Per-node execution state — tracks individual node lifecycle for debugging |
+| `useUpdatePlatformFunctionGraphExecutionNodeStateMutation` | Mutation | Per-node execution state — tracks individual node lifecycle for debugging |
+| `useDeletePlatformFunctionGraphExecutionNodeStateMutation` | Mutation | Per-node execution state — tracks individual node lifecycle for debugging |
 | `usePlatformFunctionGraphsQuery` | Query | Flow graph definitions — FBP graphs stored in the dedicated graph Merkle store |
 | `usePlatformFunctionGraphQuery` | Query | Flow graph definitions — FBP graphs stored in the dedicated graph Merkle store |
 | `useCreatePlatformFunctionGraphMutation` | Mutation | Flow graph definitions — FBP graphs stored in the dedicated graph Merkle store |
@@ -94,6 +104,11 @@ function App() {
 | `useCreatePlatformFunctionInvocationMutation` | Mutation | Function invocation log — INSERT to call a function (business-layer, metered). Linked to definitions by task_identifier string. |
 | `useUpdatePlatformFunctionInvocationMutation` | Mutation | Function invocation log — INSERT to call a function (business-layer, metered). Linked to definitions by task_identifier string. |
 | `useDeletePlatformFunctionInvocationMutation` | Mutation | Function invocation log — INSERT to call a function (business-layer, metered). Linked to definitions by task_identifier string. |
+| `usePlatformFunctionGraphExecutionsQuery` | Query | Ephemeral execution state for flow graph evaluation |
+| `usePlatformFunctionGraphExecutionQuery` | Query | Ephemeral execution state for flow graph evaluation |
+| `useCreatePlatformFunctionGraphExecutionMutation` | Mutation | Ephemeral execution state for flow graph evaluation |
+| `useUpdatePlatformFunctionGraphExecutionMutation` | Mutation | Ephemeral execution state for flow graph evaluation |
+| `useDeletePlatformFunctionGraphExecutionMutation` | Mutation | Ephemeral execution state for flow graph evaluation |
 | `usePlatformFunctionDefinitionsQuery` | Query | Function definitions — registered cloud functions with routing, queue, and retry configuration |
 | `usePlatformFunctionDefinitionQuery` | Query | Function definitions — registered cloud functions with routing, queue, and retry configuration |
 | `useCreatePlatformFunctionDefinitionMutation` | Mutation | Function definitions — registered cloud functions with routing, queue, and retry configuration |
@@ -220,6 +235,27 @@ const { mutate: create } = useCreateOrgFunctionExecutionLogMutation({
 create({ actorId: '<UUID>', invocationId: '<UUID>', logLevel: '<String>', message: '<String>', metadata: '<JSON>', taskIdentifier: '<String>' });
 ```
 
+### PlatformFunctionGraphExecutionOutput
+
+```typescript
+// List all platformFunctionGraphExecutionOutputs
+const { data, isLoading } = usePlatformFunctionGraphExecutionOutputsQuery({
+  selection: { fields: { createdAt: true, data: true, databaseId: true, hash: true, id: true } },
+});
+
+// Get one platformFunctionGraphExecutionOutput
+const { data: item } = usePlatformFunctionGraphExecutionOutputQuery({
+  id: '<UUID>',
+  selection: { fields: { createdAt: true, data: true, databaseId: true, hash: true, id: true } },
+});
+
+// Create a platformFunctionGraphExecutionOutput
+const { mutate: create } = useCreatePlatformFunctionGraphExecutionOutputMutation({
+  selection: { fields: { id: true } },
+});
+create({ data: '<JSON>', databaseId: '<UUID>', hash: '<Base64EncodedBinary>' });
+```
+
 ### PlatformFunctionGraphCommit
 
 ```typescript
@@ -281,6 +317,27 @@ const { mutate: create } = useCreatePlatformFunctionExecutionLogMutation({
   selection: { fields: { id: true } },
 });
 create({ actorId: '<UUID>', databaseId: '<UUID>', invocationId: '<UUID>', logLevel: '<String>', message: '<String>', metadata: '<JSON>', taskIdentifier: '<String>' });
+```
+
+### PlatformFunctionGraphExecutionNodeState
+
+```typescript
+// List all platformFunctionGraphExecutionNodeStates
+const { data, isLoading } = usePlatformFunctionGraphExecutionNodeStatesQuery({
+  selection: { fields: { createdAt: true, completedAt: true, databaseId: true, errorCode: true, errorMessage: true, executionId: true, id: true, nodeName: true, outputId: true, startedAt: true, status: true, nodePath: true } },
+});
+
+// Get one platformFunctionGraphExecutionNodeState
+const { data: item } = usePlatformFunctionGraphExecutionNodeStateQuery({
+  id: '<UUID>',
+  selection: { fields: { createdAt: true, completedAt: true, databaseId: true, errorCode: true, errorMessage: true, executionId: true, id: true, nodeName: true, outputId: true, startedAt: true, status: true, nodePath: true } },
+});
+
+// Create a platformFunctionGraphExecutionNodeState
+const { mutate: create } = useCreatePlatformFunctionGraphExecutionNodeStateMutation({
+  selection: { fields: { id: true } },
+});
+create({ completedAt: '<Datetime>', databaseId: '<UUID>', errorCode: '<String>', errorMessage: '<String>', executionId: '<UUID>', nodeName: '<String>', outputId: '<UUID>', startedAt: '<Datetime>', status: '<String>', nodePath: '<String>' });
 ```
 
 ### PlatformFunctionGraph
@@ -386,6 +443,27 @@ const { mutate: create } = useCreatePlatformFunctionInvocationMutation({
   selection: { fields: { id: true } },
 });
 create({ actorId: '<UUID>', completedAt: '<Datetime>', databaseId: '<UUID>', durationMs: '<Int>', error: '<String>', graphExecutionId: '<UUID>', jobId: '<BigInt>', parentInvocationId: '<UUID>', payload: '<JSON>', result: '<JSON>', startedAt: '<Datetime>', status: '<String>', taskIdentifier: '<String>' });
+```
+
+### PlatformFunctionGraphExecution
+
+```typescript
+// List all platformFunctionGraphExecutions
+const { data, isLoading } = usePlatformFunctionGraphExecutionsQuery({
+  selection: { fields: { startedAt: true, completedAt: true, currentWave: true, databaseId: true, definitionsCommitId: true, entityId: true, errorCode: true, errorMessage: true, executionPlan: true, graphId: true, id: true, inputPayload: true, invocationId: true, maxPendingJobs: true, maxTicks: true, nodeOutputs: true, outputNode: true, outputPayload: true, outputPort: true, parentExecutionId: true, parentNodeName: true, status: true, tickCount: true, timeoutAt: true } },
+});
+
+// Get one platformFunctionGraphExecution
+const { data: item } = usePlatformFunctionGraphExecutionQuery({
+  id: '<UUID>',
+  selection: { fields: { startedAt: true, completedAt: true, currentWave: true, databaseId: true, definitionsCommitId: true, entityId: true, errorCode: true, errorMessage: true, executionPlan: true, graphId: true, id: true, inputPayload: true, invocationId: true, maxPendingJobs: true, maxTicks: true, nodeOutputs: true, outputNode: true, outputPayload: true, outputPort: true, parentExecutionId: true, parentNodeName: true, status: true, tickCount: true, timeoutAt: true } },
+});
+
+// Create a platformFunctionGraphExecution
+const { mutate: create } = useCreatePlatformFunctionGraphExecutionMutation({
+  selection: { fields: { id: true } },
+});
+create({ startedAt: '<Datetime>', completedAt: '<Datetime>', currentWave: '<Int>', databaseId: '<UUID>', definitionsCommitId: '<UUID>', entityId: '<UUID>', errorCode: '<String>', errorMessage: '<String>', executionPlan: '<JSON>', graphId: '<UUID>', inputPayload: '<JSON>', invocationId: '<UUID>', maxPendingJobs: '<Int>', maxTicks: '<Int>', nodeOutputs: '<JSON>', outputNode: '<String>', outputPayload: '<JSON>', outputPort: '<String>', parentExecutionId: '<UUID>', parentNodeName: '<String>', status: '<String>', tickCount: '<Int>', timeoutAt: '<Datetime>' });
 ```
 
 ### PlatformFunctionDefinition

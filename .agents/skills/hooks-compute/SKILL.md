@@ -1,13 +1,13 @@
 ---
 name: hooks-compute
-description: React Query hooks for the compute API — provides typed query and mutation hooks for 14 tables and 16 custom operations
+description: React Query hooks for the compute API — provides typed query and mutation hooks for 17 tables and 16 custom operations
 ---
 
 # hooks-compute
 
 <!-- @constructive-io/graphql-codegen - DO NOT EDIT -->
 
-React Query hooks for the compute API — provides typed query and mutation hooks for 14 tables and 16 custom operations
+React Query hooks for the compute API — provides typed query and mutation hooks for 17 tables and 16 custom operations
 
 ## Usage
 
@@ -43,14 +43,17 @@ See the `references/` directory for detailed per-entity API documentation:
 - [platform-function-graph-store](references/platform-function-graph-store.md)
 - [platform-function-graph-object](references/platform-function-graph-object.md)
 - [org-function-execution-log](references/org-function-execution-log.md)
+- [platform-function-graph-execution-output](references/platform-function-graph-execution-output.md)
 - [platform-function-graph-commit](references/platform-function-graph-commit.md)
 - [platform-secret-definition](references/platform-secret-definition.md)
 - [platform-function-execution-log](references/platform-function-execution-log.md)
+- [platform-function-graph-execution-node-state](references/platform-function-graph-execution-node-state.md)
 - [platform-function-graph](references/platform-function-graph.md)
 - [platform-compute-log](references/platform-compute-log.md)
 - [platform-usage-daily](references/platform-usage-daily.md)
 - [org-function-invocation](references/org-function-invocation.md)
 - [platform-function-invocation](references/platform-function-invocation.md)
+- [platform-function-graph-execution](references/platform-function-graph-execution.md)
 - [platform-function-definition](references/platform-function-definition.md)
 - [platform-read-function-graph](references/platform-read-function-graph.md)
 - [platform-validate-function-graph](references/platform-validate-function-graph.md)

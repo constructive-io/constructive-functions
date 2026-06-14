@@ -4,15 +4,14 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import type { QueryClient,UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-
-import type { CommitSelect, CommitWithRelations } from '../../orm/input-types';
-import type { HookStrictSelect,InferSelectResult } from '../../orm/select-types';
+import type { UseQueryOptions, UseQueryResult, QueryClient } from '@tanstack/react-query';
 import { getClient } from '../client';
-import { commitKeys } from '../query-keys';
-import type { SelectionConfig } from '../selection';
 import { buildSelectionArgs } from '../selection';
+import type { SelectionConfig } from '../selection';
+import { commitKeys } from '../query-keys';
+import type { CommitSelect, CommitWithRelations } from '../../orm/input-types';
+import type { InferSelectResult, HookStrictSelect } from '../../orm/select-types';
 export type { CommitSelect, CommitWithRelations } from '../../orm/input-types';
 /** Query key factory - re-exported from query-keys.ts */
 export const commitQueryKey = commitKeys.detail;

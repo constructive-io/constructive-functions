@@ -75,6 +75,18 @@ export const orgFunctionExecutionLogMutationKeys = {
   /** Delete orgFunctionExecutionLog mutation key */ delete: (id: string | number) =>
     ['mutation', 'orgfunctionexecutionlog', 'delete', id] as const,
 } as const;
+export const platformFunctionGraphExecutionOutputMutationKeys = {
+  /** All platformFunctionGraphExecutionOutput mutation keys */ all: [
+    'mutation',
+    'platformfunctiongraphexecutionoutput',
+  ] as const,
+  /** Create platformFunctionGraphExecutionOutput mutation key */ create: () =>
+    ['mutation', 'platformfunctiongraphexecutionoutput', 'create'] as const,
+  /** Update platformFunctionGraphExecutionOutput mutation key */ update: (id: string | number) =>
+    ['mutation', 'platformfunctiongraphexecutionoutput', 'update', id] as const,
+  /** Delete platformFunctionGraphExecutionOutput mutation key */ delete: (id: string | number) =>
+    ['mutation', 'platformfunctiongraphexecutionoutput', 'delete', id] as const,
+} as const;
 export const platformFunctionGraphCommitMutationKeys = {
   /** All platformFunctionGraphCommit mutation keys */ all: [
     'mutation',
@@ -110,6 +122,20 @@ export const platformFunctionExecutionLogMutationKeys = {
     ['mutation', 'platformfunctionexecutionlog', 'update', id] as const,
   /** Delete platformFunctionExecutionLog mutation key */ delete: (id: string | number) =>
     ['mutation', 'platformfunctionexecutionlog', 'delete', id] as const,
+} as const;
+export const platformFunctionGraphExecutionNodeStateMutationKeys = {
+  /** All platformFunctionGraphExecutionNodeState mutation keys */ all: [
+    'mutation',
+    'platformfunctiongraphexecutionnodestate',
+  ] as const,
+  /** Create platformFunctionGraphExecutionNodeState mutation key */ create: () =>
+    ['mutation', 'platformfunctiongraphexecutionnodestate', 'create'] as const,
+  /** Update platformFunctionGraphExecutionNodeState mutation key */ update: (
+    id: string | number
+  ) => ['mutation', 'platformfunctiongraphexecutionnodestate', 'update', id] as const,
+  /** Delete platformFunctionGraphExecutionNodeState mutation key */ delete: (
+    id: string | number
+  ) => ['mutation', 'platformfunctiongraphexecutionnodestate', 'delete', id] as const,
 } as const;
 export const platformFunctionGraphMutationKeys = {
   /** All platformFunctionGraph mutation keys */ all: [
@@ -164,6 +190,18 @@ export const platformFunctionInvocationMutationKeys = {
     ['mutation', 'platformfunctioninvocation', 'update', id] as const,
   /** Delete platformFunctionInvocation mutation key */ delete: (id: string | number) =>
     ['mutation', 'platformfunctioninvocation', 'delete', id] as const,
+} as const;
+export const platformFunctionGraphExecutionMutationKeys = {
+  /** All platformFunctionGraphExecution mutation keys */ all: [
+    'mutation',
+    'platformfunctiongraphexecution',
+  ] as const,
+  /** Create platformFunctionGraphExecution mutation key */ create: () =>
+    ['mutation', 'platformfunctiongraphexecution', 'create'] as const,
+  /** Update platformFunctionGraphExecution mutation key */ update: (id: string | number) =>
+    ['mutation', 'platformfunctiongraphexecution', 'update', id] as const,
+  /** Delete platformFunctionGraphExecution mutation key */ delete: (id: string | number) =>
+    ['mutation', 'platformfunctiongraphexecution', 'delete', id] as const,
 } as const;
 export const platformFunctionDefinitionMutationKeys = {
   /** All platformFunctionDefinition mutation keys */ all: [
@@ -278,14 +316,17 @@ export const mutationKeys = {
   platformFunctionGraphStore: platformFunctionGraphStoreMutationKeys,
   platformFunctionGraphObject: platformFunctionGraphObjectMutationKeys,
   orgFunctionExecutionLog: orgFunctionExecutionLogMutationKeys,
+  platformFunctionGraphExecutionOutput: platformFunctionGraphExecutionOutputMutationKeys,
   platformFunctionGraphCommit: platformFunctionGraphCommitMutationKeys,
   platformSecretDefinition: platformSecretDefinitionMutationKeys,
   platformFunctionExecutionLog: platformFunctionExecutionLogMutationKeys,
+  platformFunctionGraphExecutionNodeState: platformFunctionGraphExecutionNodeStateMutationKeys,
   platformFunctionGraph: platformFunctionGraphMutationKeys,
   platformComputeLog: platformComputeLogMutationKeys,
   platformUsageDaily: platformUsageDailyMutationKeys,
   orgFunctionInvocation: orgFunctionInvocationMutationKeys,
   platformFunctionInvocation: platformFunctionInvocationMutationKeys,
+  platformFunctionGraphExecution: platformFunctionGraphExecutionMutationKeys,
   platformFunctionDefinition: platformFunctionDefinitionMutationKeys,
   custom: customMutationKeys,
 } as const;

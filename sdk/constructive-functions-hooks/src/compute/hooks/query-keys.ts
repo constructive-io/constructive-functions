@@ -66,6 +66,19 @@ export const orgFunctionExecutionLogKeys = {
   /** Detail query key for specific item */ detail: (id: string | number) =>
     [...orgFunctionExecutionLogKeys.details(), id] as const,
 } as const;
+export const platformFunctionGraphExecutionOutputKeys = {
+  /** All platformFunctionGraphExecutionOutput queries */ all: [
+    'platformfunctiongraphexecutionoutput',
+  ] as const,
+  /** List query keys */ lists: () =>
+    [...platformFunctionGraphExecutionOutputKeys.all, 'list'] as const,
+  /** List query key with variables */ list: (variables?: object) =>
+    [...platformFunctionGraphExecutionOutputKeys.lists(), variables] as const,
+  /** Detail query keys */ details: () =>
+    [...platformFunctionGraphExecutionOutputKeys.all, 'detail'] as const,
+  /** Detail query key for specific item */ detail: (id: string | number) =>
+    [...platformFunctionGraphExecutionOutputKeys.details(), id] as const,
+} as const;
 export const platformFunctionGraphCommitKeys = {
   /** All platformFunctionGraphCommit queries */ all: ['platformfunctiongraphcommit'] as const,
   /** List query keys */ lists: () => [...platformFunctionGraphCommitKeys.all, 'list'] as const,
@@ -94,6 +107,19 @@ export const platformFunctionExecutionLogKeys = {
     [...platformFunctionExecutionLogKeys.all, 'detail'] as const,
   /** Detail query key for specific item */ detail: (id: string | number) =>
     [...platformFunctionExecutionLogKeys.details(), id] as const,
+} as const;
+export const platformFunctionGraphExecutionNodeStateKeys = {
+  /** All platformFunctionGraphExecutionNodeState queries */ all: [
+    'platformfunctiongraphexecutionnodestate',
+  ] as const,
+  /** List query keys */ lists: () =>
+    [...platformFunctionGraphExecutionNodeStateKeys.all, 'list'] as const,
+  /** List query key with variables */ list: (variables?: object) =>
+    [...platformFunctionGraphExecutionNodeStateKeys.lists(), variables] as const,
+  /** Detail query keys */ details: () =>
+    [...platformFunctionGraphExecutionNodeStateKeys.all, 'detail'] as const,
+  /** Detail query key for specific item */ detail: (id: string | number) =>
+    [...platformFunctionGraphExecutionNodeStateKeys.details(), id] as const,
 } as const;
 export const platformFunctionGraphKeys = {
   /** All platformFunctionGraph queries */ all: ['platformfunctiongraph'] as const,
@@ -140,6 +166,18 @@ export const platformFunctionInvocationKeys = {
     [...platformFunctionInvocationKeys.all, 'detail'] as const,
   /** Detail query key for specific item */ detail: (id: string | number) =>
     [...platformFunctionInvocationKeys.details(), id] as const,
+} as const;
+export const platformFunctionGraphExecutionKeys = {
+  /** All platformFunctionGraphExecution queries */ all: [
+    'platformfunctiongraphexecution',
+  ] as const,
+  /** List query keys */ lists: () => [...platformFunctionGraphExecutionKeys.all, 'list'] as const,
+  /** List query key with variables */ list: (variables?: object) =>
+    [...platformFunctionGraphExecutionKeys.lists(), variables] as const,
+  /** Detail query keys */ details: () =>
+    [...platformFunctionGraphExecutionKeys.all, 'detail'] as const,
+  /** Detail query key for specific item */ detail: (id: string | number) =>
+    [...platformFunctionGraphExecutionKeys.details(), id] as const,
 } as const;
 export const platformFunctionDefinitionKeys = {
   /** All platformFunctionDefinition queries */ all: ['platformfunctiondefinition'] as const,
@@ -188,14 +226,17 @@ export const queryKeys = {
   platformFunctionGraphStore: platformFunctionGraphStoreKeys,
   platformFunctionGraphObject: platformFunctionGraphObjectKeys,
   orgFunctionExecutionLog: orgFunctionExecutionLogKeys,
+  platformFunctionGraphExecutionOutput: platformFunctionGraphExecutionOutputKeys,
   platformFunctionGraphCommit: platformFunctionGraphCommitKeys,
   platformSecretDefinition: platformSecretDefinitionKeys,
   platformFunctionExecutionLog: platformFunctionExecutionLogKeys,
+  platformFunctionGraphExecutionNodeState: platformFunctionGraphExecutionNodeStateKeys,
   platformFunctionGraph: platformFunctionGraphKeys,
   platformComputeLog: platformComputeLogKeys,
   platformUsageDaily: platformUsageDailyKeys,
   orgFunctionInvocation: orgFunctionInvocationKeys,
   platformFunctionInvocation: platformFunctionInvocationKeys,
+  platformFunctionGraphExecution: platformFunctionGraphExecutionKeys,
   platformFunctionDefinition: platformFunctionDefinitionKeys,
   custom: customQueryKeys,
 } as const;

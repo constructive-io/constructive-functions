@@ -146,6 +146,39 @@ type Query {
   ): OrgFunctionExecutionLogConnection
 
   """
+  Reads and enables pagination through a set of `PlatformFunctionGraphExecutionOutput`.
+  """
+  platformFunctionGraphExecutionOutputs(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformFunctionGraphExecutionOutputFilter
+
+    """
+    The method to use when ordering `PlatformFunctionGraphExecutionOutput`.
+    """
+    orderBy: [PlatformFunctionGraphExecutionOutputOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphExecutionOutputConnection
+
+  """
   Reads and enables pagination through a set of `PlatformFunctionGraphCommit`.
   """
   platformFunctionGraphCommits(
@@ -237,6 +270,39 @@ type Query {
     """The method to use when ordering `PlatformFunctionExecutionLog`."""
     orderBy: [PlatformFunctionExecutionLogOrderBy!] = [PRIMARY_KEY_ASC]
   ): PlatformFunctionExecutionLogConnection
+
+  """
+  Reads and enables pagination through a set of `PlatformFunctionGraphExecutionNodeState`.
+  """
+  platformFunctionGraphExecutionNodeStates(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformFunctionGraphExecutionNodeStateFilter
+
+    """
+    The method to use when ordering `PlatformFunctionGraphExecutionNodeState`.
+    """
+    orderBy: [PlatformFunctionGraphExecutionNodeStateOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphExecutionNodeStateConnection
 
   """Reads and enables pagination through a set of `PlatformFunctionGraph`."""
   platformFunctionGraphs(
@@ -384,6 +450,37 @@ type Query {
     """The method to use when ordering `PlatformFunctionInvocation`."""
     orderBy: [PlatformFunctionInvocationOrderBy!] = [PRIMARY_KEY_ASC]
   ): PlatformFunctionInvocationConnection
+
+  """
+  Reads and enables pagination through a set of `PlatformFunctionGraphExecution`.
+  """
+  platformFunctionGraphExecutions(
+    """Only read the first `n` values of the set."""
+    first: Int
+
+    """Only read the last `n` values of the set."""
+    last: Int
+
+    """
+    Skip the first `n` values from our `after` cursor, an alternative to cursor
+    based pagination. May not be used with `last`.
+    """
+    offset: Int
+
+    """Read all values in the set before (above) this cursor."""
+    before: Cursor
+
+    """Read all values in the set after (below) this cursor."""
+    after: Cursor
+
+    """
+    A filter to be used in determining which values should be returned by the collection.
+    """
+    where: PlatformFunctionGraphExecutionFilter
+
+    """The method to use when ordering `PlatformFunctionGraphExecution`."""
+    orderBy: [PlatformFunctionGraphExecutionOrderBy!] = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphExecutionConnection
 
   """
   Reads and enables pagination through a set of `PlatformFunctionDefinition`.
@@ -1293,6 +1390,135 @@ enum OrgFunctionExecutionLogOrderBy {
   TASK_IDENTIFIER_DESC
 }
 
+"""
+A connection to a list of `PlatformFunctionGraphExecutionOutput` values.
+"""
+type PlatformFunctionGraphExecutionOutputConnection {
+  """A list of `PlatformFunctionGraphExecutionOutput` objects."""
+  nodes: [PlatformFunctionGraphExecutionOutput]!
+
+  """
+  A list of edges which contains the `PlatformFunctionGraphExecutionOutput` and cursor to aid in pagination.
+  """
+  edges: [PlatformFunctionGraphExecutionOutputEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformFunctionGraphExecutionOutput` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""
+Content-addressed store for execution outputs — hash-referenced from node_outputs
+"""
+type PlatformFunctionGraphExecutionOutput {
+  """Timestamp of output creation"""
+  createdAt: Datetime!
+
+  """The actual output payload from a completed node"""
+  data: JSON!
+
+  """Scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """SHA-256 hash of the data JSONB — content-addressed deduplication"""
+  hash: Base64EncodedBinary!
+
+  """Unique execution output identifier"""
+  id: UUID!
+}
+
+"""Binary data encoded using Base64"""
+scalar Base64EncodedBinary
+
+"""A `PlatformFunctionGraphExecutionOutput` edge in the connection."""
+type PlatformFunctionGraphExecutionOutputEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformFunctionGraphExecutionOutput` at the end of the edge."""
+  node: PlatformFunctionGraphExecutionOutput
+}
+
+"""
+A filter to be used against `PlatformFunctionGraphExecutionOutput` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformFunctionGraphExecutionOutputFilter {
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `data` field."""
+  data: JSONFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `hash` field."""
+  hash: Base64EncodedBinaryFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformFunctionGraphExecutionOutputFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformFunctionGraphExecutionOutputFilter!]
+
+  """Negates the expression."""
+  not: PlatformFunctionGraphExecutionOutputFilter
+}
+
+"""
+A filter to be used against Base64EncodedBinary fields. All fields are combined with a logical ‘and.’
+"""
+input Base64EncodedBinaryFilter {
+  """
+  Is null (if `true` is specified) or is not null (if `false` is specified).
+  """
+  isNull: Boolean
+
+  """Equal to the specified value."""
+  equalTo: Base64EncodedBinary
+
+  """Not equal to the specified value."""
+  notEqualTo: Base64EncodedBinary
+
+  """
+  Not equal to the specified value, treating null like an ordinary value.
+  """
+  distinctFrom: Base64EncodedBinary
+
+  """Equal to the specified value, treating null like an ordinary value."""
+  notDistinctFrom: Base64EncodedBinary
+
+  """Included in the specified list."""
+  in: [Base64EncodedBinary!]
+
+  """Not included in the specified list."""
+  notIn: [Base64EncodedBinary!]
+}
+
+"""Methods to use when ordering `PlatformFunctionGraphExecutionOutput`."""
+enum PlatformFunctionGraphExecutionOutputOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  DATA_ASC
+  DATA_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  HASH_ASC
+  HASH_DESC
+  ID_ASC
+  ID_DESC
+}
+
 """A connection to a list of `PlatformFunctionGraphCommit` values."""
 type PlatformFunctionGraphCommitConnection {
   """A list of `PlatformFunctionGraphCommit` objects."""
@@ -1703,6 +1929,158 @@ enum PlatformFunctionExecutionLogOrderBy {
   METADATA_DESC
   TASK_IDENTIFIER_ASC
   TASK_IDENTIFIER_DESC
+}
+
+"""
+A connection to a list of `PlatformFunctionGraphExecutionNodeState` values.
+"""
+type PlatformFunctionGraphExecutionNodeStateConnection {
+  """A list of `PlatformFunctionGraphExecutionNodeState` objects."""
+  nodes: [PlatformFunctionGraphExecutionNodeState]!
+
+  """
+  A list of edges which contains the `PlatformFunctionGraphExecutionNodeState` and cursor to aid in pagination.
+  """
+  edges: [PlatformFunctionGraphExecutionNodeStateEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformFunctionGraphExecutionNodeState` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""
+Per-node execution state — tracks individual node lifecycle for debugging
+"""
+type PlatformFunctionGraphExecutionNodeState {
+  """Timestamp of node state creation (partition key)"""
+  createdAt: Datetime!
+
+  """Timestamp when the node finished (success or failure)"""
+  completedAt: Datetime
+
+  """Scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """Machine-readable error code when status = failed"""
+  errorCode: String
+
+  """Human-readable error description when status = failed"""
+  errorMessage: String
+
+  """FK to the parent graph execution"""
+  executionId: UUID!
+
+  """Unique node state identifier"""
+  id: UUID!
+
+  """Name of the node within the graph (e.g. send-email1)"""
+  nodeName: String!
+
+  """FK to execution_outputs — content-addressed output blob for this node"""
+  outputId: UUID
+
+  """Timestamp when the node began executing"""
+  startedAt: Datetime
+
+  """Node lifecycle: pending → queued → running → completed/failed"""
+  status: String!
+  nodePath: [String]
+}
+
+"""A `PlatformFunctionGraphExecutionNodeState` edge in the connection."""
+type PlatformFunctionGraphExecutionNodeStateEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformFunctionGraphExecutionNodeState` at the end of the edge."""
+  node: PlatformFunctionGraphExecutionNodeState
+}
+
+"""
+A filter to be used against `PlatformFunctionGraphExecutionNodeState` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformFunctionGraphExecutionNodeStateFilter {
+  """Filter by the object’s `createdAt` field."""
+  createdAt: DatetimeFilter
+
+  """Filter by the object’s `completedAt` field."""
+  completedAt: DatetimeFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `errorCode` field."""
+  errorCode: StringFilter
+
+  """Filter by the object’s `errorMessage` field."""
+  errorMessage: StringFilter
+
+  """Filter by the object’s `executionId` field."""
+  executionId: UUIDFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `nodeName` field."""
+  nodeName: StringFilter
+
+  """Filter by the object’s `outputId` field."""
+  outputId: UUIDFilter
+
+  """Filter by the object’s `startedAt` field."""
+  startedAt: DatetimeFilter
+
+  """Filter by the object’s `status` field."""
+  status: StringFilter
+
+  """Filter by the object’s `nodePath` field."""
+  nodePath: StringListFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformFunctionGraphExecutionNodeStateFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformFunctionGraphExecutionNodeStateFilter!]
+
+  """Negates the expression."""
+  not: PlatformFunctionGraphExecutionNodeStateFilter
+}
+
+"""
+Methods to use when ordering `PlatformFunctionGraphExecutionNodeState`.
+"""
+enum PlatformFunctionGraphExecutionNodeStateOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  COMPLETED_AT_ASC
+  COMPLETED_AT_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  ERROR_CODE_ASC
+  ERROR_CODE_DESC
+  ERROR_MESSAGE_ASC
+  ERROR_MESSAGE_DESC
+  EXECUTION_ID_ASC
+  EXECUTION_ID_DESC
+  ID_ASC
+  ID_DESC
+  NODE_NAME_ASC
+  NODE_NAME_DESC
+  OUTPUT_ID_ASC
+  OUTPUT_ID_DESC
+  STARTED_AT_ASC
+  STARTED_AT_DESC
+  STATUS_ASC
+  STATUS_DESC
+  NODE_PATH_ASC
+  NODE_PATH_DESC
 }
 
 """A connection to a list of `PlatformFunctionGraph` values."""
@@ -2603,6 +2981,260 @@ enum PlatformFunctionInvocationOrderBy {
   TASK_IDENTIFIER_DESC
 }
 
+"""A connection to a list of `PlatformFunctionGraphExecution` values."""
+type PlatformFunctionGraphExecutionConnection {
+  """A list of `PlatformFunctionGraphExecution` objects."""
+  nodes: [PlatformFunctionGraphExecution]!
+
+  """
+  A list of edges which contains the `PlatformFunctionGraphExecution` and cursor to aid in pagination.
+  """
+  edges: [PlatformFunctionGraphExecutionEdge]!
+
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """
+  The count of *all* `PlatformFunctionGraphExecution` you could get from the connection.
+  """
+  totalCount: Int!
+}
+
+"""Ephemeral execution state for flow graph evaluation"""
+type PlatformFunctionGraphExecution {
+  """Execution start timestamp"""
+  startedAt: Datetime!
+
+  """Execution completion timestamp"""
+  completedAt: Datetime
+
+  """Index into execution_plan — tick only processes this wave"""
+  currentWave: Int!
+
+  """Scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """Pinned definitions store commit for deterministic evaluation"""
+  definitionsCommitId: UUID
+
+  """Entity context (org/team) for scoped billing"""
+  entityId: UUID
+
+  """Machine-readable error code when status = failed"""
+  errorCode: String
+
+  """Human-readable error description when status = failed"""
+  errorMessage: String
+
+  """Pre-computed topological sort as array of wave objects"""
+  executionPlan: JSON
+
+  """FK to the graph definition being executed"""
+  graphId: UUID!
+
+  """Unique execution identifier"""
+  id: UUID!
+
+  """Initial inputs provided at invocation time"""
+  inputPayload: JSON
+
+  """Parent function_invocations row (for metering)"""
+  invocationId: UUID
+
+  """Maximum pending jobs before execution is failed (default 50)"""
+  maxPendingJobs: Int!
+
+  """Maximum ticks before execution is failed (default 100)"""
+  maxTicks: Int!
+
+  """
+  Map of node_name → execution output id (content-addressed hash reference)
+  """
+  nodeOutputs: JSON!
+
+  """Target output boundary node name to resolve"""
+  outputNode: String!
+
+  """Final result extracted from terminal output node"""
+  outputPayload: JSON
+
+  """Target output port name (default: value)"""
+  outputPort: String!
+
+  """Parent execution when this is a sub-execution"""
+  parentExecutionId: UUID
+
+  """Node name in parent execution that spawned this sub-execution"""
+  parentNodeName: String
+
+  """Lifecycle: pending → running → completed/failed/cancelled"""
+  status: String!
+
+  """Number of evaluate_step ticks executed"""
+  tickCount: Int!
+
+  """Absolute deadline — execution fails if still running after this time"""
+  timeoutAt: Datetime!
+
+  """
+  Reads a single `PlatformFunctionGraph` that is related to this `PlatformFunctionGraphExecution`.
+  """
+  graph: PlatformFunctionGraph
+}
+
+"""A `PlatformFunctionGraphExecution` edge in the connection."""
+type PlatformFunctionGraphExecutionEdge {
+  """A cursor for use in pagination."""
+  cursor: Cursor
+
+  """The `PlatformFunctionGraphExecution` at the end of the edge."""
+  node: PlatformFunctionGraphExecution
+}
+
+"""
+A filter to be used against `PlatformFunctionGraphExecution` object types. All fields are combined with a logical ‘and.’
+"""
+input PlatformFunctionGraphExecutionFilter {
+  """Filter by the object’s `startedAt` field."""
+  startedAt: DatetimeFilter
+
+  """Filter by the object’s `completedAt` field."""
+  completedAt: DatetimeFilter
+
+  """Filter by the object’s `currentWave` field."""
+  currentWave: IntFilter
+
+  """Filter by the object’s `databaseId` field."""
+  databaseId: UUIDFilter
+
+  """Filter by the object’s `definitionsCommitId` field."""
+  definitionsCommitId: UUIDFilter
+
+  """Filter by the object’s `entityId` field."""
+  entityId: UUIDFilter
+
+  """Filter by the object’s `errorCode` field."""
+  errorCode: StringFilter
+
+  """Filter by the object’s `errorMessage` field."""
+  errorMessage: StringFilter
+
+  """Filter by the object’s `executionPlan` field."""
+  executionPlan: JSONFilter
+
+  """Filter by the object’s `graphId` field."""
+  graphId: UUIDFilter
+
+  """Filter by the object’s `id` field."""
+  id: UUIDFilter
+
+  """Filter by the object’s `inputPayload` field."""
+  inputPayload: JSONFilter
+
+  """Filter by the object’s `invocationId` field."""
+  invocationId: UUIDFilter
+
+  """Filter by the object’s `maxPendingJobs` field."""
+  maxPendingJobs: IntFilter
+
+  """Filter by the object’s `maxTicks` field."""
+  maxTicks: IntFilter
+
+  """Filter by the object’s `nodeOutputs` field."""
+  nodeOutputs: JSONFilter
+
+  """Filter by the object’s `outputNode` field."""
+  outputNode: StringFilter
+
+  """Filter by the object’s `outputPayload` field."""
+  outputPayload: JSONFilter
+
+  """Filter by the object’s `outputPort` field."""
+  outputPort: StringFilter
+
+  """Filter by the object’s `parentExecutionId` field."""
+  parentExecutionId: UUIDFilter
+
+  """Filter by the object’s `parentNodeName` field."""
+  parentNodeName: StringFilter
+
+  """Filter by the object’s `status` field."""
+  status: StringFilter
+
+  """Filter by the object’s `tickCount` field."""
+  tickCount: IntFilter
+
+  """Filter by the object’s `timeoutAt` field."""
+  timeoutAt: DatetimeFilter
+
+  """Checks for all expressions in this list."""
+  and: [PlatformFunctionGraphExecutionFilter!]
+
+  """Checks for any expressions in this list."""
+  or: [PlatformFunctionGraphExecutionFilter!]
+
+  """Negates the expression."""
+  not: PlatformFunctionGraphExecutionFilter
+
+  """Filter by the object’s `graph` relation."""
+  graph: PlatformFunctionGraphFilter
+}
+
+"""Methods to use when ordering `PlatformFunctionGraphExecution`."""
+enum PlatformFunctionGraphExecutionOrderBy {
+  NATURAL
+  PRIMARY_KEY_ASC
+  PRIMARY_KEY_DESC
+  STARTED_AT_ASC
+  STARTED_AT_DESC
+  COMPLETED_AT_ASC
+  COMPLETED_AT_DESC
+  CURRENT_WAVE_ASC
+  CURRENT_WAVE_DESC
+  DATABASE_ID_ASC
+  DATABASE_ID_DESC
+  DEFINITIONS_COMMIT_ID_ASC
+  DEFINITIONS_COMMIT_ID_DESC
+  ENTITY_ID_ASC
+  ENTITY_ID_DESC
+  ERROR_CODE_ASC
+  ERROR_CODE_DESC
+  ERROR_MESSAGE_ASC
+  ERROR_MESSAGE_DESC
+  EXECUTION_PLAN_ASC
+  EXECUTION_PLAN_DESC
+  GRAPH_ID_ASC
+  GRAPH_ID_DESC
+  ID_ASC
+  ID_DESC
+  INPUT_PAYLOAD_ASC
+  INPUT_PAYLOAD_DESC
+  INVOCATION_ID_ASC
+  INVOCATION_ID_DESC
+  MAX_PENDING_JOBS_ASC
+  MAX_PENDING_JOBS_DESC
+  MAX_TICKS_ASC
+  MAX_TICKS_DESC
+  NODE_OUTPUTS_ASC
+  NODE_OUTPUTS_DESC
+  OUTPUT_NODE_ASC
+  OUTPUT_NODE_DESC
+  OUTPUT_PAYLOAD_ASC
+  OUTPUT_PAYLOAD_DESC
+  OUTPUT_PORT_ASC
+  OUTPUT_PORT_DESC
+  PARENT_EXECUTION_ID_ASC
+  PARENT_EXECUTION_ID_DESC
+  PARENT_NODE_NAME_ASC
+  PARENT_NODE_NAME_DESC
+  STATUS_ASC
+  STATUS_DESC
+  TICK_COUNT_ASC
+  TICK_COUNT_DESC
+  TIMEOUT_AT_ASC
+  TIMEOUT_AT_DESC
+}
+
 """A connection to a list of `PlatformFunctionDefinition` values."""
 type PlatformFunctionDefinitionConnection {
   """A list of `PlatformFunctionDefinition` objects."""
@@ -3124,6 +3756,14 @@ type Mutation {
     input: CreateOrgFunctionExecutionLogInput!
   ): CreateOrgFunctionExecutionLogPayload
 
+  """Creates a single `PlatformFunctionGraphExecutionOutput`."""
+  createPlatformFunctionGraphExecutionOutput(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformFunctionGraphExecutionOutputInput!
+  ): CreatePlatformFunctionGraphExecutionOutputPayload
+
   """Creates a single `PlatformFunctionGraphCommit`."""
   createPlatformFunctionGraphCommit(
     """
@@ -3147,6 +3787,14 @@ type Mutation {
     """
     input: CreatePlatformFunctionExecutionLogInput!
   ): CreatePlatformFunctionExecutionLogPayload
+
+  """Creates a single `PlatformFunctionGraphExecutionNodeState`."""
+  createPlatformFunctionGraphExecutionNodeState(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformFunctionGraphExecutionNodeStateInput!
+  ): CreatePlatformFunctionGraphExecutionNodeStatePayload
 
   """Creates a single `PlatformFunctionGraph`."""
   createPlatformFunctionGraph(
@@ -3187,6 +3835,14 @@ type Mutation {
     """
     input: CreatePlatformFunctionInvocationInput!
   ): CreatePlatformFunctionInvocationPayload
+
+  """Creates a single `PlatformFunctionGraphExecution`."""
+  createPlatformFunctionGraphExecution(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: CreatePlatformFunctionGraphExecutionInput!
+  ): CreatePlatformFunctionGraphExecutionPayload
 
   """Creates a single `PlatformFunctionDefinition`."""
   createPlatformFunctionDefinition(
@@ -3237,6 +3893,16 @@ type Mutation {
   ): UpdateOrgFunctionExecutionLogPayload
 
   """
+  Updates a single `PlatformFunctionGraphExecutionOutput` using a unique key and a patch.
+  """
+  updatePlatformFunctionGraphExecutionOutput(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformFunctionGraphExecutionOutputInput!
+  ): UpdatePlatformFunctionGraphExecutionOutputPayload
+
+  """
   Updates a single `PlatformFunctionGraphCommit` using a unique key and a patch.
   """
   updatePlatformFunctionGraphCommit(
@@ -3265,6 +3931,16 @@ type Mutation {
     """
     input: UpdatePlatformFunctionExecutionLogInput!
   ): UpdatePlatformFunctionExecutionLogPayload
+
+  """
+  Updates a single `PlatformFunctionGraphExecutionNodeState` using a unique key and a patch.
+  """
+  updatePlatformFunctionGraphExecutionNodeState(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformFunctionGraphExecutionNodeStateInput!
+  ): UpdatePlatformFunctionGraphExecutionNodeStatePayload
 
   """
   Updates a single `PlatformFunctionGraph` using a unique key and a patch.
@@ -3313,6 +3989,16 @@ type Mutation {
   ): UpdatePlatformFunctionInvocationPayload
 
   """
+  Updates a single `PlatformFunctionGraphExecution` using a unique key and a patch.
+  """
+  updatePlatformFunctionGraphExecution(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: UpdatePlatformFunctionGraphExecutionInput!
+  ): UpdatePlatformFunctionGraphExecutionPayload
+
+  """
   Updates a single `PlatformFunctionDefinition` using a unique key and a patch.
   """
   updatePlatformFunctionDefinition(
@@ -3354,6 +4040,16 @@ type Mutation {
     input: DeleteOrgFunctionExecutionLogInput!
   ): DeleteOrgFunctionExecutionLogPayload
 
+  """
+  Deletes a single `PlatformFunctionGraphExecutionOutput` using a unique key.
+  """
+  deletePlatformFunctionGraphExecutionOutput(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformFunctionGraphExecutionOutputInput!
+  ): DeletePlatformFunctionGraphExecutionOutputPayload
+
   """Deletes a single `PlatformFunctionGraphCommit` using a unique key."""
   deletePlatformFunctionGraphCommit(
     """
@@ -3377,6 +4073,16 @@ type Mutation {
     """
     input: DeletePlatformFunctionExecutionLogInput!
   ): DeletePlatformFunctionExecutionLogPayload
+
+  """
+  Deletes a single `PlatformFunctionGraphExecutionNodeState` using a unique key.
+  """
+  deletePlatformFunctionGraphExecutionNodeState(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformFunctionGraphExecutionNodeStateInput!
+  ): DeletePlatformFunctionGraphExecutionNodeStatePayload
 
   """Deletes a single `PlatformFunctionGraph` using a unique key."""
   deletePlatformFunctionGraph(
@@ -3417,6 +4123,14 @@ type Mutation {
     """
     input: DeletePlatformFunctionInvocationInput!
   ): DeletePlatformFunctionInvocationPayload
+
+  """Deletes a single `PlatformFunctionGraphExecution` using a unique key."""
+  deletePlatformFunctionGraphExecution(
+    """
+    The exclusive input argument for this mutation. An object type, make sure to see documentation for this object’s fields.
+    """
+    input: DeletePlatformFunctionGraphExecutionInput!
+  ): DeletePlatformFunctionGraphExecutionPayload
 
   """Deletes a single `PlatformFunctionDefinition` using a unique key."""
   deletePlatformFunctionDefinition(
@@ -4100,6 +4814,73 @@ input OrgFunctionExecutionLogInput {
   taskIdentifier: String
 }
 
+"""
+The output of our create `PlatformFunctionGraphExecutionOutput` mutation.
+"""
+type CreatePlatformFunctionGraphExecutionOutputPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  The `PlatformFunctionGraphExecutionOutput` that was created by this mutation.
+  """
+  platformFunctionGraphExecutionOutput: PlatformFunctionGraphExecutionOutput
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """
+  An edge for our `PlatformFunctionGraphExecutionOutput`. May be used by Relay 1.
+  """
+  platformFunctionGraphExecutionOutputEdge(
+    """
+    The method to use when ordering `PlatformFunctionGraphExecutionOutput`.
+    """
+    orderBy: [PlatformFunctionGraphExecutionOutputOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphExecutionOutputEdge
+}
+
+"""
+All input for the create `PlatformFunctionGraphExecutionOutput` mutation.
+"""
+input CreatePlatformFunctionGraphExecutionOutputInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """
+  The `PlatformFunctionGraphExecutionOutput` to be created by this mutation.
+  """
+  platformFunctionGraphExecutionOutput: PlatformFunctionGraphExecutionOutputInput!
+}
+
+"""
+An input for mutations affecting `PlatformFunctionGraphExecutionOutput`
+"""
+input PlatformFunctionGraphExecutionOutputInput {
+  """Timestamp of output creation"""
+  createdAt: Datetime
+
+  """The actual output payload from a completed node"""
+  data: JSON!
+
+  """Scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """SHA-256 hash of the data JSONB — content-addressed deduplication"""
+  hash: Base64EncodedBinary!
+
+  """Unique execution output identifier"""
+  id: UUID
+}
+
 """The output of our create `PlatformFunctionGraphCommit` mutation."""
 type CreatePlatformFunctionGraphCommitPayload {
   """
@@ -4291,6 +5072,92 @@ input PlatformFunctionExecutionLogInput {
 
   """Function routing key (NULL for generic job logs)"""
   taskIdentifier: String
+}
+
+"""
+The output of our create `PlatformFunctionGraphExecutionNodeState` mutation.
+"""
+type CreatePlatformFunctionGraphExecutionNodeStatePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  The `PlatformFunctionGraphExecutionNodeState` that was created by this mutation.
+  """
+  platformFunctionGraphExecutionNodeState: PlatformFunctionGraphExecutionNodeState
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """
+  An edge for our `PlatformFunctionGraphExecutionNodeState`. May be used by Relay 1.
+  """
+  platformFunctionGraphExecutionNodeStateEdge(
+    """
+    The method to use when ordering `PlatformFunctionGraphExecutionNodeState`.
+    """
+    orderBy: [PlatformFunctionGraphExecutionNodeStateOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphExecutionNodeStateEdge
+}
+
+"""
+All input for the create `PlatformFunctionGraphExecutionNodeState` mutation.
+"""
+input CreatePlatformFunctionGraphExecutionNodeStateInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """
+  The `PlatformFunctionGraphExecutionNodeState` to be created by this mutation.
+  """
+  platformFunctionGraphExecutionNodeState: PlatformFunctionGraphExecutionNodeStateInput!
+}
+
+"""
+An input for mutations affecting `PlatformFunctionGraphExecutionNodeState`
+"""
+input PlatformFunctionGraphExecutionNodeStateInput {
+  """Timestamp of node state creation (partition key)"""
+  createdAt: Datetime
+
+  """Timestamp when the node finished (success or failure)"""
+  completedAt: Datetime
+
+  """Scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """Machine-readable error code when status = failed"""
+  errorCode: String
+
+  """Human-readable error description when status = failed"""
+  errorMessage: String
+
+  """FK to the parent graph execution"""
+  executionId: UUID!
+
+  """Unique node state identifier"""
+  id: UUID
+
+  """Name of the node within the graph (e.g. send-email1)"""
+  nodeName: String!
+
+  """FK to execution_outputs — content-addressed output blob for this node"""
+  outputId: UUID
+
+  """Timestamp when the node began executing"""
+  startedAt: Datetime
+
+  """Node lifecycle: pending → queued → running → completed/failed"""
+  status: String
+  nodePath: [String]
 }
 
 """The output of our create `PlatformFunctionGraph` mutation."""
@@ -4639,6 +5506,122 @@ input PlatformFunctionInvocationInput {
   Function routing slug (scope:name). Links to function_definitions.task_identifier by convention — no FK.
   """
   taskIdentifier: String!
+}
+
+"""The output of our create `PlatformFunctionGraphExecution` mutation."""
+type CreatePlatformFunctionGraphExecutionPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  The `PlatformFunctionGraphExecution` that was created by this mutation.
+  """
+  platformFunctionGraphExecution: PlatformFunctionGraphExecution
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """
+  An edge for our `PlatformFunctionGraphExecution`. May be used by Relay 1.
+  """
+  platformFunctionGraphExecutionEdge(
+    """The method to use when ordering `PlatformFunctionGraphExecution`."""
+    orderBy: [PlatformFunctionGraphExecutionOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphExecutionEdge
+}
+
+"""All input for the create `PlatformFunctionGraphExecution` mutation."""
+input CreatePlatformFunctionGraphExecutionInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """The `PlatformFunctionGraphExecution` to be created by this mutation."""
+  platformFunctionGraphExecution: PlatformFunctionGraphExecutionInput!
+}
+
+"""An input for mutations affecting `PlatformFunctionGraphExecution`"""
+input PlatformFunctionGraphExecutionInput {
+  """Execution start timestamp"""
+  startedAt: Datetime
+
+  """Execution completion timestamp"""
+  completedAt: Datetime
+
+  """Index into execution_plan — tick only processes this wave"""
+  currentWave: Int
+
+  """Scope for multi-tenant isolation"""
+  databaseId: UUID!
+
+  """Pinned definitions store commit for deterministic evaluation"""
+  definitionsCommitId: UUID
+
+  """Entity context (org/team) for scoped billing"""
+  entityId: UUID
+
+  """Machine-readable error code when status = failed"""
+  errorCode: String
+
+  """Human-readable error description when status = failed"""
+  errorMessage: String
+
+  """Pre-computed topological sort as array of wave objects"""
+  executionPlan: JSON
+
+  """FK to the graph definition being executed"""
+  graphId: UUID!
+
+  """Unique execution identifier"""
+  id: UUID
+
+  """Initial inputs provided at invocation time"""
+  inputPayload: JSON
+
+  """Parent function_invocations row (for metering)"""
+  invocationId: UUID
+
+  """Maximum pending jobs before execution is failed (default 50)"""
+  maxPendingJobs: Int
+
+  """Maximum ticks before execution is failed (default 100)"""
+  maxTicks: Int
+
+  """
+  Map of node_name → execution output id (content-addressed hash reference)
+  """
+  nodeOutputs: JSON
+
+  """Target output boundary node name to resolve"""
+  outputNode: String!
+
+  """Final result extracted from terminal output node"""
+  outputPayload: JSON
+
+  """Target output port name (default: value)"""
+  outputPort: String
+
+  """Parent execution when this is a sub-execution"""
+  parentExecutionId: UUID
+
+  """Node name in parent execution that spawned this sub-execution"""
+  parentNodeName: String
+
+  """Lifecycle: pending → running → completed/failed/cancelled"""
+  status: String
+
+  """Number of evaluate_step ticks executed"""
+  tickCount: Int
+
+  """Absolute deadline — execution fails if still running after this time"""
+  timeoutAt: Datetime
 }
 
 """The output of our create `PlatformFunctionDefinition` mutation."""
@@ -5028,6 +6011,79 @@ input OrgFunctionExecutionLogPatch {
   taskIdentifier: String
 }
 
+"""
+The output of our update `PlatformFunctionGraphExecutionOutput` mutation.
+"""
+type UpdatePlatformFunctionGraphExecutionOutputPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  The `PlatformFunctionGraphExecutionOutput` that was updated by this mutation.
+  """
+  platformFunctionGraphExecutionOutput: PlatformFunctionGraphExecutionOutput
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """
+  An edge for our `PlatformFunctionGraphExecutionOutput`. May be used by Relay 1.
+  """
+  platformFunctionGraphExecutionOutputEdge(
+    """
+    The method to use when ordering `PlatformFunctionGraphExecutionOutput`.
+    """
+    orderBy: [PlatformFunctionGraphExecutionOutputOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphExecutionOutputEdge
+}
+
+"""
+All input for the `updatePlatformFunctionGraphExecutionOutput` mutation.
+"""
+input UpdatePlatformFunctionGraphExecutionOutputInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Timestamp of output creation"""
+  createdAt: Datetime!
+
+  """Unique execution output identifier"""
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformFunctionGraphExecutionOutput` being updated.
+  """
+  platformFunctionGraphExecutionOutputPatch: PlatformFunctionGraphExecutionOutputPatch!
+}
+
+"""
+Represents an update to a `PlatformFunctionGraphExecutionOutput`. Fields that are set will be updated.
+"""
+input PlatformFunctionGraphExecutionOutputPatch {
+  """Timestamp of output creation"""
+  createdAt: Datetime
+
+  """The actual output payload from a completed node"""
+  data: JSON
+
+  """Scope for multi-tenant isolation"""
+  databaseId: UUID
+
+  """SHA-256 hash of the data JSONB — content-addressed deduplication"""
+  hash: Base64EncodedBinary
+
+  """Unique execution output identifier"""
+  id: UUID
+}
+
 """The output of our update `PlatformFunctionGraphCommit` mutation."""
 type UpdatePlatformFunctionGraphCommitPayload {
   """
@@ -5244,6 +6300,98 @@ input PlatformFunctionExecutionLogPatch {
 
   """Function routing key (NULL for generic job logs)"""
   taskIdentifier: String
+}
+
+"""
+The output of our update `PlatformFunctionGraphExecutionNodeState` mutation.
+"""
+type UpdatePlatformFunctionGraphExecutionNodeStatePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  The `PlatformFunctionGraphExecutionNodeState` that was updated by this mutation.
+  """
+  platformFunctionGraphExecutionNodeState: PlatformFunctionGraphExecutionNodeState
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """
+  An edge for our `PlatformFunctionGraphExecutionNodeState`. May be used by Relay 1.
+  """
+  platformFunctionGraphExecutionNodeStateEdge(
+    """
+    The method to use when ordering `PlatformFunctionGraphExecutionNodeState`.
+    """
+    orderBy: [PlatformFunctionGraphExecutionNodeStateOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphExecutionNodeStateEdge
+}
+
+"""
+All input for the `updatePlatformFunctionGraphExecutionNodeState` mutation.
+"""
+input UpdatePlatformFunctionGraphExecutionNodeStateInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Timestamp of node state creation (partition key)"""
+  createdAt: Datetime!
+
+  """Unique node state identifier"""
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformFunctionGraphExecutionNodeState` being updated.
+  """
+  platformFunctionGraphExecutionNodeStatePatch: PlatformFunctionGraphExecutionNodeStatePatch!
+}
+
+"""
+Represents an update to a `PlatformFunctionGraphExecutionNodeState`. Fields that are set will be updated.
+"""
+input PlatformFunctionGraphExecutionNodeStatePatch {
+  """Timestamp of node state creation (partition key)"""
+  createdAt: Datetime
+
+  """Timestamp when the node finished (success or failure)"""
+  completedAt: Datetime
+
+  """Scope for multi-tenant isolation"""
+  databaseId: UUID
+
+  """Machine-readable error code when status = failed"""
+  errorCode: String
+
+  """Human-readable error description when status = failed"""
+  errorMessage: String
+
+  """FK to the parent graph execution"""
+  executionId: UUID
+
+  """Unique node state identifier"""
+  id: UUID
+
+  """Name of the node within the graph (e.g. send-email1)"""
+  nodeName: String
+
+  """FK to execution_outputs — content-addressed output blob for this node"""
+  outputId: UUID
+
+  """Timestamp when the node began executing"""
+  startedAt: Datetime
+
+  """Node lifecycle: pending → queued → running → completed/failed"""
+  status: String
+  nodePath: [String]
 }
 
 """The output of our update `PlatformFunctionGraph` mutation."""
@@ -5632,6 +6780,132 @@ input PlatformFunctionInvocationPatch {
   taskIdentifier: String
 }
 
+"""The output of our update `PlatformFunctionGraphExecution` mutation."""
+type UpdatePlatformFunctionGraphExecutionPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  The `PlatformFunctionGraphExecution` that was updated by this mutation.
+  """
+  platformFunctionGraphExecution: PlatformFunctionGraphExecution
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """
+  An edge for our `PlatformFunctionGraphExecution`. May be used by Relay 1.
+  """
+  platformFunctionGraphExecutionEdge(
+    """The method to use when ordering `PlatformFunctionGraphExecution`."""
+    orderBy: [PlatformFunctionGraphExecutionOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphExecutionEdge
+}
+
+"""All input for the `updatePlatformFunctionGraphExecution` mutation."""
+input UpdatePlatformFunctionGraphExecutionInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Execution start timestamp"""
+  startedAt: Datetime!
+
+  """Unique execution identifier"""
+  id: UUID!
+
+  """
+  An object where the defined keys will be set on the `PlatformFunctionGraphExecution` being updated.
+  """
+  platformFunctionGraphExecutionPatch: PlatformFunctionGraphExecutionPatch!
+}
+
+"""
+Represents an update to a `PlatformFunctionGraphExecution`. Fields that are set will be updated.
+"""
+input PlatformFunctionGraphExecutionPatch {
+  """Execution start timestamp"""
+  startedAt: Datetime
+
+  """Execution completion timestamp"""
+  completedAt: Datetime
+
+  """Index into execution_plan — tick only processes this wave"""
+  currentWave: Int
+
+  """Scope for multi-tenant isolation"""
+  databaseId: UUID
+
+  """Pinned definitions store commit for deterministic evaluation"""
+  definitionsCommitId: UUID
+
+  """Entity context (org/team) for scoped billing"""
+  entityId: UUID
+
+  """Machine-readable error code when status = failed"""
+  errorCode: String
+
+  """Human-readable error description when status = failed"""
+  errorMessage: String
+
+  """Pre-computed topological sort as array of wave objects"""
+  executionPlan: JSON
+
+  """FK to the graph definition being executed"""
+  graphId: UUID
+
+  """Unique execution identifier"""
+  id: UUID
+
+  """Initial inputs provided at invocation time"""
+  inputPayload: JSON
+
+  """Parent function_invocations row (for metering)"""
+  invocationId: UUID
+
+  """Maximum pending jobs before execution is failed (default 50)"""
+  maxPendingJobs: Int
+
+  """Maximum ticks before execution is failed (default 100)"""
+  maxTicks: Int
+
+  """
+  Map of node_name → execution output id (content-addressed hash reference)
+  """
+  nodeOutputs: JSON
+
+  """Target output boundary node name to resolve"""
+  outputNode: String
+
+  """Final result extracted from terminal output node"""
+  outputPayload: JSON
+
+  """Target output port name (default: value)"""
+  outputPort: String
+
+  """Parent execution when this is a sub-execution"""
+  parentExecutionId: UUID
+
+  """Node name in parent execution that spawned this sub-execution"""
+  parentNodeName: String
+
+  """Lifecycle: pending → running → completed/failed/cancelled"""
+  status: String
+
+  """Number of evaluate_step ticks executed"""
+  tickCount: Int
+
+  """Absolute deadline — execution fails if still running after this time"""
+  timeoutAt: Datetime
+}
+
 """The output of our update `PlatformFunctionDefinition` mutation."""
 type UpdatePlatformFunctionDefinitionPayload {
   """
@@ -5906,6 +7180,54 @@ input DeleteOrgFunctionExecutionLogInput {
   id: UUID!
 }
 
+"""
+The output of our delete `PlatformFunctionGraphExecutionOutput` mutation.
+"""
+type DeletePlatformFunctionGraphExecutionOutputPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  The `PlatformFunctionGraphExecutionOutput` that was deleted by this mutation.
+  """
+  platformFunctionGraphExecutionOutput: PlatformFunctionGraphExecutionOutput
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """
+  An edge for our `PlatformFunctionGraphExecutionOutput`. May be used by Relay 1.
+  """
+  platformFunctionGraphExecutionOutputEdge(
+    """
+    The method to use when ordering `PlatformFunctionGraphExecutionOutput`.
+    """
+    orderBy: [PlatformFunctionGraphExecutionOutputOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphExecutionOutputEdge
+}
+
+"""
+All input for the `deletePlatformFunctionGraphExecutionOutput` mutation.
+"""
+input DeletePlatformFunctionGraphExecutionOutputInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Timestamp of output creation"""
+  createdAt: Datetime!
+
+  """Unique execution output identifier"""
+  id: UUID!
+}
+
 """The output of our delete `PlatformFunctionGraphCommit` mutation."""
 type DeletePlatformFunctionGraphCommitPayload {
   """
@@ -6014,6 +7336,54 @@ input DeletePlatformFunctionExecutionLogInput {
   createdAt: Datetime!
 
   """Unique log entry identifier"""
+  id: UUID!
+}
+
+"""
+The output of our delete `PlatformFunctionGraphExecutionNodeState` mutation.
+"""
+type DeletePlatformFunctionGraphExecutionNodeStatePayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  The `PlatformFunctionGraphExecutionNodeState` that was deleted by this mutation.
+  """
+  platformFunctionGraphExecutionNodeState: PlatformFunctionGraphExecutionNodeState
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """
+  An edge for our `PlatformFunctionGraphExecutionNodeState`. May be used by Relay 1.
+  """
+  platformFunctionGraphExecutionNodeStateEdge(
+    """
+    The method to use when ordering `PlatformFunctionGraphExecutionNodeState`.
+    """
+    orderBy: [PlatformFunctionGraphExecutionNodeStateOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphExecutionNodeStateEdge
+}
+
+"""
+All input for the `deletePlatformFunctionGraphExecutionNodeState` mutation.
+"""
+input DeletePlatformFunctionGraphExecutionNodeStateInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Timestamp of node state creation (partition key)"""
+  createdAt: Datetime!
+
+  """Unique node state identifier"""
   id: UUID!
 }
 
@@ -6192,6 +7562,48 @@ input DeletePlatformFunctionInvocationInput {
   createdAt: Datetime!
 
   """Unique invocation identifier"""
+  id: UUID!
+}
+
+"""The output of our delete `PlatformFunctionGraphExecution` mutation."""
+type DeletePlatformFunctionGraphExecutionPayload {
+  """
+  The exact same `clientMutationId` that was provided in the mutation input,
+  unchanged and unused. May be used by a client to track mutations.
+  """
+  clientMutationId: String
+
+  """
+  The `PlatformFunctionGraphExecution` that was deleted by this mutation.
+  """
+  platformFunctionGraphExecution: PlatformFunctionGraphExecution
+
+  """
+  Our root query field type. Allows us to run any query from our mutation payload.
+  """
+  query: Query
+
+  """
+  An edge for our `PlatformFunctionGraphExecution`. May be used by Relay 1.
+  """
+  platformFunctionGraphExecutionEdge(
+    """The method to use when ordering `PlatformFunctionGraphExecution`."""
+    orderBy: [PlatformFunctionGraphExecutionOrderBy!]! = [PRIMARY_KEY_ASC]
+  ): PlatformFunctionGraphExecutionEdge
+}
+
+"""All input for the `deletePlatformFunctionGraphExecution` mutation."""
+input DeletePlatformFunctionGraphExecutionInput {
+  """
+  An arbitrary string value with no semantic meaning. Will be included in the
+  payload verbatim. May be used to track mutations by the client.
+  """
+  clientMutationId: String
+
+  """Execution start timestamp"""
+  startedAt: Datetime!
+
+  """Unique execution identifier"""
   id: UUID!
 }
 

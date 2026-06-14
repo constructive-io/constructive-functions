@@ -231,6 +231,7 @@ export interface UUIDListFilter {
   anyGreaterThanOrEqualTo?: string;
 }
 // ============ Custom Scalar Types ============
+export type Base64EncodedBinary = unknown;
 export type FunctionRequirement = unknown;
 // ============ Entity Types ============
 export interface GetAllRecord {
@@ -297,6 +298,19 @@ export interface OrgFunctionExecutionLog {
   /** Function routing key (NULL for generic job logs) */
   taskIdentifier?: string | null;
 }
+/** Content-addressed store for execution outputs — hash-referenced from node_outputs */
+export interface PlatformFunctionGraphExecutionOutput {
+  /** Timestamp of output creation */
+  createdAt?: string | null;
+  /** The actual output payload from a completed node */
+  data?: Record<string, unknown> | null;
+  /** Scope for multi-tenant isolation */
+  databaseId?: string | null;
+  /** SHA-256 hash of the data JSONB — content-addressed deduplication */
+  hash?: Base64EncodedBinary | null;
+  /** Unique execution output identifier */
+  id: string;
+}
 /** Commit history — each commit snapshots a tree root for a store */
 export interface PlatformFunctionGraphCommit {
   /** User who authored the changes */
@@ -356,6 +370,32 @@ export interface PlatformFunctionExecutionLog {
   metadata?: Record<string, unknown> | null;
   /** Function routing key (NULL for generic job logs) */
   taskIdentifier?: string | null;
+}
+/** Per-node execution state — tracks individual node lifecycle for debugging */
+export interface PlatformFunctionGraphExecutionNodeState {
+  /** Timestamp of node state creation (partition key) */
+  createdAt?: string | null;
+  /** Timestamp when the node finished (success or failure) */
+  completedAt?: string | null;
+  /** Scope for multi-tenant isolation */
+  databaseId?: string | null;
+  /** Machine-readable error code when status = failed */
+  errorCode?: string | null;
+  /** Human-readable error description when status = failed */
+  errorMessage?: string | null;
+  /** FK to the parent graph execution */
+  executionId?: string | null;
+  /** Unique node state identifier */
+  id: string;
+  /** Name of the node within the graph (e.g. send-email1) */
+  nodeName?: string | null;
+  /** FK to execution_outputs — content-addressed output blob for this node */
+  outputId?: string | null;
+  /** Timestamp when the node began executing */
+  startedAt?: string | null;
+  /** Node lifecycle: pending → queued → running → completed/failed */
+  status?: string | null;
+  nodePath?: string[] | null;
 }
 /** Flow graph definitions — FBP graphs stored in the dedicated graph Merkle store */
 export interface PlatformFunctionGraph {
@@ -480,6 +520,57 @@ export interface PlatformFunctionInvocation {
   /** Function routing slug (scope:name). Links to function_definitions.task_identifier by convention — no FK. */
   taskIdentifier?: string | null;
 }
+/** Ephemeral execution state for flow graph evaluation */
+export interface PlatformFunctionGraphExecution {
+  /** Execution start timestamp */
+  startedAt?: string | null;
+  /** Execution completion timestamp */
+  completedAt?: string | null;
+  /** Index into execution_plan — tick only processes this wave */
+  currentWave?: number | null;
+  /** Scope for multi-tenant isolation */
+  databaseId?: string | null;
+  /** Pinned definitions store commit for deterministic evaluation */
+  definitionsCommitId?: string | null;
+  /** Entity context (org/team) for scoped billing */
+  entityId?: string | null;
+  /** Machine-readable error code when status = failed */
+  errorCode?: string | null;
+  /** Human-readable error description when status = failed */
+  errorMessage?: string | null;
+  /** Pre-computed topological sort as array of wave objects */
+  executionPlan?: Record<string, unknown> | null;
+  /** FK to the graph definition being executed */
+  graphId?: string | null;
+  /** Unique execution identifier */
+  id: string;
+  /** Initial inputs provided at invocation time */
+  inputPayload?: Record<string, unknown> | null;
+  /** Parent function_invocations row (for metering) */
+  invocationId?: string | null;
+  /** Maximum pending jobs before execution is failed (default 50) */
+  maxPendingJobs?: number | null;
+  /** Maximum ticks before execution is failed (default 100) */
+  maxTicks?: number | null;
+  /** Map of node_name → execution output id (content-addressed hash reference) */
+  nodeOutputs?: Record<string, unknown> | null;
+  /** Target output boundary node name to resolve */
+  outputNode?: string | null;
+  /** Final result extracted from terminal output node */
+  outputPayload?: Record<string, unknown> | null;
+  /** Target output port name (default: value) */
+  outputPort?: string | null;
+  /** Parent execution when this is a sub-execution */
+  parentExecutionId?: string | null;
+  /** Node name in parent execution that spawned this sub-execution */
+  parentNodeName?: string | null;
+  /** Lifecycle: pending → running → completed/failed/cancelled */
+  status?: string | null;
+  /** Number of evaluate_step ticks executed */
+  tickCount?: number | null;
+  /** Absolute deadline — execution fails if still running after this time */
+  timeoutAt?: string | null;
+}
 /** Function definitions — registered cloud functions with routing, queue, and retry configuration */
 export interface PlatformFunctionDefinition {
   createdAt?: string | null;
@@ -544,14 +635,19 @@ export interface PlatformFunctionGraphRefRelations {}
 export interface PlatformFunctionGraphStoreRelations {}
 export interface PlatformFunctionGraphObjectRelations {}
 export interface OrgFunctionExecutionLogRelations {}
+export interface PlatformFunctionGraphExecutionOutputRelations {}
 export interface PlatformFunctionGraphCommitRelations {}
 export interface PlatformSecretDefinitionRelations {}
 export interface PlatformFunctionExecutionLogRelations {}
+export interface PlatformFunctionGraphExecutionNodeStateRelations {}
 export interface PlatformFunctionGraphRelations {}
 export interface PlatformComputeLogRelations {}
 export interface PlatformUsageDailyRelations {}
 export interface OrgFunctionInvocationRelations {}
 export interface PlatformFunctionInvocationRelations {}
+export interface PlatformFunctionGraphExecutionRelations {
+  graph?: PlatformFunctionGraph | null;
+}
 export interface PlatformFunctionDefinitionRelations {}
 // ============ Entity Types With Relations ============
 export type GetAllRecordWithRelations = GetAllRecord & GetAllRecordRelations;
@@ -563,12 +659,16 @@ export type PlatformFunctionGraphObjectWithRelations = PlatformFunctionGraphObje
   PlatformFunctionGraphObjectRelations;
 export type OrgFunctionExecutionLogWithRelations = OrgFunctionExecutionLog &
   OrgFunctionExecutionLogRelations;
+export type PlatformFunctionGraphExecutionOutputWithRelations =
+  PlatformFunctionGraphExecutionOutput & PlatformFunctionGraphExecutionOutputRelations;
 export type PlatformFunctionGraphCommitWithRelations = PlatformFunctionGraphCommit &
   PlatformFunctionGraphCommitRelations;
 export type PlatformSecretDefinitionWithRelations = PlatformSecretDefinition &
   PlatformSecretDefinitionRelations;
 export type PlatformFunctionExecutionLogWithRelations = PlatformFunctionExecutionLog &
   PlatformFunctionExecutionLogRelations;
+export type PlatformFunctionGraphExecutionNodeStateWithRelations =
+  PlatformFunctionGraphExecutionNodeState & PlatformFunctionGraphExecutionNodeStateRelations;
 export type PlatformFunctionGraphWithRelations = PlatformFunctionGraph &
   PlatformFunctionGraphRelations;
 export type PlatformComputeLogWithRelations = PlatformComputeLog & PlatformComputeLogRelations;
@@ -577,6 +677,8 @@ export type OrgFunctionInvocationWithRelations = OrgFunctionInvocation &
   OrgFunctionInvocationRelations;
 export type PlatformFunctionInvocationWithRelations = PlatformFunctionInvocation &
   PlatformFunctionInvocationRelations;
+export type PlatformFunctionGraphExecutionWithRelations = PlatformFunctionGraphExecution &
+  PlatformFunctionGraphExecutionRelations;
 export type PlatformFunctionDefinitionWithRelations = PlatformFunctionDefinition &
   PlatformFunctionDefinitionRelations;
 // ============ Entity Select Types ============
@@ -616,6 +718,13 @@ export type OrgFunctionExecutionLogSelect = {
   metadata?: boolean;
   taskIdentifier?: boolean;
 };
+export type PlatformFunctionGraphExecutionOutputSelect = {
+  createdAt?: boolean;
+  data?: boolean;
+  databaseId?: boolean;
+  hash?: boolean;
+  id?: boolean;
+};
 export type PlatformFunctionGraphCommitSelect = {
   authorId?: boolean;
   committerId?: boolean;
@@ -648,6 +757,20 @@ export type PlatformFunctionExecutionLogSelect = {
   message?: boolean;
   metadata?: boolean;
   taskIdentifier?: boolean;
+};
+export type PlatformFunctionGraphExecutionNodeStateSelect = {
+  createdAt?: boolean;
+  completedAt?: boolean;
+  databaseId?: boolean;
+  errorCode?: boolean;
+  errorMessage?: boolean;
+  executionId?: boolean;
+  id?: boolean;
+  nodeName?: boolean;
+  outputId?: boolean;
+  startedAt?: boolean;
+  status?: boolean;
+  nodePath?: boolean;
 };
 export type PlatformFunctionGraphSelect = {
   context?: boolean;
@@ -726,6 +849,35 @@ export type PlatformFunctionInvocationSelect = {
   startedAt?: boolean;
   status?: boolean;
   taskIdentifier?: boolean;
+};
+export type PlatformFunctionGraphExecutionSelect = {
+  startedAt?: boolean;
+  completedAt?: boolean;
+  currentWave?: boolean;
+  databaseId?: boolean;
+  definitionsCommitId?: boolean;
+  entityId?: boolean;
+  errorCode?: boolean;
+  errorMessage?: boolean;
+  executionPlan?: boolean;
+  graphId?: boolean;
+  id?: boolean;
+  inputPayload?: boolean;
+  invocationId?: boolean;
+  maxPendingJobs?: boolean;
+  maxTicks?: boolean;
+  nodeOutputs?: boolean;
+  outputNode?: boolean;
+  outputPayload?: boolean;
+  outputPort?: boolean;
+  parentExecutionId?: boolean;
+  parentNodeName?: boolean;
+  status?: boolean;
+  tickCount?: boolean;
+  timeoutAt?: boolean;
+  graph?: {
+    select: PlatformFunctionGraphSelect;
+  };
 };
 export type PlatformFunctionDefinitionSelect = {
   createdAt?: boolean;
@@ -840,6 +992,24 @@ export interface OrgFunctionExecutionLogFilter {
   /** Negates the expression. */
   not?: OrgFunctionExecutionLogFilter;
 }
+export interface PlatformFunctionGraphExecutionOutputFilter {
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: DatetimeFilter;
+  /** Filter by the object’s `data` field. */
+  data?: JSONFilter;
+  /** Filter by the object’s `databaseId` field. */
+  databaseId?: UUIDFilter;
+  /** Filter by the object’s `hash` field. */
+  hash?: Base64EncodedBinaryFilter;
+  /** Filter by the object’s `id` field. */
+  id?: UUIDFilter;
+  /** Checks for all expressions in this list. */
+  and?: PlatformFunctionGraphExecutionOutputFilter[];
+  /** Checks for any expressions in this list. */
+  or?: PlatformFunctionGraphExecutionOutputFilter[];
+  /** Negates the expression. */
+  not?: PlatformFunctionGraphExecutionOutputFilter;
+}
 export interface PlatformFunctionGraphCommitFilter {
   /** Filter by the object’s `authorId` field. */
   authorId?: UUIDFilter;
@@ -917,6 +1087,38 @@ export interface PlatformFunctionExecutionLogFilter {
   or?: PlatformFunctionExecutionLogFilter[];
   /** Negates the expression. */
   not?: PlatformFunctionExecutionLogFilter;
+}
+export interface PlatformFunctionGraphExecutionNodeStateFilter {
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: DatetimeFilter;
+  /** Filter by the object’s `completedAt` field. */
+  completedAt?: DatetimeFilter;
+  /** Filter by the object’s `databaseId` field. */
+  databaseId?: UUIDFilter;
+  /** Filter by the object’s `errorCode` field. */
+  errorCode?: StringFilter;
+  /** Filter by the object’s `errorMessage` field. */
+  errorMessage?: StringFilter;
+  /** Filter by the object’s `executionId` field. */
+  executionId?: UUIDFilter;
+  /** Filter by the object’s `id` field. */
+  id?: UUIDFilter;
+  /** Filter by the object’s `nodeName` field. */
+  nodeName?: StringFilter;
+  /** Filter by the object’s `outputId` field. */
+  outputId?: UUIDFilter;
+  /** Filter by the object’s `startedAt` field. */
+  startedAt?: DatetimeFilter;
+  /** Filter by the object’s `status` field. */
+  status?: StringFilter;
+  /** Filter by the object’s `nodePath` field. */
+  nodePath?: StringListFilter;
+  /** Checks for all expressions in this list. */
+  and?: PlatformFunctionGraphExecutionNodeStateFilter[];
+  /** Checks for any expressions in this list. */
+  or?: PlatformFunctionGraphExecutionNodeStateFilter[];
+  /** Negates the expression. */
+  not?: PlatformFunctionGraphExecutionNodeStateFilter;
 }
 export interface PlatformFunctionGraphFilter {
   /** Filter by the object’s `context` field. */
@@ -1094,6 +1296,64 @@ export interface PlatformFunctionInvocationFilter {
   /** Negates the expression. */
   not?: PlatformFunctionInvocationFilter;
 }
+export interface PlatformFunctionGraphExecutionFilter {
+  /** Filter by the object’s `startedAt` field. */
+  startedAt?: DatetimeFilter;
+  /** Filter by the object’s `completedAt` field. */
+  completedAt?: DatetimeFilter;
+  /** Filter by the object’s `currentWave` field. */
+  currentWave?: IntFilter;
+  /** Filter by the object’s `databaseId` field. */
+  databaseId?: UUIDFilter;
+  /** Filter by the object’s `definitionsCommitId` field. */
+  definitionsCommitId?: UUIDFilter;
+  /** Filter by the object’s `entityId` field. */
+  entityId?: UUIDFilter;
+  /** Filter by the object’s `errorCode` field. */
+  errorCode?: StringFilter;
+  /** Filter by the object’s `errorMessage` field. */
+  errorMessage?: StringFilter;
+  /** Filter by the object’s `executionPlan` field. */
+  executionPlan?: JSONFilter;
+  /** Filter by the object’s `graphId` field. */
+  graphId?: UUIDFilter;
+  /** Filter by the object’s `id` field. */
+  id?: UUIDFilter;
+  /** Filter by the object’s `inputPayload` field. */
+  inputPayload?: JSONFilter;
+  /** Filter by the object’s `invocationId` field. */
+  invocationId?: UUIDFilter;
+  /** Filter by the object’s `maxPendingJobs` field. */
+  maxPendingJobs?: IntFilter;
+  /** Filter by the object’s `maxTicks` field. */
+  maxTicks?: IntFilter;
+  /** Filter by the object’s `nodeOutputs` field. */
+  nodeOutputs?: JSONFilter;
+  /** Filter by the object’s `outputNode` field. */
+  outputNode?: StringFilter;
+  /** Filter by the object’s `outputPayload` field. */
+  outputPayload?: JSONFilter;
+  /** Filter by the object’s `outputPort` field. */
+  outputPort?: StringFilter;
+  /** Filter by the object’s `parentExecutionId` field. */
+  parentExecutionId?: UUIDFilter;
+  /** Filter by the object’s `parentNodeName` field. */
+  parentNodeName?: StringFilter;
+  /** Filter by the object’s `status` field. */
+  status?: StringFilter;
+  /** Filter by the object’s `tickCount` field. */
+  tickCount?: IntFilter;
+  /** Filter by the object’s `timeoutAt` field. */
+  timeoutAt?: DatetimeFilter;
+  /** Checks for all expressions in this list. */
+  and?: PlatformFunctionGraphExecutionFilter[];
+  /** Checks for any expressions in this list. */
+  or?: PlatformFunctionGraphExecutionFilter[];
+  /** Negates the expression. */
+  not?: PlatformFunctionGraphExecutionFilter;
+  /** Filter by the object’s `graph` relation. */
+  graph?: PlatformFunctionGraphFilter;
+}
 export interface PlatformFunctionDefinitionFilter {
   /** Filter by the object’s `createdAt` field. */
   createdAt?: DatetimeFilter;
@@ -1217,6 +1477,20 @@ export type OrgFunctionExecutionLogOrderBy =
   | 'METADATA_DESC'
   | 'TASK_IDENTIFIER_ASC'
   | 'TASK_IDENTIFIER_DESC';
+export type PlatformFunctionGraphExecutionOutputOrderBy =
+  | 'NATURAL'
+  | 'PRIMARY_KEY_ASC'
+  | 'PRIMARY_KEY_DESC'
+  | 'CREATED_AT_ASC'
+  | 'CREATED_AT_DESC'
+  | 'DATA_ASC'
+  | 'DATA_DESC'
+  | 'DATABASE_ID_ASC'
+  | 'DATABASE_ID_DESC'
+  | 'HASH_ASC'
+  | 'HASH_DESC'
+  | 'ID_ASC'
+  | 'ID_DESC';
 export type PlatformFunctionGraphCommitOrderBy =
   | 'NATURAL'
   | 'PRIMARY_KEY_ASC'
@@ -1283,6 +1557,34 @@ export type PlatformFunctionExecutionLogOrderBy =
   | 'METADATA_DESC'
   | 'TASK_IDENTIFIER_ASC'
   | 'TASK_IDENTIFIER_DESC';
+export type PlatformFunctionGraphExecutionNodeStateOrderBy =
+  | 'NATURAL'
+  | 'PRIMARY_KEY_ASC'
+  | 'PRIMARY_KEY_DESC'
+  | 'CREATED_AT_ASC'
+  | 'CREATED_AT_DESC'
+  | 'COMPLETED_AT_ASC'
+  | 'COMPLETED_AT_DESC'
+  | 'DATABASE_ID_ASC'
+  | 'DATABASE_ID_DESC'
+  | 'ERROR_CODE_ASC'
+  | 'ERROR_CODE_DESC'
+  | 'ERROR_MESSAGE_ASC'
+  | 'ERROR_MESSAGE_DESC'
+  | 'EXECUTION_ID_ASC'
+  | 'EXECUTION_ID_DESC'
+  | 'ID_ASC'
+  | 'ID_DESC'
+  | 'NODE_NAME_ASC'
+  | 'NODE_NAME_DESC'
+  | 'OUTPUT_ID_ASC'
+  | 'OUTPUT_ID_DESC'
+  | 'STARTED_AT_ASC'
+  | 'STARTED_AT_DESC'
+  | 'STATUS_ASC'
+  | 'STATUS_DESC'
+  | 'NODE_PATH_ASC'
+  | 'NODE_PATH_DESC';
 export type PlatformFunctionGraphOrderBy =
   | 'NATURAL'
   | 'PRIMARY_KEY_ASC'
@@ -1439,6 +1741,58 @@ export type PlatformFunctionInvocationOrderBy =
   | 'STATUS_DESC'
   | 'TASK_IDENTIFIER_ASC'
   | 'TASK_IDENTIFIER_DESC';
+export type PlatformFunctionGraphExecutionOrderBy =
+  | 'NATURAL'
+  | 'PRIMARY_KEY_ASC'
+  | 'PRIMARY_KEY_DESC'
+  | 'STARTED_AT_ASC'
+  | 'STARTED_AT_DESC'
+  | 'COMPLETED_AT_ASC'
+  | 'COMPLETED_AT_DESC'
+  | 'CURRENT_WAVE_ASC'
+  | 'CURRENT_WAVE_DESC'
+  | 'DATABASE_ID_ASC'
+  | 'DATABASE_ID_DESC'
+  | 'DEFINITIONS_COMMIT_ID_ASC'
+  | 'DEFINITIONS_COMMIT_ID_DESC'
+  | 'ENTITY_ID_ASC'
+  | 'ENTITY_ID_DESC'
+  | 'ERROR_CODE_ASC'
+  | 'ERROR_CODE_DESC'
+  | 'ERROR_MESSAGE_ASC'
+  | 'ERROR_MESSAGE_DESC'
+  | 'EXECUTION_PLAN_ASC'
+  | 'EXECUTION_PLAN_DESC'
+  | 'GRAPH_ID_ASC'
+  | 'GRAPH_ID_DESC'
+  | 'ID_ASC'
+  | 'ID_DESC'
+  | 'INPUT_PAYLOAD_ASC'
+  | 'INPUT_PAYLOAD_DESC'
+  | 'INVOCATION_ID_ASC'
+  | 'INVOCATION_ID_DESC'
+  | 'MAX_PENDING_JOBS_ASC'
+  | 'MAX_PENDING_JOBS_DESC'
+  | 'MAX_TICKS_ASC'
+  | 'MAX_TICKS_DESC'
+  | 'NODE_OUTPUTS_ASC'
+  | 'NODE_OUTPUTS_DESC'
+  | 'OUTPUT_NODE_ASC'
+  | 'OUTPUT_NODE_DESC'
+  | 'OUTPUT_PAYLOAD_ASC'
+  | 'OUTPUT_PAYLOAD_DESC'
+  | 'OUTPUT_PORT_ASC'
+  | 'OUTPUT_PORT_DESC'
+  | 'PARENT_EXECUTION_ID_ASC'
+  | 'PARENT_EXECUTION_ID_DESC'
+  | 'PARENT_NODE_NAME_ASC'
+  | 'PARENT_NODE_NAME_DESC'
+  | 'STATUS_ASC'
+  | 'STATUS_DESC'
+  | 'TICK_COUNT_ASC'
+  | 'TICK_COUNT_DESC'
+  | 'TIMEOUT_AT_ASC'
+  | 'TIMEOUT_AT_DESC';
 export type PlatformFunctionDefinitionOrderBy =
   | 'NATURAL'
   | 'PRIMARY_KEY_ASC'
@@ -1608,6 +1962,28 @@ export interface DeleteOrgFunctionExecutionLogInput {
   clientMutationId?: string;
   id: string;
 }
+export interface CreatePlatformFunctionGraphExecutionOutputInput {
+  clientMutationId?: string;
+  platformFunctionGraphExecutionOutput: {
+    data: Record<string, unknown>;
+    databaseId: string;
+    hash: Base64EncodedBinary;
+  };
+}
+export interface PlatformFunctionGraphExecutionOutputPatch {
+  data?: Record<string, unknown> | null;
+  databaseId?: string | null;
+  hash?: Base64EncodedBinary | null;
+}
+export interface UpdatePlatformFunctionGraphExecutionOutputInput {
+  clientMutationId?: string;
+  id: string;
+  platformFunctionGraphExecutionOutputPatch: PlatformFunctionGraphExecutionOutputPatch;
+}
+export interface DeletePlatformFunctionGraphExecutionOutputInput {
+  clientMutationId?: string;
+  id: string;
+}
 export interface CreatePlatformFunctionGraphCommitInput {
   clientMutationId?: string;
   platformFunctionGraphCommit: {
@@ -1695,6 +2071,42 @@ export interface UpdatePlatformFunctionExecutionLogInput {
   platformFunctionExecutionLogPatch: PlatformFunctionExecutionLogPatch;
 }
 export interface DeletePlatformFunctionExecutionLogInput {
+  clientMutationId?: string;
+  id: string;
+}
+export interface CreatePlatformFunctionGraphExecutionNodeStateInput {
+  clientMutationId?: string;
+  platformFunctionGraphExecutionNodeState: {
+    completedAt?: string;
+    databaseId: string;
+    errorCode?: string;
+    errorMessage?: string;
+    executionId: string;
+    nodeName: string;
+    outputId?: string;
+    startedAt?: string;
+    status?: string;
+    nodePath?: string[];
+  };
+}
+export interface PlatformFunctionGraphExecutionNodeStatePatch {
+  completedAt?: string | null;
+  databaseId?: string | null;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+  executionId?: string | null;
+  nodeName?: string | null;
+  outputId?: string | null;
+  startedAt?: string | null;
+  status?: string | null;
+  nodePath?: string[] | null;
+}
+export interface UpdatePlatformFunctionGraphExecutionNodeStateInput {
+  clientMutationId?: string;
+  id: string;
+  platformFunctionGraphExecutionNodeStatePatch: PlatformFunctionGraphExecutionNodeStatePatch;
+}
+export interface DeletePlatformFunctionGraphExecutionNodeStateInput {
   clientMutationId?: string;
   id: string;
 }
@@ -1896,6 +2308,68 @@ export interface DeletePlatformFunctionInvocationInput {
   clientMutationId?: string;
   id: string;
 }
+export interface CreatePlatformFunctionGraphExecutionInput {
+  clientMutationId?: string;
+  platformFunctionGraphExecution: {
+    startedAt?: string;
+    completedAt?: string;
+    currentWave?: number;
+    databaseId: string;
+    definitionsCommitId?: string;
+    entityId?: string;
+    errorCode?: string;
+    errorMessage?: string;
+    executionPlan?: Record<string, unknown>;
+    graphId: string;
+    inputPayload?: Record<string, unknown>;
+    invocationId?: string;
+    maxPendingJobs?: number;
+    maxTicks?: number;
+    nodeOutputs?: Record<string, unknown>;
+    outputNode: string;
+    outputPayload?: Record<string, unknown>;
+    outputPort?: string;
+    parentExecutionId?: string;
+    parentNodeName?: string;
+    status?: string;
+    tickCount?: number;
+    timeoutAt?: string;
+  };
+}
+export interface PlatformFunctionGraphExecutionPatch {
+  startedAt?: string | null;
+  completedAt?: string | null;
+  currentWave?: number | null;
+  databaseId?: string | null;
+  definitionsCommitId?: string | null;
+  entityId?: string | null;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+  executionPlan?: Record<string, unknown> | null;
+  graphId?: string | null;
+  inputPayload?: Record<string, unknown> | null;
+  invocationId?: string | null;
+  maxPendingJobs?: number | null;
+  maxTicks?: number | null;
+  nodeOutputs?: Record<string, unknown> | null;
+  outputNode?: string | null;
+  outputPayload?: Record<string, unknown> | null;
+  outputPort?: string | null;
+  parentExecutionId?: string | null;
+  parentNodeName?: string | null;
+  status?: string | null;
+  tickCount?: number | null;
+  timeoutAt?: string | null;
+}
+export interface UpdatePlatformFunctionGraphExecutionInput {
+  clientMutationId?: string;
+  id: string;
+  platformFunctionGraphExecutionPatch: PlatformFunctionGraphExecutionPatch;
+}
+export interface DeletePlatformFunctionGraphExecutionInput {
+  clientMutationId?: string;
+  id: string;
+}
 export interface CreatePlatformFunctionDefinitionInput {
   clientMutationId?: string;
   platformFunctionDefinition: {
@@ -2081,6 +2555,23 @@ export interface ProvisionBucketInput {
    */
   ownerId?: string;
 }
+/** A filter to be used against Base64EncodedBinary fields. All fields are combined with a logical ‘and.’ */
+export interface Base64EncodedBinaryFilter {
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: boolean;
+  /** Equal to the specified value. */
+  equalTo?: Base64EncodedBinary;
+  /** Not equal to the specified value. */
+  notEqualTo?: Base64EncodedBinary;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: Base64EncodedBinary;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: Base64EncodedBinary;
+  /** Included in the specified list. */
+  in?: Base64EncodedBinary[];
+  /** Not included in the specified list. */
+  notIn?: Base64EncodedBinary[];
+}
 /** An input for mutations affecting `PlatformFunctionGraphRef` */
 export interface PlatformFunctionGraphRefInput {
   /** Commit this ref points to */
@@ -2141,6 +2632,19 @@ export interface OrgFunctionExecutionLogInput {
   /** Function routing key (NULL for generic job logs) */
   taskIdentifier?: string;
 }
+/** An input for mutations affecting `PlatformFunctionGraphExecutionOutput` */
+export interface PlatformFunctionGraphExecutionOutputInput {
+  /** Timestamp of output creation */
+  createdAt?: string;
+  /** The actual output payload from a completed node */
+  data: Record<string, unknown>;
+  /** Scope for multi-tenant isolation */
+  databaseId: string;
+  /** SHA-256 hash of the data JSONB — content-addressed deduplication */
+  hash: Base64EncodedBinary;
+  /** Unique execution output identifier */
+  id?: string;
+}
 /** An input for mutations affecting `PlatformFunctionGraphCommit` */
 export interface PlatformFunctionGraphCommitInput {
   /** User who authored the changes */
@@ -2200,6 +2704,32 @@ export interface PlatformFunctionExecutionLogInput {
   metadata?: Record<string, unknown>;
   /** Function routing key (NULL for generic job logs) */
   taskIdentifier?: string;
+}
+/** An input for mutations affecting `PlatformFunctionGraphExecutionNodeState` */
+export interface PlatformFunctionGraphExecutionNodeStateInput {
+  /** Timestamp of node state creation (partition key) */
+  createdAt?: string;
+  /** Timestamp when the node finished (success or failure) */
+  completedAt?: string;
+  /** Scope for multi-tenant isolation */
+  databaseId: string;
+  /** Machine-readable error code when status = failed */
+  errorCode?: string;
+  /** Human-readable error description when status = failed */
+  errorMessage?: string;
+  /** FK to the parent graph execution */
+  executionId: string;
+  /** Unique node state identifier */
+  id?: string;
+  /** Name of the node within the graph (e.g. send-email1) */
+  nodeName: string;
+  /** FK to execution_outputs — content-addressed output blob for this node */
+  outputId?: string;
+  /** Timestamp when the node began executing */
+  startedAt?: string;
+  /** Node lifecycle: pending → queued → running → completed/failed */
+  status?: string;
+  nodePath?: string[];
 }
 /** An input for mutations affecting `PlatformFunctionGraph` */
 export interface PlatformFunctionGraphInput {
@@ -2325,6 +2855,57 @@ export interface PlatformFunctionInvocationInput {
   status?: string;
   /** Function routing slug (scope:name). Links to function_definitions.task_identifier by convention — no FK. */
   taskIdentifier: string;
+}
+/** An input for mutations affecting `PlatformFunctionGraphExecution` */
+export interface PlatformFunctionGraphExecutionInput {
+  /** Execution start timestamp */
+  startedAt?: string;
+  /** Execution completion timestamp */
+  completedAt?: string;
+  /** Index into execution_plan — tick only processes this wave */
+  currentWave?: number;
+  /** Scope for multi-tenant isolation */
+  databaseId: string;
+  /** Pinned definitions store commit for deterministic evaluation */
+  definitionsCommitId?: string;
+  /** Entity context (org/team) for scoped billing */
+  entityId?: string;
+  /** Machine-readable error code when status = failed */
+  errorCode?: string;
+  /** Human-readable error description when status = failed */
+  errorMessage?: string;
+  /** Pre-computed topological sort as array of wave objects */
+  executionPlan?: Record<string, unknown>;
+  /** FK to the graph definition being executed */
+  graphId: string;
+  /** Unique execution identifier */
+  id?: string;
+  /** Initial inputs provided at invocation time */
+  inputPayload?: Record<string, unknown>;
+  /** Parent function_invocations row (for metering) */
+  invocationId?: string;
+  /** Maximum pending jobs before execution is failed (default 50) */
+  maxPendingJobs?: number;
+  /** Maximum ticks before execution is failed (default 100) */
+  maxTicks?: number;
+  /** Map of node_name → execution output id (content-addressed hash reference) */
+  nodeOutputs?: Record<string, unknown>;
+  /** Target output boundary node name to resolve */
+  outputNode: string;
+  /** Final result extracted from terminal output node */
+  outputPayload?: Record<string, unknown>;
+  /** Target output port name (default: value) */
+  outputPort?: string;
+  /** Parent execution when this is a sub-execution */
+  parentExecutionId?: string;
+  /** Node name in parent execution that spawned this sub-execution */
+  parentNodeName?: string;
+  /** Lifecycle: pending → running → completed/failed/cancelled */
+  status?: string;
+  /** Number of evaluate_step ticks executed */
+  tickCount?: number;
+  /** Absolute deadline — execution fails if still running after this time */
+  timeoutAt?: string;
 }
 /** An input for mutations affecting `PlatformFunctionDefinition` */
 export interface PlatformFunctionDefinitionInput {
@@ -2707,6 +3288,51 @@ export type DeleteOrgFunctionExecutionLogPayloadSelect = {
     select: OrgFunctionExecutionLogEdgeSelect;
   };
 };
+export interface CreatePlatformFunctionGraphExecutionOutputPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformFunctionGraphExecutionOutput` that was created by this mutation. */
+  platformFunctionGraphExecutionOutput?: PlatformFunctionGraphExecutionOutput | null;
+  platformFunctionGraphExecutionOutputEdge?: PlatformFunctionGraphExecutionOutputEdge | null;
+}
+export type CreatePlatformFunctionGraphExecutionOutputPayloadSelect = {
+  clientMutationId?: boolean;
+  platformFunctionGraphExecutionOutput?: {
+    select: PlatformFunctionGraphExecutionOutputSelect;
+  };
+  platformFunctionGraphExecutionOutputEdge?: {
+    select: PlatformFunctionGraphExecutionOutputEdgeSelect;
+  };
+};
+export interface UpdatePlatformFunctionGraphExecutionOutputPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformFunctionGraphExecutionOutput` that was updated by this mutation. */
+  platformFunctionGraphExecutionOutput?: PlatformFunctionGraphExecutionOutput | null;
+  platformFunctionGraphExecutionOutputEdge?: PlatformFunctionGraphExecutionOutputEdge | null;
+}
+export type UpdatePlatformFunctionGraphExecutionOutputPayloadSelect = {
+  clientMutationId?: boolean;
+  platformFunctionGraphExecutionOutput?: {
+    select: PlatformFunctionGraphExecutionOutputSelect;
+  };
+  platformFunctionGraphExecutionOutputEdge?: {
+    select: PlatformFunctionGraphExecutionOutputEdgeSelect;
+  };
+};
+export interface DeletePlatformFunctionGraphExecutionOutputPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformFunctionGraphExecutionOutput` that was deleted by this mutation. */
+  platformFunctionGraphExecutionOutput?: PlatformFunctionGraphExecutionOutput | null;
+  platformFunctionGraphExecutionOutputEdge?: PlatformFunctionGraphExecutionOutputEdge | null;
+}
+export type DeletePlatformFunctionGraphExecutionOutputPayloadSelect = {
+  clientMutationId?: boolean;
+  platformFunctionGraphExecutionOutput?: {
+    select: PlatformFunctionGraphExecutionOutputSelect;
+  };
+  platformFunctionGraphExecutionOutputEdge?: {
+    select: PlatformFunctionGraphExecutionOutputEdgeSelect;
+  };
+};
 export interface CreatePlatformFunctionGraphCommitPayload {
   clientMutationId?: string | null;
   /** The `PlatformFunctionGraphCommit` that was created by this mutation. */
@@ -2840,6 +3466,51 @@ export type DeletePlatformFunctionExecutionLogPayloadSelect = {
   };
   platformFunctionExecutionLogEdge?: {
     select: PlatformFunctionExecutionLogEdgeSelect;
+  };
+};
+export interface CreatePlatformFunctionGraphExecutionNodeStatePayload {
+  clientMutationId?: string | null;
+  /** The `PlatformFunctionGraphExecutionNodeState` that was created by this mutation. */
+  platformFunctionGraphExecutionNodeState?: PlatformFunctionGraphExecutionNodeState | null;
+  platformFunctionGraphExecutionNodeStateEdge?: PlatformFunctionGraphExecutionNodeStateEdge | null;
+}
+export type CreatePlatformFunctionGraphExecutionNodeStatePayloadSelect = {
+  clientMutationId?: boolean;
+  platformFunctionGraphExecutionNodeState?: {
+    select: PlatformFunctionGraphExecutionNodeStateSelect;
+  };
+  platformFunctionGraphExecutionNodeStateEdge?: {
+    select: PlatformFunctionGraphExecutionNodeStateEdgeSelect;
+  };
+};
+export interface UpdatePlatformFunctionGraphExecutionNodeStatePayload {
+  clientMutationId?: string | null;
+  /** The `PlatformFunctionGraphExecutionNodeState` that was updated by this mutation. */
+  platformFunctionGraphExecutionNodeState?: PlatformFunctionGraphExecutionNodeState | null;
+  platformFunctionGraphExecutionNodeStateEdge?: PlatformFunctionGraphExecutionNodeStateEdge | null;
+}
+export type UpdatePlatformFunctionGraphExecutionNodeStatePayloadSelect = {
+  clientMutationId?: boolean;
+  platformFunctionGraphExecutionNodeState?: {
+    select: PlatformFunctionGraphExecutionNodeStateSelect;
+  };
+  platformFunctionGraphExecutionNodeStateEdge?: {
+    select: PlatformFunctionGraphExecutionNodeStateEdgeSelect;
+  };
+};
+export interface DeletePlatformFunctionGraphExecutionNodeStatePayload {
+  clientMutationId?: string | null;
+  /** The `PlatformFunctionGraphExecutionNodeState` that was deleted by this mutation. */
+  platformFunctionGraphExecutionNodeState?: PlatformFunctionGraphExecutionNodeState | null;
+  platformFunctionGraphExecutionNodeStateEdge?: PlatformFunctionGraphExecutionNodeStateEdge | null;
+}
+export type DeletePlatformFunctionGraphExecutionNodeStatePayloadSelect = {
+  clientMutationId?: boolean;
+  platformFunctionGraphExecutionNodeState?: {
+    select: PlatformFunctionGraphExecutionNodeStateSelect;
+  };
+  platformFunctionGraphExecutionNodeStateEdge?: {
+    select: PlatformFunctionGraphExecutionNodeStateEdgeSelect;
   };
 };
 export interface CreatePlatformFunctionGraphPayload {
@@ -3067,6 +3738,51 @@ export type DeletePlatformFunctionInvocationPayloadSelect = {
     select: PlatformFunctionInvocationEdgeSelect;
   };
 };
+export interface CreatePlatformFunctionGraphExecutionPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformFunctionGraphExecution` that was created by this mutation. */
+  platformFunctionGraphExecution?: PlatformFunctionGraphExecution | null;
+  platformFunctionGraphExecutionEdge?: PlatformFunctionGraphExecutionEdge | null;
+}
+export type CreatePlatformFunctionGraphExecutionPayloadSelect = {
+  clientMutationId?: boolean;
+  platformFunctionGraphExecution?: {
+    select: PlatformFunctionGraphExecutionSelect;
+  };
+  platformFunctionGraphExecutionEdge?: {
+    select: PlatformFunctionGraphExecutionEdgeSelect;
+  };
+};
+export interface UpdatePlatformFunctionGraphExecutionPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformFunctionGraphExecution` that was updated by this mutation. */
+  platformFunctionGraphExecution?: PlatformFunctionGraphExecution | null;
+  platformFunctionGraphExecutionEdge?: PlatformFunctionGraphExecutionEdge | null;
+}
+export type UpdatePlatformFunctionGraphExecutionPayloadSelect = {
+  clientMutationId?: boolean;
+  platformFunctionGraphExecution?: {
+    select: PlatformFunctionGraphExecutionSelect;
+  };
+  platformFunctionGraphExecutionEdge?: {
+    select: PlatformFunctionGraphExecutionEdgeSelect;
+  };
+};
+export interface DeletePlatformFunctionGraphExecutionPayload {
+  clientMutationId?: string | null;
+  /** The `PlatformFunctionGraphExecution` that was deleted by this mutation. */
+  platformFunctionGraphExecution?: PlatformFunctionGraphExecution | null;
+  platformFunctionGraphExecutionEdge?: PlatformFunctionGraphExecutionEdge | null;
+}
+export type DeletePlatformFunctionGraphExecutionPayloadSelect = {
+  clientMutationId?: boolean;
+  platformFunctionGraphExecution?: {
+    select: PlatformFunctionGraphExecutionSelect;
+  };
+  platformFunctionGraphExecutionEdge?: {
+    select: PlatformFunctionGraphExecutionEdgeSelect;
+  };
+};
 export interface CreatePlatformFunctionDefinitionPayload {
   clientMutationId?: string | null;
   /** The `PlatformFunctionDefinition` that was created by this mutation. */
@@ -3160,6 +3876,18 @@ export type OrgFunctionExecutionLogEdgeSelect = {
     select: OrgFunctionExecutionLogSelect;
   };
 };
+/** A `PlatformFunctionGraphExecutionOutput` edge in the connection. */
+export interface PlatformFunctionGraphExecutionOutputEdge {
+  cursor?: string | null;
+  /** The `PlatformFunctionGraphExecutionOutput` at the end of the edge. */
+  node?: PlatformFunctionGraphExecutionOutput | null;
+}
+export type PlatformFunctionGraphExecutionOutputEdgeSelect = {
+  cursor?: boolean;
+  node?: {
+    select: PlatformFunctionGraphExecutionOutputSelect;
+  };
+};
 /** A `PlatformFunctionGraphCommit` edge in the connection. */
 export interface PlatformFunctionGraphCommitEdge {
   cursor?: string | null;
@@ -3194,6 +3922,18 @@ export type PlatformFunctionExecutionLogEdgeSelect = {
   cursor?: boolean;
   node?: {
     select: PlatformFunctionExecutionLogSelect;
+  };
+};
+/** A `PlatformFunctionGraphExecutionNodeState` edge in the connection. */
+export interface PlatformFunctionGraphExecutionNodeStateEdge {
+  cursor?: string | null;
+  /** The `PlatformFunctionGraphExecutionNodeState` at the end of the edge. */
+  node?: PlatformFunctionGraphExecutionNodeState | null;
+}
+export type PlatformFunctionGraphExecutionNodeStateEdgeSelect = {
+  cursor?: boolean;
+  node?: {
+    select: PlatformFunctionGraphExecutionNodeStateSelect;
   };
 };
 /** A `PlatformFunctionGraph` edge in the connection. */
@@ -3254,6 +3994,18 @@ export type PlatformFunctionInvocationEdgeSelect = {
   cursor?: boolean;
   node?: {
     select: PlatformFunctionInvocationSelect;
+  };
+};
+/** A `PlatformFunctionGraphExecution` edge in the connection. */
+export interface PlatformFunctionGraphExecutionEdge {
+  cursor?: string | null;
+  /** The `PlatformFunctionGraphExecution` at the end of the edge. */
+  node?: PlatformFunctionGraphExecution | null;
+}
+export type PlatformFunctionGraphExecutionEdgeSelect = {
+  cursor?: boolean;
+  node?: {
+    select: PlatformFunctionGraphExecutionSelect;
   };
 };
 /** A `PlatformFunctionDefinition` edge in the connection. */

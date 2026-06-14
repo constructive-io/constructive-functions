@@ -26,14 +26,17 @@ const db = createClient({
 | `platformFunctionGraphStore` | findMany, findOne, create, update, delete |
 | `platformFunctionGraphObject` | findMany, findOne, create, update, delete |
 | `orgFunctionExecutionLog` | findMany, findOne, create, update, delete |
+| `platformFunctionGraphExecutionOutput` | findMany, findOne, create, update, delete |
 | `platformFunctionGraphCommit` | findMany, findOne, create, update, delete |
 | `platformSecretDefinition` | findMany, findOne, create, update, delete |
 | `platformFunctionExecutionLog` | findMany, findOne, create, update, delete |
+| `platformFunctionGraphExecutionNodeState` | findMany, findOne, create, update, delete |
 | `platformFunctionGraph` | findMany, findOne, create, update, delete |
 | `platformComputeLog` | findMany, findOne, create, update, delete |
 | `platformUsageDaily` | findMany, findOne, create, update, delete |
 | `orgFunctionInvocation` | findMany, findOne, create, update, delete |
 | `platformFunctionInvocation` | findMany, findOne, create, update, delete |
+| `platformFunctionGraphExecution` | findMany, findOne, create, update, delete |
 | `platformFunctionDefinition` | findMany, findOne, create, update, delete |
 
 ## Table Operations
@@ -204,6 +207,39 @@ const updated = await db.orgFunctionExecutionLog.update({ where: { id: '<UUID>' 
 const deleted = await db.orgFunctionExecutionLog.delete({ where: { id: '<UUID>' } }).execute();
 ```
 
+### `db.platformFunctionGraphExecutionOutput`
+
+CRUD operations for PlatformFunctionGraphExecutionOutput records.
+
+**Fields:**
+
+| Field | Type | Editable |
+|-------|------|----------|
+| `createdAt` | Datetime | No |
+| `data` | JSON | Yes |
+| `databaseId` | UUID | Yes |
+| `hash` | Base64EncodedBinary | Yes |
+| `id` | UUID | No |
+
+**Operations:**
+
+```typescript
+// List all platformFunctionGraphExecutionOutput records
+const items = await db.platformFunctionGraphExecutionOutput.findMany({ select: { createdAt: true, data: true, databaseId: true, hash: true, id: true } }).execute();
+
+// Get one by id
+const item = await db.platformFunctionGraphExecutionOutput.findOne({ id: '<UUID>', select: { createdAt: true, data: true, databaseId: true, hash: true, id: true } }).execute();
+
+// Create
+const created = await db.platformFunctionGraphExecutionOutput.create({ data: { data: '<JSON>', databaseId: '<UUID>', hash: '<Base64EncodedBinary>' }, select: { id: true } }).execute();
+
+// Update
+const updated = await db.platformFunctionGraphExecutionOutput.update({ where: { id: '<UUID>' }, data: { data: '<JSON>' }, select: { id: true } }).execute();
+
+// Delete
+const deleted = await db.platformFunctionGraphExecutionOutput.delete({ where: { id: '<UUID>' } }).execute();
+```
+
 ### `db.platformFunctionGraphCommit`
 
 CRUD operations for PlatformFunctionGraphCommit records.
@@ -313,6 +349,46 @@ const updated = await db.platformFunctionExecutionLog.update({ where: { id: '<UU
 
 // Delete
 const deleted = await db.platformFunctionExecutionLog.delete({ where: { id: '<UUID>' } }).execute();
+```
+
+### `db.platformFunctionGraphExecutionNodeState`
+
+CRUD operations for PlatformFunctionGraphExecutionNodeState records.
+
+**Fields:**
+
+| Field | Type | Editable |
+|-------|------|----------|
+| `createdAt` | Datetime | No |
+| `completedAt` | Datetime | Yes |
+| `databaseId` | UUID | Yes |
+| `errorCode` | String | Yes |
+| `errorMessage` | String | Yes |
+| `executionId` | UUID | Yes |
+| `id` | UUID | No |
+| `nodeName` | String | Yes |
+| `outputId` | UUID | Yes |
+| `startedAt` | Datetime | Yes |
+| `status` | String | Yes |
+| `nodePath` | String | Yes |
+
+**Operations:**
+
+```typescript
+// List all platformFunctionGraphExecutionNodeState records
+const items = await db.platformFunctionGraphExecutionNodeState.findMany({ select: { createdAt: true, completedAt: true, databaseId: true, errorCode: true, errorMessage: true, executionId: true, id: true, nodeName: true, outputId: true, startedAt: true, status: true, nodePath: true } }).execute();
+
+// Get one by id
+const item = await db.platformFunctionGraphExecutionNodeState.findOne({ id: '<UUID>', select: { createdAt: true, completedAt: true, databaseId: true, errorCode: true, errorMessage: true, executionId: true, id: true, nodeName: true, outputId: true, startedAt: true, status: true, nodePath: true } }).execute();
+
+// Create
+const created = await db.platformFunctionGraphExecutionNodeState.create({ data: { completedAt: '<Datetime>', databaseId: '<UUID>', errorCode: '<String>', errorMessage: '<String>', executionId: '<UUID>', nodeName: '<String>', outputId: '<UUID>', startedAt: '<Datetime>', status: '<String>', nodePath: '<String>' }, select: { id: true } }).execute();
+
+// Update
+const updated = await db.platformFunctionGraphExecutionNodeState.update({ where: { id: '<UUID>' }, data: { completedAt: '<Datetime>' }, select: { id: true } }).execute();
+
+// Delete
+const deleted = await db.platformFunctionGraphExecutionNodeState.delete({ where: { id: '<UUID>' } }).execute();
 ```
 
 ### `db.platformFunctionGraph`
@@ -521,6 +597,58 @@ const updated = await db.platformFunctionInvocation.update({ where: { id: '<UUID
 
 // Delete
 const deleted = await db.platformFunctionInvocation.delete({ where: { id: '<UUID>' } }).execute();
+```
+
+### `db.platformFunctionGraphExecution`
+
+CRUD operations for PlatformFunctionGraphExecution records.
+
+**Fields:**
+
+| Field | Type | Editable |
+|-------|------|----------|
+| `startedAt` | Datetime | Yes |
+| `completedAt` | Datetime | Yes |
+| `currentWave` | Int | Yes |
+| `databaseId` | UUID | Yes |
+| `definitionsCommitId` | UUID | Yes |
+| `entityId` | UUID | Yes |
+| `errorCode` | String | Yes |
+| `errorMessage` | String | Yes |
+| `executionPlan` | JSON | Yes |
+| `graphId` | UUID | Yes |
+| `id` | UUID | No |
+| `inputPayload` | JSON | Yes |
+| `invocationId` | UUID | Yes |
+| `maxPendingJobs` | Int | Yes |
+| `maxTicks` | Int | Yes |
+| `nodeOutputs` | JSON | Yes |
+| `outputNode` | String | Yes |
+| `outputPayload` | JSON | Yes |
+| `outputPort` | String | Yes |
+| `parentExecutionId` | UUID | Yes |
+| `parentNodeName` | String | Yes |
+| `status` | String | Yes |
+| `tickCount` | Int | Yes |
+| `timeoutAt` | Datetime | Yes |
+
+**Operations:**
+
+```typescript
+// List all platformFunctionGraphExecution records
+const items = await db.platformFunctionGraphExecution.findMany({ select: { startedAt: true, completedAt: true, currentWave: true, databaseId: true, definitionsCommitId: true, entityId: true, errorCode: true, errorMessage: true, executionPlan: true, graphId: true, id: true, inputPayload: true, invocationId: true, maxPendingJobs: true, maxTicks: true, nodeOutputs: true, outputNode: true, outputPayload: true, outputPort: true, parentExecutionId: true, parentNodeName: true, status: true, tickCount: true, timeoutAt: true } }).execute();
+
+// Get one by id
+const item = await db.platformFunctionGraphExecution.findOne({ id: '<UUID>', select: { startedAt: true, completedAt: true, currentWave: true, databaseId: true, definitionsCommitId: true, entityId: true, errorCode: true, errorMessage: true, executionPlan: true, graphId: true, id: true, inputPayload: true, invocationId: true, maxPendingJobs: true, maxTicks: true, nodeOutputs: true, outputNode: true, outputPayload: true, outputPort: true, parentExecutionId: true, parentNodeName: true, status: true, tickCount: true, timeoutAt: true } }).execute();
+
+// Create
+const created = await db.platformFunctionGraphExecution.create({ data: { startedAt: '<Datetime>', completedAt: '<Datetime>', currentWave: '<Int>', databaseId: '<UUID>', definitionsCommitId: '<UUID>', entityId: '<UUID>', errorCode: '<String>', errorMessage: '<String>', executionPlan: '<JSON>', graphId: '<UUID>', inputPayload: '<JSON>', invocationId: '<UUID>', maxPendingJobs: '<Int>', maxTicks: '<Int>', nodeOutputs: '<JSON>', outputNode: '<String>', outputPayload: '<JSON>', outputPort: '<String>', parentExecutionId: '<UUID>', parentNodeName: '<String>', status: '<String>', tickCount: '<Int>', timeoutAt: '<Datetime>' }, select: { id: true } }).execute();
+
+// Update
+const updated = await db.platformFunctionGraphExecution.update({ where: { id: '<UUID>' }, data: { startedAt: '<Datetime>' }, select: { id: true } }).execute();
+
+// Delete
+const deleted = await db.platformFunctionGraphExecution.delete({ where: { id: '<UUID>' } }).execute();
 ```
 
 ### `db.platformFunctionDefinition`
