@@ -20,7 +20,7 @@ const DATABASE_ID = '00000000-0000-0000-0000-000000000000';
 const BOUNDARY_NAMES = ['graph/input', 'graph/output', 'graph/prop'];
 const EXECUTION_POLL_MS = 1500;
 
-type NodeState = 'pending' | 'running' | 'completed' | 'failed';
+type NodeState = 'pending' | 'queued' | 'running' | 'completed' | 'failed';
 
 interface InvocationDetail {
   id: string;
@@ -563,69 +563,98 @@ async function pollExecutionStatus(executionId: string): Promise<{
   output?: unknown;
   error?: string;
 }> {
-  const endpoint = '/graphql/compute';
+  // Query node_states directly — this catches all states including 'queued'
+  const nsRes = await fetch(`/api/execution/${executionId}/node-states`);
+  const nsRows: Array<{
+    node_name: string;
+    status: string;
+    node_path: string[] | null;
+    started_at: string | null;
+    completed_at: string | null;
+    duration_ms: number | null;
+  }> = nsRes.ok ? await nsRes.json() : [];
 
-  const invData = await gqlFetch(endpoint, `
-    query ($where: PlatformFunctionInvocationFilter) {
-      platformFunctionInvocations(where: $where, orderBy: CREATED_AT_ASC) {
-        nodes {
-          id
-          taskIdentifier
-          status
-          durationMs
-          error
-          result
-          createdAt
-          startedAt
-          completedAt
-          graphExecutionId
-          payload
+  // Also query invocations for detailed payload/result data
+  const endpoint = '/graphql/compute';
+  let invocationsArr: any[] = [];
+  try {
+    const invData = await gqlFetch(endpoint, `
+      query ($where: PlatformFunctionInvocationFilter) {
+        platformFunctionInvocations(where: $where, orderBy: CREATED_AT_ASC) {
+          nodes {
+            id
+            taskIdentifier
+            status
+            durationMs
+            error
+            result
+            createdAt
+            startedAt
+            completedAt
+            graphExecutionId
+            payload
+          }
         }
       }
-    }
-  `, {
-    where: { graphExecutionId: { equalTo: executionId } },
-  });
+    `, {
+      where: { graphExecutionId: { equalTo: executionId } },
+    });
+    invocationsArr = invData?.platformFunctionInvocations?.nodes ?? [];
+  } catch {
+    // Invocations query may fail if graphExecutionId filter isn't supported yet
+  }
 
-  const invocationsArr = invData?.platformFunctionInvocations?.nodes ?? [];
   const nodeStates: Record<string, NodeState> = {};
   const nodeDetails: Record<string, NodeExecutionInfo> = {};
   const invocations: Record<string, InvocationDetail> = {};
   let hasRunning = false;
   let hasFailed = false;
+  let hasQueued = false;
 
+  // Primary source: node_states table (has all states including queued)
+  for (const row of nsRows) {
+    const s = row.status;
+    let state: NodeState;
+    if (s === 'completed') state = 'completed';
+    else if (s === 'failed') { state = 'failed'; hasFailed = true; }
+    else if (s === 'queued') { state = 'queued'; hasQueued = true; }
+    else if (s === 'running') { state = 'running'; hasRunning = true; }
+    else { state = 'running'; hasRunning = true; }
+    nodeStates[row.node_name] = state;
+
+    nodeDetails[row.node_name] = {
+      state,
+      durationMs: row.duration_ms != null ? Math.round(row.duration_ms) : undefined,
+      startedAt: row.started_at ?? undefined,
+      completedAt: row.completed_at ?? undefined,
+    };
+  }
+
+  // Supplement with invocation details (payload, result, error)
   for (const inv of invocationsArr) {
     const nodeName = inv.payload?.node_name;
     if (!nodeName) continue;
 
-    const s = inv.status as string;
-    let state: NodeState;
-    if (s === 'completed') state = 'completed';
-    else if (s === 'failed') { state = 'failed'; hasFailed = true; }
-    else { state = 'running'; hasRunning = true; }
-    nodeStates[nodeName] = state;
-
-    nodeDetails[nodeName] = {
-      state,
-      durationMs: inv.durationMs ?? undefined,
-      error: inv.error ?? undefined,
-      startedAt: inv.startedAt ?? undefined,
-      completedAt: inv.completedAt ?? undefined,
-    };
-
     invocations[nodeName] = {
       id: inv.id,
       taskIdentifier: inv.taskIdentifier,
-      status: s,
+      status: inv.status,
       durationMs: inv.durationMs,
       error: inv.error,
       result: inv.result,
       payload: inv.payload,
       createdAt: inv.createdAt,
     };
+
+    // Invocation error takes precedence for detail
+    if (inv.error && nodeDetails[nodeName]) {
+      nodeDetails[nodeName].error = inv.error;
+    }
   }
 
-  const overallStatus = hasFailed ? 'failed' : hasRunning ? 'running' : (invocationsArr.length > 0 ? 'completed' : 'running');
+  const overallStatus = hasFailed ? 'failed'
+    : (hasRunning || hasQueued) ? 'running'
+    : (nsRows.length > 0 ? 'completed' : 'running');
   return { status: overallStatus, nodeStates, nodeDetails, invocations };
 }
 

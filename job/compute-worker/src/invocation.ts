@@ -70,9 +70,9 @@ export class InvocationTracker {
 
     const sql = `
       INSERT INTO "${publicSchema}"."${invocationsTable}"
-        (id, task_identifier, payload, job_id, database_id, actor_id, status, started_at)
+        (id, task_identifier, payload, job_id, database_id, actor_id, graph_execution_id, status, started_at)
       VALUES
-        (gen_random_uuid(), $1, $2::jsonb, $3, $4, $5, 'running', now())
+        (gen_random_uuid(), $1, $2::jsonb, $3, $4, $5, $6, 'running', now())
       RETURNING id, started_at
     `;
     try {
@@ -82,6 +82,7 @@ export class InvocationTracker {
         String(input.job_id),
         input.database_id ?? this.databaseId,
         input.actor_id ?? null,
+        input.graph_execution_id ?? null,
       ]);
       const row = rows[0];
       log.debug(`created ${scope}-scoped invocation ${row.id} for ${input.task_identifier}`);

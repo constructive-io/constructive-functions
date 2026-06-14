@@ -359,6 +359,7 @@ export default class ComputeWorker {
       database_id: databaseId,
       actor_id: job.actor_id,
       scope,
+      graph_execution_id: graphNode ? payload.execution_id : undefined,
     });
 
     const reqStart = process.hrtime();
@@ -468,6 +469,7 @@ export default class ComputeWorker {
       database_id: databaseId,
       actor_id: job.actor_id,
       scope,
+      graph_execution_id: graphNode ? payload.execution_id : undefined,
     });
 
     const reqStart = process.hrtime();

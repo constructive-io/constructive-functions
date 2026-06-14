@@ -78,6 +78,7 @@ export interface CreateInvocationInput {
   database_id?: string;
   actor_id?: string;
   scope?: string;
+  graph_execution_id?: string;
 }
 
 export interface InvocationRecord {
