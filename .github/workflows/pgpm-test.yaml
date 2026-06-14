@@ -55,7 +55,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22'
-          cache: 'pnpm'
 
       - name: Install pgpm CLI
         run: npm install -g pgpm@4.7.4
