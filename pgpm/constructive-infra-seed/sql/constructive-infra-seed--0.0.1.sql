@@ -193,36 +193,4 @@ GRANT SELECT ON ALL TABLES IN SCHEMA constructive_platform_function_graph_privat
 
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA constructive_platform_function_graph_private TO authenticated;
 
-GRANT USAGE ON SCHEMA constructive_compute_public TO anonymous;
-
-GRANT USAGE ON SCHEMA constructive_platform_function_graph_public TO anonymous;
-
-GRANT USAGE ON SCHEMA constructive_infra_public TO anonymous;
-
-GRANT USAGE ON SCHEMA constructive_users_public TO anonymous;
-
-GRANT SELECT ON ALL TABLES IN SCHEMA constructive_compute_public TO anonymous;
-
-GRANT SELECT ON ALL TABLES IN SCHEMA constructive_platform_function_graph_public TO anonymous;
-
-GRANT SELECT ON ALL TABLES IN SCHEMA constructive_infra_public TO anonymous;
-
-GRANT SELECT ON ALL TABLES IN SCHEMA constructive_users_public TO anonymous;
-
-GRANT USAGE ON ALL SEQUENCES IN SCHEMA constructive_compute_public TO anonymous;
-
-GRANT USAGE ON ALL SEQUENCES IN SCHEMA constructive_platform_function_graph_public TO anonymous;
-
-GRANT USAGE ON ALL SEQUENCES IN SCHEMA constructive_infra_public TO anonymous;
-
-GRANT USAGE ON ALL SEQUENCES IN SCHEMA constructive_users_public TO anonymous;
-
-GRANT USAGE ON SCHEMA constructive_compute_private TO anonymous;
-
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA constructive_compute_private TO anonymous;
-
-GRANT USAGE ON SCHEMA constructive_platform_function_graph_private TO anonymous;
-
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA constructive_platform_function_graph_private TO anonymous;
-
 UPDATE services_public.apis SET anon_role = 'authenticated' WHERE database_id = '00000000-0000-0000-0000-000000000000';
