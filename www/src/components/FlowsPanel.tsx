@@ -488,8 +488,8 @@ async function pollExecutionStatus(executionId: string): Promise<{
         ? (new Date(n.completedAt || Date.now()).getTime() - new Date(n.startedAt).getTime())
         : null,
     }));
-  } catch {
-    // node_states query may fail if schema not yet available
+  } catch (err) {
+    console.error('[pollExecutionStatus] node_states query failed:', err);
   }
 
   // Also query invocations for detailed payload/result data
@@ -501,8 +501,8 @@ async function pollExecutionStatus(executionId: string): Promise<{
       orderBy: ['CREATED_AT_ASC'],
     }).unwrap();
     invocationsArr = invResult?.platformFunctionInvocations?.nodes ?? [];
-  } catch {
-    // Invocations query may fail if graphExecutionId filter isn't supported yet
+  } catch (err) {
+    console.error('[pollExecutionStatus] invocations query failed:', err);
   }
 
   const nodeStates: Record<string, NodeState> = {};
@@ -807,8 +807,8 @@ export function FlowsPanel() {
             pollRef.current = null;
             setIsExecuting(false);
           }
-        } catch {
-          // Keep polling on transient errors
+        } catch (pollErr) {
+          console.error('[execution-poll] transient error:', pollErr);
         }
       }, EXECUTION_POLL_MS);
     } catch (err: unknown) {

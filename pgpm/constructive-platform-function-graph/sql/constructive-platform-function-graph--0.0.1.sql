@@ -39,6 +39,12 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
 ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
   GRANT ALL ON TABLES TO administrator;
 
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_platform_function_graph_public
+  GRANT SELECT ON TABLES TO anonymous;
+
 CREATE TABLE constructive_platform_function_graph_public.platform_function_graph_commit ();
 
 ALTER TABLE constructive_platform_function_graph_public.platform_function_graph_commit 

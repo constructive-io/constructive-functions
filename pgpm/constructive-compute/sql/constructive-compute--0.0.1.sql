@@ -41,6 +41,12 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
 ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
   GRANT ALL ON TABLES TO administrator;
 
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
+  GRANT SELECT ON TABLES TO anonymous;
+
 CREATE TABLE constructive_compute_public.platform_function_graph_execution_outputs (
   created_at timestamptz NOT NULL DEFAULT now()
 ) PARTITION BY RANGE (created_at);
