@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { Logger } from '@pgpmjs/logger';
+import type { Pool } from 'pg';
+import { logInferenceUsage } from './inference-meter';
 
 const log = new Logger('agentic-server');
 
@@ -12,6 +14,8 @@ export interface AgenticRouterOptions {
   defaultModel?: string;
   /** Provider type: 'openai' | 'ollama' | 'anthropic' */
   providerType?: string;
+  /** Optional pg pool for inference metering (fire-and-forget writes) */
+  pgPool?: Pool;
 }
 
 /**
@@ -25,7 +29,7 @@ export interface AgenticRouterOptions {
  */
 export const createRouter = (options: AgenticRouterOptions): Router => {
   const router = Router();
-  const { providerBaseUrl, providerApiKey, defaultModel, providerType } = options;
+  const { providerBaseUrl, providerApiKey, defaultModel, providerType, pgPool } = options;
 
   // Resolve upstream URL based on provider type
   const resolveUpstreamUrl = (path: string): string => {
@@ -112,6 +116,8 @@ export const createRouter = (options: AgenticRouterOptions): Router => {
     const internalService = req.get('X-Internal-Service');
     const databaseId = req.get('X-Database-Id');
     const entityId = req.get('X-Entity-Id');
+    const actorId = req.get('X-Actor-Id');
+    const startTime = process.hrtime.bigint();
 
     log.info('chat/completions', {
       internal: !!internalService,
@@ -137,9 +143,26 @@ export const createRouter = (options: AgenticRouterOptions): Router => {
         body: JSON.stringify(body)
       });
 
+      const latencyMs = Number(process.hrtime.bigint() - startTime) / 1e6;
+
       if (!upstream.ok) {
         const text = await upstream.text().catch(() => '');
         log.error('upstream error', { status: upstream.status, body: text });
+
+        if (pgPool) {
+          logInferenceUsage(pgPool, {
+            databaseId, entityId, actorId,
+            model: String(body.model || ''),
+            provider: providerType || 'openai',
+            service: 'chat',
+            operation: 'chat/completions',
+            inputTokens: 0, outputTokens: 0, totalTokens: 0,
+            latencyMs,
+            status: 'error',
+            errorType: `upstream_${upstream.status}`
+          });
+        }
+
         res.status(upstream.status).json({
           error: { message: `LLM provider error: ${upstream.status}`, upstream: text }
         });
@@ -150,7 +173,6 @@ export const createRouter = (options: AgenticRouterOptions): Router => {
       const data = await upstream.json() as Record<string, unknown>;
       const response = transformChatResponse(data, type);
 
-      // Log usage for billing (async, don't block response)
       const usage = (response.usage || {}) as Record<string, number>;
       log.info('inference complete', {
         databaseId,
@@ -161,9 +183,41 @@ export const createRouter = (options: AgenticRouterOptions): Router => {
         totalTokens: usage.total_tokens
       });
 
+      if (pgPool) {
+        logInferenceUsage(pgPool, {
+          databaseId, entityId, actorId,
+          model: String(body.model || ''),
+          provider: providerType || 'openai',
+          service: 'chat',
+          operation: 'chat/completions',
+          inputTokens: usage.prompt_tokens || 0,
+          outputTokens: usage.completion_tokens || 0,
+          totalTokens: usage.total_tokens || 0,
+          latencyMs,
+          status: 'ok',
+          rawUsage: usage
+        });
+      }
+
       res.json(response);
     } catch (err: any) {
+      const latencyMs = Number(process.hrtime.bigint() - startTime) / 1e6;
       log.error('chat/completions error', err);
+
+      if (pgPool) {
+        logInferenceUsage(pgPool, {
+          databaseId, entityId, actorId,
+          model: String(req.body?.model || ''),
+          provider: providerType || 'openai',
+          service: 'chat',
+          operation: 'chat/completions',
+          inputTokens: 0, outputTokens: 0, totalTokens: 0,
+          latencyMs,
+          status: 'error',
+          errorType: err.message
+        });
+      }
+
       res.status(502).json({
         error: { message: 'Failed to reach LLM provider', details: err.message }
       });
@@ -174,6 +228,8 @@ export const createRouter = (options: AgenticRouterOptions): Router => {
   router.post('/v1/embeddings', async (req: any, res: any) => {
     const databaseId = req.get('X-Database-Id');
     const entityId = req.get('X-Entity-Id');
+    const actorId = req.get('X-Actor-Id');
+    const startTime = process.hrtime.bigint();
 
     log.info('embeddings', { databaseId, entityId, model: req.body?.model });
 
@@ -194,9 +250,26 @@ export const createRouter = (options: AgenticRouterOptions): Router => {
         body: JSON.stringify(body)
       });
 
+      const latencyMs = Number(process.hrtime.bigint() - startTime) / 1e6;
+
       if (!upstream.ok) {
         const text = await upstream.text().catch(() => '');
         log.error('upstream embed error', { status: upstream.status, body: text });
+
+        if (pgPool) {
+          logInferenceUsage(pgPool, {
+            databaseId, entityId, actorId,
+            model: String(body.model || ''),
+            provider: providerType || 'openai',
+            service: 'embed',
+            operation: 'embeddings',
+            inputTokens: 0, outputTokens: 0, totalTokens: 0,
+            latencyMs,
+            status: 'error',
+            errorType: `upstream_${upstream.status}`
+          });
+        }
+
         res.status(upstream.status).json({
           error: { message: `LLM provider error: ${upstream.status}`, upstream: text }
         });
@@ -207,11 +280,44 @@ export const createRouter = (options: AgenticRouterOptions): Router => {
       const data = await upstream.json() as Record<string, unknown>;
       const response = transformEmbedResponse(data, type);
 
+      const usage = (response.usage || {}) as Record<string, number>;
       log.info('embed complete', { databaseId, entityId });
+
+      if (pgPool) {
+        logInferenceUsage(pgPool, {
+          databaseId, entityId, actorId,
+          model: String(body.model || ''),
+          provider: providerType || 'openai',
+          service: 'embed',
+          operation: 'embeddings',
+          inputTokens: usage.prompt_tokens || 0,
+          outputTokens: 0,
+          totalTokens: usage.total_tokens || 0,
+          latencyMs,
+          status: 'ok',
+          rawUsage: usage
+        });
+      }
 
       res.json(response);
     } catch (err: any) {
+      const latencyMs = Number(process.hrtime.bigint() - startTime) / 1e6;
       log.error('embeddings error', err);
+
+      if (pgPool) {
+        logInferenceUsage(pgPool, {
+          databaseId, entityId, actorId,
+          model: String(req.body?.model || ''),
+          provider: providerType || 'openai',
+          service: 'embed',
+          operation: 'embeddings',
+          inputTokens: 0, outputTokens: 0, totalTokens: 0,
+          latencyMs,
+          status: 'error',
+          errorType: err.message
+        });
+      }
+
       res.status(502).json({
         error: { message: 'Failed to reach LLM provider', details: err.message }
       });
