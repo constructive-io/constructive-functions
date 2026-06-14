@@ -4,6 +4,8 @@ import * as jobs from '@constructive-io/job-utils';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool, PoolClient } from 'pg';
 
+import { completeNode, failNode } from './graph-complete';
+import { extractNodeProps, getInlineImpl, isGraphJob } from './inline-nodes';
 import { request as req } from './req';
 
 export interface JobRow {
@@ -116,6 +118,25 @@ export default class Worker {
     ) {
       throw new Error('Unsupported task');
     }
+
+    // Inline execution path: native FBP nodes with graph job payloads
+    // are resolved in-process rather than dispatched via HTTP.
+    const impl = getInlineImpl(task_identifier);
+    if (impl && isGraphJob(payload)) {
+      const { execution_id, node_name, inputs } = payload;
+      const props = extractNodeProps(payload);
+      try {
+        const output = await impl(inputs ?? {}, props);
+        await completeNode(this.pgPool, execution_id, node_name, output);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        log.error(`inline node ${task_identifier} failed`, { node_name, message });
+        await failNode(this.pgPool, execution_id, node_name, message);
+      }
+      return;
+    }
+
+    // HTTP dispatch path: cloud functions (send-email, etc.)
     await req(task_identifier, {
       body: payload,
       databaseId: job.database_id,
