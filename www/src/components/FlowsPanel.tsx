@@ -292,87 +292,58 @@ const FUNCTION_FIELDS = {
 
 const STORE_FIELDS = { id: true, name: true, hash: true } as const;
 
-// ─── GraphQL client helper ──────────────────────────────────────────────
+// ─── SDK ORM helper ──────────────────────────────────────────────────────
 
-async function gqlFetch(endpoint: string, query: string, variables: Record<string, unknown> = {}) {
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, variables }),
-  });
-  const contentType = res.headers.get('content-type') || '';
-  if (!contentType.includes('json')) {
-    throw new Error(`GraphQL server returned ${res.status} (${contentType || 'no content-type'}). Is the server running on port 6464? Run: make up`);
-  }
-  const json = await res.json();
-  if (json.errors?.length) throw new Error(json.errors[0].message);
-  return json.data;
+function orm() {
+  return compute.getClient();
 }
 
 async function loadGraphFromStore(storeId: string): Promise<{ graph: Graph; commitId: string | null } | null> {
-  const endpoint = '/graphql/compute';
-
   // Get the 'main' ref for this store
-  const refData = await gqlFetch(endpoint, `
-    query ($where: PlatformFunctionGraphRefFilter) {
-      platformFunctionGraphRefs(where: $where, first: 1) {
-        nodes { id name commitId storeId }
-      }
-    }
-  `, { where: { storeId: { equalTo: storeId } } });
-  const ref = refData?.platformFunctionGraphRefs?.nodes?.[0];
-  if (!ref?.commitId) {
-    // No ref/commit chain — try reading via platformReadFunctionGraph
-    // (graph was created by platformImportGraphJson, not blob save)
-    return loadGraphFromImport(storeId);
-  }
+  const refResult = await orm().platformFunctionGraphRef.findMany({
+    select: { id: true, commitId: true, storeId: true },
+    where: { storeId: { equalTo: storeId } },
+    first: 1,
+  }).unwrap();
+  const ref = refResult?.platformFunctionGraphRefs?.nodes?.[0];
+  if (!ref?.commitId) return loadGraphFromImport(storeId);
 
   // Get the commit
-  const commitData = await gqlFetch(endpoint, `
-    query ($where: PlatformFunctionGraphCommitFilter) {
-      platformFunctionGraphCommits(where: $where, first: 1) {
-        nodes { id treeId message date parentIds }
-      }
-    }
-  `, { where: { id: { equalTo: ref.commitId } } });
-  const commit = commitData?.platformFunctionGraphCommits?.nodes?.[0];
+  const commitResult = await orm().platformFunctionGraphCommit.findMany({
+    select: { id: true, treeId: true, message: true, parentIds: true },
+    where: { id: { equalTo: ref.commitId } },
+    first: 1,
+  }).unwrap();
+  const commit = commitResult?.platformFunctionGraphCommits?.nodes?.[0];
   if (!commit?.treeId) return loadGraphFromImport(storeId);
 
   // Get the object (tree)
-  const objData = await gqlFetch(endpoint, `
-    query ($where: PlatformFunctionGraphObjectFilter) {
-      platformFunctionGraphObjects(where: $where, first: 1) {
-        nodes { id data }
-      }
-    }
-  `, { where: { id: { equalTo: commit.treeId } } });
-  const obj = objData?.platformFunctionGraphObjects?.nodes?.[0];
+  const objResult = await orm().platformFunctionGraphObject.findMany({
+    select: { id: true, data: true },
+    where: { id: { equalTo: commit.treeId } },
+    first: 1,
+  }).unwrap();
+  const obj = objResult?.platformFunctionGraphObjects?.nodes?.[0];
   if (!obj?.data) return loadGraphFromImport(storeId);
 
   return { graph: obj.data as unknown as Graph, commitId: ref.commitId };
 }
 
 async function loadGraphFromImport(storeId: string): Promise<{ graph: Graph; commitId: string | null } | null> {
-  const endpoint = '/graphql/compute';
-
   // Find the platform_function_graphs entry that uses this store
-  const graphData = await gqlFetch(endpoint, `
-    query ($where: PlatformFunctionGraphFilter) {
-      platformFunctionGraphs(where: $where, first: 1) {
-        nodes { id storeId name context }
-      }
-    }
-  `, { where: { storeId: { equalTo: storeId } } });
-  const graph = graphData?.platformFunctionGraphs?.nodes?.[0];
-  if (!graph?.id) return null;
+  const graphResult = await orm().platformFunctionGraph.findMany({
+    select: { id: true, storeId: true, name: true, context: true },
+    where: { storeId: { equalTo: storeId } },
+    first: 1,
+  }).unwrap();
+  const graphRow = graphResult?.platformFunctionGraphs?.nodes?.[0];
+  if (!graphRow?.id) return null;
 
   // Read the full graph using the SQL deserialization function
-  const readData = await gqlFetch(endpoint, `
-    query ($graphId: UUID!) {
-      platformReadFunctionGraph(graphId: $graphId)
-    }
-  `, { graphId: graph.id });
-  const graphJson = readData?.platformReadFunctionGraph;
+  const readResult = await orm().query.platformReadFunctionGraph(
+    { graphId: graphRow.id },
+  ).unwrap();
+  const graphJson = readResult?.platformReadFunctionGraph;
   if (!graphJson) return null;
 
   // Strip the SQL execution context — it's for the graph engine, not the local evaluator
@@ -387,134 +358,73 @@ async function saveGraphToStore(
   graph: Graph,
   parentCommitId: string | null
 ): Promise<{ commitId: string; objectId: string }> {
-  const endpoint = '/graphql/compute';
-
-  // Create object (content-addressed blob) — ID is a deterministic hash of content,
-  // so saving the same graph twice will collide. Catch and reuse existing object.
+  // Create object (content-addressed blob)
   let objectId: string;
   try {
-    const objData = await gqlFetch(endpoint, `
-      mutation ($input: CreatePlatformFunctionGraphObjectInput!) {
-        createPlatformFunctionGraphObject(input: $input) {
-          platformFunctionGraphObject { id }
-        }
-      }
-    `, {
-      input: {
-        platformFunctionGraphObject: {
-          id: crypto.randomUUID(),
-          databaseId: DATABASE_ID,
-          data: graph as unknown as Record<string, unknown>,
-        },
-      },
-    });
-    objectId = objData.createPlatformFunctionGraphObject.platformFunctionGraphObject.id;
+    const objResult = await orm().platformFunctionGraphObject.create({
+      data: { id: crypto.randomUUID(), databaseId: DATABASE_ID, data: graph as unknown as Record<string, unknown> },
+      select: { id: true },
+    }).unwrap();
+    objectId = objResult.createPlatformFunctionGraphObject.platformFunctionGraphObject.id;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('duplicate key') || msg.includes('unique constraint')) {
-      // Object already exists with this content hash — look up the existing ref's tree
-      const refData = await gqlFetch(endpoint, `
-        query ($where: PlatformFunctionGraphRefFilter) {
-          platformFunctionGraphRefs(where: $where, first: 1) {
-            nodes { id commitId }
-          }
-        }
-      `, { where: { storeId: { equalTo: storeId } } });
-      const existingRef = refData?.platformFunctionGraphRefs?.nodes?.[0];
-      if (existingRef?.commitId) {
-        // Content unchanged — return existing commit, no new save needed
-        return { commitId: existingRef.commitId, objectId: '' };
-      }
+      const refResult = await orm().platformFunctionGraphRef.findMany({
+        select: { id: true, commitId: true },
+        where: { storeId: { equalTo: storeId } },
+        first: 1,
+      }).unwrap();
+      const existingRef = refResult?.platformFunctionGraphRefs?.nodes?.[0];
+      if (existingRef?.commitId) return { commitId: existingRef.commitId, objectId: '' };
       throw err;
     }
     throw err;
   }
 
   // Create commit pointing to the object
-  const commitData = await gqlFetch(endpoint, `
-    mutation ($input: CreatePlatformFunctionGraphCommitInput!) {
-      createPlatformFunctionGraphCommit(input: $input) {
-        platformFunctionGraphCommit { id }
-      }
-    }
-  `, {
-    input: {
-      platformFunctionGraphCommit: {
-        databaseId: DATABASE_ID,
-        storeId,
-        treeId: objectId,
-        message: `Save: ${graph.name || 'untitled'}`,
-        parentIds: parentCommitId ? [parentCommitId] : [],
-      },
-    },
-  });
-  const commitId = commitData.createPlatformFunctionGraphCommit.platformFunctionGraphCommit.id;
+  const commitResult = await orm().platformFunctionGraphCommit.create({
+    data: { databaseId: DATABASE_ID, storeId, treeId: objectId, message: `Save: ${graph.name || 'untitled'}`, parentIds: parentCommitId ? [parentCommitId] : [] },
+    select: { id: true },
+  }).unwrap();
+  const commitId = commitResult.createPlatformFunctionGraphCommit.platformFunctionGraphCommit.id;
 
   // Upsert ref: find existing 'main' ref, update or create
-  const refData = await gqlFetch(endpoint, `
-    query ($where: PlatformFunctionGraphRefFilter) {
-      platformFunctionGraphRefs(where: $where, first: 1) {
-        nodes { id }
-      }
-    }
-  `, { where: { storeId: { equalTo: storeId } } });
-  const existingRef = refData?.platformFunctionGraphRefs?.nodes?.[0];
+  const refResult = await orm().platformFunctionGraphRef.findMany({
+    select: { id: true },
+    where: { storeId: { equalTo: storeId } },
+    first: 1,
+  }).unwrap();
+  const existingRef = refResult?.platformFunctionGraphRefs?.nodes?.[0];
 
   if (existingRef) {
-    await gqlFetch(endpoint, `
-      mutation ($input: UpdatePlatformFunctionGraphRefInput!) {
-        updatePlatformFunctionGraphRef(input: $input) {
-          platformFunctionGraphRef { id }
-        }
-      }
-    `, {
-      input: { id: existingRef.id, databaseId: DATABASE_ID, platformFunctionGraphRefPatch: { commitId } },
-    });
+    await orm().platformFunctionGraphRef.update({
+      where: { id: existingRef.id },
+      data: { commitId },
+      select: { id: true },
+    }).unwrap();
   } else {
-    await gqlFetch(endpoint, `
-      mutation ($input: CreatePlatformFunctionGraphRefInput!) {
-        createPlatformFunctionGraphRef(input: $input) {
-          platformFunctionGraphRef { id }
-        }
-      }
-    `, {
-      input: {
-        platformFunctionGraphRef: {
-          databaseId: DATABASE_ID,
-          storeId,
-          name: 'main',
-          commitId,
-        },
-      },
-    });
+    await orm().platformFunctionGraphRef.create({
+      data: { databaseId: DATABASE_ID, storeId, name: 'main', commitId },
+      select: { id: true },
+    }).unwrap();
   }
 
   return { commitId, objectId };
 }
 
 async function createStore(name: string): Promise<StoreEntry> {
-  const endpoint = '/graphql/compute';
-  const data = await gqlFetch(endpoint, `
-    mutation ($input: CreatePlatformFunctionGraphStoreInput!) {
-      createPlatformFunctionGraphStore(input: $input) {
-        platformFunctionGraphStore { id name hash }
-      }
-    }
-  `, {
-    input: {
-      platformFunctionGraphStore: { databaseId: DATABASE_ID, name },
-    },
-  });
-  return data.createPlatformFunctionGraphStore.platformFunctionGraphStore;
+  const result = await orm().platformFunctionGraphStore.create({
+    data: { databaseId: DATABASE_ID, name },
+    select: { id: true, name: true, hash: true },
+  }).unwrap();
+  return result.createPlatformFunctionGraphStore.platformFunctionGraphStore;
 }
 
 async function deleteStore(id: string): Promise<void> {
-  const endpoint = '/graphql/compute';
-  await gqlFetch(endpoint, `
-    mutation ($input: DeletePlatformFunctionGraphStoreInput!) {
-      deletePlatformFunctionGraphStore(input: $input) { platformFunctionGraphStore { id } }
-    }
-  `, { input: { id } });
+  await orm().platformFunctionGraphStore.delete({
+    where: { id },
+    select: { id: true },
+  }).unwrap();
 }
 
 // ─── Graph execution helpers ────────────────────────────────────────────
@@ -525,32 +435,21 @@ async function importAndExecuteGraph(
   outputNode: string | null = null,
   outputPort: string | null = null,
 ): Promise<{ graphId: string; executionId: string }> {
-  const endpoint = '/graphql/compute';
-
-  const importData = await gqlFetch(endpoint, `
-    mutation ($input: PlatformImportGraphJsonInput!) {
-      platformImportGraphJson(input: $input) { result }
-    }
-  `, {
-    input: {
-      databaseId: DATABASE_ID,
-      name: graph.name || 'untitled',
-      graphJson: graph as unknown as Record<string, unknown>,
-      context: graph.context || 'function',
-    },
-  });
-  const graphId = importData.platformImportGraphJson.result;
+  const importResult = await orm().mutation.platformImportGraphJson(
+    { input: { databaseId: DATABASE_ID, name: graph.name || 'untitled', graphJson: graph as unknown as Record<string, unknown>, context: graph.context || 'function' } },
+    { select: { result: true } },
+  ).unwrap();
+  const graphId = importResult.platformImportGraphJson!.result;
 
   const execInput: Record<string, unknown> = { graphId, inputPayload };
   if (outputNode) execInput.outputNode = outputNode;
   if (outputPort) execInput.outputPort = outputPort;
 
-  const execData = await gqlFetch(endpoint, `
-    mutation ($input: PlatformStartExecutionInput!) {
-      platformStartExecution(input: $input) { result }
-    }
-  `, { input: execInput });
-  const executionId = execData.platformStartExecution.result;
+  const execResult = await orm().mutation.platformStartExecution(
+    { input: execInput as any },
+    { select: { result: true } },
+  ).unwrap();
+  const executionId = execResult.platformStartExecution!.result;
 
   return { graphId, executionId };
 }
@@ -563,9 +462,7 @@ async function pollExecutionStatus(executionId: string): Promise<{
   output?: unknown;
   error?: string;
 }> {
-  const endpoint = '/graphql/compute';
-
-  // Query node_states via GraphQL (table is now in public schema)
+  // Query node_states via SDK (table is in public schema)
   let nsRows: Array<{
     node_name: string;
     status: string;
@@ -575,22 +472,12 @@ async function pollExecutionStatus(executionId: string): Promise<{
     duration_ms: number | null;
   }> = [];
   try {
-    const nsData = await gqlFetch(endpoint, `
-      query ($where: PlatformFunctionGraphExecutionNodeStateFilter) {
-        platformFunctionGraphExecutionNodeStates(where: $where, orderBy: CREATED_AT_ASC) {
-          nodes {
-            nodeName
-            status
-            nodePath
-            startedAt
-            completedAt
-          }
-        }
-      }
-    `, {
+    const nsResult = await orm().platformFunctionGraphExecutionNodeState.findMany({
+      select: { nodeName: true, status: true, nodePath: true, startedAt: true, completedAt: true },
       where: { executionId: { equalTo: executionId } },
-    });
-    const gqlNodes = nsData?.platformFunctionGraphExecutionNodeStates?.nodes ?? [];
+      orderBy: ['CREATED_AT_ASC'],
+    }).unwrap();
+    const gqlNodes = nsResult?.platformFunctionGraphExecutionNodeStates?.nodes ?? [];
     nsRows = gqlNodes.map((n: any) => ({
       node_name: n.nodeName,
       status: n.status,
@@ -608,28 +495,12 @@ async function pollExecutionStatus(executionId: string): Promise<{
   // Also query invocations for detailed payload/result data
   let invocationsArr: any[] = [];
   try {
-    const invData = await gqlFetch(endpoint, `
-      query ($where: PlatformFunctionInvocationFilter) {
-        platformFunctionInvocations(where: $where, orderBy: CREATED_AT_ASC) {
-          nodes {
-            id
-            taskIdentifier
-            status
-            durationMs
-            error
-            result
-            createdAt
-            startedAt
-            completedAt
-            graphExecutionId
-            payload
-          }
-        }
-      }
-    `, {
+    const invResult = await orm().platformFunctionInvocation.findMany({
+      select: { id: true, taskIdentifier: true, status: true, durationMs: true, error: true, result: true, createdAt: true, startedAt: true, completedAt: true, graphExecutionId: true, payload: true },
       where: { graphExecutionId: { equalTo: executionId } },
-    });
-    invocationsArr = invData?.platformFunctionInvocations?.nodes ?? [];
+      orderBy: ['CREATED_AT_ASC'],
+    }).unwrap();
+    invocationsArr = invResult?.platformFunctionInvocations?.nodes ?? [];
   } catch {
     // Invocations query may fail if graphExecutionId filter isn't supported yet
   }
