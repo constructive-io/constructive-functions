@@ -204,7 +204,8 @@ export class PlatformFunctionDefinitionModel {
       'UpdatePlatformFunctionDefinitionInput',
       'id',
       'platformFunctionDefinitionPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      undefined
     );
     return new QueryBuilder({
       client: this.client,

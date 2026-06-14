@@ -49,6 +49,7 @@ export function useUpdatePlatformFunctionGraphRefMutation<S extends PlatformFunc
       Error,
       {
         id: string;
+        databaseId: string;
         platformFunctionGraphRefPatch: PlatformFunctionGraphRefPatch;
       }
     >,
@@ -63,6 +64,7 @@ export function useUpdatePlatformFunctionGraphRefMutation<S extends PlatformFunc
   Error,
   {
     id: string;
+    databaseId: string;
     platformFunctionGraphRefPatch: PlatformFunctionGraphRefPatch;
   }
 >;
@@ -75,6 +77,7 @@ export function useUpdatePlatformFunctionGraphRefMutation(
       Error,
       {
         id: string;
+        databaseId: string;
         platformFunctionGraphRefPatch: PlatformFunctionGraphRefPatch;
       }
     >,
@@ -89,15 +92,18 @@ export function useUpdatePlatformFunctionGraphRefMutation(
     mutationKey: platformFunctionGraphRefMutationKeys.all,
     mutationFn: ({
       id,
+      databaseId,
       platformFunctionGraphRefPatch,
     }: {
       id: string;
+      databaseId: string;
       platformFunctionGraphRefPatch: PlatformFunctionGraphRefPatch;
     }) =>
       getClient()
         .platformFunctionGraphRef.update({
           where: {
             id,
+            databaseId,
           },
           data: platformFunctionGraphRefPatch,
           select: args.select,

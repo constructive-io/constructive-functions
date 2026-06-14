@@ -198,7 +198,8 @@ export class PlatformSecretDefinitionModel {
       'UpdatePlatformSecretDefinitionInput',
       'id',
       'platformSecretDefinitionPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      undefined
     );
     return new QueryBuilder({
       client: this.client,

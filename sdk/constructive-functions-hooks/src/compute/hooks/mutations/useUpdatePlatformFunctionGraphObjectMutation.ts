@@ -54,6 +54,7 @@ export function useUpdatePlatformFunctionGraphObjectMutation<
       Error,
       {
         id: string;
+        databaseId: string;
         platformFunctionGraphObjectPatch: PlatformFunctionGraphObjectPatch;
       }
     >,
@@ -68,6 +69,7 @@ export function useUpdatePlatformFunctionGraphObjectMutation<
   Error,
   {
     id: string;
+    databaseId: string;
     platformFunctionGraphObjectPatch: PlatformFunctionGraphObjectPatch;
   }
 >;
@@ -80,6 +82,7 @@ export function useUpdatePlatformFunctionGraphObjectMutation(
       Error,
       {
         id: string;
+        databaseId: string;
         platformFunctionGraphObjectPatch: PlatformFunctionGraphObjectPatch;
       }
     >,
@@ -94,15 +97,18 @@ export function useUpdatePlatformFunctionGraphObjectMutation(
     mutationKey: platformFunctionGraphObjectMutationKeys.all,
     mutationFn: ({
       id,
+      databaseId,
       platformFunctionGraphObjectPatch,
     }: {
       id: string;
+      databaseId: string;
       platformFunctionGraphObjectPatch: PlatformFunctionGraphObjectPatch;
     }) =>
       getClient()
         .platformFunctionGraphObject.update({
           where: {
             id,
+            databaseId,
           },
           data: platformFunctionGraphObjectPatch,
           select: args.select,

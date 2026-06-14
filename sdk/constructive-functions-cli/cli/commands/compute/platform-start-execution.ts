@@ -4,11 +4,10 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { CLIOptions, Inquirerer } from 'inquirerer';
-
-import type { PlatformStartExecutionPayloadSelect } from '../../../orm/input-types';
-import type { PlatformStartExecutionVariables } from '../../../orm/mutation';
 import { getClient } from '../../executor';
-import { buildSelectFromPaths,unflattenDotNotation } from '../../utils';
+import { unflattenDotNotation, buildSelectFromPaths } from '../../utils';
+import type { PlatformStartExecutionVariables } from '../../../orm/mutation';
+import type { PlatformStartExecutionPayloadSelect } from '../../../orm/input-types';
 export default async (
   argv: Partial<Record<string, unknown>>,
   prompter: Inquirerer,

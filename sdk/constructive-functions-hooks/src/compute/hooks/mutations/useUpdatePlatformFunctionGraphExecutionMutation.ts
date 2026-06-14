@@ -54,6 +54,7 @@ export function useUpdatePlatformFunctionGraphExecutionMutation<
       Error,
       {
         id: string;
+        startedAt: string;
         platformFunctionGraphExecutionPatch: PlatformFunctionGraphExecutionPatch;
       }
     >,
@@ -71,6 +72,7 @@ export function useUpdatePlatformFunctionGraphExecutionMutation<
   Error,
   {
     id: string;
+    startedAt: string;
     platformFunctionGraphExecutionPatch: PlatformFunctionGraphExecutionPatch;
   }
 >;
@@ -83,6 +85,7 @@ export function useUpdatePlatformFunctionGraphExecutionMutation(
       Error,
       {
         id: string;
+        startedAt: string;
         platformFunctionGraphExecutionPatch: PlatformFunctionGraphExecutionPatch;
       }
     >,
@@ -97,15 +100,18 @@ export function useUpdatePlatformFunctionGraphExecutionMutation(
     mutationKey: platformFunctionGraphExecutionMutationKeys.all,
     mutationFn: ({
       id,
+      startedAt,
       platformFunctionGraphExecutionPatch,
     }: {
       id: string;
+      startedAt: string;
       platformFunctionGraphExecutionPatch: PlatformFunctionGraphExecutionPatch;
     }) =>
       getClient()
         .platformFunctionGraphExecution.update({
           where: {
             id,
+            startedAt,
           },
           data: platformFunctionGraphExecutionPatch,
           select: args.select,

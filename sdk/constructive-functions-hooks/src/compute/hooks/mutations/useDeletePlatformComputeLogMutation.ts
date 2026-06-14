@@ -47,6 +47,7 @@ export function useDeletePlatformComputeLogMutation<S extends PlatformComputeLog
       Error,
       {
         id: string;
+        completedAt: string;
       }
     >,
     'mutationFn'
@@ -60,6 +61,7 @@ export function useDeletePlatformComputeLogMutation<S extends PlatformComputeLog
   Error,
   {
     id: string;
+    completedAt: string;
   }
 >;
 export function useDeletePlatformComputeLogMutation(
@@ -71,6 +73,7 @@ export function useDeletePlatformComputeLogMutation(
       Error,
       {
         id: string;
+        completedAt: string;
       }
     >,
     'mutationFn'
@@ -82,11 +85,12 @@ export function useDeletePlatformComputeLogMutation(
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: platformComputeLogMutationKeys.all,
-    mutationFn: ({ id }: { id: string }) =>
+    mutationFn: ({ id, completedAt }: { id: string; completedAt: string }) =>
       getClient()
         .platformComputeLog.delete({
           where: {
             id,
+            completedAt,
           },
           select: args.select,
         })

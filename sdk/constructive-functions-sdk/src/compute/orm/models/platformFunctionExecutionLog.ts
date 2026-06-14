@@ -192,6 +192,7 @@ export class PlatformFunctionExecutionLogModel {
       S,
       {
         id: string;
+        createdAt: string;
       },
       PlatformFunctionExecutionLogPatch
     > & {
@@ -212,7 +213,10 @@ export class PlatformFunctionExecutionLogModel {
       'UpdatePlatformFunctionExecutionLogInput',
       'id',
       'platformFunctionExecutionLogPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      {
+        createdAt: args.where.createdAt,
+      }
     );
     return new QueryBuilder({
       client: this.client,
@@ -227,6 +231,7 @@ export class PlatformFunctionExecutionLogModel {
     args: DeleteArgs<
       {
         id: string;
+        createdAt: string;
       },
       S
     > & {
@@ -243,6 +248,7 @@ export class PlatformFunctionExecutionLogModel {
       'platformFunctionExecutionLog',
       {
         id: args.where.id,
+        createdAt: args.where.createdAt,
       },
       'DeletePlatformFunctionExecutionLogInput',
       args.select,

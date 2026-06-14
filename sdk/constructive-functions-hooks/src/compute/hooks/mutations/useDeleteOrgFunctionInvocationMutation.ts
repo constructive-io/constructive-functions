@@ -47,6 +47,7 @@ export function useDeleteOrgFunctionInvocationMutation<S extends OrgFunctionInvo
       Error,
       {
         id: string;
+        createdAt: string;
       }
     >,
     'mutationFn'
@@ -60,6 +61,7 @@ export function useDeleteOrgFunctionInvocationMutation<S extends OrgFunctionInvo
   Error,
   {
     id: string;
+    createdAt: string;
   }
 >;
 export function useDeleteOrgFunctionInvocationMutation(
@@ -71,6 +73,7 @@ export function useDeleteOrgFunctionInvocationMutation(
       Error,
       {
         id: string;
+        createdAt: string;
       }
     >,
     'mutationFn'
@@ -82,11 +85,12 @@ export function useDeleteOrgFunctionInvocationMutation(
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: orgFunctionInvocationMutationKeys.all,
-    mutationFn: ({ id }: { id: string }) =>
+    mutationFn: ({ id, createdAt }: { id: string; createdAt: string }) =>
       getClient()
         .orgFunctionInvocation.delete({
           where: {
             id,
+            createdAt,
           },
           select: args.select,
         })

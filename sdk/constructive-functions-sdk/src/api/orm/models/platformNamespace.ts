@@ -196,7 +196,8 @@ export class PlatformNamespaceModel {
       'UpdatePlatformNamespaceInput',
       'id',
       'platformNamespacePatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      undefined
     );
     return new QueryBuilder({
       client: this.client,

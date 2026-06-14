@@ -41,7 +41,7 @@ constructive-functions auth set-token <your-token>
 | Target | Default Endpoint | Tables | Custom Operations |
 |--------|-----------------|--------|-------------------|
 | `api` |  | 8 | 9 |
-| `compute` |  | 14 | 16 |
+| `compute` |  | 17 | 16 |
 | `objects` |  | 5 | 4 |
 
 ## Commands
@@ -88,14 +88,17 @@ and lifecycle settings. |
 | `compute:platform-function-graph-store` | platformFunctionGraphStore CRUD operations |
 | `compute:platform-function-graph-object` | platformFunctionGraphObject CRUD operations |
 | `compute:org-function-execution-log` | orgFunctionExecutionLog CRUD operations |
+| `compute:platform-function-graph-execution-output` | platformFunctionGraphExecutionOutput CRUD operations |
 | `compute:platform-function-graph-commit` | platformFunctionGraphCommit CRUD operations |
 | `compute:platform-secret-definition` | platformSecretDefinition CRUD operations |
 | `compute:platform-function-execution-log` | platformFunctionExecutionLog CRUD operations |
+| `compute:platform-function-graph-execution-node-state` | platformFunctionGraphExecutionNodeState CRUD operations |
 | `compute:platform-function-graph` | platformFunctionGraph CRUD operations |
 | `compute:platform-compute-log` | platformComputeLog CRUD operations |
 | `compute:platform-usage-daily` | platformUsageDaily CRUD operations |
 | `compute:org-function-invocation` | orgFunctionInvocation CRUD operations |
 | `compute:platform-function-invocation` | platformFunctionInvocation CRUD operations |
+| `compute:platform-function-graph-execution` | platformFunctionGraphExecution CRUD operations |
 | `compute:platform-function-definition` | platformFunctionDefinition CRUD operations |
 | `compute:platform-read-function-graph` | platformReadFunctionGraph |
 | `compute:platform-validate-function-graph` | platformValidateFunctionGraph |
@@ -741,6 +744,31 @@ CRUD operations for OrgFunctionExecutionLog records.
 **Required create fields:** `message`
 **Optional create fields (backend defaults):** `actorId`, `invocationId`, `logLevel`, `metadata`, `taskIdentifier`
 
+### `compute:platform-function-graph-execution-output`
+
+CRUD operations for PlatformFunctionGraphExecutionOutput records.
+
+| Subcommand | Description |
+|------------|-------------|
+| `list` | List all platformFunctionGraphExecutionOutput records |
+| `find-first` | Find first matching platformFunctionGraphExecutionOutput record |
+| `get` | Get a platformFunctionGraphExecutionOutput by id |
+| `create` | Create a new platformFunctionGraphExecutionOutput |
+| `update` | Update an existing platformFunctionGraphExecutionOutput |
+| `delete` | Delete a platformFunctionGraphExecutionOutput |
+
+**Fields:**
+
+| Field | Type |
+|-------|------|
+| `createdAt` | Datetime |
+| `data` | JSON |
+| `databaseId` | UUID |
+| `hash` | Base64EncodedBinary |
+| `id` | UUID |
+
+**Required create fields:** `data`, `databaseId`, `hash`
+
 ### `compute:platform-function-graph-commit`
 
 CRUD operations for PlatformFunctionGraphCommit records.
@@ -830,6 +858,39 @@ CRUD operations for PlatformFunctionExecutionLog records.
 
 **Required create fields:** `databaseId`, `message`
 **Optional create fields (backend defaults):** `actorId`, `invocationId`, `logLevel`, `metadata`, `taskIdentifier`
+
+### `compute:platform-function-graph-execution-node-state`
+
+CRUD operations for PlatformFunctionGraphExecutionNodeState records.
+
+| Subcommand | Description |
+|------------|-------------|
+| `list` | List all platformFunctionGraphExecutionNodeState records |
+| `find-first` | Find first matching platformFunctionGraphExecutionNodeState record |
+| `get` | Get a platformFunctionGraphExecutionNodeState by id |
+| `create` | Create a new platformFunctionGraphExecutionNodeState |
+| `update` | Update an existing platformFunctionGraphExecutionNodeState |
+| `delete` | Delete a platformFunctionGraphExecutionNodeState |
+
+**Fields:**
+
+| Field | Type |
+|-------|------|
+| `createdAt` | Datetime |
+| `completedAt` | Datetime |
+| `databaseId` | UUID |
+| `errorCode` | String |
+| `errorMessage` | String |
+| `executionId` | UUID |
+| `id` | UUID |
+| `nodeName` | String |
+| `outputId` | UUID |
+| `startedAt` | Datetime |
+| `status` | String |
+| `nodePath` | String |
+
+**Required create fields:** `databaseId`, `executionId`, `nodeName`
+**Optional create fields (backend defaults):** `completedAt`, `errorCode`, `errorMessage`, `outputId`, `startedAt`, `status`, `nodePath`
 
 ### `compute:platform-function-graph`
 
@@ -1003,6 +1064,51 @@ CRUD operations for PlatformFunctionInvocation records.
 
 **Required create fields:** `databaseId`, `taskIdentifier`
 **Optional create fields (backend defaults):** `actorId`, `completedAt`, `durationMs`, `error`, `graphExecutionId`, `jobId`, `parentInvocationId`, `payload`, `result`, `startedAt`, `status`
+
+### `compute:platform-function-graph-execution`
+
+CRUD operations for PlatformFunctionGraphExecution records.
+
+| Subcommand | Description |
+|------------|-------------|
+| `list` | List all platformFunctionGraphExecution records |
+| `find-first` | Find first matching platformFunctionGraphExecution record |
+| `get` | Get a platformFunctionGraphExecution by id |
+| `create` | Create a new platformFunctionGraphExecution |
+| `update` | Update an existing platformFunctionGraphExecution |
+| `delete` | Delete a platformFunctionGraphExecution |
+
+**Fields:**
+
+| Field | Type |
+|-------|------|
+| `startedAt` | Datetime |
+| `completedAt` | Datetime |
+| `currentWave` | Int |
+| `databaseId` | UUID |
+| `definitionsCommitId` | UUID |
+| `entityId` | UUID |
+| `errorCode` | String |
+| `errorMessage` | String |
+| `executionPlan` | JSON |
+| `graphId` | UUID |
+| `id` | UUID |
+| `inputPayload` | JSON |
+| `invocationId` | UUID |
+| `maxPendingJobs` | Int |
+| `maxTicks` | Int |
+| `nodeOutputs` | JSON |
+| `outputNode` | String |
+| `outputPayload` | JSON |
+| `outputPort` | String |
+| `parentExecutionId` | UUID |
+| `parentNodeName` | String |
+| `status` | String |
+| `tickCount` | Int |
+| `timeoutAt` | Datetime |
+
+**Required create fields:** `databaseId`, `graphId`, `outputNode`
+**Optional create fields (backend defaults):** `startedAt`, `completedAt`, `currentWave`, `definitionsCommitId`, `entityId`, `errorCode`, `errorMessage`, `executionPlan`, `inputPayload`, `invocationId`, `maxPendingJobs`, `maxTicks`, `nodeOutputs`, `outputPayload`, `outputPort`, `parentExecutionId`, `parentNodeName`, `status`, `tickCount`, `timeoutAt`
 
 ### `compute:platform-function-definition`
 

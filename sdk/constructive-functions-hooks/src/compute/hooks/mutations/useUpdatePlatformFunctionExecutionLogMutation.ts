@@ -54,6 +54,7 @@ export function useUpdatePlatformFunctionExecutionLogMutation<
       Error,
       {
         id: string;
+        createdAt: string;
         platformFunctionExecutionLogPatch: PlatformFunctionExecutionLogPatch;
       }
     >,
@@ -68,6 +69,7 @@ export function useUpdatePlatformFunctionExecutionLogMutation<
   Error,
   {
     id: string;
+    createdAt: string;
     platformFunctionExecutionLogPatch: PlatformFunctionExecutionLogPatch;
   }
 >;
@@ -80,6 +82,7 @@ export function useUpdatePlatformFunctionExecutionLogMutation(
       Error,
       {
         id: string;
+        createdAt: string;
         platformFunctionExecutionLogPatch: PlatformFunctionExecutionLogPatch;
       }
     >,
@@ -94,15 +97,18 @@ export function useUpdatePlatformFunctionExecutionLogMutation(
     mutationKey: platformFunctionExecutionLogMutationKeys.all,
     mutationFn: ({
       id,
+      createdAt,
       platformFunctionExecutionLogPatch,
     }: {
       id: string;
+      createdAt: string;
       platformFunctionExecutionLogPatch: PlatformFunctionExecutionLogPatch;
     }) =>
       getClient()
         .platformFunctionExecutionLog.update({
           where: {
             id,
+            createdAt,
           },
           data: platformFunctionExecutionLogPatch,
           select: args.select,

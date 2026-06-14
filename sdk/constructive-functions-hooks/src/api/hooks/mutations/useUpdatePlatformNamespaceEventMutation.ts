@@ -49,6 +49,7 @@ export function useUpdatePlatformNamespaceEventMutation<S extends PlatformNamesp
       Error,
       {
         id: string;
+        createdAt: string;
         platformNamespaceEventPatch: PlatformNamespaceEventPatch;
       }
     >,
@@ -63,6 +64,7 @@ export function useUpdatePlatformNamespaceEventMutation<S extends PlatformNamesp
   Error,
   {
     id: string;
+    createdAt: string;
     platformNamespaceEventPatch: PlatformNamespaceEventPatch;
   }
 >;
@@ -75,6 +77,7 @@ export function useUpdatePlatformNamespaceEventMutation(
       Error,
       {
         id: string;
+        createdAt: string;
         platformNamespaceEventPatch: PlatformNamespaceEventPatch;
       }
     >,
@@ -89,15 +92,18 @@ export function useUpdatePlatformNamespaceEventMutation(
     mutationKey: platformNamespaceEventMutationKeys.all,
     mutationFn: ({
       id,
+      createdAt,
       platformNamespaceEventPatch,
     }: {
       id: string;
+      createdAt: string;
       platformNamespaceEventPatch: PlatformNamespaceEventPatch;
     }) =>
       getClient()
         .platformNamespaceEvent.update({
           where: {
             id,
+            createdAt,
           },
           data: platformNamespaceEventPatch,
           select: args.select,

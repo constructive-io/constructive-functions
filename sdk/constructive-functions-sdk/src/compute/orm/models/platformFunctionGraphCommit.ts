@@ -188,6 +188,7 @@ export class PlatformFunctionGraphCommitModel {
       S,
       {
         id: string;
+        databaseId: string;
       },
       PlatformFunctionGraphCommitPatch
     > & {
@@ -208,7 +209,10 @@ export class PlatformFunctionGraphCommitModel {
       'UpdatePlatformFunctionGraphCommitInput',
       'id',
       'platformFunctionGraphCommitPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      {
+        databaseId: args.where.databaseId,
+      }
     );
     return new QueryBuilder({
       client: this.client,
@@ -223,6 +227,7 @@ export class PlatformFunctionGraphCommitModel {
     args: DeleteArgs<
       {
         id: string;
+        databaseId: string;
       },
       S
     > & {
@@ -239,6 +244,7 @@ export class PlatformFunctionGraphCommitModel {
       'platformFunctionGraphCommit',
       {
         id: args.where.id,
+        databaseId: args.where.databaseId,
       },
       'DeletePlatformFunctionGraphCommitInput',
       args.select,

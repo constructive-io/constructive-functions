@@ -52,6 +52,7 @@ export function useDeletePlatformFunctionGraphCommitMutation<
       Error,
       {
         id: string;
+        databaseId: string;
       }
     >,
     'mutationFn'
@@ -65,6 +66,7 @@ export function useDeletePlatformFunctionGraphCommitMutation<
   Error,
   {
     id: string;
+    databaseId: string;
   }
 >;
 export function useDeletePlatformFunctionGraphCommitMutation(
@@ -76,6 +78,7 @@ export function useDeletePlatformFunctionGraphCommitMutation(
       Error,
       {
         id: string;
+        databaseId: string;
       }
     >,
     'mutationFn'
@@ -87,11 +90,12 @@ export function useDeletePlatformFunctionGraphCommitMutation(
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: platformFunctionGraphCommitMutationKeys.all,
-    mutationFn: ({ id }: { id: string }) =>
+    mutationFn: ({ id, databaseId }: { id: string; databaseId: string }) =>
       getClient()
         .platformFunctionGraphCommit.delete({
           where: {
             id,
+            databaseId,
           },
           select: args.select,
         })

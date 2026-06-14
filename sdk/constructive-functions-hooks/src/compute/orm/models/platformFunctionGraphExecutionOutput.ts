@@ -200,6 +200,7 @@ export class PlatformFunctionGraphExecutionOutputModel {
       S,
       {
         id: string;
+        createdAt: string;
       },
       PlatformFunctionGraphExecutionOutputPatch
     > & {
@@ -223,7 +224,10 @@ export class PlatformFunctionGraphExecutionOutputModel {
       'UpdatePlatformFunctionGraphExecutionOutputInput',
       'id',
       'platformFunctionGraphExecutionOutputPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      {
+        createdAt: args.where.createdAt,
+      }
     );
     return new QueryBuilder({
       client: this.client,
@@ -238,6 +242,7 @@ export class PlatformFunctionGraphExecutionOutputModel {
     args: DeleteArgs<
       {
         id: string;
+        createdAt: string;
       },
       S
     > & {
@@ -257,6 +262,7 @@ export class PlatformFunctionGraphExecutionOutputModel {
       'platformFunctionGraphExecutionOutput',
       {
         id: args.where.id,
+        createdAt: args.where.createdAt,
       },
       'DeletePlatformFunctionGraphExecutionOutputInput',
       args.select,

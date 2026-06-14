@@ -49,6 +49,7 @@ export function useUpdatePlatformComputeLogMutation<S extends PlatformComputeLog
       Error,
       {
         id: string;
+        completedAt: string;
         platformComputeLogPatch: PlatformComputeLogPatch;
       }
     >,
@@ -63,6 +64,7 @@ export function useUpdatePlatformComputeLogMutation<S extends PlatformComputeLog
   Error,
   {
     id: string;
+    completedAt: string;
     platformComputeLogPatch: PlatformComputeLogPatch;
   }
 >;
@@ -75,6 +77,7 @@ export function useUpdatePlatformComputeLogMutation(
       Error,
       {
         id: string;
+        completedAt: string;
         platformComputeLogPatch: PlatformComputeLogPatch;
       }
     >,
@@ -89,15 +92,18 @@ export function useUpdatePlatformComputeLogMutation(
     mutationKey: platformComputeLogMutationKeys.all,
     mutationFn: ({
       id,
+      completedAt,
       platformComputeLogPatch,
     }: {
       id: string;
+      completedAt: string;
       platformComputeLogPatch: PlatformComputeLogPatch;
     }) =>
       getClient()
         .platformComputeLog.update({
           where: {
             id,
+            completedAt,
           },
           data: platformComputeLogPatch,
           select: args.select,

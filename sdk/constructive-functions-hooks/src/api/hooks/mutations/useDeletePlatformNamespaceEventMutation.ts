@@ -47,6 +47,7 @@ export function useDeletePlatformNamespaceEventMutation<S extends PlatformNamesp
       Error,
       {
         id: string;
+        createdAt: string;
       }
     >,
     'mutationFn'
@@ -60,6 +61,7 @@ export function useDeletePlatformNamespaceEventMutation<S extends PlatformNamesp
   Error,
   {
     id: string;
+    createdAt: string;
   }
 >;
 export function useDeletePlatformNamespaceEventMutation(
@@ -71,6 +73,7 @@ export function useDeletePlatformNamespaceEventMutation(
       Error,
       {
         id: string;
+        createdAt: string;
       }
     >,
     'mutationFn'
@@ -82,11 +85,12 @@ export function useDeletePlatformNamespaceEventMutation(
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: platformNamespaceEventMutationKeys.all,
-    mutationFn: ({ id }: { id: string }) =>
+    mutationFn: ({ id, createdAt }: { id: string; createdAt: string }) =>
       getClient()
         .platformNamespaceEvent.delete({
           where: {
             id,
+            createdAt,
           },
           select: args.select,
         })

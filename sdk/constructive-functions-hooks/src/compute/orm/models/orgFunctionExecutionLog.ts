@@ -178,6 +178,7 @@ export class OrgFunctionExecutionLogModel {
       S,
       {
         id: string;
+        createdAt: string;
       },
       OrgFunctionExecutionLogPatch
     > & {
@@ -198,7 +199,10 @@ export class OrgFunctionExecutionLogModel {
       'UpdateOrgFunctionExecutionLogInput',
       'id',
       'orgFunctionExecutionLogPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      {
+        createdAt: args.where.createdAt,
+      }
     );
     return new QueryBuilder({
       client: this.client,
@@ -213,6 +217,7 @@ export class OrgFunctionExecutionLogModel {
     args: DeleteArgs<
       {
         id: string;
+        createdAt: string;
       },
       S
     > & {
@@ -229,6 +234,7 @@ export class OrgFunctionExecutionLogModel {
       'orgFunctionExecutionLog',
       {
         id: args.where.id,
+        createdAt: args.where.createdAt,
       },
       'DeleteOrgFunctionExecutionLogInput',
       args.select,

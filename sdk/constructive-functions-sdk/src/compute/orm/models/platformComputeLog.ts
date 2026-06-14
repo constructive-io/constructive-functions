@@ -176,6 +176,7 @@ export class PlatformComputeLogModel {
       S,
       {
         id: string;
+        completedAt: string;
       },
       PlatformComputeLogPatch
     > & {
@@ -196,7 +197,10 @@ export class PlatformComputeLogModel {
       'UpdatePlatformComputeLogInput',
       'id',
       'platformComputeLogPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      {
+        completedAt: args.where.completedAt,
+      }
     );
     return new QueryBuilder({
       client: this.client,
@@ -211,6 +215,7 @@ export class PlatformComputeLogModel {
     args: DeleteArgs<
       {
         id: string;
+        completedAt: string;
       },
       S
     > & {
@@ -227,6 +232,7 @@ export class PlatformComputeLogModel {
       'platformComputeLog',
       {
         id: args.where.id,
+        completedAt: args.where.completedAt,
       },
       'DeletePlatformComputeLogInput',
       args.select,

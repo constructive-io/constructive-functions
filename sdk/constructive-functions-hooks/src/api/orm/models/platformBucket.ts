@@ -196,7 +196,8 @@ export class PlatformBucketModel {
       'UpdatePlatformBucketInput',
       'id',
       'platformBucketPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      undefined
     );
     return new QueryBuilder({
       client: this.client,

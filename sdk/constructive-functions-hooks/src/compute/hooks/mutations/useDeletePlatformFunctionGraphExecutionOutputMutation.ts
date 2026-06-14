@@ -52,6 +52,7 @@ export function useDeletePlatformFunctionGraphExecutionOutputMutation<
       Error,
       {
         id: string;
+        createdAt: string;
       }
     >,
     'mutationFn'
@@ -68,6 +69,7 @@ export function useDeletePlatformFunctionGraphExecutionOutputMutation<
   Error,
   {
     id: string;
+    createdAt: string;
   }
 >;
 export function useDeletePlatformFunctionGraphExecutionOutputMutation(
@@ -79,6 +81,7 @@ export function useDeletePlatformFunctionGraphExecutionOutputMutation(
       Error,
       {
         id: string;
+        createdAt: string;
       }
     >,
     'mutationFn'
@@ -90,11 +93,12 @@ export function useDeletePlatformFunctionGraphExecutionOutputMutation(
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: platformFunctionGraphExecutionOutputMutationKeys.all,
-    mutationFn: ({ id }: { id: string }) =>
+    mutationFn: ({ id, createdAt }: { id: string; createdAt: string }) =>
       getClient()
         .platformFunctionGraphExecutionOutput.delete({
           where: {
             id,
+            createdAt,
           },
           select: args.select,
         })

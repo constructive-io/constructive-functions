@@ -49,6 +49,7 @@ export function useUpdateOrgFunctionExecutionLogMutation<S extends OrgFunctionEx
       Error,
       {
         id: string;
+        createdAt: string;
         orgFunctionExecutionLogPatch: OrgFunctionExecutionLogPatch;
       }
     >,
@@ -63,6 +64,7 @@ export function useUpdateOrgFunctionExecutionLogMutation<S extends OrgFunctionEx
   Error,
   {
     id: string;
+    createdAt: string;
     orgFunctionExecutionLogPatch: OrgFunctionExecutionLogPatch;
   }
 >;
@@ -75,6 +77,7 @@ export function useUpdateOrgFunctionExecutionLogMutation(
       Error,
       {
         id: string;
+        createdAt: string;
         orgFunctionExecutionLogPatch: OrgFunctionExecutionLogPatch;
       }
     >,
@@ -89,15 +92,18 @@ export function useUpdateOrgFunctionExecutionLogMutation(
     mutationKey: orgFunctionExecutionLogMutationKeys.all,
     mutationFn: ({
       id,
+      createdAt,
       orgFunctionExecutionLogPatch,
     }: {
       id: string;
+      createdAt: string;
       orgFunctionExecutionLogPatch: OrgFunctionExecutionLogPatch;
     }) =>
       getClient()
         .orgFunctionExecutionLog.update({
           where: {
             id,
+            createdAt,
           },
           data: orgFunctionExecutionLogPatch,
           select: args.select,

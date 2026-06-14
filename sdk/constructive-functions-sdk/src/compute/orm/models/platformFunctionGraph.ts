@@ -198,7 +198,8 @@ export class PlatformFunctionGraphModel {
       'UpdatePlatformFunctionGraphInput',
       'id',
       'platformFunctionGraphPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      undefined
     );
     return new QueryBuilder({
       client: this.client,

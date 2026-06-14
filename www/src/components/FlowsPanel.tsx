@@ -298,18 +298,6 @@ function orm() {
   return compute.getClient();
 }
 
-async function rawMutation(document: string, variables: Record<string, unknown>) {
-  const res = await fetch('/graphql/compute', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query: document, variables }),
-  });
-  const json = await res.json();
-  if (json.errors?.length) {
-    throw new Error(`GraphQL Error: ${json.errors.map((e: any) => e.message).join(', ')}`);
-  }
-  return json.data;
-}
 
 async function loadGraphFromStore(storeId: string): Promise<{ graph: Graph; commitId: string | null } | null> {
   // Get the 'main' ref for this store
@@ -410,14 +398,11 @@ async function saveGraphToStore(
   const existingRef = refResult?.platformFunctionGraphRefs?.nodes?.[0];
 
   if (existingRef) {
-    // ORM update/delete for partitioned tables omits databaseId from the
-    // GraphQL input, but the mutation requires it. Use raw mutation.
-    await rawMutation(
-      `mutation($input: UpdatePlatformFunctionGraphRefInput!) {
-        updatePlatformFunctionGraphRef(input: $input) { platformFunctionGraphRef { id } }
-      }`,
-      { input: { id: existingRef.id, databaseId: DATABASE_ID, platformFunctionGraphRefPatch: { commitId } } }
-    );
+    await orm().platformFunctionGraphRef.update({
+      where: { id: existingRef.id, databaseId: DATABASE_ID },
+      data: { commitId },
+      select: { id: true },
+    }).unwrap();
   } else {
     await orm().platformFunctionGraphRef.create({
       data: { databaseId: DATABASE_ID, storeId, name: 'main', commitId },
@@ -437,13 +422,10 @@ async function createStore(name: string): Promise<StoreEntry> {
 }
 
 async function deleteStore(id: string): Promise<void> {
-  // Raw mutation — partitioned table delete requires databaseId in the input
-  await rawMutation(
-    `mutation($input: DeletePlatformFunctionGraphStoreInput!) {
-      deletePlatformFunctionGraphStore(input: $input) { platformFunctionGraphStore { id } }
-    }`,
-    { input: { id, databaseId: DATABASE_ID } }
-  );
+  await orm().platformFunctionGraphStore.delete({
+    where: { id },
+    select: { id: true },
+  }).unwrap();
 }
 
 // ─── Graph execution helpers ────────────────────────────────────────────

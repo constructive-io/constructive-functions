@@ -196,7 +196,8 @@ export class PlatformConfigModel {
       'UpdatePlatformConfigInput',
       'id',
       'platformConfigPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      undefined
     );
     return new QueryBuilder({
       client: this.client,

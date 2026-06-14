@@ -178,6 +178,7 @@ export class PlatformNamespaceEventModel {
       S,
       {
         id: string;
+        createdAt: string;
       },
       PlatformNamespaceEventPatch
     > & {
@@ -198,7 +199,10 @@ export class PlatformNamespaceEventModel {
       'UpdatePlatformNamespaceEventInput',
       'id',
       'platformNamespaceEventPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      {
+        createdAt: args.where.createdAt,
+      }
     );
     return new QueryBuilder({
       client: this.client,
@@ -213,6 +217,7 @@ export class PlatformNamespaceEventModel {
     args: DeleteArgs<
       {
         id: string;
+        createdAt: string;
       },
       S
     > & {
@@ -229,6 +234,7 @@ export class PlatformNamespaceEventModel {
       'platformNamespaceEvent',
       {
         id: args.where.id,
+        createdAt: args.where.createdAt,
       },
       'DeletePlatformNamespaceEventInput',
       args.select,

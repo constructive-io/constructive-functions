@@ -49,6 +49,7 @@ export function useUpdateOrgFunctionInvocationMutation<S extends OrgFunctionInvo
       Error,
       {
         id: string;
+        createdAt: string;
         orgFunctionInvocationPatch: OrgFunctionInvocationPatch;
       }
     >,
@@ -63,6 +64,7 @@ export function useUpdateOrgFunctionInvocationMutation<S extends OrgFunctionInvo
   Error,
   {
     id: string;
+    createdAt: string;
     orgFunctionInvocationPatch: OrgFunctionInvocationPatch;
   }
 >;
@@ -75,6 +77,7 @@ export function useUpdateOrgFunctionInvocationMutation(
       Error,
       {
         id: string;
+        createdAt: string;
         orgFunctionInvocationPatch: OrgFunctionInvocationPatch;
       }
     >,
@@ -89,15 +92,18 @@ export function useUpdateOrgFunctionInvocationMutation(
     mutationKey: orgFunctionInvocationMutationKeys.all,
     mutationFn: ({
       id,
+      createdAt,
       orgFunctionInvocationPatch,
     }: {
       id: string;
+      createdAt: string;
       orgFunctionInvocationPatch: OrgFunctionInvocationPatch;
     }) =>
       getClient()
         .orgFunctionInvocation.update({
           where: {
             id,
+            createdAt,
           },
           data: orgFunctionInvocationPatch,
           select: args.select,

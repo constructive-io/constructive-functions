@@ -52,6 +52,7 @@ export function useDeletePlatformFunctionExecutionLogMutation<
       Error,
       {
         id: string;
+        createdAt: string;
       }
     >,
     'mutationFn'
@@ -65,6 +66,7 @@ export function useDeletePlatformFunctionExecutionLogMutation<
   Error,
   {
     id: string;
+    createdAt: string;
   }
 >;
 export function useDeletePlatformFunctionExecutionLogMutation(
@@ -76,6 +78,7 @@ export function useDeletePlatformFunctionExecutionLogMutation(
       Error,
       {
         id: string;
+        createdAt: string;
       }
     >,
     'mutationFn'
@@ -87,11 +90,12 @@ export function useDeletePlatformFunctionExecutionLogMutation(
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: platformFunctionExecutionLogMutationKeys.all,
-    mutationFn: ({ id }: { id: string }) =>
+    mutationFn: ({ id, createdAt }: { id: string; createdAt: string }) =>
       getClient()
         .platformFunctionExecutionLog.delete({
           where: {
             id,
+            createdAt,
           },
           select: args.select,
         })

@@ -51,6 +51,7 @@ export function useUpdatePlatformFunctionInvocationMutation<
       Error,
       {
         id: string;
+        createdAt: string;
         platformFunctionInvocationPatch: PlatformFunctionInvocationPatch;
       }
     >,
@@ -65,6 +66,7 @@ export function useUpdatePlatformFunctionInvocationMutation<
   Error,
   {
     id: string;
+    createdAt: string;
     platformFunctionInvocationPatch: PlatformFunctionInvocationPatch;
   }
 >;
@@ -77,6 +79,7 @@ export function useUpdatePlatformFunctionInvocationMutation(
       Error,
       {
         id: string;
+        createdAt: string;
         platformFunctionInvocationPatch: PlatformFunctionInvocationPatch;
       }
     >,
@@ -91,15 +94,18 @@ export function useUpdatePlatformFunctionInvocationMutation(
     mutationKey: platformFunctionInvocationMutationKeys.all,
     mutationFn: ({
       id,
+      createdAt,
       platformFunctionInvocationPatch,
     }: {
       id: string;
+      createdAt: string;
       platformFunctionInvocationPatch: PlatformFunctionInvocationPatch;
     }) =>
       getClient()
         .platformFunctionInvocation.update({
           where: {
             id,
+            createdAt,
           },
           data: platformFunctionInvocationPatch,
           select: args.select,

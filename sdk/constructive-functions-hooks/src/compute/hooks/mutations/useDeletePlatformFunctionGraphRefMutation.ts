@@ -47,6 +47,7 @@ export function useDeletePlatformFunctionGraphRefMutation<S extends PlatformFunc
       Error,
       {
         id: string;
+        databaseId: string;
       }
     >,
     'mutationFn'
@@ -60,6 +61,7 @@ export function useDeletePlatformFunctionGraphRefMutation<S extends PlatformFunc
   Error,
   {
     id: string;
+    databaseId: string;
   }
 >;
 export function useDeletePlatformFunctionGraphRefMutation(
@@ -71,6 +73,7 @@ export function useDeletePlatformFunctionGraphRefMutation(
       Error,
       {
         id: string;
+        databaseId: string;
       }
     >,
     'mutationFn'
@@ -82,11 +85,12 @@ export function useDeletePlatformFunctionGraphRefMutation(
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: platformFunctionGraphRefMutationKeys.all,
-    mutationFn: ({ id }: { id: string }) =>
+    mutationFn: ({ id, databaseId }: { id: string; databaseId: string }) =>
       getClient()
         .platformFunctionGraphRef.delete({
           where: {
             id,
+            databaseId,
           },
           select: args.select,
         })

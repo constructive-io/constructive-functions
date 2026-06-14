@@ -178,6 +178,7 @@ export class PlatformFunctionGraphRefModel {
       S,
       {
         id: string;
+        databaseId: string;
       },
       PlatformFunctionGraphRefPatch
     > & {
@@ -198,7 +199,10 @@ export class PlatformFunctionGraphRefModel {
       'UpdatePlatformFunctionGraphRefInput',
       'id',
       'platformFunctionGraphRefPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      {
+        databaseId: args.where.databaseId,
+      }
     );
     return new QueryBuilder({
       client: this.client,
@@ -213,6 +217,7 @@ export class PlatformFunctionGraphRefModel {
     args: DeleteArgs<
       {
         id: string;
+        databaseId: string;
       },
       S
     > & {
@@ -229,6 +234,7 @@ export class PlatformFunctionGraphRefModel {
       'platformFunctionGraphRef',
       {
         id: args.where.id,
+        databaseId: args.where.databaseId,
       },
       'DeletePlatformFunctionGraphRefInput',
       args.select,

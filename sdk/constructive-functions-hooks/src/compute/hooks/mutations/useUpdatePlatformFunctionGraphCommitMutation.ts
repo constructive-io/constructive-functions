@@ -54,6 +54,7 @@ export function useUpdatePlatformFunctionGraphCommitMutation<
       Error,
       {
         id: string;
+        databaseId: string;
         platformFunctionGraphCommitPatch: PlatformFunctionGraphCommitPatch;
       }
     >,
@@ -68,6 +69,7 @@ export function useUpdatePlatformFunctionGraphCommitMutation<
   Error,
   {
     id: string;
+    databaseId: string;
     platformFunctionGraphCommitPatch: PlatformFunctionGraphCommitPatch;
   }
 >;
@@ -80,6 +82,7 @@ export function useUpdatePlatformFunctionGraphCommitMutation(
       Error,
       {
         id: string;
+        databaseId: string;
         platformFunctionGraphCommitPatch: PlatformFunctionGraphCommitPatch;
       }
     >,
@@ -94,15 +97,18 @@ export function useUpdatePlatformFunctionGraphCommitMutation(
     mutationKey: platformFunctionGraphCommitMutationKeys.all,
     mutationFn: ({
       id,
+      databaseId,
       platformFunctionGraphCommitPatch,
     }: {
       id: string;
+      databaseId: string;
       platformFunctionGraphCommitPatch: PlatformFunctionGraphCommitPatch;
     }) =>
       getClient()
         .platformFunctionGraphCommit.update({
           where: {
             id,
+            databaseId,
           },
           data: platformFunctionGraphCommitPatch,
           select: args.select,

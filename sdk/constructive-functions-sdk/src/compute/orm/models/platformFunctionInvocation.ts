@@ -184,6 +184,7 @@ export class PlatformFunctionInvocationModel {
       S,
       {
         id: string;
+        createdAt: string;
       },
       PlatformFunctionInvocationPatch
     > & {
@@ -204,7 +205,10 @@ export class PlatformFunctionInvocationModel {
       'UpdatePlatformFunctionInvocationInput',
       'id',
       'platformFunctionInvocationPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      {
+        createdAt: args.where.createdAt,
+      }
     );
     return new QueryBuilder({
       client: this.client,
@@ -219,6 +223,7 @@ export class PlatformFunctionInvocationModel {
     args: DeleteArgs<
       {
         id: string;
+        createdAt: string;
       },
       S
     > & {
@@ -235,6 +240,7 @@ export class PlatformFunctionInvocationModel {
       'platformFunctionInvocation',
       {
         id: args.where.id,
+        createdAt: args.where.createdAt,
       },
       'DeletePlatformFunctionInvocationInput',
       args.select,

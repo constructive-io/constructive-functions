@@ -178,6 +178,7 @@ export class OrgFunctionInvocationModel {
       S,
       {
         id: string;
+        createdAt: string;
       },
       OrgFunctionInvocationPatch
     > & {
@@ -198,7 +199,10 @@ export class OrgFunctionInvocationModel {
       'UpdateOrgFunctionInvocationInput',
       'id',
       'orgFunctionInvocationPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      {
+        createdAt: args.where.createdAt,
+      }
     );
     return new QueryBuilder({
       client: this.client,
@@ -213,6 +217,7 @@ export class OrgFunctionInvocationModel {
     args: DeleteArgs<
       {
         id: string;
+        createdAt: string;
       },
       S
     > & {
@@ -229,6 +234,7 @@ export class OrgFunctionInvocationModel {
       'orgFunctionInvocation',
       {
         id: args.where.id,
+        createdAt: args.where.createdAt,
       },
       'DeleteOrgFunctionInvocationInput',
       args.select,

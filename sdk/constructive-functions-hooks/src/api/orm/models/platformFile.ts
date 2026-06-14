@@ -196,7 +196,8 @@ export class PlatformFileModel {
       'UpdatePlatformFileInput',
       'id',
       'platformFilePatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      undefined
     );
     return new QueryBuilder({
       client: this.client,

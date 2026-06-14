@@ -196,7 +196,8 @@ export class PlatformUsageDailyModel {
       'UpdatePlatformUsageDailyInput',
       'id',
       'platformUsageDailyPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      undefined
     );
     return new QueryBuilder({
       client: this.client,

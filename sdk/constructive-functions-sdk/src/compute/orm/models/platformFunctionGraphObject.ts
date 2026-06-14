@@ -174,6 +174,7 @@ export class PlatformFunctionGraphObjectModel {
       S,
       {
         id: string;
+        databaseId: string;
       },
       PlatformFunctionGraphObjectPatch
     > & {
@@ -194,7 +195,10 @@ export class PlatformFunctionGraphObjectModel {
       'UpdatePlatformFunctionGraphObjectInput',
       'id',
       'platformFunctionGraphObjectPatch',
-      connectionFieldsMap
+      connectionFieldsMap,
+      {
+        databaseId: args.where.databaseId,
+      }
     );
     return new QueryBuilder({
       client: this.client,
@@ -209,6 +213,7 @@ export class PlatformFunctionGraphObjectModel {
     args: DeleteArgs<
       {
         id: string;
+        databaseId: string;
       },
       S
     > & {
@@ -225,6 +230,7 @@ export class PlatformFunctionGraphObjectModel {
       'platformFunctionGraphObject',
       {
         id: args.where.id,
+        databaseId: args.where.databaseId,
       },
       'DeletePlatformFunctionGraphObjectInput',
       args.select,
