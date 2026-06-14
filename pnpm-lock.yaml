@@ -353,9 +353,6 @@ importers:
 
   packages/agentic-server:
     dependencies:
-      '@constructive-io/knative-job-worker':
-        specifier: workspace:*
-        version: link:../../job/worker
       '@pgpmjs/logger':
         specifier: ^2.4.3
         version: 2.12.0

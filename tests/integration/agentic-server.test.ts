@@ -14,6 +14,7 @@
 import express from 'express';
 import http from 'http';
 import { createAgenticServer } from '../../packages/agentic-server/src/server';
+import { _resetCache } from '../../packages/agentic-server/src/inference-meter';
 
 const flush = () => new Promise((r) => setTimeout(r, 30));
 
@@ -67,6 +68,7 @@ describe('agentic server (first-class service)', () => {
   });
 
   beforeEach(() => {
+    _resetCache();
     mockQuery = jest.fn().mockResolvedValue({ rows: [] });
     mockPool = { query: mockQuery } as any;
     mockProvider.calls.length = 0;
@@ -156,7 +158,7 @@ describe('agentic server (first-class service)', () => {
       // 2 calls: 1 config resolution (metaschema) + 1 insert
       expect(mockQuery).toHaveBeenCalledTimes(2);
       const insertCall = mockQuery.mock.calls.find(
-        ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+        ([sql]: [string]) => sql.includes('INSERT INTO')
       );
       expect(insertCall).toBeDefined();
       const [sql, params] = insertCall!;
@@ -185,7 +187,7 @@ describe('agentic server (first-class service)', () => {
       await flush();
 
       const insertCall = mockQuery.mock.calls.find(
-        ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+        ([sql]: [string]) => sql.includes('INSERT INTO')
       );
       const [, params] = insertCall!;
       const latencyMs = params[12];
@@ -253,7 +255,7 @@ describe('agentic server (first-class service)', () => {
       // 2 calls: 1 config resolution (metaschema) + 1 insert
       expect(mockQuery).toHaveBeenCalledTimes(2);
       const insertCall = mockQuery.mock.calls.find(
-        ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+        ([sql]: [string]) => sql.includes('INSERT INTO')
       );
       expect(insertCall).toBeDefined();
       const [sql, params] = insertCall!;
@@ -284,7 +286,7 @@ describe('agentic server (first-class service)', () => {
         // Error path: 1 config resolution + 1 insert
         expect(mockQuery).toHaveBeenCalledTimes(2);
         const insertCall = mockQuery.mock.calls.find(
-          ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+          ([sql]: [string]) => sql.includes('INSERT INTO')
         );
         const [, params] = insertCall!;
         expect(params[13]).toBe('error');  // status
@@ -344,7 +346,7 @@ describe('agentic server (first-class service)', () => {
 
         // Metering should have null database_id (stripped → undefined → null via ?? null)
         const insertCall = mockQuery.mock.calls.find(
-          ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+          ([sql]: [string]) => sql.includes('INSERT INTO')
         );
         const [, params] = insertCall!;
         expect(params[1]).toBeNull();  // database_id stripped

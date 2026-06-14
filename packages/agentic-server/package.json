@@ -19,7 +19,6 @@
     "start": "node dist/standalone.js"
   },
   "dependencies": {
-    "@constructive-io/knative-job-worker": "workspace:*",
     "@pgpmjs/logger": "^2.4.3",
     "express": "5.2.1"
   },

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
-import { UsageClient } from '@constructive-io/knative-job-worker';
+import { logInferenceUsage } from './inference-meter';
 
 const log = new Logger('agentic-server');
 
@@ -30,7 +30,6 @@ export interface AgenticRouterOptions {
 export const createRouter = (options: AgenticRouterOptions): Router => {
   const router = Router();
   const { providerBaseUrl, providerApiKey, defaultModel, providerType, pgPool } = options;
-  const usageClient = pgPool ? new UsageClient(pgPool) : null;
 
   // Resolve upstream URL based on provider type
   const resolveUpstreamUrl = (path: string): string => {
@@ -150,8 +149,8 @@ export const createRouter = (options: AgenticRouterOptions): Router => {
         const text = await upstream.text().catch(() => '');
         log.error('upstream error', { status: upstream.status, body: text });
 
-        if (usageClient) {
-          usageClient.logInferenceUsage({
+        if (pgPool) {
+          logInferenceUsage(pgPool, {
             databaseId, entityId, actorId,
             model: String(body.model || ''),
             provider: providerType || 'openai',
@@ -184,8 +183,8 @@ export const createRouter = (options: AgenticRouterOptions): Router => {
         totalTokens: usage.total_tokens
       });
 
-      if (usageClient) {
-        usageClient.logInferenceUsage({
+      if (pgPool) {
+        logInferenceUsage(pgPool, {
           databaseId, entityId, actorId,
           model: String(body.model || ''),
           provider: providerType || 'openai',
@@ -205,8 +204,8 @@ export const createRouter = (options: AgenticRouterOptions): Router => {
       const latencyMs = Number(process.hrtime.bigint() - startTime) / 1e6;
       log.error('chat/completions error', err);
 
-      if (usageClient) {
-        usageClient.logInferenceUsage({
+      if (pgPool) {
+        logInferenceUsage(pgPool, {
           databaseId, entityId, actorId,
           model: String(req.body?.model || ''),
           provider: providerType || 'openai',
@@ -257,8 +256,8 @@ export const createRouter = (options: AgenticRouterOptions): Router => {
         const text = await upstream.text().catch(() => '');
         log.error('upstream embed error', { status: upstream.status, body: text });
 
-        if (usageClient) {
-          usageClient.logInferenceUsage({
+        if (pgPool) {
+          logInferenceUsage(pgPool, {
             databaseId, entityId, actorId,
             model: String(body.model || ''),
             provider: providerType || 'openai',
@@ -284,8 +283,8 @@ export const createRouter = (options: AgenticRouterOptions): Router => {
       const usage = (response.usage || {}) as Record<string, number>;
       log.info('embed complete', { databaseId, entityId });
 
-      if (usageClient) {
-        usageClient.logInferenceUsage({
+      if (pgPool) {
+        logInferenceUsage(pgPool, {
           databaseId, entityId, actorId,
           model: String(body.model || ''),
           provider: providerType || 'openai',
@@ -305,8 +304,8 @@ export const createRouter = (options: AgenticRouterOptions): Router => {
       const latencyMs = Number(process.hrtime.bigint() - startTime) / 1e6;
       log.error('embeddings error', err);
 
-      if (usageClient) {
-        usageClient.logInferenceUsage({
+      if (pgPool) {
+        logInferenceUsage(pgPool, {
           databaseId, entityId, actorId,
           model: String(req.body?.model || ''),
           provider: providerType || 'openai',

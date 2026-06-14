@@ -10,7 +10,7 @@
  *   6. Handles null database_id, entity_id, actor_id gracefully
  */
 
-import { logInferenceUsage } from '../../packages/agentic-server/src/inference-meter';
+import { logInferenceUsage, _resetCache } from '../../packages/agentic-server/src/inference-meter';
 
 const flush = () => new Promise((r) => setTimeout(r, 20));
 
@@ -19,6 +19,7 @@ describe('logInferenceUsage', () => {
   let mockPool: any;
 
   beforeEach(() => {
+    _resetCache();
     mockQuery = jest.fn().mockResolvedValue({ rows: [] });
     mockPool = { query: mockQuery } as any;
   });
@@ -43,7 +44,7 @@ describe('logInferenceUsage', () => {
     // 2 calls: 1 config resolution (metaschema) + 1 insert
     expect(mockQuery).toHaveBeenCalledTimes(2);
     const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+      ([sql]: [string]) => sql.includes('INSERT INTO')
     );
     expect(insertCall).toBeDefined();
     const [sql] = insertCall!;
@@ -70,7 +71,7 @@ describe('logInferenceUsage', () => {
     await flush();
 
     const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+      ([sql]: [string]) => sql.includes('INSERT INTO')
     );
     const [sql, params] = insertCall!;
     expect(sql).toContain('model');
@@ -123,7 +124,7 @@ describe('logInferenceUsage', () => {
     await flush();
 
     const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+      ([sql]: [string]) => sql.includes('INSERT INTO')
     );
     const [, params] = insertCall!;
     expect(params[5]).toBe('text-embedding-3-small'); // model
@@ -150,7 +151,7 @@ describe('logInferenceUsage', () => {
     await flush();
 
     const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+      ([sql]: [string]) => sql.includes('INSERT INTO')
     );
     const [, params] = insertCall!;
     expect(params[13]).toBe('error');          // status
@@ -174,7 +175,7 @@ describe('logInferenceUsage', () => {
     // 2 calls: 1 config resolution (metaschema) + 1 insert
     expect(mockQuery).toHaveBeenCalledTimes(2);
     const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+      ([sql]: [string]) => sql.includes('INSERT INTO')
     );
     const [, params] = insertCall!;
     expect(params[1]).toBeNull(); // database_id
@@ -219,7 +220,7 @@ describe('logInferenceUsage', () => {
     await flush();
 
     const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+      ([sql]: [string]) => sql.includes('INSERT INTO')
     );
     const [, params] = insertCall!;
     expect(params[12]).toBe(4); // Math.round(3.7)
@@ -252,7 +253,7 @@ describe('logInferenceUsage', () => {
 
     // 3 calls: 1 config resolution (deduped via promise) + 2 inserts
     const insertCalls = mockQuery.mock.calls.filter(
-      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+      ([sql]: [string]) => sql.includes('INSERT INTO')
     );
     expect(insertCalls.length).toBe(2);
     const id1 = insertCalls[0][1][0];
@@ -276,7 +277,7 @@ describe('logInferenceUsage', () => {
     await flush();
 
     const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+      ([sql]: [string]) => sql.includes('INSERT INTO')
     );
     const [, params] = insertCall!;
     expect(params[4]).toBe('req-custom-123'); // request_id
@@ -297,7 +298,7 @@ describe('logInferenceUsage', () => {
     await flush();
 
     const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+      ([sql]: [string]) => sql.includes('INSERT INTO')
     );
     const [, params] = insertCall!;
     expect(params[15]).toBeNull(); // raw_usage
