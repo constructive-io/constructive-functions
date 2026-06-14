@@ -2,6 +2,7 @@ import { createLogger } from '@pgpmjs/logger';
 import type { FunctionContext } from '@constructive-io/fn-types';
 import { createClients } from './graphql';
 import { createAgentContext } from './agent';
+import { createStorageContext, type StorageMeterCallback } from './storage';
 
 type RequestHeaders = {
   databaseId?: string;
@@ -13,7 +14,7 @@ type RequestHeaders = {
 
 export const buildContext = (
   headers: RequestHeaders,
-  options: { name?: string } = {}
+  options: { name?: string; onStorageMeter?: StorageMeterCallback } = {}
 ): FunctionContext => {
   const env = process.env as Record<string, string | undefined>;
   const log = createLogger(options.name || 'fn-runtime');
@@ -56,11 +57,19 @@ export const buildContext = (
     actorId
   });
 
+  // Create storage context for S3/MinIO operations with metering.
+  const storage = createStorageContext(
+    env,
+    { databaseId, entityId, actorId },
+    options.onStorageMeter
+  );
+
   return {
     job: { jobId, workerId, databaseId, actorId, entityId },
     client,
     meta,
     agent,
+    storage,
     log,
     env
   };

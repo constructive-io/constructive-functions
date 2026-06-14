@@ -2,6 +2,7 @@ export { createFunctionServer } from './server';
 export { createClients } from './graphql';
 export { buildContext } from './context';
 export { createAgentContext } from './agent';
+export { createStorageContext } from './storage';
 export type {
   AgentContext,
   EmbedResult,
@@ -10,5 +11,6 @@ export type {
   FunctionLogger,
   InferenceOptions,
   InferenceResult,
-  ServerOptions
+  ServerOptions,
+  StorageContext
 } from '@constructive-io/fn-types';

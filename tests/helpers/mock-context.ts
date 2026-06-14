@@ -14,6 +14,11 @@ type FunctionContext = {
     readonly databaseId: string | undefined;
     readonly entityId: string | undefined;
   };
+  storage: {
+    read: (bucket: string, key: string) => Promise<Buffer>;
+    write: (bucket: string, key: string, body: Buffer | Uint8Array | string) => Promise<void>;
+    delete: (bucket: string, key: string) => Promise<void>;
+  };
   log: {
     info: (...args: any[]) => void;
     error: (...args: any[]) => void;
@@ -48,6 +53,11 @@ export const createMockContext = (
     embed: jest.fn().mockRejectedValue(new Error('AGENTIC_SERVER_URL not set')),
     get databaseId() { return options.databaseId ?? 'test-db'; },
     get entityId() { return undefined; }
+  },
+  storage: {
+    read: jest.fn().mockRejectedValue(new Error('S3 not configured')),
+    write: jest.fn().mockRejectedValue(new Error('S3 not configured')),
+    delete: jest.fn().mockRejectedValue(new Error('S3 not configured'))
   },
   log: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
   env: options.env ?? {}

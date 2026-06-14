@@ -18,5 +18,6 @@ export type {
   FunctionLogger,
   InferenceOptions,
   InferenceResult,
-  ServerOptions
+  ServerOptions,
+  StorageContext
 } from './runtime';

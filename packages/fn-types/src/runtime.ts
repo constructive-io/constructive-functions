@@ -53,6 +53,19 @@ export type AgentContext = {
   readonly entityId: string | undefined;
 };
 
+// ─── Storage Context (S3/MinIO operations) ───────────────────────────────
+
+export type StorageContext = {
+  /** Read an object from S3/MinIO. Returns the body as a Buffer. */
+  read(bucket: string, key: string): Promise<Buffer>;
+
+  /** Write (put) an object to S3/MinIO. */
+  write(bucket: string, key: string, body: Buffer | Uint8Array | string): Promise<void>;
+
+  /** Delete an object from S3/MinIO. */
+  delete(bucket: string, key: string): Promise<void>;
+};
+
 // ─── Function Context ─────────────────────────────────────────────────────
 
 export type FunctionContext = {
@@ -70,6 +83,7 @@ export type FunctionContext = {
   client: GraphQLClient;
   meta: GraphQLClient;
   agent: AgentContext;
+  storage: StorageContext;
   log: FunctionLogger;
   env: Record<string, string | undefined>;
 };
