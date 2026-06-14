@@ -4,16 +4,17 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import type { UserPatch,UserSelect, UserWithRelations } from '../../orm/input-types';
+import type { HookStrictSelect,InferSelectResult } from '../../orm/select-types';
 import { getClient } from '../client';
-import { buildSelectionArgs } from '../selection';
-import type { SelectionConfig } from '../selection';
-import { userKeys } from '../query-keys';
 import { userMutationKeys } from '../mutation-keys';
-import type { UserSelect, UserWithRelations, UserPatch } from '../../orm/input-types';
-import type { InferSelectResult, HookStrictSelect } from '../../orm/select-types';
-export type { UserSelect, UserWithRelations, UserPatch } from '../../orm/input-types';
+import { userKeys } from '../query-keys';
+import type { SelectionConfig } from '../selection';
+import { buildSelectionArgs } from '../selection';
+export type { UserPatch,UserSelect, UserWithRelations } from '../../orm/input-types';
 /**
  * Mutation hook for updating a User
  *

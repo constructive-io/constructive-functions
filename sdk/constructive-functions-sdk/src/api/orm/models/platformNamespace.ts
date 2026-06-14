@@ -4,36 +4,33 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { OrmClient } from '../client';
+import type {
+  CreatePlatformNamespaceInput,
+  PlatformNamespaceFilter,
+  PlatformNamespaceOrderBy,
+  PlatformNamespacePatch,
+  PlatformNamespaceSelect,
+  PlatformNamespaceWithRelations,
+} from '../input-types';
+import { connectionFieldsMap } from '../input-types';
 import {
-  QueryBuilder,
-  buildFindManyDocument,
-  buildFindFirstDocument,
-  buildFindOneDocument,
   buildCreateDocument,
-  buildUpdateByPkDocument,
   buildDeleteByPkDocument,
+  buildFindFirstDocument,
+  buildFindManyDocument,
+  buildUpdateByPkDocument,
+  QueryBuilder,
 } from '../query-builder';
 import type {
   ConnectionResult,
-  FindManyArgs,
-  FindFirstArgs,
   CreateArgs,
-  UpdateArgs,
   DeleteArgs,
+  FindFirstArgs,
+  FindManyArgs,
   InferSelectResult,
   StrictSelect,
+  UpdateArgs,
 } from '../select-types';
-import type {
-  PlatformNamespace,
-  PlatformNamespaceWithRelations,
-  PlatformNamespaceSelect,
-  PlatformNamespaceFilter,
-  PlatformNamespaceOrderBy,
-  CreatePlatformNamespaceInput,
-  UpdatePlatformNamespaceInput,
-  PlatformNamespacePatch,
-} from '../input-types';
-import { connectionFieldsMap } from '../input-types';
 export class PlatformNamespaceModel {
   constructor(private client: OrmClient) {}
   findMany<S extends PlatformNamespaceSelect>(

@@ -4,36 +4,33 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { OrmClient } from '../client';
+import type {
+  CreatePlatformComputeLogInput,
+  PlatformComputeLogFilter,
+  PlatformComputeLogOrderBy,
+  PlatformComputeLogPatch,
+  PlatformComputeLogSelect,
+  PlatformComputeLogWithRelations,
+} from '../input-types';
+import { connectionFieldsMap } from '../input-types';
 import {
-  QueryBuilder,
-  buildFindManyDocument,
-  buildFindFirstDocument,
-  buildFindOneDocument,
   buildCreateDocument,
-  buildUpdateByPkDocument,
   buildDeleteByPkDocument,
+  buildFindFirstDocument,
+  buildFindManyDocument,
+  buildUpdateByPkDocument,
+  QueryBuilder,
 } from '../query-builder';
 import type {
   ConnectionResult,
-  FindManyArgs,
-  FindFirstArgs,
   CreateArgs,
-  UpdateArgs,
   DeleteArgs,
+  FindFirstArgs,
+  FindManyArgs,
   InferSelectResult,
   StrictSelect,
+  UpdateArgs,
 } from '../select-types';
-import type {
-  PlatformComputeLog,
-  PlatformComputeLogWithRelations,
-  PlatformComputeLogSelect,
-  PlatformComputeLogFilter,
-  PlatformComputeLogOrderBy,
-  CreatePlatformComputeLogInput,
-  UpdatePlatformComputeLogInput,
-  PlatformComputeLogPatch,
-} from '../input-types';
-import { connectionFieldsMap } from '../input-types';
 export class PlatformComputeLogModel {
   constructor(private client: OrmClient) {}
   findMany<S extends PlatformComputeLogSelect>(

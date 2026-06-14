@@ -4,6 +4,7 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { createConfigStore } from 'appstash';
+
 import { createClient as createApiClient } from '../src/api/orm';
 import { createClient as createComputeClient } from '../src/compute/orm';
 import { createClient as createObjectsClient } from '../src/objects/orm';

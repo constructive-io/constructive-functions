@@ -4,36 +4,33 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { OrmClient } from '../client';
+import type {
+  CreateRefInput,
+  RefFilter,
+  RefOrderBy,
+  RefPatch,
+  RefSelect,
+  RefWithRelations,
+} from '../input-types';
+import { connectionFieldsMap } from '../input-types';
 import {
-  QueryBuilder,
-  buildFindManyDocument,
-  buildFindFirstDocument,
-  buildFindOneDocument,
   buildCreateDocument,
-  buildUpdateByPkDocument,
   buildDeleteByPkDocument,
+  buildFindFirstDocument,
+  buildFindManyDocument,
+  buildUpdateByPkDocument,
+  QueryBuilder,
 } from '../query-builder';
 import type {
   ConnectionResult,
-  FindManyArgs,
-  FindFirstArgs,
   CreateArgs,
-  UpdateArgs,
   DeleteArgs,
+  FindFirstArgs,
+  FindManyArgs,
   InferSelectResult,
   StrictSelect,
+  UpdateArgs,
 } from '../select-types';
-import type {
-  Ref,
-  RefWithRelations,
-  RefSelect,
-  RefFilter,
-  RefOrderBy,
-  CreateRefInput,
-  UpdateRefInput,
-  RefPatch,
-} from '../input-types';
-import { connectionFieldsMap } from '../input-types';
 export class RefModel {
   constructor(private client: OrmClient) {}
   findMany<S extends RefSelect>(
