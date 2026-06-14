@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_compute_public/tables/platform_function_graph_execution_outputs/indexes/idx_platform_function_graph_execution_outputs_unique_hash
+
+
+DROP INDEX "constructive_compute_public".idx_platform_function_graph_execution_outputs_unique_hash;
+
+

@@ -1,0 +1,5 @@
+-- Revert: schemas/constructive_compute_public/tables/platform_function_graph_execution_node_states/columns/status/alterations/alt0000002716
+
+
+ALTER TABLE "constructive_compute_public".platform_function_graph_execution_node_states
+  DROP CONSTRAINT platform_function_graph_execution_node_states_status_chk;

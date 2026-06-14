@@ -1,0 +1,7 @@
+-- Revert: schemas/constructive_compute_public/tables/platform_function_graph_executions/columns/current_wave/alterations/alt0000002675
+
+
+ALTER TABLE "constructive_compute_public".platform_function_graph_executions 
+  ALTER COLUMN current_wave DROP DEFAULT;
+
+

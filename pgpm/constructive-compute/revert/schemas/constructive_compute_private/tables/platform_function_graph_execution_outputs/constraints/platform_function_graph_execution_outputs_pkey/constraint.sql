@@ -1,7 +1,0 @@
--- Revert: schemas/constructive_compute_private/tables/platform_function_graph_execution_outputs/constraints/platform_function_graph_execution_outputs_pkey/constraint
-
-
-ALTER TABLE "constructive_compute_private".platform_function_graph_execution_outputs 
-  DROP CONSTRAINT platform_function_graph_execution_outputs_pkey;
-
-

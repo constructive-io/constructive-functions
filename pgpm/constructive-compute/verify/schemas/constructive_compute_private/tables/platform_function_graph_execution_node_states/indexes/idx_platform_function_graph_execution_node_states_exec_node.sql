@@ -1,6 +1,0 @@
--- Verify: schemas/constructive_compute_private/tables/platform_function_graph_execution_node_states/indexes/idx_platform_function_graph_execution_node_states_exec_node
-
-
-SELECT verify_index('constructive_compute_private.platform_function_graph_execution_node_states', 'idx_platform_function_graph_execution_node_states_exec_node');
-
-

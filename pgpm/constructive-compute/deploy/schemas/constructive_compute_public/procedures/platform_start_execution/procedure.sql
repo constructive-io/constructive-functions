@@ -62,7 +62,7 @@ BEGIN
       v_input_value := platform_start_execution.input_payload->v_port_name;
       v_output_data := jsonb_build_object('value', v_input_value);
       v_output_hash := digest(v_output_data::text, 'sha256');
-      INSERT INTO "constructive_compute_private".platform_function_graph_execution_outputs (
+      INSERT INTO "constructive_compute_public".platform_function_graph_execution_outputs (
         database_id,
         hash,
         data
@@ -73,7 +73,7 @@ BEGIN
       RETURNING id INTO v_obj_id;
       IF v_obj_id IS NULL THEN
         SELECT id
-        FROM "constructive_compute_private".platform_function_graph_execution_outputs
+        FROM "constructive_compute_public".platform_function_graph_execution_outputs
         WHERE
           database_id = v_graph.database_id AND hash = v_output_hash INTO v_obj_id;
       END IF;
@@ -105,7 +105,7 @@ BEGIN
     IF v_prop_value IS NOT NULL THEN
       v_output_data := jsonb_build_object('value', v_prop_value);
       v_output_hash := digest(v_output_data::text, 'sha256');
-      INSERT INTO "constructive_compute_private".platform_function_graph_execution_outputs (
+      INSERT INTO "constructive_compute_public".platform_function_graph_execution_outputs (
         database_id,
         hash,
         data
@@ -116,14 +116,14 @@ BEGIN
       RETURNING id INTO v_obj_id;
       IF v_obj_id IS NULL THEN
         SELECT id
-        FROM "constructive_compute_private".platform_function_graph_execution_outputs
+        FROM "constructive_compute_public".platform_function_graph_execution_outputs
         WHERE
           database_id = v_graph.database_id AND hash = v_output_hash INTO v_obj_id;
       END IF;
       v_node_outputs := v_node_outputs || jsonb_build_object((v_node_row.path)[5], v_obj_id);
     END IF;
   END LOOP;
-  INSERT INTO "constructive_compute_private".platform_function_graph_executions (
+  INSERT INTO "constructive_compute_public".platform_function_graph_executions (
     graph_id,
     database_id,
     output_node,

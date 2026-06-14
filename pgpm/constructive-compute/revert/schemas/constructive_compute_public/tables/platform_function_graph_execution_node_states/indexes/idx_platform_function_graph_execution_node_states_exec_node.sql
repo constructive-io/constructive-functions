@@ -1,0 +1,6 @@
+-- Revert: schemas/constructive_compute_public/tables/platform_function_graph_execution_node_states/indexes/idx_platform_function_graph_execution_node_states_exec_node
+
+
+DROP INDEX "constructive_compute_public".idx_platform_function_graph_execution_node_states_exec_node;
+
+
