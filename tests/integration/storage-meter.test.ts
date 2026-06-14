@@ -8,12 +8,20 @@
  *   4. Handles null database_id, entity_id, actor_id gracefully
  *   5. Rounds duration_ms to nearest integer
  *   6. Works for read, write, and delete operations
+ *   7. Resolves table names via MetaSchema module loader
  */
 
 import { logStorageUsage } from '../../job/worker/src/storage-meter';
 
 /** Wait for fire-and-forget promises to settle */
-const flush = () => new Promise((r) => setTimeout(r, 20));
+const flush = () => new Promise((r) => setTimeout(r, 30));
+
+/** Filter query calls to only INSERT statements for storage table */
+function storageInserts(mockQuery: jest.Mock) {
+  return mockQuery.mock.calls.filter(
+    ([sql]: [string]) => sql.includes('INSERT INTO') && sql.includes('platform_usage_log_storage')
+  );
+}
 
 describe('logStorageUsage', () => {
   let mockQuery: jest.Mock;
@@ -24,7 +32,7 @@ describe('logStorageUsage', () => {
     mockPool = { query: mockQuery } as any;
   });
 
-  it('inserts into platform_usage_log_storage', async () => {
+  it('inserts into platform_usage_log_storage via module loader', async () => {
     logStorageUsage(mockPool, {
       databaseId: 'db-001',
       entityId: 'entity-001',
@@ -37,10 +45,28 @@ describe('logStorageUsage', () => {
     });
     await flush();
 
-    expect(mockQuery).toHaveBeenCalledTimes(1);
-    const [sql] = mockQuery.mock.calls[0];
+    const inserts = storageInserts(mockQuery);
+    expect(inserts).toHaveLength(1);
+    const [sql] = inserts[0];
     expect(sql).toContain('INSERT INTO');
     expect(sql).toContain('platform_usage_log_storage');
+  });
+
+  it('resolves table names from MetaSchema before INSERT', async () => {
+    logStorageUsage(mockPool, {
+      operation: 'read',
+      bucket: 'b',
+      key: 'k',
+      sizeBytes: 1,
+      durationMs: 1
+    });
+    await flush();
+
+    // First call is the MetaSchema lookup
+    const metaCalls = mockQuery.mock.calls.filter(
+      ([sql]: [string]) => sql.includes('metaschema_public')
+    );
+    expect(metaCalls.length).toBeGreaterThanOrEqual(1);
   });
 
   it('passes correct columns for a read operation', async () => {
@@ -56,7 +82,9 @@ describe('logStorageUsage', () => {
     });
     await flush();
 
-    const [sql, params] = mockQuery.mock.calls[0];
+    const inserts = storageInserts(mockQuery);
+    expect(inserts).toHaveLength(1);
+    const [sql, params] = inserts[0];
     expect(sql).toContain('database_id');
     expect(sql).toContain('entity_id');
     expect(sql).toContain('actor_id');
@@ -93,7 +121,9 @@ describe('logStorageUsage', () => {
     });
     await flush();
 
-    const [, params] = mockQuery.mock.calls[0];
+    const inserts = storageInserts(mockQuery);
+    expect(inserts).toHaveLength(1);
+    const [, params] = inserts[0];
     expect(params[4]).toBe('write');           // operation
     expect(params[5]).toBe('uploads');         // bucket
     expect(params[6]).toBe('docs/report.pdf'); // key
@@ -112,7 +142,9 @@ describe('logStorageUsage', () => {
     });
     await flush();
 
-    const [, params] = mockQuery.mock.calls[0];
+    const inserts = storageInserts(mockQuery);
+    expect(inserts).toHaveLength(1);
+    const [, params] = inserts[0];
     expect(params[4]).toBe('delete');                 // operation
     expect(params[5]).toBe('temp');                    // bucket
     expect(params[6]).toBe('scratch/old-file.tmp');   // key
@@ -129,9 +161,9 @@ describe('logStorageUsage', () => {
     });
     await flush();
 
-    expect(mockQuery).toHaveBeenCalledTimes(1);
-
-    const [, params] = mockQuery.mock.calls[0];
+    const inserts = storageInserts(mockQuery);
+    expect(inserts).toHaveLength(1);
+    const [, params] = inserts[0];
     expect(params[1]).toBeNull(); // database_id
     expect(params[2]).toBeNull(); // entity_id
     expect(params[3]).toBeNull(); // actor_id
@@ -151,7 +183,7 @@ describe('logStorageUsage', () => {
     }).not.toThrow();
 
     await flush();
-    expect(mockQuery).toHaveBeenCalledTimes(1);
+    // Both MetaSchema lookup and INSERT will fail, but no throw
   });
 
   it('rounds duration_ms to nearest integer', async () => {
@@ -164,7 +196,9 @@ describe('logStorageUsage', () => {
     });
     await flush();
 
-    const [, params] = mockQuery.mock.calls[0];
+    const inserts = storageInserts(mockQuery);
+    expect(inserts).toHaveLength(1);
+    const [, params] = inserts[0];
     expect(params[8]).toBe(4); // Math.round(3.7)
   });
 
@@ -185,9 +219,10 @@ describe('logStorageUsage', () => {
     });
     await flush();
 
-    expect(mockQuery).toHaveBeenCalledTimes(2);
-    const id1 = mockQuery.mock.calls[0][1][0];
-    const id2 = mockQuery.mock.calls[1][1][0];
+    const inserts = storageInserts(mockQuery);
+    expect(inserts).toHaveLength(2);
+    const id1 = inserts[0][1][0];
+    const id2 = inserts[1][1][0];
     expect(id1).not.toBe(id2);
   });
 });

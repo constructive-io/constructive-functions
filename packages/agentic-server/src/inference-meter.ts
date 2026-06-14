@@ -1,9 +1,8 @@
 /**
  * Inference metering — fire-and-forget usage logging for LLM calls.
  *
- * Self-contained implementation that resolves table names dynamically
- * from MetaSchema module registration tables. Falls back to well-known
- * defaults when MetaSchema is unavailable.
+ * Resolves table names dynamically from MetaSchema module registration tables.
+ * Falls back to well-known defaults when MetaSchema is unavailable.
  *
  * All writes are non-blocking: errors are logged and swallowed so
  * metering never affects inference latency or response delivery.
@@ -35,7 +34,7 @@ export interface InferenceEntry {
   rawUsage?: unknown;
 }
 
-// ─── Table Resolution ─────────────────────────────────────────────────────────
+// ─── Table Resolution (MetaSchema module loader) ──────────────────────────────
 
 const INFERENCE_TABLE_SQL = `
   SELECT s.schema_name, t.name AS table_name

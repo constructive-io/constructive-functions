@@ -35,6 +35,7 @@ const KNOWN_TABLES = [
   'platform_function_invocations',
   'platform_usage_log_computes',
   'platform_usage_log_inferences',
+  'platform_usage_log_storage',
 ] as const;
 
 /** Default config used when metaschema is unavailable */
@@ -45,6 +46,8 @@ const DEFAULTS: UsageModuleConfig = {
   computeUsageTable: 'platform_usage_log_computes',
   inferenceUsageSchema: 'constructive_usage_public',
   inferenceUsageTable: 'platform_usage_log_inferences',
+  storageUsageSchema: 'constructive_usage_public',
+  storageUsageTable: 'platform_usage_log_storage',
 };
 
 export interface UsageModuleConfig {
@@ -54,6 +57,8 @@ export interface UsageModuleConfig {
   computeUsageTable: string;
   inferenceUsageSchema: string;
   inferenceUsageTable: string;
+  storageUsageSchema: string;
+  storageUsageTable: string;
 }
 
 // ─── Entry Types ──────────────────────────────────────────────────────────────
@@ -90,6 +95,17 @@ export interface InferenceEntry {
   status: 'ok' | 'error';
   errorType?: string;
   rawUsage?: unknown;
+}
+
+export interface StorageEntry {
+  databaseId?: string;
+  entityId?: string;
+  actorId?: string;
+  operation: 'read' | 'write' | 'delete';
+  bucket: string;
+  key: string;
+  sizeBytes: number;
+  durationMs: number;
 }
 
 // ─── UsageClient ──────────────────────────────────────────────────────────────
@@ -137,6 +153,9 @@ export class UsageClient {
         }
         if (row.table_name === 'platform_usage_log_inferences') {
           config.inferenceUsageSchema = row.schema_name;
+        }
+        if (row.table_name === 'platform_usage_log_storage') {
+          config.storageUsageSchema = row.schema_name;
         }
       }
 
@@ -282,6 +301,48 @@ export class UsageClient {
       )
       .catch((err) => {
         log.warn(`inference log failed (non-fatal): ${err instanceof Error ? err.message : String(err)}`);
+      });
+  }
+
+  // ─── Storage Usage ─────────────────────────────────────────────────────
+
+  /**
+   * Log a storage operation to the usage log table.
+   * Fire-and-forget: returns immediately, never throws.
+   */
+  logStorageUsage(entry: StorageEntry): void {
+    this.resolveConfig()
+      .then((cfg) => this.insertStorageUsage(cfg, entry))
+      .catch((err) => {
+        log.warn(`storage usage log failed (non-fatal): ${err instanceof Error ? err.message : String(err)}`);
+      });
+  }
+
+  private async insertStorageUsage(cfg: UsageModuleConfig, entry: StorageEntry): Promise<void> {
+    const id = randomUUID();
+    const now = new Date();
+
+    this.pool
+      .query(
+        `INSERT INTO "${cfg.storageUsageSchema}"."${cfg.storageUsageTable}"
+         (id, database_id, entity_id, actor_id, operation,
+          bucket, key, size_bytes, duration_ms, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [
+          id,
+          entry.databaseId ?? null,
+          entry.entityId ?? null,
+          entry.actorId ?? null,
+          entry.operation,
+          entry.bucket,
+          entry.key,
+          entry.sizeBytes,
+          Math.round(entry.durationMs),
+          now,
+        ]
+      )
+      .catch((err) => {
+        log.warn(`storage log failed (non-fatal): ${err instanceof Error ? err.message : String(err)}`);
       });
   }
 }

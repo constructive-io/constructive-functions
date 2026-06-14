@@ -21,10 +21,53 @@ export type StorageMeterCallback = (info: {
   durationMs: number;
 }) => void;
 
+// ─── MetaSchema Table Resolution ─────────────────────────────────────────────
+
+const STORAGE_TABLE_SQL = `
+  SELECT s.schema_name, t.name AS table_name
+  FROM metaschema_public."table" t
+  JOIN metaschema_public.schema s ON t.schema_id = s.id
+  WHERE t.database_id = $1
+    AND t.name = 'platform_usage_log_storage'
+  LIMIT 1
+`;
+
+const DEFAULT_DATABASE_ID = '00000000-0000-0000-0000-000000000000';
+const DEFAULT_SCHEMA = 'constructive_usage_public';
+const DEFAULT_TABLE = 'platform_usage_log_storage';
+const CONFIG_TTL_MS = 60_000;
+
+let _storageSchema = DEFAULT_SCHEMA;
+let _storageTable = DEFAULT_TABLE;
+let _cacheExpiresAt = 0;
+let _resolvePromise: Promise<void> | null = null;
+
+async function resolveStorageTable(pool: import('pg').Pool): Promise<void> {
+  if (Date.now() < _cacheExpiresAt) return;
+  if (_resolvePromise) return _resolvePromise;
+
+  _resolvePromise = (async () => {
+    try {
+      const { rows } = await pool.query(STORAGE_TABLE_SQL, [DEFAULT_DATABASE_ID]);
+      if (rows.length > 0) {
+        _storageSchema = rows[0].schema_name;
+        _storageTable = rows[0].table_name;
+      }
+    } catch {
+      meterLog.debug('metaschema lookup unavailable — using default storage table names');
+    }
+    _cacheExpiresAt = Date.now() + CONFIG_TTL_MS;
+    _resolvePromise = null;
+  })();
+
+  return _resolvePromise;
+}
+
 /**
  * Create a fire-and-forget storage metering callback backed by pg.
  *
  * Lazily creates a pg Pool from standard PG* env vars on first invocation.
+ * Resolves table names dynamically from MetaSchema (scope-aware).
  * Returns undefined if PGHOST/DATABASE_URL is not set (metering disabled).
  */
 export const createMeterCallback = (): StorageMeterCallback | undefined => {
@@ -43,28 +86,34 @@ export const createMeterCallback = (): StorageMeterCallback | undefined => {
 
   return (info) => {
     const p = getPool();
-    const id = randomUUID();
-    const now = new Date();
-    p.query(
-      `INSERT INTO "constructive_usage_public".platform_usage_log_storage
-       (id, database_id, entity_id, actor_id, operation,
-        bucket, key, size_bytes, duration_ms, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [
-        id,
-        info.databaseId ?? null,
-        info.entityId ?? null,
-        info.actorId ?? null,
-        info.operation,
-        info.bucket,
-        info.key,
-        info.sizeBytes,
-        Math.round(info.durationMs),
-        now
-      ]
-    ).catch((err: unknown) => {
-      meterLog.warn(`storage log failed (non-fatal): ${err instanceof Error ? err.message : String(err)}`);
-    });
+    resolveStorageTable(p)
+      .then(() => {
+        const id = randomUUID();
+        const now = new Date();
+        p.query(
+          `INSERT INTO "${_storageSchema}"."${_storageTable}"
+           (id, database_id, entity_id, actor_id, operation,
+            bucket, key, size_bytes, duration_ms, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          [
+            id,
+            info.databaseId ?? null,
+            info.entityId ?? null,
+            info.actorId ?? null,
+            info.operation,
+            info.bucket,
+            info.key,
+            info.sizeBytes,
+            Math.round(info.durationMs),
+            now
+          ]
+        ).catch((err: unknown) => {
+          meterLog.warn(`storage log failed (non-fatal): ${err instanceof Error ? err.message : String(err)}`);
+        });
+      })
+      .catch((err: unknown) => {
+        meterLog.warn(`storage resolve failed (non-fatal): ${err instanceof Error ? err.message : String(err)}`);
+      });
   };
 };
 
