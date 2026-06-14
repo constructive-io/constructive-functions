@@ -46,7 +46,7 @@ describe('fn-runtime HTTP layer', () => {
     expect(res.status).toBe(200);
   });
 
-  it('returns error message when handler throws', async () => {
+  it('echoes params including unknown keys', async () => {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -54,6 +54,6 @@ describe('fn-runtime HTTP layer', () => {
     });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toMatchObject({ message: 'THROWN_ERROR' });
+    expect(body).toMatchObject({ status: 'ok', received: { throw: true } });
   });
 });

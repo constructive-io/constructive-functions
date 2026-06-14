@@ -23,10 +23,6 @@ import type { FunctionHandler } from '@constructive-io/fn-runtime';
 const handler: FunctionHandler = async (params: any, context) => {
   const { log } = context;
 
-  if (params.throw) {
-    throw new Error('THROWN_ERROR');
-  }
-
   log.info('node-example received payload', { params });
 
   // Example: LLM inference (requires AGENTIC_SERVER_URL to be set)

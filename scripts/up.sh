@@ -293,9 +293,11 @@ if [ -f "$ROOT_DIR/.graphql-server.pid" ]; then
   echo "    Compute       http://compute.localhost:$GRAPHQL_PORT/graphiql"
   echo "    Objects       http://objects.localhost:$GRAPHQL_PORT/graphiql"
 fi
+echo "    Agentic       http://localhost:3003  (make dev-agent)"
 echo ""
 echo -e "  ${BOLD}Next:${NC}"
 echo "    make up:compute      # start mailpit + compute-service"
+echo "    make dev-agent       # start agentic server (LLM gateway)"
 echo "    make dev-compute     # start compute-service only"
 echo "    make status          # show environment state"
 echo -e "${BOLD}════════════════════════════════════════════════════════════${NC}"
