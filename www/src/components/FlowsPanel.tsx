@@ -566,7 +566,7 @@ export function FlowsPanel() {
     selection: { fields: FUNCTION_FIELDS },
   });
 
-  const { data: storesData, isLoading: storesLoading, refetch: refetchStores } = compute.usePlatformFunctionGraphStoresQuery({
+  const { data: storesData, isLoading: storesLoading, refetch: refetchStores, error: storesError } = compute.usePlatformFunctionGraphStoresQuery({
     selection: { fields: STORE_FIELDS },
   });
 
@@ -1063,8 +1063,9 @@ export function FlowsPanel() {
                   {store.name}
                 </button>
               ))}
-              {stores.length === 0 && !storesLoading && (
+              {stores.length === 0 && (!storesLoading || storesError) && (
                 <div className="px-3 py-2">
+                  {storesError && <p className="text-xs text-red-500 mb-1">{(storesError as any)?.message || 'Failed to load stores'}</p>}
                   <p className="text-xs text-zinc-600 mb-2">No stores yet</p>
                   <button
                     onClick={async () => {

@@ -26,7 +26,7 @@ const FUNCTION_FIELDS = {
 } as const;
 
 export function FunctionsPanel({ onNavigate }: { onNavigate?: (tab: Tab) => void }) {
-  const { data, isLoading, refetch, isFetching } = compute.usePlatformFunctionDefinitionsQuery({
+  const { data, isLoading, refetch, isFetching, error } = compute.usePlatformFunctionDefinitionsQuery({
     selection: { fields: FUNCTION_FIELDS },
   });
 
@@ -48,10 +48,16 @@ export function FunctionsPanel({ onNavigate }: { onNavigate?: (tab: Tab) => void
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {error && (
+          <div className="rounded-md border border-red-800 bg-red-950/30 p-3">
+            <p className="text-xs text-red-400 font-medium">Query failed</p>
+            <p className="text-xs text-red-500/70 mt-1 font-mono">{(error as any)?.message || String(error)}</p>
+          </div>
+        )}
         {functions.map((fn) => (
           <FunctionCard key={fn.name} fn={fn} onNavigate={onNavigate} />
         ))}
-        {!loading && functions.length === 0 && (
+        {!loading && !error && functions.length === 0 && (
           <p className="text-zinc-500 text-sm">No functions found. Run <code className="text-amber-400">make up</code> to deploy.</p>
         )}
       </div>
