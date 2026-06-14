@@ -1,6 +1,0 @@
--- Revert: schemas/constructive_compute_private/tables/platform_execution_tree_ref/indexes/platform_execution_tree_refs_store_id_name_idx
-
-
-DROP INDEX "constructive_compute_private".platform_execution_tree_refs_store_id_name_idx;
-
-
