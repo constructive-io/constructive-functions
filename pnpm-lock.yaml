@@ -8,9 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@constructive-io/express-context':
+        specifier: 0.6.0
+        version: 0.6.0(express@5.2.1)
       '@constructive-io/graphql-server':
         specifier: ^4.35.5
         version: 4.35.5(@dataplan/json@1.0.0(grafast@1.0.2(graphql@16.13.0)))(@dataplan/pg@1.0.3(@dataplan/json@1.0.0(grafast@1.0.2(graphql@16.13.0)))(grafast@1.0.2(graphql@16.13.0))(graphile-config@1.0.1)(graphql@16.13.0)(pg-sql2@5.0.1)(pg@8.20.0))(@types/node@22.19.3)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tamedevil@0.1.1)(use-sync-external-store@1.6.0(react@19.2.7))(ws@8.21.0)
+      agentic-server:
+        specifier: 0.6.0
+        version: 0.6.0(express@5.2.1)
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
@@ -347,31 +353,6 @@ importers:
       makage:
         specifier: ^0.1.12
         version: 0.1.12
-      typescript:
-        specifier: ^5.1.6
-        version: 5.9.3
-
-  packages/agentic-server:
-    dependencies:
-      '@pgpmjs/logger':
-        specifier: ^2.4.3
-        version: 2.12.0
-      express:
-        specifier: 5.2.1
-        version: 5.2.1
-    devDependencies:
-      '@types/node':
-        specifier: ^22.10.4
-        version: 22.19.3
-      '@types/pg':
-        specifier: ^8.11.0
-        version: 8.16.0
-      pg:
-        specifier: ^8.20.0
-        version: 8.21.0
-      rimraf:
-        specifier: ^5.0.5
-        version: 5.0.10
       typescript:
         specifier: ^5.1.6
         version: 5.9.3
@@ -869,8 +850,14 @@ packages:
   '@agentic-kit/ollama@2.0.1':
     resolution: {integrity: sha512-MXs/pc+YwwfzPtgx5tYrNx21fPVW1r5SpXbSM+sVyMiM1NwRC7NnMvoV0E+mqy2sJQxDhGLSOJBeelDn1XhHrw==}
 
+  '@agentic-kit/ollama@2.1.0':
+    resolution: {integrity: sha512-efVpUKClvIl4POsvty57VoZPEnEK0kMjy2o2hlaOgh4YKb6yCq6ZTSEoRvQ+IHcFHPIXmdt7b7ciUkaBbTW02A==}
+
   '@agentic-kit/protocol@1.1.0':
     resolution: {integrity: sha512-rv0yYaP8kCB/oCTOx7p+8UXtJ0KHvrvIzMgDxldgWSVeFR3cNzed3JLxXzg+rEi76FUs2N8deZXPr/Gp8y+xOA==}
+
+  '@agentic-kit/protocol@1.2.0':
+    resolution: {integrity: sha512-oPP/N0ZbyjetqlY6cxErVX7nKYQCTbveqmOAfwEB4zaSQsdOlPABUX87Ll4yKvTfbmABLzqEN2sz5jxVIFGPyA==}
 
   '@aws-crypto/crc32@5.2.0':
     resolution: {integrity: sha512-nLbCWqQNgUiwwtFsen1AdzAtvuLRsQS8rYgMuxCrdKf9kOssamGLuPwyTY9wyYblNr9+1XM8v6zoDTPPSIeANg==}
@@ -3218,6 +3205,11 @@ packages:
     resolution: {integrity: sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==}
     engines: {node: '>=0.4.0'}
     hasBin: true
+
+  agentic-server@0.6.0:
+    resolution: {integrity: sha512-F92LwYJwt99DscEzH9zzOYxby9X+/+3KWVzcUFtcoRICOfWKUO1T2b5v9i1dgosjCZdaHCz/TgqKTEL2ULFYAg==}
+    peerDependencies:
+      express: ^5.0.0
 
   ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
@@ -6852,7 +6844,13 @@ snapshots:
     dependencies:
       '@agentic-kit/protocol': 1.1.0
 
+  '@agentic-kit/ollama@2.1.0':
+    dependencies:
+      '@agentic-kit/protocol': 1.2.0
+
   '@agentic-kit/protocol@1.1.0': {}
+
+  '@agentic-kit/protocol@1.2.0': {}
 
   '@aws-crypto/crc32@5.2.0':
     dependencies:
@@ -10096,6 +10094,19 @@ snapshots:
       acorn: 8.15.0
 
   acorn@8.15.0: {}
+
+  agentic-server@0.6.0(express@5.2.1):
+    dependencies:
+      '@agentic-kit/ollama': 2.1.0
+      '@constructive-io/express-context': 0.6.0(express@5.2.1)
+      '@constructive-io/llm-env': 0.1.1
+      '@pgpmjs/logger': 2.12.0
+      express: 5.2.1
+      pg: 8.21.0
+      pg-cache: 3.12.0
+    transitivePeerDependencies:
+      - pg-native
+      - supports-color
 
   ajv@6.12.6:
     dependencies:
@@ -14029,8 +14040,8 @@ snapshots:
   pg-cache@3.4.4:
     dependencies:
       '@pgpmjs/logger': 2.12.0
-      '@pgpmjs/types': 2.21.0
-      lru-cache: 11.3.0
+      '@pgpmjs/types': 2.29.0
+      lru-cache: 11.5.1
       pg: 8.21.0
       pg-env: 1.8.2
     transitivePeerDependencies:

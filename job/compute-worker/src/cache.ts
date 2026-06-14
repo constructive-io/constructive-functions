@@ -1,5 +1,5 @@
 /**
- * Simple TTL cache — same pattern as agentic-server.
+ * Simple TTL cache.
  * Entries expire after the configured TTL.
  */
 

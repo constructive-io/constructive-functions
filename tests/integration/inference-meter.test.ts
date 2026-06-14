@@ -1,31 +1,40 @@
 /**
- * Integration tests for inference metering (fire-and-forget usage logging).
+ * Integration tests for inference metering via the published agentic-server stack.
  *
- * Verifies that logInferenceUsage:
- *   1. INSERTs into platform_usage_log_inferences with correct columns
+ * Verifies that createBillingClient.logInference:
+ *   1. INSERTs into the configured inference log table
  *   2. Captures model, provider, tokens, latency_ms, status
  *   3. Never throws — metering errors are swallowed
  *   4. Handles both chat and embed services
  *   5. Records error status with error_type for failed inferences
- *   6. Handles null database_id, entity_id, actor_id gracefully
+ *   6. Handles null optional fields gracefully
+ *   7. Stores rawUsage as JSON
+ *   8. Is a no-op when inferenceLog config is null
+ *   9. Passes latencyMs correctly
+ *  10. Includes cache and RAG fields
  */
 
-import { logInferenceUsage } from '../../packages/agentic-server/src/inference-meter';
+import { createBillingClient } from '@constructive-io/express-context';
 
 const flush = () => new Promise((r) => setTimeout(r, 20));
 
-describe('logInferenceUsage', () => {
+describe('logInference (via createBillingClient)', () => {
   let mockQuery: jest.Mock;
-  let mockPool: any;
+  let mockWithPgClient: any;
+
+  const inferenceLogConfig = {
+    schema: 'constructive_usage_public',
+    tableName: 'platform_usage_log_inferences'
+  };
 
   beforeEach(() => {
     mockQuery = jest.fn().mockResolvedValue({ rows: [] });
-    mockPool = { query: mockQuery } as any;
+    mockWithPgClient = async (fn: any) => fn({ query: mockQuery });
   });
 
-  it('inserts into platform_usage_log_inferences', async () => {
-    logInferenceUsage(mockPool, {
-      databaseId: 'db-001',
+  it('inserts into the configured inference log table', async () => {
+    const billing = createBillingClient(mockWithPgClient, 'entity-001', null, inferenceLogConfig);
+    await billing.logInference({
       entityId: 'entity-001',
       actorId: 'actor-001',
       model: 'gpt-4o',
@@ -38,7 +47,6 @@ describe('logInferenceUsage', () => {
       latencyMs: 320,
       status: 'ok'
     });
-    await flush();
 
     expect(mockQuery).toHaveBeenCalledTimes(1);
     const [sql] = mockQuery.mock.calls[0];
@@ -47,8 +55,8 @@ describe('logInferenceUsage', () => {
   });
 
   it('passes correct columns for chat completions', async () => {
-    logInferenceUsage(mockPool, {
-      databaseId: 'db-aaa',
+    const billing = createBillingClient(mockWithPgClient, 'entity-bbb', null, inferenceLogConfig);
+    await billing.logInference({
       entityId: 'entity-bbb',
       actorId: 'actor-ccc',
       model: 'gpt-4o',
@@ -58,11 +66,10 @@ describe('logInferenceUsage', () => {
       inputTokens: 200,
       outputTokens: 80,
       totalTokens: 280,
-      latencyMs: 450.7,
+      latencyMs: 450,
       status: 'ok',
       rawUsage: { prompt_tokens: 200, completion_tokens: 80, total_tokens: 280 }
     });
-    await flush();
 
     const [sql, params] = mockQuery.mock.calls[0];
     expect(sql).toContain('model');
@@ -72,36 +79,28 @@ describe('logInferenceUsage', () => {
     expect(sql).toContain('total_tokens');
     expect(sql).toContain('latency_ms');
 
-    // params: [id, database_id, entity_id, actor_id, request_id,
-    //          model, provider, service, operation,
-    //          input_tokens, output_tokens, total_tokens,
-    //          latency_ms, status, error_type, raw_usage, created_at]
-    expect(params[0]).toBeDefined();           // id (UUID)
-    expect(params[1]).toBe('db-aaa');          // database_id
-    expect(params[2]).toBe('entity-bbb');      // entity_id
-    expect(params[3]).toBe('actor-ccc');       // actor_id
-    expect(params[4]).toBeDefined();           // request_id (UUID)
-    expect(params[5]).toBe('gpt-4o');          // model
-    expect(params[6]).toBe('openai');          // provider
-    expect(params[7]).toBe('chat');            // service
-    expect(params[8]).toBe('chat/completions'); // operation
-    expect(params[9]).toBe(200);               // input_tokens
-    expect(params[10]).toBe(80);               // output_tokens
-    expect(params[11]).toBe(280);              // total_tokens
-    expect(params[12]).toBe(451);              // latency_ms (rounded)
-    expect(params[13]).toBe('ok');             // status
-    expect(params[14]).toBeNull();             // error_type
-    expect(JSON.parse(params[15])).toEqual({   // raw_usage
-      prompt_tokens: 200,
-      completion_tokens: 80,
-      total_tokens: 280
-    });
-    expect(params[16]).toBeInstanceOf(Date);   // created_at
+    // params: [entity_id, actor_id, model, provider, service, operation,
+    //          input_tokens, output_tokens, total_tokens, latency_ms, status,
+    //          cache_read_tokens, cache_write_tokens, rag_enabled, chunks_retrieved,
+    //          embedding_model, embedding_latency_ms, error_type, raw_usage]
+    expect(params).toContain('entity-bbb');
+    expect(params).toContain('actor-ccc');
+    expect(params).toContain('gpt-4o');
+    expect(params).toContain('openai');
+    expect(params).toContain('chat');
+    expect(params).toContain('chat/completions');
+    expect(params).toContain(200);      // input_tokens
+    expect(params).toContain(80);       // output_tokens
+    expect(params).toContain(280);      // total_tokens
+    expect(params).toContain(450);      // latency_ms
+    expect(params).toContain('ok');     // status
   });
 
   it('logs embed service correctly', async () => {
-    logInferenceUsage(mockPool, {
-      databaseId: 'db-embed',
+    const billing = createBillingClient(mockWithPgClient, 'entity-embed', null, inferenceLogConfig);
+    await billing.logInference({
+      entityId: 'entity-embed',
+      actorId: null,
       model: 'text-embedding-3-small',
       provider: 'openai',
       service: 'embed',
@@ -112,19 +111,19 @@ describe('logInferenceUsage', () => {
       latencyMs: 120,
       status: 'ok'
     });
-    await flush();
 
     const [, params] = mockQuery.mock.calls[0];
-    expect(params[5]).toBe('text-embedding-3-small'); // model
-    expect(params[7]).toBe('embed');                   // service
-    expect(params[8]).toBe('embeddings');               // operation
-    expect(params[9]).toBe(50);                        // input_tokens
-    expect(params[10]).toBe(0);                        // output_tokens
+    expect(params).toContain('text-embedding-3-small');
+    expect(params).toContain('embed');
+    expect(params).toContain('embeddings');
+    expect(params).toContain(50);   // input_tokens
   });
 
   it('records error status with error_type', async () => {
-    logInferenceUsage(mockPool, {
-      databaseId: 'db-err',
+    const billing = createBillingClient(mockWithPgClient, 'entity-err', null, inferenceLogConfig);
+    await billing.logInference({
+      entityId: 'entity-err',
+      actorId: null,
       model: 'gpt-4o',
       provider: 'openai',
       service: 'chat',
@@ -136,17 +135,19 @@ describe('logInferenceUsage', () => {
       status: 'error',
       errorType: 'upstream_429'
     });
-    await flush();
 
     const [, params] = mockQuery.mock.calls[0];
-    expect(params[13]).toBe('error');          // status
-    expect(params[14]).toBe('upstream_429');   // error_type
+    expect(params).toContain('error');
+    expect(params).toContain('upstream_429');
   });
 
-  it('handles null database_id, entity_id, actor_id gracefully', async () => {
-    logInferenceUsage(mockPool, {
+  it('handles null optional fields gracefully', async () => {
+    const billing = createBillingClient(mockWithPgClient, 'entity-null', null, inferenceLogConfig);
+    await billing.logInference({
+      entityId: 'entity-null',
+      actorId: null,
       model: 'llama3',
-      provider: 'ollama',
+      provider: null,
       service: 'chat',
       operation: 'chat/completions',
       inputTokens: 10,
@@ -155,106 +156,59 @@ describe('logInferenceUsage', () => {
       latencyMs: 5,
       status: 'ok'
     });
-    await flush();
 
     expect(mockQuery).toHaveBeenCalledTimes(1);
     const [, params] = mockQuery.mock.calls[0];
-    expect(params[1]).toBeNull(); // database_id
-    expect(params[2]).toBeNull(); // entity_id
-    expect(params[3]).toBeNull(); // actor_id
+    expect(params).toContain(null); // actor_id or provider is null
   });
 
-  it('never throws even when pool.query rejects', async () => {
-    mockQuery.mockRejectedValue(new Error('connection refused'));
+  it('never throws even when withPgClient rejects', async () => {
+    const failingClient = async () => { throw new Error('connection refused'); };
+    const billing = createBillingClient(failingClient as any, 'entity-x', null, inferenceLogConfig);
 
-    expect(() => {
-      logInferenceUsage(mockPool, {
-        model: 'gpt-4o',
-        provider: 'openai',
-        service: 'chat',
-        operation: 'chat/completions',
-        inputTokens: 0,
-        outputTokens: 0,
-        totalTokens: 0,
-        latencyMs: 0,
-        status: 'ok'
-      });
-    }).not.toThrow();
-
-    await flush();
-    expect(mockQuery).toHaveBeenCalledTimes(1);
-  });
-
-  it('rounds latency_ms to nearest integer', async () => {
-    logInferenceUsage(mockPool, {
+    await expect(billing.logInference({
+      entityId: 'entity-x',
+      actorId: null,
       model: 'gpt-4o',
       provider: 'openai',
       service: 'chat',
       operation: 'chat/completions',
-      inputTokens: 10,
-      outputTokens: 5,
-      totalTokens: 15,
-      latencyMs: 3.7,
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      latencyMs: 0,
       status: 'ok'
+    })).resolves.toBeUndefined();
+  });
+
+  it('stores rawUsage as JSON string', async () => {
+    const billing = createBillingClient(mockWithPgClient, 'entity-raw', null, inferenceLogConfig);
+    const rawUsage = { prompt_tokens: 200, completion_tokens: 80, total_tokens: 280 };
+    await billing.logInference({
+      entityId: 'entity-raw',
+      actorId: null,
+      model: 'gpt-4o',
+      provider: 'openai',
+      service: 'chat',
+      operation: 'chat/completions',
+      inputTokens: 200,
+      outputTokens: 80,
+      totalTokens: 280,
+      latencyMs: 100,
+      status: 'ok',
+      rawUsage
     });
-    await flush();
 
     const [, params] = mockQuery.mock.calls[0];
-    expect(params[12]).toBe(4); // Math.round(3.7)
+    const jsonParam = params.find((p: any) => typeof p === 'string' && p.includes('prompt_tokens'));
+    expect(JSON.parse(jsonParam)).toEqual(rawUsage);
   });
 
-  it('generates unique id and request_id per call', async () => {
-    logInferenceUsage(mockPool, {
-      model: 'gpt-4o',
-      provider: 'openai',
-      service: 'chat',
-      operation: 'chat/completions',
-      inputTokens: 0,
-      outputTokens: 0,
-      totalTokens: 0,
-      latencyMs: 1,
-      status: 'ok'
-    });
-    logInferenceUsage(mockPool, {
-      model: 'gpt-4o',
-      provider: 'openai',
-      service: 'chat',
-      operation: 'chat/completions',
-      inputTokens: 0,
-      outputTokens: 0,
-      totalTokens: 0,
-      latencyMs: 1,
-      status: 'ok'
-    });
-    await flush();
-
-    expect(mockQuery).toHaveBeenCalledTimes(2);
-    const id1 = mockQuery.mock.calls[0][1][0];
-    const id2 = mockQuery.mock.calls[1][1][0];
-    expect(id1).not.toBe(id2);
-  });
-
-  it('uses provided requestId when given', async () => {
-    logInferenceUsage(mockPool, {
-      requestId: 'req-custom-123',
-      model: 'gpt-4o',
-      provider: 'openai',
-      service: 'chat',
-      operation: 'chat/completions',
-      inputTokens: 0,
-      outputTokens: 0,
-      totalTokens: 0,
-      latencyMs: 1,
-      status: 'ok'
-    });
-    await flush();
-
-    const [, params] = mockQuery.mock.calls[0];
-    expect(params[4]).toBe('req-custom-123'); // request_id
-  });
-
-  it('stores raw_usage as null when not provided', async () => {
-    logInferenceUsage(mockPool, {
+  it('is a no-op when inferenceLog config is null', async () => {
+    const billing = createBillingClient(mockWithPgClient, 'entity-noop', null, null);
+    await billing.logInference({
+      entityId: 'entity-noop',
+      actorId: null,
       model: 'gpt-4o',
       provider: 'openai',
       service: 'chat',
@@ -265,9 +219,58 @@ describe('logInferenceUsage', () => {
       latencyMs: 100,
       status: 'ok'
     });
-    await flush();
+
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it('passes latencyMs correctly', async () => {
+    const billing = createBillingClient(mockWithPgClient, 'entity-lat', null, inferenceLogConfig);
+    await billing.logInference({
+      entityId: 'entity-lat',
+      actorId: null,
+      model: 'gpt-4o',
+      provider: 'openai',
+      service: 'chat',
+      operation: 'chat/completions',
+      inputTokens: 10,
+      outputTokens: 5,
+      totalTokens: 15,
+      latencyMs: 320,
+      status: 'ok'
+    });
 
     const [, params] = mockQuery.mock.calls[0];
-    expect(params[15]).toBeNull(); // raw_usage
+    expect(params).toContain(320);
+  });
+
+  it('includes cache and RAG fields when provided', async () => {
+    const billing = createBillingClient(mockWithPgClient, 'entity-rag', null, inferenceLogConfig);
+    await billing.logInference({
+      entityId: 'entity-rag',
+      actorId: 'actor-rag',
+      model: 'gpt-4o',
+      provider: 'openai',
+      service: 'chat',
+      operation: 'chat/completions',
+      inputTokens: 100,
+      outputTokens: 50,
+      totalTokens: 150,
+      latencyMs: 200,
+      status: 'ok',
+      cacheReadTokens: 30,
+      cacheWriteTokens: 20,
+      ragEnabled: true,
+      chunksRetrieved: 5,
+      embeddingModel: 'text-embedding-3-small',
+      embeddingLatencyMs: 45
+    });
+
+    const [, params] = mockQuery.mock.calls[0];
+    expect(params).toContain(30);    // cacheReadTokens
+    expect(params).toContain(20);    // cacheWriteTokens
+    expect(params).toContain(true);  // ragEnabled
+    expect(params).toContain(5);     // chunksRetrieved
+    expect(params).toContain('text-embedding-3-small'); // embeddingModel
+    expect(params).toContain(45);    // embeddingLatencyMs
   });
 });

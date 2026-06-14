@@ -135,22 +135,24 @@ services:
       retries: 5
 
   # Agentic server — LLM gateway for cloud functions.
-  # Proxies OpenAI-compatible requests to a configured LLM provider.
+  # Uses the published agentic-server package with express-context middleware.
   # Cloud functions call this via context.agent.inference() / context.agent.embed().
   # Identity headers (X-Database-Id, X-Entity-Id) are set server-side by fn-runtime.
   agentic-server:
     build:
       context: .
-      dockerfile: packages/agentic-server/Dockerfile
+      dockerfile: docker/agentic-server.Dockerfile
     depends_on:
       db-setup:
         condition: service_completed_successfully
     environment:
       PORT: "3003"
-      LLM_PROVIDER_URL: ${LLM_PROVIDER_URL:-http://host.docker.internal:11434}
-      LLM_PROVIDER_API_KEY: ${LLM_PROVIDER_API_KEY:-}
-      LLM_PROVIDER_TYPE: ${LLM_PROVIDER_TYPE:-ollama}
-      LLM_DEFAULT_MODEL: ${LLM_DEFAULT_MODEL:-}
+      CHAT_BASE_URL: ${LLM_PROVIDER_URL:-http://host.docker.internal:11434}
+      CHAT_PROVIDER: ${LLM_PROVIDER_TYPE:-ollama}
+      CHAT_MODEL: ${LLM_DEFAULT_MODEL:-llama3}
+      EMBEDDER_BASE_URL: ${LLM_PROVIDER_URL:-http://host.docker.internal:11434}
+      EMBEDDER_PROVIDER: ${LLM_PROVIDER_TYPE:-ollama}
+      EMBEDDER_MODEL: ${LLM_DEFAULT_MODEL:-nomic-embed-text}
     ports:
       - "3003:3003"
     healthcheck:

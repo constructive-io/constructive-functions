@@ -129,7 +129,7 @@ dev-fn:
 	AGENTIC_SERVER_URL=http://localhost:3003 node --experimental-strip-types scripts/dev.ts
 
 dev-agent:
-	node packages/agentic-server/dist/standalone.js
+	node --experimental-strip-types scripts/dev-agent.ts
 
 dev-compute:
 	node --experimental-strip-types scripts/dev-compute.ts

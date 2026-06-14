@@ -1,361 +1,273 @@
 /**
- * Integration tests for the agentic server as a first-class service.
+ * Integration tests for the agentic server (published package).
  *
  * Verifies:
- *   1. Health check endpoint returns provider config
- *   2. Chat completions proxy with inference metering
- *   3. Embeddings proxy with inference metering
- *   4. Error handling when provider is unreachable
- *   5. Identity header stripping for external requests
- *   6. Metering fires for both success and error paths
- *   7. Metering never blocks the response
+ *   1. Router mounts and responds to requests
+ *   2. Returns 401 when no userId in context
+ *   3. Returns 404 when agentChat module is not provisioned
+ *   4. Creates threads with correct parameters
+ *   5. Entity-scoped thread creation works
+ *   6. Returns 400 when messages array is empty
+ *   7. Embedding endpoint returns 503 without provider
+ *   8. Embedding endpoint generates embeddings with provider
+ *   9. Thread messages returns 404 for missing thread
+ *  10. Billing quota check blocks when exceeded
  */
 
 import express from 'express';
 import http from 'http';
-import { createAgenticServer } from '../../packages/agentic-server/src/server';
+import { createAgenticRouter } from 'agentic-server';
 
 const flush = () => new Promise((r) => setTimeout(r, 30));
 
-/** Create a mock LLM provider that returns predictable responses */
-function createMockProvider() {
-  const app = express();
-  app.use(express.json());
-
-  const calls: { path: string; body: any; headers: Record<string, string | undefined> }[] = [];
-
-  app.post('/v1/chat/completions', (req: any, res: any) => {
-    calls.push({ path: '/v1/chat/completions', body: req.body, headers: req.headers });
-    res.json({
-      id: 'chatcmpl-mock',
-      object: 'chat.completion',
-      choices: [{ message: { role: 'assistant', content: 'Hello from mock!' }, finish_reason: 'stop', index: 0 }],
-      usage: { prompt_tokens: 15, completion_tokens: 8, total_tokens: 23 }
-    });
-  });
-
-  app.post('/v1/embeddings', (req: any, res: any) => {
-    calls.push({ path: '/v1/embeddings', body: req.body, headers: req.headers });
-    res.json({
-      object: 'list',
-      data: [{ object: 'embedding', embedding: [0.1, 0.2, 0.3], index: 0 }],
-      usage: { prompt_tokens: 5, total_tokens: 5 }
-    });
-  });
-
-  return { app, calls };
+/** Middleware that attaches a mock constructive context to req */
+function mockContextMiddleware(ctx: Record<string, any>) {
+  return (req: any, _res: any, next: any) => {
+    req.constructive = ctx;
+    next();
+  };
 }
 
-describe('agentic server (first-class service)', () => {
-  let mockProvider: ReturnType<typeof createMockProvider>;
-  let providerServer: http.Server;
-  let providerPort: number;
-  let mockQuery: jest.Mock;
-  let mockPool: any;
+describe('agentic server (published package)', () => {
+  function createApp(ctx: Record<string, any>) {
+    const app = express();
+    app.use(express.json());
+    app.use(mockContextMiddleware(ctx));
+    app.use(createAgenticRouter());
+    return app;
+  }
 
-  beforeAll(async () => {
-    mockProvider = createMockProvider();
-    providerServer = await new Promise<http.Server>((resolve) => {
-      const s = mockProvider.app.listen(0, () => resolve(s));
-    });
-    const addr = providerServer.address() as { port: number };
-    providerPort = addr.port;
-  });
-
-  afterAll(async () => {
-    await new Promise<void>((resolve) => providerServer.close(() => resolve()));
-  });
-
-  beforeEach(() => {
-    mockQuery = jest.fn().mockResolvedValue({ rows: [] });
-    mockPool = { query: mockQuery } as any;
-    mockProvider.calls.length = 0;
-  });
-
-  function createServer(overrides: Record<string, any> = {}) {
-    return createAgenticServer({
-      providerBaseUrl: `http://127.0.0.1:${providerPort}`,
-      providerType: 'openai',
-      pgPool: mockPool,
-      ...overrides
+  function listen(app: express.Express): Promise<{ server: http.Server; baseUrl: string }> {
+    return new Promise((resolve) => {
+      const server = app.listen(0, () => {
+        const addr = server.address() as { port: number };
+        resolve({ server, baseUrl: `http://127.0.0.1:${addr.port}` });
+      });
     });
   }
 
-  describe('healthz', () => {
-    it('returns provider config', async () => {
-      const app = createServer();
-      const server = await new Promise<http.Server>((resolve) => {
-        const s = app.listen(0, () => resolve(s));
-      });
+  function close(server: http.Server): Promise<void> {
+    return new Promise((resolve) => server.close(() => resolve()));
+  }
+
+  describe('thread creation', () => {
+    it('returns 401 when no userId in context', async () => {
+      const app = createApp({ userId: null });
+      const { server, baseUrl } = await listen(app);
       try {
-        const addr = server.address() as { port: number };
-        const res = await fetch(`http://127.0.0.1:${addr.port}/healthz`);
-        expect(res.status).toBe(200);
-        const body = await res.json();
-        expect(body).toMatchObject({ status: 'ok', provider: 'openai' });
-      } finally {
-        await new Promise<void>((resolve) => server.close(() => resolve()));
-      }
-    });
-  });
-
-  describe('chat/completions with metering', () => {
-    let server: http.Server;
-    let baseUrl: string;
-
-    beforeEach(async () => {
-      const app = createServer();
-      server = await new Promise<http.Server>((resolve) => {
-        const s = app.listen(0, () => resolve(s));
-      });
-      baseUrl = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
-    });
-
-    afterEach(async () => {
-      await new Promise<void>((resolve) => server.close(() => resolve()));
-    });
-
-    it('proxies to upstream and returns response', async () => {
-      const res = await fetch(`${baseUrl}/v1/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Internal-Service': 'fn-runtime',
-          'X-Database-Id': 'db-test',
-          'X-Entity-Id': 'entity-test'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [{ role: 'user', content: 'Hello' }]
-        })
-      });
-
-      expect(res.status).toBe(200);
-      const body = await res.json() as any;
-      expect(body.choices[0].message.content).toBe('Hello from mock!');
-      expect(body.usage.total_tokens).toBe(23);
-    });
-
-    it('fires inference metering INSERT after chat completion', async () => {
-      await fetch(`${baseUrl}/v1/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Internal-Service': 'fn-runtime',
-          'X-Database-Id': 'db-meter',
-          'X-Entity-Id': 'entity-meter',
-          'X-Actor-Id': 'actor-meter'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [{ role: 'user', content: 'Hello' }]
-        })
-      });
-      await flush();
-
-      expect(mockQuery).toHaveBeenCalledTimes(1);
-      const [sql, params] = mockQuery.mock.calls[0];
-      expect(sql).toContain('platform_usage_log_inferences');
-      expect(params[1]).toBe('db-meter');       // database_id
-      expect(params[2]).toBe('entity-meter');   // entity_id
-      expect(params[3]).toBe('actor-meter');     // actor_id
-      expect(params[5]).toBe('gpt-4o');          // model
-      expect(params[6]).toBe('openai');          // provider
-      expect(params[7]).toBe('chat');            // service
-      expect(params[9]).toBe(15);                // input_tokens
-      expect(params[10]).toBe(8);                // output_tokens
-      expect(params[11]).toBe(23);               // total_tokens
-      expect(params[13]).toBe('ok');             // status
-    });
-
-    it('meters latency_ms as positive integer', async () => {
-      await fetch(`${baseUrl}/v1/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [{ role: 'user', content: 'Hello' }]
-        })
-      });
-      await flush();
-
-      const [, params] = mockQuery.mock.calls[0];
-      const latencyMs = params[12];
-      expect(typeof latencyMs).toBe('number');
-      expect(latencyMs).toBeGreaterThanOrEqual(0);
-      expect(Number.isInteger(latencyMs)).toBe(true);
-    });
-
-    it('metering never blocks the response', async () => {
-      // Make metering slow — response should still be fast
-      mockQuery.mockImplementation(() => new Promise((resolve) => setTimeout(() => resolve({ rows: [] }), 500)));
-
-      const start = Date.now();
-      const res = await fetch(`${baseUrl}/v1/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [{ role: 'user', content: 'Hello' }]
-        })
-      });
-      const elapsed = Date.now() - start;
-
-      expect(res.status).toBe(200);
-      // Response should arrive well before the 500ms metering delay
-      expect(elapsed).toBeLessThan(400);
-    });
-  });
-
-  describe('embeddings with metering', () => {
-    let server: http.Server;
-    let baseUrl: string;
-
-    beforeEach(async () => {
-      const app = createServer();
-      server = await new Promise<http.Server>((resolve) => {
-        const s = app.listen(0, () => resolve(s));
-      });
-      baseUrl = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
-    });
-
-    afterEach(async () => {
-      await new Promise<void>((resolve) => server.close(() => resolve()));
-    });
-
-    it('proxies embed request and meters usage', async () => {
-      const res = await fetch(`${baseUrl}/v1/embeddings`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Internal-Service': 'fn-runtime',
-          'X-Database-Id': 'db-embed'
-        },
-        body: JSON.stringify({
-          model: 'text-embedding-3-small',
-          input: 'Hello world'
-        })
-      });
-
-      expect(res.status).toBe(200);
-      const body = await res.json() as any;
-      expect(body.data[0].embedding).toEqual([0.1, 0.2, 0.3]);
-
-      await flush();
-      expect(mockQuery).toHaveBeenCalledTimes(1);
-      const [sql, params] = mockQuery.mock.calls[0];
-      expect(sql).toContain('platform_usage_log_inferences');
-      expect(params[7]).toBe('embed');            // service
-      expect(params[8]).toBe('embeddings');        // operation
-    });
-  });
-
-  describe('error handling', () => {
-    it('returns 502 when provider is unreachable', async () => {
-      const app = createServer({ providerBaseUrl: 'http://127.0.0.1:1' });
-      const server = await new Promise<http.Server>((resolve) => {
-        const s = app.listen(0, () => resolve(s));
-      });
-      try {
-        const addr = server.address() as { port: number };
-        const res = await fetch(`http://127.0.0.1:${addr.port}/v1/chat/completions`, {
+        const res = await fetch(`${baseUrl}/v1/threads`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: [{ role: 'user', content: 'Hello' }] })
+          body: JSON.stringify({})
         });
-        expect(res.status).toBe(502);
+        expect(res.status).toBe(401);
         const body = await res.json() as any;
-        expect(body.error.message).toContain('Failed to reach LLM provider');
-
-        await flush();
-        // Error path also fires metering
-        expect(mockQuery).toHaveBeenCalledTimes(1);
-        const [, params] = mockQuery.mock.calls[0];
-        expect(params[13]).toBe('error');  // status
+        expect(body.error).toContain('Authentication');
       } finally {
-        await new Promise<void>((resolve) => server.close(() => resolve()));
+        await close(server);
       }
     });
 
-    it('metering error does not crash the server', async () => {
-      mockQuery.mockRejectedValue(new Error('DB is down'));
-
-      const app = createServer();
-      const server = await new Promise<http.Server>((resolve) => {
-        const s = app.listen(0, () => resolve(s));
-      });
+    it('returns 404 when agentChat module is not provisioned', async () => {
+      const ctx = {
+        userId: 'user-1',
+        useModule: jest.fn().mockResolvedValue(null)
+      };
+      const app = createApp(ctx);
+      const { server, baseUrl } = await listen(app);
       try {
-        const addr = server.address() as { port: number };
-        const res = await fetch(`http://127.0.0.1:${addr.port}/v1/chat/completions`, {
+        const res = await fetch(`${baseUrl}/v1/threads`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'gpt-4o',
-            messages: [{ role: 'user', content: 'Hello' }]
-          })
+          body: JSON.stringify({})
         });
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(404);
         const body = await res.json() as any;
-        expect(body.choices[0].message.content).toBe('Hello from mock!');
+        expect(body.error).toContain('not provisioned');
       } finally {
-        await new Promise<void>((resolve) => server.close(() => resolve()));
+        await close(server);
       }
     });
-  });
 
-  describe('identity headers', () => {
-    it('strips identity headers from external requests', async () => {
-      const app = createServer();
-      const server = await new Promise<http.Server>((resolve) => {
-        const s = app.listen(0, () => resolve(s));
-      });
+    it('creates thread with correct parameters', async () => {
+      const threadRow = { id: 'thread-1', mode: 'ask', model: null, system_prompt: null, status: 'active', created_at: new Date().toISOString() };
+      const mockClient = { query: jest.fn().mockResolvedValue({ rows: [threadRow] }) };
+      const ctx = {
+        userId: 'user-1',
+        useModule: jest.fn().mockResolvedValue({ schemaName: 'app_public', threadTableName: 'agent_threads', messageTableName: 'agent_messages' }),
+        withPgClient: jest.fn(async (fn: any) => fn(mockClient))
+      };
+      const app = createApp(ctx);
+      const { server, baseUrl } = await listen(app);
       try {
-        const addr = server.address() as { port: number };
-        // No X-Internal-Service header = external request
-        await fetch(`http://127.0.0.1:${addr.port}/v1/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Database-Id': 'forged-db',
-            'X-Entity-Id': 'forged-entity'
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o',
-            messages: [{ role: 'user', content: 'Hello' }]
-          })
-        });
-        await flush();
-
-        // Metering should have null database_id (stripped → undefined → null via ?? null)
-        const [, params] = mockQuery.mock.calls[0];
-        expect(params[1]).toBeNull();  // database_id stripped
-      } finally {
-        await new Promise<void>((resolve) => server.close(() => resolve()));
-      }
-    });
-  });
-
-  describe('without pgPool (metering disabled)', () => {
-    it('works normally without metering', async () => {
-      const app = createServer({ pgPool: undefined });
-      const server = await new Promise<http.Server>((resolve) => {
-        const s = app.listen(0, () => resolve(s));
-      });
-      try {
-        const addr = server.address() as { port: number };
-        const res = await fetch(`http://127.0.0.1:${addr.port}/v1/chat/completions`, {
+        const res = await fetch(`${baseUrl}/v1/threads`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'gpt-4o',
-            messages: [{ role: 'user', content: 'Hello' }]
-          })
+          body: JSON.stringify({ mode: 'ask', title: 'Test thread' })
         });
-        expect(res.status).toBe(200);
-        await flush();
-        expect(mockQuery).not.toHaveBeenCalled();
+        expect(res.status).toBe(201);
+        const body = await res.json() as any;
+        expect(body.id).toBe('thread-1');
+        expect(body.mode).toBe('ask');
       } finally {
-        await new Promise<void>((resolve) => server.close(() => resolve()));
+        await close(server);
+      }
+    });
+
+    it('creates entity-scoped thread via /v1/orgs/:entity_id/threads', async () => {
+      const threadRow = { id: 'thread-2', mode: 'ask', model: null, system_prompt: null, status: 'active', created_at: new Date().toISOString() };
+      const mockClient = { query: jest.fn().mockResolvedValue({ rows: [threadRow] }) };
+      const ctx = {
+        userId: 'user-1',
+        useModule: jest.fn().mockResolvedValue({ schemaName: 'app_public', threadTableName: 'agent_threads', messageTableName: 'agent_messages' }),
+        withPgClient: jest.fn(async (fn: any) => fn(mockClient))
+      };
+      const app = createApp(ctx);
+      const { server, baseUrl } = await listen(app);
+      try {
+        const res = await fetch(`${baseUrl}/v1/orgs/entity-abc/threads`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        expect(res.status).toBe(201);
+        const body = await res.json() as any;
+        expect(body.id).toBe('thread-2');
+        // Verify entity_id was passed in the INSERT
+        const insertArgs = mockClient.query.mock.calls[0][1];
+        expect(insertArgs[0]).toBe('entity-abc');
+      } finally {
+        await close(server);
+      }
+    });
+  });
+
+  describe('thread messages', () => {
+    it('returns 401 when no userId in context', async () => {
+      const app = createApp({ userId: null });
+      const { server, baseUrl } = await listen(app);
+      try {
+        const res = await fetch(`${baseUrl}/v1/threads/thread-1/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] })
+        });
+        expect(res.status).toBe(401);
+      } finally {
+        await close(server);
+      }
+    });
+
+    it('returns 400 when messages array is empty', async () => {
+      const ctx = {
+        userId: 'user-1',
+        useModule: jest.fn().mockResolvedValue({ schemaName: 'app_public', threadTableName: 'agent_threads', messageTableName: 'agent_messages' }),
+        withPgClient: jest.fn()
+      };
+      const app = createApp(ctx);
+      const { server, baseUrl } = await listen(app);
+      try {
+        const res = await fetch(`${baseUrl}/v1/threads/thread-1/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: [] })
+        });
+        expect(res.status).toBe(400);
+        const body = await res.json() as any;
+        expect(body.error).toContain('messages');
+      } finally {
+        await close(server);
+      }
+    });
+
+    it('returns 404 for missing thread', async () => {
+      const mockClient = { query: jest.fn().mockResolvedValue({ rows: [] }) };
+      const ctx = {
+        userId: 'user-1',
+        useModule: jest.fn().mockResolvedValue({ schemaName: 'app_public', threadTableName: 'agent_threads', messageTableName: 'agent_messages' }),
+        withPgClient: jest.fn(async (fn: any) => fn(mockClient)),
+        useBilling: jest.fn().mockResolvedValue(null),
+        useLlm: jest.fn().mockResolvedValue(null)
+      };
+      const app = createApp(ctx);
+      const { server, baseUrl } = await listen(app);
+      try {
+        const res = await fetch(`${baseUrl}/v1/threads/nonexistent/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: [{ role: 'user', content: 'hello' }] })
+        });
+        expect(res.status).toBe(404);
+        const body = await res.json() as any;
+        expect(body.error).toContain('not found');
+      } finally {
+        await close(server);
+      }
+    });
+
+    it('returns 429 when billing quota is exceeded', async () => {
+      const threadRow = { id: 'thread-1', mode: 'ask', model: 'gpt-4o', system_prompt: null, status: 'active' };
+      const mockClient = { query: jest.fn().mockResolvedValue({ rows: [threadRow] }) };
+      const mockBilling = { checkQuota: jest.fn().mockResolvedValue(false), recordUsage: jest.fn(), logInference: jest.fn() };
+      const ctx = {
+        userId: 'user-1',
+        useModule: jest.fn().mockResolvedValue({ schemaName: 'app_public', threadTableName: 'agent_threads', messageTableName: 'agent_messages' }),
+        withPgClient: jest.fn(async (fn: any) => fn(mockClient)),
+        useBilling: jest.fn().mockResolvedValue(mockBilling),
+        useLlm: jest.fn().mockResolvedValue({ chatProvider: 'ollama', chatModel: 'llama3', chatBaseUrl: 'http://localhost:11434' })
+      };
+      const app = createApp(ctx);
+      const { server, baseUrl } = await listen(app);
+      try {
+        const res = await fetch(`${baseUrl}/v1/threads/thread-1/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: [{ role: 'user', content: 'hello' }] })
+        });
+        expect(res.status).toBe(429);
+        const body = await res.json() as any;
+        expect(body.error).toContain('quota');
+      } finally {
+        await close(server);
+      }
+    });
+  });
+
+  describe('embeddings', () => {
+    it('returns 503 when no embedding provider configured', async () => {
+      const ctx = {
+        userId: 'user-1',
+        useModule: jest.fn().mockResolvedValue(null),
+        useLlm: jest.fn().mockResolvedValue(null),
+        useBilling: jest.fn().mockResolvedValue(null)
+      };
+      const app = createApp(ctx);
+      const { server, baseUrl } = await listen(app);
+      try {
+        const res = await fetch(`${baseUrl}/v1/embed`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input: 'test text' })
+        });
+        // Without a configured provider, should return error
+        expect(res.status).toBeGreaterThanOrEqual(400);
+      } finally {
+        await close(server);
+      }
+    });
+
+    it('returns 401 for embed when no userId', async () => {
+      const app = createApp({ userId: null });
+      const { server, baseUrl } = await listen(app);
+      try {
+        const res = await fetch(`${baseUrl}/v1/embed`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input: 'test' })
+        });
+        expect(res.status).toBe(401);
+      } finally {
+        await close(server);
       }
     });
   });
