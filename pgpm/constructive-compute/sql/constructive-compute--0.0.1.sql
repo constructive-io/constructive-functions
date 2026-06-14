@@ -19,6 +19,28 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_private
 ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_private
   GRANT ALL ON TABLES TO administrator;
 
+CREATE SCHEMA constructive_compute_public;
+
+CREATE TABLE constructive_compute_public.platform_function_graphs ();
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
+  GRANT ALL ON FUNCTIONS TO administrator;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
+  GRANT ALL ON FUNCTIONS TO anonymous;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
+  GRANT ALL ON FUNCTIONS TO authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
+  GRANT USAGE ON SEQUENCES TO administrator;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
+  GRANT USAGE ON SEQUENCES TO authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
+  GRANT ALL ON TABLES TO administrator;
+
 CREATE TABLE constructive_compute_public.platform_function_graph_execution_outputs (
   created_at timestamptz NOT NULL DEFAULT now()
 ) PARTITION BY RANGE (created_at);
@@ -281,30 +303,8 @@ ALTER TABLE constructive_compute_public.platform_function_graph_executions
 ALTER TABLE constructive_compute_public.platform_function_graph_executions 
   ALTER COLUMN timeout_at SET DEFAULT now() + '5 minutes'::interval;
 
-CREATE SCHEMA constructive_compute_public;
-
-CREATE TABLE constructive_compute_public.platform_function_graphs ();
-
 ALTER TABLE constructive_compute_public.platform_function_graph_executions 
   ADD CONSTRAINT platform_function_graph_executions_pkey PRIMARY KEY (started_at, id);
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
-  GRANT ALL ON FUNCTIONS TO administrator;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
-  GRANT ALL ON FUNCTIONS TO anonymous;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
-  GRANT ALL ON FUNCTIONS TO authenticated;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
-  GRANT USAGE ON SEQUENCES TO administrator;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
-  GRANT USAGE ON SEQUENCES TO authenticated;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA constructive_compute_public
-  GRANT ALL ON TABLES TO administrator;
 
 CREATE TABLE constructive_compute_public.org_function_execution_logs (
   created_at timestamptz NOT NULL DEFAULT now()
