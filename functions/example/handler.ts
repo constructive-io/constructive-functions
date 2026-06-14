@@ -11,16 +11,30 @@ import type { FunctionHandler } from '@constructive-io/fn-runtime';
  *
  * The handler receives:
  *   - params: the job payload (JSON from the caller)
- *   - context: { client, meta, log, env, job }
+ *   - context: { client, meta, agent, log, env, job }
  *     - client/meta: GraphQL clients (tenant-scoped)
+ *     - agent: AgentContext for LLM inference (metered, tenant-isolated)
+ *       - agent.inference({ messages, model?, temperature? })
+ *       - agent.embed(input, model?)
  *     - log: structured logger
  *     - env: process.env
  *     - job: { jobId, workerId, databaseId, actorId }
  */
-const handler: FunctionHandler = async (params, context) => {
+const handler: FunctionHandler = async (params: any, context) => {
   const { log } = context;
 
+  if (params.throw) {
+    throw new Error('THROWN_ERROR');
+  }
+
   log.info('node-example received payload', { params });
+
+  // Example: LLM inference (requires AGENTIC_SERVER_URL to be set)
+  // const result = await context.agent.inference({
+  //   messages: [{ role: 'user', content: 'Hello!' }],
+  //   model: 'gpt-4o'
+  // });
+  // log.info('LLM response:', result.content);
 
   return {
     status: 'ok',

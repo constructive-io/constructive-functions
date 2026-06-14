@@ -7,14 +7,18 @@ Copy this directory to create a new Python function:
   3. Implement your logic here
   4. Run: make register && pgpm kill && make up
 
-The handler receives a dict payload from the job queue
-and returns a dict result.
+The handler receives a dict payload from the job queue and an optional
+AgentContext for LLM inference:
+    result = await agent.inference(
+        messages=[{"role": "user", "content": "Hello"}],
+        model="gpt-4o"
+    )
 """
 
 from datetime import datetime, timezone
 
 
-async def handler(payload: dict) -> dict:
+async def handler(payload: dict, agent=None) -> dict:
     """Process a job payload and return a result."""
     return {
         "status": "ok",

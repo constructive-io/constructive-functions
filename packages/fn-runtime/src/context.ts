@@ -1,6 +1,7 @@
 import { createLogger } from '@pgpmjs/logger';
 import type { FunctionContext } from '@constructive-io/fn-types';
 import { createClients } from './graphql';
+import { createAgentContext } from './agent';
 
 type RequestHeaders = {
   databaseId?: string;
@@ -46,10 +47,20 @@ export const buildContext = (
     meta = stub;
   }
 
+  // Create agent context for LLM inference via the agentic server.
+  // Identity headers (databaseId, entityId, actorId) flow from the job context
+  // and are set server-side — they cannot be forged by the function caller.
+  const agent = createAgentContext(env.AGENTIC_SERVER_URL, {
+    databaseId,
+    entityId,
+    actorId
+  });
+
   return {
     job: { jobId, workerId, databaseId, actorId, entityId },
     client,
     meta,
+    agent,
     log,
     env
   };

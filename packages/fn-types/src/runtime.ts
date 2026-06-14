@@ -11,6 +11,50 @@ export type FunctionLogger = {
   warn: (...args: any[]) => void;
 };
 
+// ─── Agent Context (LLM inference via agentic server) ─────────────────────
+
+export type InferenceOptions = {
+  messages: Array<{ role: 'user' | 'system' | 'assistant'; content: string }>;
+  model?: string;
+  temperature?: number;
+  max_tokens?: number;
+  stream?: boolean;
+};
+
+export type InferenceResult = {
+  content: string;
+  finishReason: string;
+  usage: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+};
+
+export type EmbedResult = {
+  embeddings: number[][];
+  usage: {
+    promptTokens: number;
+    totalTokens: number;
+  };
+};
+
+export type AgentContext = {
+  /** Fully typed inference call — metered, logged, quota-checked by the agentic server */
+  inference(options: InferenceOptions): Promise<InferenceResult>;
+
+  /** Generate embeddings — metered by the agentic server */
+  embed(input: string | string[], model?: string): Promise<EmbedResult>;
+
+  /** Database ID from job context (set server-side, unforgeable) */
+  readonly databaseId: string | undefined;
+
+  /** Entity ID from job context (set server-side, unforgeable) */
+  readonly entityId: string | undefined;
+};
+
+// ─── Function Context ─────────────────────────────────────────────────────
+
 export type FunctionContext = {
   job: {
     jobId?: string;
@@ -25,6 +69,7 @@ export type FunctionContext = {
   };
   client: GraphQLClient;
   meta: GraphQLClient;
+  agent: AgentContext;
   log: FunctionLogger;
   env: Record<string, string | undefined>;
 };

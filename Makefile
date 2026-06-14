@@ -3,7 +3,7 @@
        up\:compute down\:compute \
        up\:www \
        generate\:schemas generate\:sdk generate\:cli generate\:hooks generate\:sdk-all \
-       dev dev-fn dev-compute dev-down dev-logs setup-dev setup-check \
+       dev dev-fn dev-agent dev-compute dev-down dev-logs setup-dev setup-check \
        secrets\:sync \
        test test\:unit test\:integration test\:workflow test\:workflow\:schema test\:functions \
        skaffold-dev skaffold-dev-knative docker-build
@@ -114,7 +114,7 @@ check-env:
 # ═══════════════════════════════════════════════════════════════════════════════
 # Tier 2 — compose-local
 # ═══════════════════════════════════════════════════════════════════════════════
-# Infrastructure (postgres, db-setup, graphql-server, mailpit) runs in Docker.
+# Infrastructure (postgres, db-setup, graphql-server, mailpit, agentic-server) runs in Docker.
 # Functions run as local Node processes for fast edit-run cycles.
 #
 # Quick start:
@@ -126,7 +126,10 @@ dev:
 	docker compose up -d
 
 dev-fn:
-	node --experimental-strip-types scripts/dev.ts
+	AGENTIC_SERVER_URL=http://localhost:3003 node --experimental-strip-types scripts/dev.ts
+
+dev-agent:
+	node packages/agentic-server/dist/standalone.js
 
 dev-compute:
 	node --experimental-strip-types scripts/dev-compute.ts

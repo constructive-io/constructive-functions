@@ -58,6 +58,7 @@ jobs:
           pnpm --filter @constructive-io/fn-types build
           pnpm --filter @constructive-io/knative-job-fn build
           pnpm --filter @constructive-io/fn-runtime build
+          pnpm --filter @constructive-io/agentic-server build
           pnpm --filter @constructive-io/fn-generator build
           pnpm --filter @constructive-io/fn-client build
           pnpm --filter @constructive-io/fn-cli build

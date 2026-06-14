@@ -11,8 +11,12 @@ export type { HandlerManifest, NodeDefinition, Port } from './manifest';
 export { toNodeDefinition } from './manifest';
 export type { FnRegistry, FnRegistryEntry } from './registry';
 export type {
+  AgentContext,
+  EmbedResult,
   FunctionContext,
   FunctionHandler,
   FunctionLogger,
+  InferenceOptions,
+  InferenceResult,
   ServerOptions
 } from './runtime';
