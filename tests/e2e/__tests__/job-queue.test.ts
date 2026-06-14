@@ -33,7 +33,7 @@ describe('SQL: Job Queue (k8s)', () => {
     }
 
     databaseId = await getDatabaseId(pg);
-  });
+  }, 90_000);
 
   afterAll(async () => {
     if (pg) await deleteTestJobs(pg, TEST_PREFIX);

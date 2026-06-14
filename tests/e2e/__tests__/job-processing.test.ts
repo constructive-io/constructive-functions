@@ -17,7 +17,7 @@ describe('Job Queue Inspection (k8s e2e)', () => {
   beforeAll(async () => {
     const connections = await getTestConnections();
     pg = connections.pg;
-  });
+  }, 90_000);
 
   afterAll(async () => {
     await closeConnections();
