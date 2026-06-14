@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 
 from handler import handler
+from agent import AgentContext
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("{{name}}")
@@ -57,10 +58,13 @@ async def handle(request: Request):
     job_id = request.headers.get("X-Job-Id")
     database_id = request.headers.get("X-Database-Id")
 
+    # Build agent context from request headers (identity is set server-side)
+    agent = AgentContext.from_request(request)
+
     try:
         payload = await request.json()
         logger.info(f"Received job: {payload}")
-        result = await handler(payload)
+        result = await handler(payload, agent=agent)
         logger.info(f"Job completed: {result}")
 
         # Send success callback

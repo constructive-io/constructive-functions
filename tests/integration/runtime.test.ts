@@ -29,7 +29,7 @@ describe('fn-runtime HTTP layer', () => {
     });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toMatchObject({ fn: 'example-fn' });
+    expect(body).toMatchObject({ fn: 'example-fn', body: { hello: 'world' } });
   });
 
   it('passes job headers to handler context', async () => {

@@ -1,4 +1,4 @@
-.PHONY: install build clean lint generate dev dev-fn dev-down dev-logs docker-build skaffold-dev skaffold-dev-knative
+.PHONY: install build clean lint generate dev dev-fn dev-agent dev-down dev-logs docker-build skaffold-dev skaffold-dev-knative
 
 install:
 	node --experimental-strip-types scripts/generate.ts
@@ -17,14 +17,17 @@ generate:
 	pnpm run generate
 
 # --- Local development ---
-# Infrastructure (postgres, db-setup, graphql-server, mailpit) runs in Docker.
+# Infrastructure (postgres, db-setup, graphql-server, mailpit, agentic-server) runs in Docker.
 # Functions run as local Node processes for fast edit-run cycles.
 
 dev:
 	docker compose up -d
 
 dev-fn:
-	node --experimental-strip-types scripts/dev.ts
+	AGENTIC_SERVER_URL=http://localhost:3003 node --experimental-strip-types scripts/dev.ts
+
+dev-agent:
+	node packages/agentic-server/dist/standalone.js
 
 dev-down:
 	docker compose down

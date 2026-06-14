@@ -10,8 +10,12 @@ export { defineConfig } from './config';
 export type { HandlerManifest } from './manifest';
 export type { FnRegistry, FnRegistryEntry } from './registry';
 export type {
+  AgentContext,
+  EmbedResult,
   FunctionContext,
   FunctionHandler,
   FunctionLogger,
+  InferenceOptions,
+  InferenceResult,
   ServerOptions
 } from './runtime';
