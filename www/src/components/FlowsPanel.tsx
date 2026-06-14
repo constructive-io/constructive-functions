@@ -299,11 +299,16 @@ function orm() {
 }
 
 async function rawMutation(document: string, variables: Record<string, unknown>) {
-  const result = await orm().execute(document, variables);
-  if (!result.ok) {
-    throw new Error(`GraphQL Error: ${result.errors.map((e: any) => e.message).join(', ')}`);
+  const res = await fetch('/graphql/compute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: document, variables }),
+  });
+  const json = await res.json();
+  if (json.errors?.length) {
+    throw new Error(`GraphQL Error: ${json.errors.map((e: any) => e.message).join(', ')}`);
   }
-  return result.data;
+  return json.data;
 }
 
 async function loadGraphFromStore(storeId: string): Promise<{ graph: Graph; commitId: string | null } | null> {
