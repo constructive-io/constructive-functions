@@ -12,6 +12,7 @@ function getPool(): pg.Pool {
       user: process.env.PGUSER || 'postgres',
       password: process.env.PGPASSWORD,
       database: process.env.PGDATABASE || 'constructive',
+      connectionTimeoutMillis: 5000,
     });
   }
   return pool;
@@ -53,7 +54,17 @@ let client: TestClient | null = null;
 export async function getTestConnections(): Promise<{ pg: TestClient }> {
   if (!client) {
     client = createTestClient();
-    await client.query('SELECT 1');
+    // Retry the initial connection — K8s DB may take a while to be ready
+    const maxRetries = 10;
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        await client.query('SELECT 1');
+        return { pg: client };
+      } catch {
+        if (i === maxRetries - 1) throw new Error('DB not reachable after retries');
+        await new Promise((r) => setTimeout(r, 3000));
+      }
+    }
   }
   return { pg: client };
 }
