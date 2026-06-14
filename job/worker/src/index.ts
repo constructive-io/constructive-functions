@@ -4,10 +4,10 @@ import * as jobs from '@constructive-io/job-utils';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool, PoolClient } from 'pg';
 
-import { logComputeUsage } from './compute-meter';
 import { completeNode, failNode } from './graph-complete';
 import { extractNodeProps, getInlineImpl, isGraphJob } from './inline-nodes';
 import { request as req } from './req';
+import { UsageClient } from './usage-client';
 
 export interface JobRow {
   id: number | string;
@@ -26,6 +26,7 @@ export default class Worker {
   workerId: string;
   doNextTimer?: NodeJS.Timeout;
   pgPool: Pool;
+  usageClient: UsageClient;
   _initialized?: boolean;
   listenClient?: PoolClient;
   listenRelease?: () => void;
@@ -55,6 +56,7 @@ export default class Worker {
     this.workerId = workerId;
     this.doNextTimer = undefined;
     this.pgPool = pgPool;
+    this.usageClient = new UsageClient(pgPool);
     poolManager.onClose(async () => {
       await jobs.releaseJobs(pgPool, { workerId: this.workerId });
     });
@@ -138,7 +140,7 @@ export default class Worker {
         await failNode(this.pgPool, execution_id, node_name, message);
 
         const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
-        logComputeUsage(this.pgPool, {
+        this.usageClient.logComputeUsage({
           jobId: job.id,
           taskIdentifier: task_identifier,
           databaseId: job.database_id,
@@ -156,7 +158,7 @@ export default class Worker {
       }
 
       const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
-      logComputeUsage(this.pgPool, {
+      this.usageClient.logComputeUsage({
         jobId: job.id,
         taskIdentifier: task_identifier,
         databaseId: job.database_id,
@@ -187,7 +189,7 @@ export default class Worker {
     } catch (err: unknown) {
       httpError = err instanceof Error ? err.message : String(err);
       const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
-      logComputeUsage(this.pgPool, {
+      this.usageClient.logComputeUsage({
         jobId: job.id,
         taskIdentifier: task_identifier,
         databaseId: job.database_id,
@@ -203,7 +205,7 @@ export default class Worker {
     }
 
     const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
-    logComputeUsage(this.pgPool, {
+    this.usageClient.logComputeUsage({
       jobId: job.id,
       taskIdentifier: task_identifier,
       databaseId: job.database_id,
@@ -351,3 +353,5 @@ export default class Worker {
 }
 
 export { Worker };
+export type { InferenceEntry, MeterEntry, UsageModuleConfig } from './usage-client';
+export { createUsageClient,UsageClient } from './usage-client';

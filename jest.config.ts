@@ -21,6 +21,7 @@ const config: Config = {
     '^@pgpmjs/logger$': '<rootDir>/tests/__mocks__/@pgpmjs/logger',
     '^@constructive-io/postmaster$':
       '<rootDir>/tests/__mocks__/@constructive-io/postmaster',
+    '^@constructive-io/knative-job-worker$': '<rootDir>/job/worker/src/usage-client',
     '^simple-smtp-server$': '<rootDir>/tests/__mocks__/simple-smtp-server',
     '^@launchql/mjml$': '<rootDir>/tests/__mocks__/@launchql/mjml',
     '^graphql-tag$': '<rootDir>/tests/__mocks__/graphql-tag'

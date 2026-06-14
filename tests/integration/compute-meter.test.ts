@@ -37,7 +37,8 @@ describe('logComputeUsage', () => {
     });
     await flush();
 
-    expect(mockQuery).toHaveBeenCalledTimes(2);
+    // 3 calls: 1 config resolution (metaschema) + 2 inserts (invocations + usage)
+    expect(mockQuery).toHaveBeenCalledTimes(3);
 
     const invocationCall = mockQuery.mock.calls.find(
       ([sql]: [string]) => sql.includes('platform_function_invocations')
@@ -208,7 +209,8 @@ describe('logComputeUsage', () => {
     });
     await flush();
 
-    expect(mockQuery).toHaveBeenCalledTimes(2);
+    // 3 calls: 1 config resolution (metaschema) + 2 inserts
+    expect(mockQuery).toHaveBeenCalledTimes(3);
 
     const invocationCall = mockQuery.mock.calls.find(
       ([sql]: [string]) => sql.includes('platform_function_invocations')
@@ -239,8 +241,8 @@ describe('logComputeUsage', () => {
     }).not.toThrow();
 
     await flush();
-    // Both calls were attempted, both rejected, but no crash
-    expect(mockQuery).toHaveBeenCalledTimes(2);
+    // All calls were attempted (config + 2 inserts), all rejected, but no crash
+    expect(mockQuery).toHaveBeenCalledTimes(3);
   });
 
   it('parses string job IDs to integers', async () => {

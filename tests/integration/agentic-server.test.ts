@@ -153,8 +153,13 @@ describe('agentic server (first-class service)', () => {
       });
       await flush();
 
-      expect(mockQuery).toHaveBeenCalledTimes(1);
-      const [sql, params] = mockQuery.mock.calls[0];
+      // 2 calls: 1 config resolution (metaschema) + 1 insert
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+      const insertCall = mockQuery.mock.calls.find(
+        ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+      );
+      expect(insertCall).toBeDefined();
+      const [sql, params] = insertCall!;
       expect(sql).toContain('platform_usage_log_inferences');
       expect(params[1]).toBe('db-meter');       // database_id
       expect(params[2]).toBe('entity-meter');   // entity_id
@@ -179,7 +184,10 @@ describe('agentic server (first-class service)', () => {
       });
       await flush();
 
-      const [, params] = mockQuery.mock.calls[0];
+      const insertCall = mockQuery.mock.calls.find(
+        ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+      );
+      const [, params] = insertCall!;
       const latencyMs = params[12];
       expect(typeof latencyMs).toBe('number');
       expect(latencyMs).toBeGreaterThanOrEqual(0);
@@ -242,8 +250,13 @@ describe('agentic server (first-class service)', () => {
       expect(body.data[0].embedding).toEqual([0.1, 0.2, 0.3]);
 
       await flush();
-      expect(mockQuery).toHaveBeenCalledTimes(1);
-      const [sql, params] = mockQuery.mock.calls[0];
+      // 2 calls: 1 config resolution (metaschema) + 1 insert
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+      const insertCall = mockQuery.mock.calls.find(
+        ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+      );
+      expect(insertCall).toBeDefined();
+      const [sql, params] = insertCall!;
       expect(sql).toContain('platform_usage_log_inferences');
       expect(params[7]).toBe('embed');            // service
       expect(params[8]).toBe('embeddings');        // operation
@@ -268,9 +281,12 @@ describe('agentic server (first-class service)', () => {
         expect(body.error.message).toContain('Failed to reach LLM provider');
 
         await flush();
-        // Error path also fires metering
-        expect(mockQuery).toHaveBeenCalledTimes(1);
-        const [, params] = mockQuery.mock.calls[0];
+        // Error path: 1 config resolution + 1 insert
+        expect(mockQuery).toHaveBeenCalledTimes(2);
+        const insertCall = mockQuery.mock.calls.find(
+          ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+        );
+        const [, params] = insertCall!;
         expect(params[13]).toBe('error');  // status
       } finally {
         await new Promise<void>((resolve) => server.close(() => resolve()));
@@ -327,7 +343,10 @@ describe('agentic server (first-class service)', () => {
         await flush();
 
         // Metering should have null database_id (stripped → undefined → null via ?? null)
-        const [, params] = mockQuery.mock.calls[0];
+        const insertCall = mockQuery.mock.calls.find(
+          ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+        );
+        const [, params] = insertCall!;
         expect(params[1]).toBeNull();  // database_id stripped
       } finally {
         await new Promise<void>((resolve) => server.close(() => resolve()));

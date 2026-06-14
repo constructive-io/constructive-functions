@@ -40,8 +40,13 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    expect(mockQuery).toHaveBeenCalledTimes(1);
-    const [sql] = mockQuery.mock.calls[0];
+    // 2 calls: 1 config resolution (metaschema) + 1 insert
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+    const insertCall = mockQuery.mock.calls.find(
+      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+    );
+    expect(insertCall).toBeDefined();
+    const [sql] = insertCall!;
     expect(sql).toContain('INSERT INTO');
     expect(sql).toContain('platform_usage_log_inferences');
   });
@@ -64,7 +69,10 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    const [sql, params] = mockQuery.mock.calls[0];
+    const insertCall = mockQuery.mock.calls.find(
+      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+    );
+    const [sql, params] = insertCall!;
     expect(sql).toContain('model');
     expect(sql).toContain('provider');
     expect(sql).toContain('input_tokens');
@@ -114,7 +122,10 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    const [, params] = mockQuery.mock.calls[0];
+    const insertCall = mockQuery.mock.calls.find(
+      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+    );
+    const [, params] = insertCall!;
     expect(params[5]).toBe('text-embedding-3-small'); // model
     expect(params[7]).toBe('embed');                   // service
     expect(params[8]).toBe('embeddings');               // operation
@@ -138,7 +149,10 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    const [, params] = mockQuery.mock.calls[0];
+    const insertCall = mockQuery.mock.calls.find(
+      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+    );
+    const [, params] = insertCall!;
     expect(params[13]).toBe('error');          // status
     expect(params[14]).toBe('upstream_429');   // error_type
   });
@@ -157,8 +171,12 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    expect(mockQuery).toHaveBeenCalledTimes(1);
-    const [, params] = mockQuery.mock.calls[0];
+    // 2 calls: 1 config resolution (metaschema) + 1 insert
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+    const insertCall = mockQuery.mock.calls.find(
+      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+    );
+    const [, params] = insertCall!;
     expect(params[1]).toBeNull(); // database_id
     expect(params[2]).toBeNull(); // entity_id
     expect(params[3]).toBeNull(); // actor_id
@@ -182,7 +200,8 @@ describe('logInferenceUsage', () => {
     }).not.toThrow();
 
     await flush();
-    expect(mockQuery).toHaveBeenCalledTimes(1);
+    // 2 calls: config resolution + insert (both reject, but no crash)
+    expect(mockQuery).toHaveBeenCalledTimes(2);
   });
 
   it('rounds latency_ms to nearest integer', async () => {
@@ -199,7 +218,10 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    const [, params] = mockQuery.mock.calls[0];
+    const insertCall = mockQuery.mock.calls.find(
+      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+    );
+    const [, params] = insertCall!;
     expect(params[12]).toBe(4); // Math.round(3.7)
   });
 
@@ -228,9 +250,13 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    expect(mockQuery).toHaveBeenCalledTimes(2);
-    const id1 = mockQuery.mock.calls[0][1][0];
-    const id2 = mockQuery.mock.calls[1][1][0];
+    // 3 calls: 1 config resolution (deduped via promise) + 2 inserts
+    const insertCalls = mockQuery.mock.calls.filter(
+      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+    );
+    expect(insertCalls.length).toBe(2);
+    const id1 = insertCalls[0][1][0];
+    const id2 = insertCalls[1][1][0];
     expect(id1).not.toBe(id2);
   });
 
@@ -249,7 +275,10 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    const [, params] = mockQuery.mock.calls[0];
+    const insertCall = mockQuery.mock.calls.find(
+      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+    );
+    const [, params] = insertCall!;
     expect(params[4]).toBe('req-custom-123'); // request_id
   });
 
@@ -267,7 +296,10 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    const [, params] = mockQuery.mock.calls[0];
+    const insertCall = mockQuery.mock.calls.find(
+      ([sql]: [string]) => sql.includes('platform_usage_log_inferences')
+    );
+    const [, params] = insertCall!;
     expect(params[15]).toBeNull(); // raw_usage
   });
 });
