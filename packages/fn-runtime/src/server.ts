@@ -1,12 +1,16 @@
 import { createJobApp } from '@constructive-io/knative-job-fn';
 import type { FunctionHandler, ServerOptions } from '@constructive-io/fn-types';
 import { buildContext } from './context';
+import { createMeterCallback } from './storage';
 
 export const createFunctionServer = (
   handler: FunctionHandler<any, any>,
   options: ServerOptions = {}
 ) => {
   const app = createJobApp();
+
+  // Build a shared metering callback once (lazily creates pg Pool on first use)
+  const onStorageMeter = createMeterCallback();
 
   app.post('/', async (req: any, res: any, next: any) => {
     try {
@@ -18,7 +22,7 @@ export const createFunctionServer = (
           workerId: req.get('X-Worker-Id') || req.get('x-worker-id'),
           jobId: req.get('X-Job-Id') || req.get('x-job-id')
         },
-        { name: options.name }
+        { name: options.name, onStorageMeter }
       );
 
       const params = req.body || {};

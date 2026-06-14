@@ -537,6 +537,9 @@ importers:
 
   packages/fn-runtime:
     dependencies:
+      '@aws-sdk/client-s3':
+        specifier: ^3.1066.0
+        version: 3.1066.0
       '@constructive-io/fn-types':
         specifier: workspace:^
         version: link:../fn-types
