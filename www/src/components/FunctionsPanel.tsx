@@ -30,7 +30,10 @@ export function FunctionsPanel({ onNavigate }: { onNavigate?: (tab: Tab) => void
     selection: { fields: FUNCTION_FIELDS },
   });
 
-  const functions = data?.platformFunctionDefinitions?.nodes ?? [];
+  const allFunctions = data?.platformFunctionDefinitions?.nodes ?? [];
+  // Only show cloud functions (those with a serviceUrl) — native/inline
+  // functions are internal graph building blocks, not user-triggerable.
+  const functions = allFunctions.filter((fn) => fn.serviceUrl);
   const loading = isLoading || isFetching;
 
   return (
