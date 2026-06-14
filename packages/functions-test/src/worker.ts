@@ -162,7 +162,7 @@ export async function createTestWorker(
     // 0. Mark node as running in node_states (queued → running)
     if (graphNode) {
       await pool.query(
-        `UPDATE constructive_compute_private.platform_function_graph_execution_node_states
+        `UPDATE constructive_compute_public.platform_function_graph_execution_node_states
          SET status = 'running', started_at = now()
          WHERE execution_id = $1::uuid AND node_name = $2 AND status = 'queued'`,
         [payload.execution_id, payload.node_name]
@@ -348,7 +348,7 @@ export async function createTestWorker(
       // Check execution status after processing wave
       const { rows: [exec] } = await pgClient.query(
         `SELECT status, output_payload, error_message
-         FROM constructive_compute_private.platform_function_graph_executions
+         FROM constructive_compute_public.platform_function_graph_executions
          WHERE id = $1`,
         [executionId]
       );
@@ -368,7 +368,7 @@ export async function createTestWorker(
     // If we exhaust waves, check final status
     const { rows: [finalExec] } = await pgClient.query(
       `SELECT status, output_payload, error_message
-       FROM constructive_compute_private.platform_function_graph_executions
+       FROM constructive_compute_public.platform_function_graph_executions
        WHERE id = $1`,
       [executionId]
     );

@@ -563,19 +563,49 @@ async function pollExecutionStatus(executionId: string): Promise<{
   output?: unknown;
   error?: string;
 }> {
-  // Query node_states directly — this catches all states including 'queued'
-  const nsRes = await fetch(`/api/execution/${executionId}/node-states`);
-  const nsRows: Array<{
+  const endpoint = '/graphql/compute';
+
+  // Query node_states via GraphQL (table is now in public schema)
+  let nsRows: Array<{
     node_name: string;
     status: string;
     node_path: string[] | null;
     started_at: string | null;
     completed_at: string | null;
     duration_ms: number | null;
-  }> = nsRes.ok ? await nsRes.json() : [];
+  }> = [];
+  try {
+    const nsData = await gqlFetch(endpoint, `
+      query ($where: PlatformFunctionGraphExecutionNodeStateFilter) {
+        platformFunctionGraphExecutionNodeStates(where: $where, orderBy: CREATED_AT_ASC) {
+          nodes {
+            nodeName
+            status
+            nodePath
+            startedAt
+            completedAt
+          }
+        }
+      }
+    `, {
+      where: { executionId: { equalTo: executionId } },
+    });
+    const gqlNodes = nsData?.platformFunctionGraphExecutionNodeStates?.nodes ?? [];
+    nsRows = gqlNodes.map((n: any) => ({
+      node_name: n.nodeName,
+      status: n.status,
+      node_path: n.nodePath,
+      started_at: n.startedAt,
+      completed_at: n.completedAt,
+      duration_ms: n.startedAt
+        ? (new Date(n.completedAt || Date.now()).getTime() - new Date(n.startedAt).getTime())
+        : null,
+    }));
+  } catch {
+    // node_states query may fail if schema not yet available
+  }
 
   // Also query invocations for detailed payload/result data
-  const endpoint = '/graphql/compute';
   let invocationsArr: any[] = [];
   try {
     const invData = await gqlFetch(endpoint, `

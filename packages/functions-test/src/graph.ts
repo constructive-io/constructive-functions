@@ -127,7 +127,7 @@ export async function getExecution(
   executionId: string
 ): Promise<GraphExecution | null> {
   return client.oneOrNone<GraphExecution>(
-    `SELECT * FROM constructive_compute_private.platform_function_graph_executions WHERE id = $1`,
+    `SELECT * FROM constructive_compute_public.platform_function_graph_executions WHERE id = $1`,
     [executionId]
   );
 }
@@ -269,7 +269,7 @@ export async function getNodeStates(
   executionId: string
 ): Promise<NodeState[]> {
   const result = await client.query<NodeState>(
-    `SELECT * FROM constructive_compute_private.platform_function_graph_execution_node_states
+    `SELECT * FROM constructive_compute_public.platform_function_graph_execution_node_states
      WHERE execution_id = $1::uuid
      ORDER BY node_name`,
     [executionId]

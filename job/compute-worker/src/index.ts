@@ -631,7 +631,7 @@ export default class ComputeWorker {
   ): Promise<void> {
     log.debug('marking graph node running', { executionId, nodeName });
     await this.pgPool.query(
-      `UPDATE constructive_compute_private.platform_function_graph_execution_node_states
+      `UPDATE constructive_compute_public.platform_function_graph_execution_node_states
        SET status = 'running', started_at = now()
        WHERE execution_id = $1::uuid AND node_name = $2 AND status = 'queued'`,
       [executionId, nodeName]

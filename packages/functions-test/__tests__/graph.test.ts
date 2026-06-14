@@ -120,7 +120,7 @@ describe('graph infrastructure', () => {
     for (const t of ['platform_function_graph_executions', 'platform_function_graph_execution_outputs', 'platform_function_graph_execution_node_states']) {
       const row = await ctx.pg.oneOrNone(
         `SELECT 1 FROM information_schema.tables
-         WHERE table_schema = 'constructive_compute_private' AND table_name = $1`,
+         WHERE table_schema = 'constructive_compute_public' AND table_name = $1`,
         [t]
       );
       expect(row).toBeTruthy();

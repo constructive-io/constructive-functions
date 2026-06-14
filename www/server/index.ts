@@ -133,23 +133,7 @@ app.get('/api/secrets', async (_req, res) => {
   }
 });
 
-// ─── REST API — Execution Node States ────────────────────────────────────────
 
-app.get('/api/execution/:id/node-states', async (req, res) => {
-  try {
-    const executionId = req.params.id;
-    const result = await pool.query(`
-      SELECT node_name, status, node_path, started_at, completed_at,
-             EXTRACT(EPOCH FROM (COALESCE(completed_at, now()) - started_at)) * 1000 AS duration_ms
-      FROM constructive_compute_private.platform_function_graph_execution_node_states
-      WHERE execution_id = $1::uuid
-      ORDER BY created_at ASC
-    `, [executionId]);
-    res.json(result.rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // ─── .env helpers (must be declared before Secret Values endpoints) ────────
 
