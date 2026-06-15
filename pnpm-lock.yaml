@@ -211,6 +211,9 @@ importers:
       '@constructive-io/job-utils':
         specifier: ^2.5.4
         version: 2.5.4
+      '@constructive-io/module-loader':
+        specifier: workspace:^
+        version: link:../../packages/module-loader
       '@pgpmjs/logger':
         specifier: ^2.4.3
         version: 2.5.2
@@ -616,11 +619,20 @@ importers:
         specifier: ^5.8.3
         version: 5.9.3
 
-  packages/usage-loader:
+  packages/module-loader:
     dependencies:
       '@pgpmjs/logger':
         specifier: ^2.4.3
         version: 2.12.0
+      pg:
+        specifier: ^8.0.0
+        version: 8.21.0
+
+  packages/usage-loader:
+    dependencies:
+      '@constructive-io/module-loader':
+        specifier: workspace:^
+        version: link:../module-loader
       pg:
         specifier: ^8.0.0
         version: 8.21.0

@@ -1,0 +1,47 @@
+/**
+ * TtlCache — generic time-to-live cache.
+ *
+ * Used by all module loaders to cache MetaSchema-resolved configs.
+ * Entries expire after the configured TTL. Thread-safe for single-threaded
+ * Node.js (no concurrent writes to same key).
+ */
+
+interface CacheEntry<T> {
+  value: T;
+  expiresAt: number;
+}
+
+export class TtlCache<T> {
+  private store = new Map<string, CacheEntry<T>>();
+  private ttlMs: number;
+
+  constructor(ttlMs: number) {
+    this.ttlMs = ttlMs;
+  }
+
+  get(key: string): T | undefined {
+    const entry = this.store.get(key);
+    if (!entry) return undefined;
+    if (Date.now() > entry.expiresAt) {
+      this.store.delete(key);
+      return undefined;
+    }
+    return entry.value;
+  }
+
+  set(key: string, value: T): void {
+    this.store.set(key, { value, expiresAt: Date.now() + this.ttlMs });
+  }
+
+  delete(key: string): void {
+    this.store.delete(key);
+  }
+
+  clear(): void {
+    this.store.clear();
+  }
+
+  get size(): number {
+    return this.store.size;
+  }
+}

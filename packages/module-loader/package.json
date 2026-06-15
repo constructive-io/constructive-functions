@@ -1,7 +1,7 @@
 {
-  "name": "@constructive-io/usage-loader",
+  "name": "@constructive-io/module-loader",
   "version": "1.0.0",
-  "description": "Shared usage metering module loader — resolves table names from MetaSchema with TTL caching.",
+  "description": "Unified MetaSchema module loader — resolves compute, usage, and billing table/schema names with TTL caching. Multi-database (platform + tenant) aware.",
   "author": "Constructive <developers@constructive.io>",
   "license": "SEE LICENSE IN LICENSE",
   "main": "dist/index.js",
@@ -18,7 +18,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@constructive-io/module-loader": "workspace:^"
+    "@pgpmjs/logger": "^2.4.3"
   },
   "peerDependencies": {
     "pg": "^8.0.0"

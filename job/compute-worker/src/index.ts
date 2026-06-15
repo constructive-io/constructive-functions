@@ -15,6 +15,8 @@
 import poolManager from '@constructive-io/job-pg';
 import type { PgClientLike } from '@constructive-io/job-utils';
 import * as jobs from '@constructive-io/job-utils';
+import { ComputeModuleLoader } from '@constructive-io/module-loader';
+import type { GraphExecutionModuleConfig } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool, PoolClient } from 'pg';
 
@@ -23,7 +25,6 @@ import { ComputeLogTracker } from './compute-log';
 import { FunctionDiscovery } from './discovery';
 import { executeInline, getInlineImpl } from './inline';
 import { InvocationTracker } from './invocation';
-import { ComputeModuleLoader } from './module-loader';
 import { compute_request } from './req';
 import type { ComputeJobRow, ComputeWorkerOptions, PlatformFunctionDefinition } from './types';
 import { isGraphNodePayload } from './types';
@@ -53,6 +54,7 @@ export type {
   FunctionPortDefinition,
   FunctionRequirement,
   FunctionRuntime,
+  GraphExecutionModuleConfig,
   GraphNodePayload,
   InvocationModuleConfig,
   InvocationStatus,
@@ -623,6 +625,14 @@ export default class ComputeWorker {
   }
 
   /**
+   * Resolve graph execution module config (cached via ComputeModuleLoader).
+   */
+  private async graphConfig(): Promise<GraphExecutionModuleConfig> {
+    const config = await this.loader.load(this.platformDatabaseId);
+    return config.graphExecutionModule;
+  }
+
+  /**
    * Transition a node from queued → running when the worker picks up the job.
    */
   private async markNodeRunning(
@@ -630,8 +640,9 @@ export default class ComputeWorker {
     nodeName: string
   ): Promise<void> {
     log.debug('marking graph node running', { executionId, nodeName });
+    const ge = await this.graphConfig();
     await this.pgPool.query(
-      `UPDATE constructive_compute_public.platform_function_graph_execution_node_states
+      `UPDATE "${ge.publicSchema}"."${ge.nodeStatesTable}"
        SET status = 'running', started_at = now()
        WHERE execution_id = $1::uuid AND node_name = $2 AND status = 'queued'`,
       [executionId, nodeName]
@@ -649,8 +660,9 @@ export default class ComputeWorker {
     output: unknown
   ): Promise<void> {
     log.debug('completing graph node', { executionId, nodeName });
+    const ge = await this.graphConfig();
     await this.pgPool.query(
-      `SELECT constructive_compute_private.platform_complete_node($1::uuid, $2, $3::jsonb)`,
+      `SELECT "${ge.privateSchema}"."${ge.completeNodeFunction}"($1::uuid, $2, $3::jsonb)`,
       [executionId, nodeName, JSON.stringify(output ?? {})]
     );
   }
@@ -667,13 +679,12 @@ export default class ComputeWorker {
   ): Promise<void> {
     log.error('graph node failed', { executionId, nodeName, error: errorMessage });
     try {
+      const ge = await this.graphConfig();
       await this.pgPool.query(
-        `SELECT constructive_compute_private.platform_fail_node($1::uuid, $2, $3, $4)`,
+        `SELECT "${ge.privateSchema}"."${ge.failNodeFunction}"($1::uuid, $2, $3, $4)`,
         [executionId, nodeName, 'NODE_EXECUTION_FAILED', errorMessage]
       );
     } catch (err: any) {
-      // Execution may already be completed/failed (race with graphOutput).
-      // Log so the error is never invisible.
       log.warn('platform_fail_node raised; execution may already be finished', {
         executionId, nodeName, error: errorMessage, sqlError: err.message,
       });
