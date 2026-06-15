@@ -31,6 +31,8 @@ export function buildKnativeServiceSpec(
       name: string;
       namespace: string;
       resourceVersion?: string;
+      annotations?: Record<string, string>;
+      labels?: Record<string, string>;
     },
     spec: {
       template: {

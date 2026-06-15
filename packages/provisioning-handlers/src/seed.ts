@@ -191,14 +191,18 @@ export async function provision(opts: ProvisionSeedOptions): Promise<ProvisionSe
       result.functions.push({ name: fnName, namespace: namespaceName, serviceUrl, status: 'created' });
     } catch (err: unknown) {
       if (isConflict(err)) {
-        // GET the existing service to retrieve its resourceVersion (required for PUT)
+        // GET the existing service to retrieve metadata required for PUT
         const existing = await client.readServingKnativeDevV1NamespacedService({
           query: {},
           path: { name: fnName, namespace: namespaceName },
         });
-        const resourceVersion = existing?.metadata?.resourceVersion;
-        if (resourceVersion && serviceSpec.metadata) {
-          serviceSpec.metadata.resourceVersion = resourceVersion;
+        if (serviceSpec.metadata) {
+          serviceSpec.metadata.resourceVersion = existing?.metadata?.resourceVersion;
+          // Preserve Knative-managed annotations (e.g. serving.knative.dev/creator)
+          const existingAnnotations = (existing?.metadata?.annotations ?? {}) as Record<string, string>;
+          serviceSpec.metadata.annotations = { ...existingAnnotations, ...serviceSpec.metadata.annotations };
+          const existingLabels = (existing?.metadata?.labels ?? {}) as Record<string, string>;
+          serviceSpec.metadata.labels = { ...existingLabels, ...serviceSpec.metadata.labels };
         }
 
         const svc = await client.replaceServingKnativeDevV1NamespacedService({
