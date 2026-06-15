@@ -6,10 +6,9 @@
  * Gracefully no-ops if compute_log_module is not registered.
  */
 
+import type { ComputeModuleLoader } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
-
-import { ComputeModuleLoader } from './module-loader';
 
 const log = new Logger('compute:log-tracker');
 

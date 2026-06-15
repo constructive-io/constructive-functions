@@ -14,11 +14,11 @@
  *   3. `fail()` — updates to status='failed' with error + duration
  */
 
+import type { ComputeModuleLoader, InvocationModuleConfig } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
 
-import type { ComputeModuleLoader } from './module-loader';
-import type { CreateInvocationInput, InvocationModuleConfig } from './types';
+import type { CreateInvocationInput } from './types';
 
 const log = new Logger('compute:invocation');
 

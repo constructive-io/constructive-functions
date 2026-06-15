@@ -5,37 +5,48 @@
  * call the corresponding SQL procedures to store outputs and advance
  * the execution graph to the next tick.
  *
- * This is the shared completion path for BOTH inline (FBP native) and
- * cloud function invocations — the graph engine sees no difference.
+ * Schema/function names are resolved dynamically via ModuleLoader
+ * (graph_execution_module) instead of hardcoding.
  */
+import { ComputeModuleLoader, DEFAULT_DATABASE_ID } from '@constructive-io/module-loader';
+import type { GraphExecutionModuleConfig } from '@constructive-io/module-loader';
 import type { Pool } from 'pg';
+
+let _loader: ComputeModuleLoader | null = null;
+let _pool: Pool | null = null;
+
+function getLoader(pool: Pool): ComputeModuleLoader {
+  if (_loader && _pool === pool) return _loader;
+  _loader = new ComputeModuleLoader(pool);
+  _pool = pool;
+  return _loader;
+}
+
+async function resolveGraph(pool: Pool): Promise<GraphExecutionModuleConfig> {
+  const config = await getLoader(pool).load(DEFAULT_DATABASE_ID);
+  return config.graphExecutionModule;
+}
 
 /**
  * Mark a graph node as completed with its output data.
- * Calls `constructive_compute_private.platform_complete_node` which:
- *   1. Stores the output in execution_outputs (content-addressed)
- *   2. Updates node_outputs on the execution
- *   3. Sets node_state to 'completed'
- *   4. Calls tick_execution to advance the graph
+ * Resolves the complete_node function from MetaSchema.
  */
 export const completeNode = async (
   pool: Pool,
   executionId: string,
   nodeName: string,
-  outputData: Record<string, any>
+  outputData: Record<string, unknown>
 ): Promise<void> => {
+  const ge = await resolveGraph(pool);
   await pool.query(
-    `SELECT "constructive_compute_private".platform_complete_node($1::uuid, $2::text, $3::jsonb)`,
+    `SELECT "${ge.privateSchema}"."${ge.completeNodeFunction}"($1::uuid, $2::text, $3::jsonb)`,
     [executionId, nodeName, JSON.stringify(outputData)]
   );
 };
 
 /**
  * Mark a graph node as failed with an error message.
- * Calls `constructive_compute_private.platform_fail_node` which:
- *   1. Sets node_state to 'failed'
- *   2. Stores the error message
- *   3. Optionally fails the parent execution
+ * Resolves the fail_node function from MetaSchema.
  */
 export const failNode = async (
   pool: Pool,
@@ -43,8 +54,15 @@ export const failNode = async (
   nodeName: string,
   errorMessage: string
 ): Promise<void> => {
+  const ge = await resolveGraph(pool);
   await pool.query(
-    `SELECT "constructive_compute_private".platform_fail_node($1::uuid, $2::text, $3::text)`,
+    `SELECT "${ge.privateSchema}"."${ge.failNodeFunction}"($1::uuid, $2::text, $3::text)`,
     [executionId, nodeName, errorMessage]
   );
 };
+
+/** Reset loader cache (for testing). */
+export function _resetGraphCompleteCache(): void {
+  _loader = null;
+  _pool = null;
+}

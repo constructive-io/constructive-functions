@@ -1,5 +1,15 @@
 import type { Pool } from 'pg';
 
+// Re-export module config types from the shared package
+export type {
+  BillingModuleConfig,
+  ComputeLogModuleConfig,
+  ComputeModuleConfig,
+  FunctionModuleConfig,
+  GraphExecutionModuleConfig,
+  InvocationModuleConfig,
+} from '@constructive-io/module-loader';
+
 // ─── Platform Function Definition ────────────────────────────────────────────
 
 export interface FunctionRequirement {
@@ -34,37 +44,6 @@ export interface PlatformFunctionDefinition {
   runtime: FunctionRuntime | null;
   inputs: FunctionPortDefinition[] | null;
   outputs: FunctionPortDefinition[] | null;
-}
-
-// ─── Compute Module Config ────────────────────────────────────────────────────
-
-export interface FunctionModuleConfig {
-  publicSchema: string;
-  privateSchema: string;
-  definitionsTable: string;
-  secretDefinitionsTable: string;
-  scope: string;
-}
-
-export interface InvocationModuleConfig {
-  publicSchema: string;
-  invocationsTable: string;
-  executionLogsTable: string;
-  scope: string;
-}
-
-export interface ComputeLogModuleConfig {
-  publicSchema: string;
-  privateSchema: string;
-  computeLogTable: string;
-  usageDailyTable: string;
-  scope: string;
-}
-
-export interface ComputeModuleConfig {
-  functionModule: FunctionModuleConfig | null;
-  invocationModules: InvocationModuleConfig[];
-  computeLogModule: ComputeLogModuleConfig | null;
 }
 
 // ─── Invocation Record ───────────────────────────────────────────────────────
@@ -108,10 +87,6 @@ export interface ComputeJobRow {
 
 // ─── Graph Execution ─────────────────────────────────────────────────────────
 
-/**
- * When a job is enqueued by tick_execution for a graph node,
- * its payload includes these fields alongside the node's assembled inputs.
- */
 export interface GraphNodePayload {
   execution_id: string;
   node_name: string;
@@ -121,9 +96,6 @@ export interface GraphNodePayload {
   node_path?: string[];
 }
 
-/**
- * Type guard: does this payload represent a graph node dispatch?
- */
 export function isGraphNodePayload(payload: unknown): payload is GraphNodePayload {
   if (!payload || typeof payload !== 'object') return false;
   const p = payload as Record<string, unknown>;
@@ -135,14 +107,8 @@ export function isGraphNodePayload(payload: unknown): payload is GraphNodePayloa
 
 // ─── Billing ──────────────────────────────────────────────────────────────────
 
-export interface BillingModuleConfig {
-  publicSchema: string;
-  privateSchema: string;
-  recordUsageFunction: string;
-}
-
 export interface BillingContext {
-  config: BillingModuleConfig;
+  config: import('@constructive-io/module-loader').BillingModuleConfig;
   entityId: string;
   meterSlug: string;
 }

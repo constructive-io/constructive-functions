@@ -8,11 +8,11 @@
  * fetches the function definition and caches it for `ttlMs` (default 60 s).
  */
 
+import { TtlCache } from '@constructive-io/module-loader';
+import type { ComputeModuleLoader } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
 
-import { TtlCache } from './cache';
-import type { ComputeModuleLoader } from './module-loader';
 import type { PlatformFunctionDefinition } from './types';
 
 const log = new Logger('compute:discovery');

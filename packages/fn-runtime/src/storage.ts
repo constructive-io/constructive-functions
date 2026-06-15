@@ -5,10 +5,7 @@ import {
   PutObjectCommand,
   DeleteObjectCommand
 } from '@aws-sdk/client-s3';
-import { Logger } from '@pgpmjs/logger';
-import { randomUUID } from 'crypto';
-
-const meterLog = new Logger('storage-meter');
+import { UsageLoader } from '@constructive-io/usage-loader';
 
 export type StorageMeterCallback = (info: {
   databaseId?: string;
@@ -22,9 +19,10 @@ export type StorageMeterCallback = (info: {
 }) => void;
 
 /**
- * Create a fire-and-forget storage metering callback backed by pg.
+ * Create a fire-and-forget storage metering callback backed by UsageLoader.
  *
  * Lazily creates a pg Pool from standard PG* env vars on first invocation.
+ * Resolves table names dynamically from MetaSchema (scope-aware).
  * Returns undefined if PGHOST/DATABASE_URL is not set (metering disabled).
  */
 export const createMeterCallback = (): StorageMeterCallback | undefined => {
@@ -32,38 +30,27 @@ export const createMeterCallback = (): StorageMeterCallback | undefined => {
   if (!env.PGHOST && !env.DATABASE_URL) return undefined;
 
   let pool: import('pg').Pool | undefined;
+  let loader: UsageLoader | undefined;
 
-  const getPool = (): import('pg').Pool => {
-    if (pool) return pool;
+  const getLoader = (): UsageLoader => {
+    if (loader) return loader;
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { Pool } = require('pg') as typeof import('pg');
     pool = new Pool({ max: 2 });
-    return pool;
+    loader = new UsageLoader(pool);
+    return loader;
   };
 
   return (info) => {
-    const p = getPool();
-    const id = randomUUID();
-    const now = new Date();
-    p.query(
-      `INSERT INTO "constructive_usage_public".platform_usage_log_storage
-       (id, database_id, entity_id, actor_id, operation,
-        bucket, key, size_bytes, duration_ms, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [
-        id,
-        info.databaseId ?? null,
-        info.entityId ?? null,
-        info.actorId ?? null,
-        info.operation,
-        info.bucket,
-        info.key,
-        info.sizeBytes,
-        Math.round(info.durationMs),
-        now
-      ]
-    ).catch((err: unknown) => {
-      meterLog.warn(`storage log failed (non-fatal): ${err instanceof Error ? err.message : String(err)}`);
+    getLoader().logStorageUsage({
+      databaseId: info.databaseId,
+      entityId: info.entityId,
+      actorId: info.actorId,
+      operation: info.operation,
+      bucket: info.bucket,
+      key: info.key,
+      sizeBytes: info.sizeBytes,
+      durationMs: info.durationMs
     });
   };
 };

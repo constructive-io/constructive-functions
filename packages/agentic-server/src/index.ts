@@ -15,4 +15,4 @@ export { createAgenticServer } from './server';
 export { createRouter } from './router';
 export { logInferenceUsage } from './inference-meter';
 export type { InferenceEntry } from './inference-meter';
-export type { AgenticRouterOptions } from './router';
+export type { AgenticRouterOptions, ProviderConfig } from './router';
