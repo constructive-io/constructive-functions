@@ -8,8 +8,8 @@
  * Schema/function names are resolved dynamically via ModuleLoader
  * (graph_execution_module) instead of hardcoding.
  */
-import { ComputeModuleLoader, DEFAULT_DATABASE_ID } from '@constructive-io/module-loader';
 import type { GraphExecutionModuleConfig } from '@constructive-io/module-loader';
+import { ComputeModuleLoader, DEFAULT_DATABASE_ID } from '@constructive-io/module-loader';
 import type { Pool } from 'pg';
 
 let _loader: ComputeModuleLoader | null = null;
