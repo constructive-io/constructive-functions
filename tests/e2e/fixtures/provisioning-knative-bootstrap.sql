@@ -68,6 +68,7 @@ CREATE TABLE constructive_compute_public.platform_function_definitions (
   concurrency INT DEFAULT 0,
   scale_min INT DEFAULT 0,
   scale_max INT DEFAULT 10,
+  scale_target INT DEFAULT 0,
   timeout_seconds INT DEFAULT 300,
   resources JSONB DEFAULT '{}',
   namespace_id UUID REFERENCES metaschema_public.namespace(id)
