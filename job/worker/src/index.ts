@@ -353,5 +353,5 @@ export default class Worker {
 }
 
 export { Worker };
-export type { InferenceEntry, MeterEntry, UsageModuleConfig } from './usage-client';
-export { createUsageClient,UsageClient } from './usage-client';
+export type { InferenceEntry, MeterEntry, StorageEntry, UsageModuleConfig, UsageTableConfig } from './usage-client';
+export { UsageClient, UsageLoader, getLoader, _resetLoaderCache } from './usage-client';

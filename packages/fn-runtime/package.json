@@ -21,6 +21,7 @@
     "@aws-sdk/client-s3": "^3.1066.0",
     "@constructive-io/fn-types": "workspace:^",
     "@constructive-io/knative-job-fn": "workspace:^",
+    "@constructive-io/usage-loader": "workspace:^",
     "@pgpmjs/logger": "^2.4.3",
     "graphql-request": "^7.1.2"
   },

@@ -1,30 +1,28 @@
 /**
  * Storage metering — fire-and-forget usage logging for S3/MinIO operations.
  *
- * Delegates to UsageClient which resolves table names dynamically from
- * MetaSchema module registration tables. Schema-qualified references
- * are discovered at runtime, not hardcoded.
+ * Delegates to @constructive-io/usage-loader which resolves table names
+ * dynamically from MetaSchema module registration tables.
  *
  * All writes are non-blocking: errors are logged and swallowed so
  * metering never affects function execution or storage latency.
  */
 
 import type { Pool } from 'pg';
-
-import type { StorageEntry } from './usage-client';
-import { UsageClient } from './usage-client';
+import { UsageLoader } from '@constructive-io/usage-loader';
+import type { StorageEntry } from '@constructive-io/usage-loader';
 
 export type { StorageEntry };
 
-/** Module-level client cache — reused across calls within the same pool. */
-let _client: UsageClient | null = null;
+/** Module-level loader cache — reused across calls within the same pool. */
+let _loader: UsageLoader | null = null;
 let _pool: Pool | null = null;
 
-function getOrCreateClient(pool: Pool): UsageClient {
-  if (_client && _pool === pool) return _client;
-  _client = new UsageClient(pool);
+function getOrCreateLoader(pool: Pool): UsageLoader {
+  if (_loader && _pool === pool) return _loader;
+  _loader = new UsageLoader(pool);
   _pool = pool;
-  return _client;
+  return _loader;
 }
 
 /**
@@ -32,5 +30,5 @@ function getOrCreateClient(pool: Pool): UsageClient {
  * Fire-and-forget: returns immediately, never throws.
  */
 export function logStorageUsage(pool: Pool, entry: StorageEntry): void {
-  getOrCreateClient(pool).logStorageUsage(entry);
+  getOrCreateLoader(pool).logStorageUsage(entry);
 }

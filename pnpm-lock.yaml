@@ -331,6 +331,9 @@ importers:
       '@constructive-io/job-utils':
         specifier: ^2.5.4
         version: 2.5.4
+      '@constructive-io/usage-loader':
+        specifier: workspace:^
+        version: link:../../packages/usage-loader
       '@pgpmjs/logger':
         specifier: ^2.4.3
         version: 2.5.2
@@ -353,6 +356,9 @@ importers:
 
   packages/agentic-server:
     dependencies:
+      '@constructive-io/usage-loader':
+        specifier: workspace:^
+        version: link:../usage-loader
       '@pgpmjs/logger':
         specifier: ^2.4.3
         version: 2.12.0
@@ -546,6 +552,9 @@ importers:
       '@constructive-io/knative-job-fn':
         specifier: workspace:^
         version: link:../fn-app
+      '@constructive-io/usage-loader':
+        specifier: workspace:^
+        version: link:../usage-loader
       '@pgpmjs/logger':
         specifier: ^2.4.3
         version: 2.5.2
@@ -606,6 +615,15 @@ importers:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
+
+  packages/usage-loader:
+    dependencies:
+      '@pgpmjs/logger':
+        specifier: ^2.4.3
+        version: 2.12.0
+      pg:
+        specifier: ^8.0.0
+        version: 8.21.0
 
   sdk/constructive-functions-cli:
     dependencies:
