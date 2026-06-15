@@ -66,6 +66,19 @@ export type StorageContext = {
   delete(bucket: string, key: string): Promise<void>;
 };
 
+// ─── Resource Types ───────────────────────────────────────────────────────
+
+export type NamespaceInfo = {
+  name: string;
+  globalName: string;
+  id: string;
+};
+
+export type BucketHandle = {
+  name: string;
+  region?: string;
+};
+
 // ─── Function Context ─────────────────────────────────────────────────────
 
 export type FunctionContext = {
@@ -86,6 +99,15 @@ export type FunctionContext = {
   storage: StorageContext;
   log: FunctionLogger;
   env: Record<string, string | undefined>;
+
+  /** Resolved namespace info (populated when namespace_name is set on the function definition) */
+  namespace?: NamespaceInfo;
+
+  /** Scoped bucket handles (only declared buckets from required_buckets) */
+  buckets?: Record<string, BucketHandle>;
+
+  /** Bound API clients (from function_api_bindings) */
+  apis?: Record<string, GraphQLClient>;
 };
 
 export type ServerOptions = {

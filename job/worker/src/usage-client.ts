@@ -5,18 +5,17 @@
  * This file exists so existing imports from within job/worker/ continue working.
  */
 
-export {
-  UsageLoader as UsageClient,
-  UsageLoader,
-  getModuleLoader as getLoader,
-  _resetModuleLoaderCache as _resetLoaderCache,
-  USAGE_DEFAULTS as DEFAULTS,
-} from '@constructive-io/module-loader';
-
 export type {
+  InferenceEntry,
+  MeterEntry,
+  StorageEntry,
   UsageTableConfig as UsageModuleConfig,
   UsageTableConfig,
-  MeterEntry,
-  InferenceEntry,
-  StorageEntry,
+} from '@constructive-io/module-loader';
+export {
+  _resetModuleLoaderCache as _resetLoaderCache,
+  USAGE_DEFAULTS as DEFAULTS,
+  getModuleLoader as getLoader,
+  UsageLoader as UsageClient,
+  UsageLoader,
 } from '@constructive-io/module-loader';

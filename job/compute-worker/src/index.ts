@@ -15,8 +15,8 @@
 import poolManager from '@constructive-io/job-pg';
 import type { PgClientLike } from '@constructive-io/job-utils';
 import * as jobs from '@constructive-io/job-utils';
-import { ComputeModuleLoader } from '@constructive-io/module-loader';
 import type { GraphExecutionModuleConfig } from '@constructive-io/module-loader';
+import { ComputeModuleLoader, SecretsLoader } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool, PoolClient } from 'pg';
 
@@ -79,6 +79,7 @@ export default class ComputeWorker {
   readonly tracker: InvocationTracker;
   readonly billing: BillingTracker;
   readonly computeLog: ComputeLogTracker;
+  readonly secrets: SecretsLoader;
 
   private callbackUrl?: string;
   private gatewayUrl?: string;
@@ -95,6 +96,7 @@ export default class ComputeWorker {
     this.tracker = new InvocationTracker(this.pgPool, this.loader, this.platformDatabaseId);
     this.billing = new BillingTracker(this.pgPool, this.platformDatabaseId, opts.cacheTtlMs);
     this.computeLog = new ComputeLogTracker(this.pgPool, this.loader, this.platformDatabaseId);
+    this.secrets = new SecretsLoader(this.pgPool, this.platformDatabaseId, opts.cacheTtlMs);
 
     this.callbackUrl = process.env.COMPUTE_CALLBACK_URL
       || process.env.INTERNAL_JOBS_CALLBACK_URL;
@@ -278,6 +280,58 @@ export default class ComputeWorker {
     }
   }
 
+  // ─── Secret resolution ──────────────────────────────────────────────
+
+  /**
+   * Resolve required_secrets and required_configs from the config_secrets_module
+   * and inject them into process.env before dispatch.
+   *
+   * Secrets are looked up by name within the function's namespace scope.
+   * Only declared secrets/configs are resolved — no wildcard injection.
+   */
+  private async resolveAndInjectSecrets(
+    fn: PlatformFunctionDefinition,
+    databaseId?: string
+  ): Promise<void> {
+    const secretNames = (fn.required_secrets ?? []).map(s => s.name);
+    const configNames = (fn.required_configs ?? []).map(c => c.name);
+    const allNames = [...secretNames, ...configNames];
+
+    if (allNames.length === 0) return;
+
+    const dbId = databaseId || this.platformDatabaseId;
+    // namespace_id may be present on the function definition; we pass undefined
+    // for global-scoped functions (secrets stored without a namespace)
+    const namespaceName = fn.namespace_id ?? undefined;
+
+    const resolved = await this.secrets.resolveSecrets(allNames, namespaceName, dbId);
+
+    let injected = 0;
+    for (const secret of resolved) {
+      if (secret.value !== undefined && secret.value !== null) {
+        process.env[secret.name] = secret.value;
+        injected++;
+      }
+    }
+
+    if (injected > 0) {
+      log.info(`injected ${injected} secret(s) for function "${fn.name}"`);
+    }
+
+    // Log warnings for missing required secrets
+    const resolvedNames = new Set(resolved.map(s => s.name));
+    for (const req of fn.required_secrets ?? []) {
+      if (req.required && !resolvedNames.has(req.name)) {
+        log.warn(`missing required secret "${req.name}" for function "${fn.name}"`);
+      }
+    }
+    for (const req of fn.required_configs ?? []) {
+      if (req.required && !resolvedNames.has(req.name)) {
+        log.warn(`missing required config "${req.name}" for function "${fn.name}"`);
+      }
+    }
+  }
+
   // ─── Work dispatch ───────────────────────────────────────────────────
 
   async doWork(job: ComputeJobRow): Promise<void> {
@@ -316,6 +370,10 @@ export default class ComputeWorker {
     if (graphNode) {
       await this.markNodeRunning(payload.execution_id, payload.node_name);
     }
+
+    // Resolve required_secrets and required_configs from the secrets module
+    // and inject them into process.env before dispatch
+    await this.resolveAndInjectSecrets(fn, job.database_id);
 
     // Determine dispatch mode: inline (in-process) vs HTTP
     const isInline = fn.runtime === 'inline' || getInlineImpl(functionName) !== null;

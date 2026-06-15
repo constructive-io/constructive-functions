@@ -4,36 +4,28 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { OrmClient } from '../client';
+import type {
+  CreateGetAllRecordInput,
+  GetAllRecordFilter,
+  GetAllRecordSelect,
+  GetAllRecordsOrderBy,
+  GetAllRecordWithRelations,
+} from '../input-types';
+import { connectionFieldsMap } from '../input-types';
 import {
-  QueryBuilder,
-  buildFindManyDocument,
-  buildFindFirstDocument,
-  buildFindOneDocument,
   buildCreateDocument,
-  buildUpdateByPkDocument,
-  buildDeleteByPkDocument,
+  buildFindFirstDocument,
+  buildFindManyDocument,
+  QueryBuilder,
 } from '../query-builder';
 import type {
   ConnectionResult,
-  FindManyArgs,
-  FindFirstArgs,
   CreateArgs,
-  UpdateArgs,
-  DeleteArgs,
+  FindFirstArgs,
+  FindManyArgs,
   InferSelectResult,
   StrictSelect,
 } from '../select-types';
-import type {
-  GetAllRecord,
-  GetAllRecordWithRelations,
-  GetAllRecordSelect,
-  GetAllRecordFilter,
-  GetAllRecordsOrderBy,
-  CreateGetAllRecordInput,
-  UpdateGetAllRecordInput,
-  GetAllRecordPatch,
-} from '../input-types';
-import { connectionFieldsMap } from '../input-types';
 export class GetAllRecordModel {
   constructor(private client: OrmClient) {}
   findMany<S extends GetAllRecordSelect>(

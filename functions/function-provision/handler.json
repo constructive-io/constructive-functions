@@ -1,0 +1,67 @@
+{
+  "name": "function-provision",
+  "version": "0.1.0",
+  "type": "node-graphql",
+  "port": 8091,
+  "taskIdentifier": "function-provision",
+  "scope": "platform",
+  "description": "Provisions a cloud function — validates service_url or generates gateway URL, validates required secrets exist in the function's namespace",
+  "requiredSecrets": [],
+  "requiredConfigs": [],
+  "payloadSchema": {
+    "type": "object",
+    "required": ["function_id"],
+    "properties": {
+      "function_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "UUID of the function definition to provision"
+      },
+      "name": {
+        "type": "string",
+        "description": "Function name / task_identifier"
+      },
+      "service_url": {
+        "type": "string",
+        "description": "Explicit service URL (if already known)"
+      },
+      "namespace_name": {
+        "type": "string",
+        "description": "Namespace the function belongs to"
+      },
+      "required_secrets": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "required": { "type": "boolean" }
+          }
+        },
+        "description": "Secrets this function requires"
+      },
+      "database_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Database ID for the owning tenant/platform"
+      }
+    },
+    "additionalProperties": true
+  },
+  "inputs": [
+    { "name": "function_id", "type": "string", "description": "UUID of the function definition" },
+    { "name": "name", "type": "string", "description": "Function name", "optional": true },
+    { "name": "service_url", "type": "string", "description": "Explicit service URL", "optional": true },
+    { "name": "namespace_name", "type": "string", "description": "Namespace name", "optional": true },
+    { "name": "required_secrets", "type": "json", "description": "Required secrets array", "optional": true },
+    { "name": "database_id", "type": "string", "description": "Owning database ID", "optional": true }
+  ],
+  "outputs": [
+    { "name": "status", "type": "string", "description": "Provisioning result status" },
+    { "name": "service_url", "type": "string", "description": "Resolved service URL" },
+    { "name": "missing_secrets", "type": "json", "description": "List of missing required secrets (if any)" }
+  ],
+  "icon": "cloud",
+  "category": "infrastructure",
+  "dependencies": {}
+}

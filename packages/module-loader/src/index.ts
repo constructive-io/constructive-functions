@@ -23,18 +23,21 @@ export { ComputeModuleLoader } from './compute-loader';
 export type { ComputeModuleConfigExtended } from './compute-loader';
 export { UsageLoader, USAGE_DEFAULTS } from './usage-loader';
 export { BillingLoader } from './billing-loader';
+export { SecretsLoader } from './secrets-loader';
 
 // Types
 export type {
   BillingModuleConfig,
   ComputeLogModuleConfig,
   ComputeModuleConfig,
+  ConfigSecretsModuleConfig,
   FunctionModuleConfig,
   GraphExecutionModuleConfig,
   InferenceEntry,
   InvocationModuleConfig,
   MeterEntry,
   ModuleLoaderOptions,
+  ResolvedSecret,
   StorageEntry,
   UsageTableConfig,
 } from './types';

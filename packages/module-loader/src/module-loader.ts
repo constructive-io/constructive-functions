@@ -23,11 +23,14 @@ import type { Pool } from 'pg';
 import { BillingLoader } from './billing-loader';
 import { ComputeModuleLoader } from './compute-loader';
 import type { ComputeModuleConfigExtended } from './compute-loader';
+import { SecretsLoader } from './secrets-loader';
 import type {
   BillingModuleConfig,
+  ConfigSecretsModuleConfig,
   InferenceEntry,
   MeterEntry,
   ModuleLoaderOptions,
+  ResolvedSecret,
   StorageEntry,
   UsageTableConfig,
 } from './types';
@@ -38,6 +41,7 @@ export class ModuleLoader {
   readonly computeLoader: ComputeModuleLoader;
   readonly usageLoader: UsageLoader;
   readonly billingLoader: BillingLoader;
+  readonly secretsLoader: SecretsLoader;
 
   private pool: Pool;
   private defaultDatabaseId: string;
@@ -50,6 +54,7 @@ export class ModuleLoader {
     this.computeLoader = new ComputeModuleLoader(this.pool, ttl);
     this.usageLoader = new UsageLoader(this.pool, this.defaultDatabaseId, ttl);
     this.billingLoader = new BillingLoader(this.pool, this.defaultDatabaseId, ttl);
+    this.secretsLoader = new SecretsLoader(this.pool, this.defaultDatabaseId, ttl);
   }
 
   // ─── Compute Resolution ─────────────────────────────────────────────────
@@ -68,6 +73,20 @@ export class ModuleLoader {
 
   billing(databaseId?: string): Promise<BillingModuleConfig | null> {
     return this.billingLoader.load(databaseId);
+  }
+
+  // ─── Secrets Resolution ─────────────────────────────────────────────────
+
+  secrets(databaseId?: string): Promise<ConfigSecretsModuleConfig | null> {
+    return this.secretsLoader.load(databaseId);
+  }
+
+  resolveSecrets(
+    secretNames: string[],
+    namespaceName: string | undefined,
+    databaseId?: string
+  ): Promise<ResolvedSecret[]> {
+    return this.secretsLoader.resolveSecrets(secretNames, namespaceName, databaseId);
   }
 
   // ─── Fire-and-forget Metering ───────────────────────────────────────────
@@ -101,10 +120,12 @@ export class ModuleLoader {
       this.computeLoader.invalidate(databaseId);
       this.usageLoader.invalidate(databaseId);
       this.billingLoader.invalidate(databaseId);
+      this.secretsLoader.invalidate(databaseId);
     } else {
       this.computeLoader.invalidateAll();
       this.usageLoader.invalidate();
       this.billingLoader.invalidate();
+      this.secretsLoader.invalidate();
     }
   }
 }

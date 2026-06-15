@@ -4,14 +4,15 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
+import type { QueryClient,UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-import type { UseQueryOptions, UseQueryResult, QueryClient } from '@tanstack/react-query';
-import { getClient } from '../client';
-import { buildSelectionArgs } from '../selection';
-import type { SelectionConfig } from '../selection';
-import { roleTypeKeys } from '../query-keys';
+
 import type { RoleTypeSelect, RoleTypeWithRelations } from '../../orm/input-types';
-import type { InferSelectResult, HookStrictSelect } from '../../orm/select-types';
+import type { HookStrictSelect,InferSelectResult } from '../../orm/select-types';
+import { getClient } from '../client';
+import { roleTypeKeys } from '../query-keys';
+import type { SelectionConfig } from '../selection';
+import { buildSelectionArgs } from '../selection';
 export type { RoleTypeSelect, RoleTypeWithRelations } from '../../orm/input-types';
 /** Query key factory - re-exported from query-keys.ts */
 export const roleTypeQueryKey = roleTypeKeys.detail;

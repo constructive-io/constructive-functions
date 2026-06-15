@@ -8,9 +8,9 @@
  * metering never affects function execution or storage latency.
  */
 
-import type { Pool } from 'pg';
-import { UsageLoader } from '@constructive-io/module-loader';
 import type { StorageEntry } from '@constructive-io/module-loader';
+import { UsageLoader } from '@constructive-io/module-loader';
+import type { Pool } from 'pg';
 
 export type { StorageEntry };
 

@@ -1,0 +1,49 @@
+{
+  "name": "namespace-provision",
+  "version": "0.1.0",
+  "type": "node-graphql",
+  "port": 8090,
+  "taskIdentifier": "namespace-provision",
+  "scope": "platform",
+  "description": "Provisions a namespace for function isolation — validates namespace_name, logs provisioning event, inserts created event into namespace_events",
+  "requiredSecrets": [],
+  "requiredConfigs": [],
+  "payloadSchema": {
+    "type": "object",
+    "required": ["namespace_id", "namespace_name"],
+    "properties": {
+      "namespace_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "UUID of the namespace row to provision"
+      },
+      "namespace_name": {
+        "type": "string",
+        "description": "Short namespace name (e.g. 'email')"
+      },
+      "global_name": {
+        "type": "string",
+        "description": "K8s-safe global namespace name (e.g. 'abc123_email')"
+      },
+      "database_id": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Database ID for the owning tenant/platform"
+      }
+    },
+    "additionalProperties": true
+  },
+  "inputs": [
+    { "name": "namespace_id", "type": "string", "description": "UUID of the namespace row" },
+    { "name": "namespace_name", "type": "string", "description": "Short namespace name" },
+    { "name": "global_name", "type": "string", "description": "K8s-safe global namespace name", "optional": true },
+    { "name": "database_id", "type": "string", "description": "Owning database ID", "optional": true }
+  ],
+  "outputs": [
+    { "name": "status", "type": "string", "description": "Provisioning result status" },
+    { "name": "event_type", "type": "string", "description": "Event type inserted into namespace_events" }
+  ],
+  "icon": "box",
+  "category": "infrastructure",
+  "dependencies": {}
+}

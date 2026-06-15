@@ -12,12 +12,14 @@ export { toNodeDefinition } from './manifest';
 export type { FnRegistry, FnRegistryEntry } from './registry';
 export type {
   AgentContext,
+  BucketHandle,
   EmbedResult,
   FunctionContext,
   FunctionHandler,
   FunctionLogger,
   InferenceOptions,
   InferenceResult,
+  NamespaceInfo,
   ServerOptions,
   StorageContext
 } from './runtime';

@@ -4,18 +4,19 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
-import { getClient } from '../client';
-import { buildSelectionArgs } from '../selection';
-import type { SelectionConfig } from '../selection';
-import { platformNamespaceKeys } from '../query-keys';
-import { platformNamespaceMutationKeys } from '../mutation-keys';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import type {
   PlatformNamespaceSelect,
   PlatformNamespaceWithRelations,
 } from '../../orm/input-types';
-import type { InferSelectResult, HookStrictSelect } from '../../orm/select-types';
+import type { HookStrictSelect,InferSelectResult } from '../../orm/select-types';
+import { getClient } from '../client';
+import { platformNamespaceMutationKeys } from '../mutation-keys';
+import { platformNamespaceKeys } from '../query-keys';
+import type { SelectionConfig } from '../selection';
+import { buildSelectionArgs } from '../selection';
 export type {
   PlatformNamespaceSelect,
   PlatformNamespaceWithRelations,

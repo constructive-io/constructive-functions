@@ -8,9 +8,9 @@
  * metering never affects job throughput or latency.
  */
 
-import type { Pool } from 'pg';
-import { UsageLoader } from '@constructive-io/module-loader';
 import type { MeterEntry } from '@constructive-io/module-loader';
+import { UsageLoader } from '@constructive-io/module-loader';
+import type { Pool } from 'pg';
 
 export type { MeterEntry };
 

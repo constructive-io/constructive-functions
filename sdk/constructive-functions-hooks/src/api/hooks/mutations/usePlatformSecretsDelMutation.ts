@@ -4,20 +4,20 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import { useMutation } from '@tanstack/react-query';
 import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
-import { getClient } from '../client';
-import { buildSelectionArgs } from '../selection';
-import type { SelectionConfig } from '../selection';
-import { customMutationKeys } from '../mutation-keys';
-import type { PlatformSecretsDelVariables } from '../../orm/mutation';
+import { useMutation } from '@tanstack/react-query';
+
 import type {
-  PlatformSecretsDelPayloadSelect,
   PlatformSecretsDelPayload,
+  PlatformSecretsDelPayloadSelect,
 } from '../../orm/input-types';
-import type { InferSelectResult, HookStrictSelect, StrictSelect } from '../../orm/select-types';
-export type { PlatformSecretsDelVariables } from '../../orm/mutation';
+import type { PlatformSecretsDelVariables } from '../../orm/mutation';
+import type { HookStrictSelect, InferSelectResult, StrictSelect } from '../../orm/select-types';
+import { getClient } from '../client';
+import { customMutationKeys } from '../mutation-keys';
+import { buildSelectionArgs } from '../selection';
 export type { PlatformSecretsDelPayloadSelect } from '../../orm/input-types';
+export type { PlatformSecretsDelVariables } from '../../orm/mutation';
 export function usePlatformSecretsDelMutation<S extends PlatformSecretsDelPayloadSelect>(
   params: {
     selection: {

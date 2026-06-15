@@ -48,6 +48,20 @@ export interface UsageTableConfig {
   storageUsageTable: string;
 }
 
+// ─── Config Secrets Module ────────────────────────────────────────────────────
+
+export interface ConfigSecretsModuleConfig {
+  publicSchema: string;
+  privateSchema: string;
+  secretsTable: string;
+  scope: string;
+}
+
+export interface ResolvedSecret {
+  name: string;
+  value: string;
+}
+
 // ─── Billing Module ──────────────────────────────────────────────────────────
 
 export interface BillingModuleConfig {

@@ -5,7 +5,13 @@
  */
 
 import type {
+  BigIntFilter,
+  BooleanFilter,
+  DateFilter,
+  DatetimeFilter,
   GetAllRecord,
+  IntFilter,
+  JSONFilter,
   OrgFunctionExecutionLog,
   OrgFunctionInvocation,
   PlatformComputeLog,
@@ -22,23 +28,10 @@ import type {
   PlatformFunctionInvocation,
   PlatformSecretDefinition,
   PlatformUsageDaily,
-  BigFloatFilter,
-  BigIntFilter,
-  BitStringFilter,
-  BooleanFilter,
-  DateFilter,
-  DatetimeFilter,
-  FloatFilter,
-  FullTextFilter,
-  IntFilter,
-  IntListFilter,
-  InternetAddressFilter,
-  JSONFilter,
   StringFilter,
   StringListFilter,
   UUIDFilter,
   UUIDListFilter,
-  VectorFilter,
 } from './types';
 export type Base64EncodedBinary = unknown;
 /** Methods to use when ordering `PlatformFunctionGraphRef`. */

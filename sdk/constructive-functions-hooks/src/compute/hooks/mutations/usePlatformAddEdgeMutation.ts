@@ -4,17 +4,17 @@
  * DO NOT EDIT - changes will be overwritten
  */
 
-import { useMutation } from '@tanstack/react-query';
 import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
-import { getClient } from '../client';
-import { buildSelectionArgs } from '../selection';
-import type { SelectionConfig } from '../selection';
-import { customMutationKeys } from '../mutation-keys';
+import { useMutation } from '@tanstack/react-query';
+
+import type { PlatformAddEdgePayload,PlatformAddEdgePayloadSelect } from '../../orm/input-types';
 import type { PlatformAddEdgeVariables } from '../../orm/mutation';
-import type { PlatformAddEdgePayloadSelect, PlatformAddEdgePayload } from '../../orm/input-types';
-import type { InferSelectResult, HookStrictSelect, StrictSelect } from '../../orm/select-types';
-export type { PlatformAddEdgeVariables } from '../../orm/mutation';
+import type { HookStrictSelect, InferSelectResult, StrictSelect } from '../../orm/select-types';
+import { getClient } from '../client';
+import { customMutationKeys } from '../mutation-keys';
+import { buildSelectionArgs } from '../selection';
 export type { PlatformAddEdgePayloadSelect } from '../../orm/input-types';
+export type { PlatformAddEdgeVariables } from '../../orm/mutation';
 export function usePlatformAddEdgeMutation<S extends PlatformAddEdgePayloadSelect>(
   params: {
     selection: {

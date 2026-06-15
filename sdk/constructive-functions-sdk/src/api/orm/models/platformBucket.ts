@@ -4,36 +4,33 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { OrmClient } from '../client';
+import type {
+  CreatePlatformBucketInput,
+  PlatformBucketFilter,
+  PlatformBucketOrderBy,
+  PlatformBucketPatch,
+  PlatformBucketSelect,
+  PlatformBucketWithRelations,
+} from '../input-types';
+import { connectionFieldsMap } from '../input-types';
 import {
-  QueryBuilder,
-  buildFindManyDocument,
-  buildFindFirstDocument,
-  buildFindOneDocument,
   buildCreateDocument,
-  buildUpdateByPkDocument,
   buildDeleteByPkDocument,
+  buildFindFirstDocument,
+  buildFindManyDocument,
+  buildUpdateByPkDocument,
+  QueryBuilder,
 } from '../query-builder';
 import type {
   ConnectionResult,
-  FindManyArgs,
-  FindFirstArgs,
   CreateArgs,
-  UpdateArgs,
   DeleteArgs,
+  FindFirstArgs,
+  FindManyArgs,
   InferSelectResult,
   StrictSelect,
+  UpdateArgs,
 } from '../select-types';
-import type {
-  PlatformBucket,
-  PlatformBucketWithRelations,
-  PlatformBucketSelect,
-  PlatformBucketFilter,
-  PlatformBucketOrderBy,
-  CreatePlatformBucketInput,
-  UpdatePlatformBucketInput,
-  PlatformBucketPatch,
-} from '../input-types';
-import { connectionFieldsMap } from '../input-types';
 export class PlatformBucketModel {
   constructor(private client: OrmClient) {}
   findMany<S extends PlatformBucketSelect>(
