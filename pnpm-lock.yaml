@@ -334,6 +334,9 @@ importers:
       '@constructive-io/job-utils':
         specifier: ^2.5.4
         version: 2.5.4
+      '@constructive-io/module-loader':
+        specifier: workspace:^
+        version: link:../../packages/module-loader
       '@constructive-io/usage-loader':
         specifier: workspace:^
         version: link:../../packages/usage-loader

@@ -13,7 +13,7 @@ import {
   isGraphJob,
   extractNodeProps
 } from '../../job/worker/src/inline-nodes';
-import { completeNode, failNode } from '../../job/worker/src/graph-complete';
+import { completeNode, failNode, _resetGraphCompleteCache } from '../../job/worker/src/graph-complete';
 
 // ---------------------------------------------------------------------------
 // 1. Inline node registry
@@ -215,6 +215,8 @@ describe('extractNodeProps', () => {
 // ---------------------------------------------------------------------------
 
 describe('completeNode', () => {
+  beforeEach(() => _resetGraphCompleteCache());
+
   it('calls platform_complete_node SQL with correct args', async () => {
     const mockQuery = jest.fn().mockResolvedValue({ rows: [] });
     const mockPool = { query: mockQuery } as any;
@@ -226,8 +228,9 @@ describe('completeNode', () => {
       { sum: 10 }
     );
 
-    expect(mockQuery).toHaveBeenCalledTimes(1);
-    const [sql, params] = mockQuery.mock.calls[0];
+    // Last call is the actual complete_node; earlier calls are MetaSchema resolution
+    const lastCall = mockQuery.mock.calls[mockQuery.mock.calls.length - 1];
+    const [sql, params] = lastCall;
     expect(sql).toContain('platform_complete_node');
     expect(params).toEqual([
       'exec-uuid-123',
@@ -238,6 +241,8 @@ describe('completeNode', () => {
 });
 
 describe('failNode', () => {
+  beforeEach(() => _resetGraphCompleteCache());
+
   it('calls platform_fail_node SQL with correct args', async () => {
     const mockQuery = jest.fn().mockResolvedValue({ rows: [] });
     const mockPool = { query: mockQuery } as any;
@@ -249,8 +254,9 @@ describe('failNode', () => {
       'impl threw an error'
     );
 
-    expect(mockQuery).toHaveBeenCalledTimes(1);
-    const [sql, params] = mockQuery.mock.calls[0];
+    // Last call is the actual fail_node; earlier calls are MetaSchema resolution
+    const lastCall = mockQuery.mock.calls[mockQuery.mock.calls.length - 1];
+    const [sql, params] = lastCall;
     expect(sql).toContain('platform_fail_node');
     expect(params).toEqual([
       'exec-uuid-123',
