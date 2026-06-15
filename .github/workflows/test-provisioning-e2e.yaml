@@ -138,7 +138,7 @@ jobs:
           echo "DB bootstrap complete."
 
           echo "=== Verify seed data ==="
-          psql -c "SELECT name FROM metaschema_public.namespace;"
+          psql -c "SELECT name FROM constructive_infra_public.platform_namespaces;"
           psql -c "SELECT name, image FROM constructive_compute_public.platform_function_definitions;"
 
       # ── Start kubectl proxy ─────────────────────────────────────────────
