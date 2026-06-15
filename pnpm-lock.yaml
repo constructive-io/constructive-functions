@@ -123,10 +123,10 @@ importers:
         version: 2.5.2
       graphql-request:
         specifier: ^7.1.2
-        version: 7.4.0(graphql@16.12.0)
+        version: 7.4.0(graphql@16.13.0)
       graphql-tag:
         specifier: ^2.12.6
-        version: 2.12.6(graphql@16.12.0)
+        version: 2.12.6(graphql@16.13.0)
       simple-smtp-server:
         specifier: ^0.7.3
         version: 0.7.3
@@ -140,6 +140,35 @@ importers:
       typescript:
         specifier: ^5.1.6
         version: 5.9.3
+
+  generated/sql-example:
+    dependencies:
+      '@constructive-io/knative-job-fn':
+        specifier: workspace:^
+        version: link:../../packages/fn-app
+      '@pgpmjs/logger':
+        specifier: ^1.0.0
+        version: 1.5.0
+      pg:
+        specifier: ^8.11.0
+        version: 8.20.0
+      pg-cache:
+        specifier: ^3.11.0
+        version: 3.11.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.16.0
+      makage:
+        specifier: ^0.1.10
+        version: 0.1.12
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+    publishDirectory: dist
 
   job/server:
     dependencies:
@@ -383,7 +412,7 @@ importers:
         version: 2.5.2
       graphql-request:
         specifier: ^7.1.2
-        version: 7.4.0(graphql@16.12.0)
+        version: 7.4.0(graphql@16.13.0)
     devDependencies:
       '@types/node':
         specifier: ^22.10.4
@@ -396,7 +425,7 @@ importers:
     dependencies:
       graphql-request:
         specifier: ^7.1.2
-        version: 7.4.0(graphql@16.12.0)
+        version: 7.4.0(graphql@16.13.0)
     devDependencies:
       '@types/node':
         specifier: ^22.10.4
@@ -1047,11 +1076,20 @@ packages:
   '@pgpmjs/env@2.17.0':
     resolution: {integrity: sha512-3WPwJ4prFWGGIRzyR52/JG84hM+Qe6lVtQ+bcCpGnGuhukFowALpaegRZxi3LT/pO6D8wW1Y3nW9LugfJLO6KQ==}
 
+  '@pgpmjs/logger@1.5.0':
+    resolution: {integrity: sha512-R27o5MiOsezI5rAWdJyuOkWUK6zxr8Mg61hPs7uCu//sECoprR4/7CVeFIHwn7+gyrjUk0wBz0dQcJhjYzVDpw==}
+
+  '@pgpmjs/logger@2.11.0':
+    resolution: {integrity: sha512-OFZwb9d3/GqPvwJqtRhk+D6XrVOAi9WC6J7N13MxRVWCeCz8Sl1V19ff0FwGu7A2QQtQfnxpu48r9qeTv3EmYw==}
+
   '@pgpmjs/logger@2.5.2':
     resolution: {integrity: sha512-e9Z2Woju+fcsC0nm9KwEgOXZqm8UcrrxVEPbunXo6kpROpIQkBRg3RVU9xCxSHQ6xiko4r9YFXs370EW6kIUsQ==}
 
   '@pgpmjs/types@2.21.0':
     resolution: {integrity: sha512-aeMRRzBr2jsxodU7R6ltvWmsHViftVLt/D+5Z+nuyM4KPECCvM5l+Jp6niB0LMjpDW8/GG+C/45co00zAHAZGQ==}
+
+  '@pgpmjs/types@2.28.0':
+    resolution: {integrity: sha512-XYCcWnxkIrZEHF2oxxtU1yMeMa4bfw5za5CsDnMx0uasdtG0Y5YwDqruuv0uzYdz0id927LMb6svE38vrmPTIg==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -2154,8 +2192,8 @@ packages:
     peerDependencies:
       graphql: ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
 
-  graphql@16.12.0:
-    resolution: {integrity: sha512-DKKrynuQRne0PNpEbzuEdHlYOMksHSUI8Zc9Unei5gTsMNA2/vMpoMz/yKba50pejK56qj98qM0SjYxAKi13gQ==}
+  graphql@16.13.0:
+    resolution: {integrity: sha512-uSisMYERbaB9bkA9M4/4dnqyktaEkf1kMHNKq/7DHyxVeWqHQ2mBmVqm5u6/FVHwF3iCNalKcg82Zfl+tffWoA==}
     engines: {node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0}
 
   handlebars@4.7.8:
@@ -3043,14 +3081,17 @@ packages:
   path-to-regexp@8.3.0:
     resolution: {integrity: sha512-7jdwVIRtsP8MYpdXSwOS0YdD0Du+qOoF/AEPIt88PcCFrZCzx41oxku1jD88hZBwbNUIEfpqvuhjFaMAqMTWnA==}
 
-  pg-cache@3.4.4:
-    resolution: {integrity: sha512-orkHxeo2W7UhdIUVnVT0ZFoN+sKatO1ZVpqCuFGWr67xAsjMQwCiQbqvC/Y9F/yYw93UNBduL3nJZFruilhWcQ==}
+  pg-cache@3.11.0:
+    resolution: {integrity: sha512-2PKoYKbsIeFblbS3Nxh+7RiIudNNN8xfguqi7Z0zAtBBrSzwVFSpF+Kw07lm/iR2KSGksEIzq1Y5p6UvxJwnyw==}
 
-  pg-cloudflare@1.3.0:
-    resolution: {integrity: sha512-6lswVVSztmHiRtD6I8hw4qP/nDm1EJbKMRhf3HCYaqud7frGysPv7FYJ5noZQdhQtN2xJnimfMtvQq21pdbzyQ==}
+  pg-cloudflare@1.4.0:
+    resolution: {integrity: sha512-Vo7z/6rrQYxpNRylp4Tlob2elzbh+N/MOQbxFVWCxS7oEx6jF53GTJFxK2WWpKuBRkmiin4Mt+xofFDjx09R0A==}
 
-  pg-connection-string@2.12.0:
-    resolution: {integrity: sha512-U7qg+bpswf3Cs5xLzRqbXbQl85ng0mfSV/J0nnA31MCLgvEaAo7CIhmeyrmJpOr7o+zm0rXK+hNnT5l9RHkCkQ==}
+  pg-connection-string@2.13.0:
+    resolution: {integrity: sha512-EMnU9E2fSULdsbErBbMaXJvFeD9B4+nPcM3f+4lsiCR0BHLPrLVjv3DbyM2hgQQviKJaTWIRRTjKjWlHg3p2ig==}
+
+  pg-env@1.15.0:
+    resolution: {integrity: sha512-1bs3pcNOOrA0om3TNJGwbZu7JXKc/tenyVW4KX6ljARxvKtRSUcGl6sbpKVCXJo+Y98W0nRvPgfa/SlqlumRsg==}
 
   pg-env@1.8.2:
     resolution: {integrity: sha512-YzxNQKZmFRRJKX5t149Ys2JoAsc6OCHcaoYH/82si7gwVC9ODaFTFtQn7gv3VpoGsNkH90t6iEPWvmLIgv2rDg==}
@@ -3059,16 +3100,13 @@ packages:
     resolution: {integrity: sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw==}
     engines: {node: '>=4.0.0'}
 
-  pg-pool@3.13.0:
-    resolution: {integrity: sha512-gB+R+Xud1gLFuRD/QgOIgGOBE2KCQPaPwkzBBGC9oG69pHTkhQeIuejVIk3/cnDyX39av2AxomQiyPT13WKHQA==}
+  pg-pool@3.14.0:
+    resolution: {integrity: sha512-gKtPkFdQPU3DksooVLi9LsjZxrsBUZIpa+7aVx+LV5pNh0KzP4Zleud2po+ConrxbuXGBJ6Hfer6hdgpIBpBaw==}
     peerDependencies:
       pg: '>=8.0'
 
-  pg-protocol@1.11.0:
-    resolution: {integrity: sha512-pfsxk2M9M3BuGgDOfuy37VNRRX3jmKgMjcvAcWqNDpZSf4cUmv8HSOl5ViRQFsfARFn0KuUQTgLxVMbNq5NW3g==}
-
-  pg-protocol@1.13.0:
-    resolution: {integrity: sha512-zzdvXfS6v89r6v7OcFCHfHlyG/wvry1ALxZo4LqgUoy7W9xhBDMaqOuMiF3qEV45VqsN6rdlcehHrfDtlCPc8w==}
+  pg-protocol@1.14.0:
+    resolution: {integrity: sha512-n5taZ1kO3s9ngDTVxsEznOqCyToTgz0FLuPq0B33COy5pPpuWJpY3/2oRBVETuOgzdqRXfWpM9HIhp2LBBT1BA==}
 
   pg-types@2.2.0:
     resolution: {integrity: sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==}
@@ -3076,6 +3114,15 @@ packages:
 
   pg@8.20.0:
     resolution: {integrity: sha512-ldhMxz2r8fl/6QkXnBD3CR9/xg694oT6DZQ2s6c/RI28OjtSOpxnPrUCGOBJ46RCUxcWdx3p6kw/xnDHjKvaRA==}
+    engines: {node: '>= 16.0.0'}
+    peerDependencies:
+      pg-native: '>=3.0.1'
+    peerDependenciesMeta:
+      pg-native:
+        optional: true
+
+  pg@8.21.0:
+    resolution: {integrity: sha512-AUP1EYJuHraQGsVoCQVIcM7TEJVGtDzxWtGFZd8rds9d+CCXlU5Js1rYgfLNvxy9iJrpHjGrRjoi/3BT9fRyiA==}
     engines: {node: '>= 16.0.0'}
     peerDependencies:
       pg-native: '>=3.0.1'
@@ -3878,7 +3925,7 @@ snapshots:
   '@constructive-io/job-pg@2.5.4':
     dependencies:
       '@constructive-io/job-utils': 2.5.4
-      '@pgpmjs/logger': 2.5.2
+      '@pgpmjs/logger': 2.11.0
       pg: 8.20.0
     transitivePeerDependencies:
       - pg-native
@@ -3887,7 +3934,7 @@ snapshots:
     dependencies:
       '@constructive-io/job-pg': 2.5.4
       '@constructive-io/job-utils': 2.5.4
-      '@pgpmjs/logger': 2.5.2
+      '@pgpmjs/logger': 2.11.0
       node-schedule: 2.1.1
     transitivePeerDependencies:
       - pg-native
@@ -3895,9 +3942,9 @@ snapshots:
   '@constructive-io/job-utils@2.5.4':
     dependencies:
       '@pgpmjs/env': 2.17.0
-      '@pgpmjs/logger': 2.5.2
+      '@pgpmjs/logger': 2.11.0
       '@pgpmjs/types': 2.21.0
-      pg-cache: 3.4.4
+      pg-cache: 3.11.0
       pg-env: 1.8.2
     transitivePeerDependencies:
       - pg-native
@@ -4060,9 +4107,9 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@graphql-typed-document-node/core@3.2.0(graphql@16.12.0)':
+  '@graphql-typed-document-node/core@3.2.0(graphql@16.13.0)':
     dependencies:
-      graphql: 16.12.0
+      graphql: 16.13.0
 
   '@humanfs/core@0.19.1': {}
 
@@ -4503,6 +4550,14 @@ snapshots:
       '@pgpmjs/types': 2.21.0
       deepmerge: 4.3.1
 
+  '@pgpmjs/logger@1.5.0':
+    dependencies:
+      yanse: 0.2.1
+
+  '@pgpmjs/logger@2.11.0':
+    dependencies:
+      yanse: 0.2.1
+
   '@pgpmjs/logger@2.5.2':
     dependencies:
       yanse: 0.2.1
@@ -4510,6 +4565,10 @@ snapshots:
   '@pgpmjs/types@2.21.0':
     dependencies:
       pg-env: 1.8.2
+
+  '@pgpmjs/types@2.28.0':
+    dependencies:
+      pg-env: 1.15.0
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -4674,7 +4733,7 @@ snapshots:
   '@types/pg@8.16.0':
     dependencies:
       '@types/node': 22.19.3
-      pg-protocol: 1.11.0
+      pg-protocol: 1.14.0
       pg-types: 2.2.0
 
   '@types/qs@6.14.0': {}
@@ -5766,17 +5825,17 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  graphql-request@7.4.0(graphql@16.12.0):
+  graphql-request@7.4.0(graphql@16.13.0):
     dependencies:
-      '@graphql-typed-document-node/core': 3.2.0(graphql@16.12.0)
-      graphql: 16.12.0
+      '@graphql-typed-document-node/core': 3.2.0(graphql@16.13.0)
+      graphql: 16.13.0
 
-  graphql-tag@2.12.6(graphql@16.12.0):
+  graphql-tag@2.12.6(graphql@16.13.0):
     dependencies:
-      graphql: 16.12.0
+      graphql: 16.13.0
       tslib: 2.8.1
 
-  graphql@16.12.0: {}
+  graphql@16.13.0: {}
 
   handlebars@4.7.8:
     dependencies:
@@ -7204,32 +7263,36 @@ snapshots:
 
   path-to-regexp@8.3.0: {}
 
-  pg-cache@3.4.4:
+  pg-cache@3.11.0:
     dependencies:
-      '@pgpmjs/logger': 2.5.2
-      '@pgpmjs/types': 2.21.0
+      '@pgpmjs/logger': 2.11.0
+      '@pgpmjs/types': 2.28.0
       lru-cache: 11.3.0
-      pg: 8.20.0
-      pg-env: 1.8.2
+      pg: 8.21.0
+      pg-env: 1.15.0
     transitivePeerDependencies:
       - pg-native
 
-  pg-cloudflare@1.3.0:
+  pg-cloudflare@1.4.0:
     optional: true
 
-  pg-connection-string@2.12.0: {}
+  pg-connection-string@2.13.0: {}
+
+  pg-env@1.15.0: {}
 
   pg-env@1.8.2: {}
 
   pg-int8@1.0.1: {}
 
-  pg-pool@3.13.0(pg@8.20.0):
+  pg-pool@3.14.0(pg@8.20.0):
     dependencies:
       pg: 8.20.0
 
-  pg-protocol@1.11.0: {}
+  pg-pool@3.14.0(pg@8.21.0):
+    dependencies:
+      pg: 8.21.0
 
-  pg-protocol@1.13.0: {}
+  pg-protocol@1.14.0: {}
 
   pg-types@2.2.0:
     dependencies:
@@ -7241,13 +7304,23 @@ snapshots:
 
   pg@8.20.0:
     dependencies:
-      pg-connection-string: 2.12.0
-      pg-pool: 3.13.0(pg@8.20.0)
-      pg-protocol: 1.13.0
+      pg-connection-string: 2.13.0
+      pg-pool: 3.14.0(pg@8.20.0)
+      pg-protocol: 1.14.0
       pg-types: 2.2.0
       pgpass: 1.0.5
     optionalDependencies:
-      pg-cloudflare: 1.3.0
+      pg-cloudflare: 1.4.0
+
+  pg@8.21.0:
+    dependencies:
+      pg-connection-string: 2.13.0
+      pg-pool: 3.14.0(pg@8.21.0)
+      pg-protocol: 1.14.0
+      pg-types: 2.2.0
+      pgpass: 1.0.5
+    optionalDependencies:
+      pg-cloudflare: 1.4.0
 
   pgpass@1.0.5:
     dependencies:
