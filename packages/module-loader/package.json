@@ -1,0 +1,26 @@
+{
+  "name": "@constructive-io/module-loader",
+  "version": "1.0.0",
+  "description": "Unified MetaSchema module loader — resolves compute, usage, and billing table/schema names with TTL caching. Multi-database (platform + tenant) aware.",
+  "author": "Constructive <developers@constructive.io>",
+  "license": "SEE LICENSE IN LICENSE",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@pgpmjs/logger": "^2.4.3"
+  },
+  "peerDependencies": {
+    "pg": "^8.0.0"
+  }
+}

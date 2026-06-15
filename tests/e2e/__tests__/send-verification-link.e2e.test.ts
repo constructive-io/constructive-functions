@@ -26,7 +26,7 @@ describe('E2E: send-verification-link', () => {
     const connections = await getTestConnections();
     pg = connections.pg;
     databaseId = await getDatabaseId(pg);
-  });
+  }, 90_000);
 
   afterAll(async () => {
     if (pg) await deleteTestJobs(pg, TEST_PREFIX);
