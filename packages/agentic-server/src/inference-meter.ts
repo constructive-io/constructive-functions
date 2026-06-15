@@ -1,7 +1,7 @@
 /**
  * Inference metering — fire-and-forget usage logging for LLM calls.
  *
- * Delegates to @constructive-io/usage-loader which resolves table names
+ * Delegates to @constructive-io/module-loader which resolves table names
  * dynamically from MetaSchema module registration tables.
  *
  * All writes are non-blocking: errors are logged and swallowed so
@@ -9,8 +9,8 @@
  */
 
 import type { Pool } from 'pg';
-import { UsageLoader, getLoader, _resetLoaderCache } from '@constructive-io/usage-loader';
-import type { InferenceEntry } from '@constructive-io/usage-loader';
+import { UsageLoader, getModuleLoader as getLoader, _resetModuleLoaderCache as _resetLoaderCache } from '@constructive-io/module-loader';
+import type { InferenceEntry } from '@constructive-io/module-loader';
 
 export type { InferenceEntry };
 

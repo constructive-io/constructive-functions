@@ -5,7 +5,7 @@ import {
   PutObjectCommand,
   DeleteObjectCommand
 } from '@aws-sdk/client-s3';
-import { UsageLoader } from '@constructive-io/usage-loader';
+import { UsageLoader } from '@constructive-io/module-loader';
 
 export type StorageMeterCallback = (info: {
   databaseId?: string;
