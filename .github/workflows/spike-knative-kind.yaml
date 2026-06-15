@@ -36,20 +36,20 @@ jobs:
       # ── Install Knative Serving CRDs + core ──────────────────────────
       - name: Install Knative Serving CRDs
         run: |
-          KNATIVE_VERSION=v1.17.0
+          KNATIVE_VERSION=v1.20.0
           echo "Installing Knative Serving ${KNATIVE_VERSION} CRDs..."
           kubectl apply -f "https://github.com/knative/serving/releases/download/knative-${KNATIVE_VERSION}/serving-crds.yaml"
 
       - name: Install Knative Serving core
         run: |
-          KNATIVE_VERSION=v1.17.0
+          KNATIVE_VERSION=v1.20.0
           echo "Installing Knative Serving ${KNATIVE_VERSION} core..."
           kubectl apply -f "https://github.com/knative/serving/releases/download/knative-${KNATIVE_VERSION}/serving-core.yaml"
 
       # ── Install a networking layer (Kourier is simplest for CI) ──────
       - name: Install Kourier networking
         run: |
-          KNATIVE_VERSION=v1.17.0
+          KNATIVE_VERSION=v1.20.0
           echo "Installing Kourier networking layer..."
           kubectl apply -f "https://github.com/knative/net-kourier/releases/download/knative-${KNATIVE_VERSION}/kourier.yaml"
 

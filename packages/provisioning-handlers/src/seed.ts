@@ -17,9 +17,49 @@ import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
 
 import { getK8sClient, isConflict } from './k8s-client';
+import type { KnativeServiceSpec } from './knative';
 import { buildKnativeServiceSpec, resolveNamespaceName } from './knative';
 
 const log = new Logger('provisioning:seed');
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * GET → merge immutable metadata → PUT.
+ *
+ * Knative's admission webhook sets immutable annotations
+ * (e.g. serving.knative.dev/creator) and K8s requires
+ * resourceVersion for optimistic-concurrency on PUT.
+ * This helper fetches both from the live object and merges
+ * them into the desired spec before replacing.
+ */
+export async function mergeAndReplace(
+  client: import('@kubernetesjs/ops').InterwebClient,
+  spec: KnativeServiceSpec,
+  name: string,
+  namespace: string
+) {
+  const existing = await client.readServingKnativeDevV1NamespacedService({
+    query: {},
+    path: { name, namespace },
+  });
+
+  spec.metadata.resourceVersion = existing?.metadata?.resourceVersion;
+
+  const existingAnnotations = (existing?.metadata?.annotations ?? {}) as Record<string, string>;
+  spec.metadata.annotations = { ...existingAnnotations, ...spec.metadata.annotations };
+
+  const existingLabels = (existing?.metadata?.labels ?? {}) as Record<string, string>;
+  spec.metadata.labels = { ...existingLabels, ...spec.metadata.labels };
+
+  return client.replaceServingKnativeDevV1NamespacedService({
+    query: {},
+    path: { name, namespace },
+    body: spec,
+  });
+}
+
+// ── Types ────────────────────────────────────────────────────────────────────
 
 export interface ProvisionSeedOptions {
   pool: Pool;
@@ -191,25 +231,7 @@ export async function provision(opts: ProvisionSeedOptions): Promise<ProvisionSe
       result.functions.push({ name: fnName, namespace: namespaceName, serviceUrl, status: 'created' });
     } catch (err: unknown) {
       if (isConflict(err)) {
-        // GET the existing service to retrieve metadata required for PUT
-        const existing = await client.readServingKnativeDevV1NamespacedService({
-          query: {},
-          path: { name: fnName, namespace: namespaceName },
-        });
-        if (serviceSpec.metadata) {
-          serviceSpec.metadata.resourceVersion = existing?.metadata?.resourceVersion;
-          // Preserve Knative-managed annotations (e.g. serving.knative.dev/creator)
-          const existingAnnotations = (existing?.metadata?.annotations ?? {}) as Record<string, string>;
-          serviceSpec.metadata.annotations = { ...existingAnnotations, ...serviceSpec.metadata.annotations };
-          const existingLabels = (existing?.metadata?.labels ?? {}) as Record<string, string>;
-          serviceSpec.metadata.labels = { ...existingLabels, ...serviceSpec.metadata.labels };
-        }
-
-        const svc = await client.replaceServingKnativeDevV1NamespacedService({
-          query: {},
-          path: { name: fnName, namespace: namespaceName },
-          body: serviceSpec,
-        });
+        const svc = await mergeAndReplace(client, serviceSpec, fnName, namespaceName);
         serviceUrl = svc?.status?.url ?? svc?.status?.address?.url ?? null;
         log.info(`replaced Knative Service "${fnName}" in "${namespaceName}"`);
         result.functions.push({ name: fnName, namespace: namespaceName, serviceUrl, status: 'exists' });

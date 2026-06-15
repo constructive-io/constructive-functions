@@ -12,6 +12,7 @@ import { Logger } from '@pgpmjs/logger';
 
 import { getK8sClient, isNotFound } from '../k8s-client';
 import { buildKnativeServiceSpec, resolveNamespaceName } from '../knative';
+import { mergeAndReplace } from '../seed';
 import type { ProvisioningContext, ProvisioningHandler } from '../types';
 
 const log = new Logger('provisioning:function-sync');
@@ -67,26 +68,7 @@ export const handleFunctionSyncResources: ProvisioningHandler = async (
   const serviceSpec = buildKnativeServiceSpec(fnRow, namespaceName);
 
   try {
-    // GET the existing service to retrieve metadata required for PUT
-    const existing = await client.readServingKnativeDevV1NamespacedService({
-      query: {},
-      path: { name: fnName, namespace: namespaceName },
-    });
-    if (serviceSpec.metadata) {
-      serviceSpec.metadata.resourceVersion = existing?.metadata?.resourceVersion;
-      // Preserve Knative-managed annotations (e.g. serving.knative.dev/creator)
-      const existingAnnotations = (existing?.metadata?.annotations ?? {}) as Record<string, string>;
-      serviceSpec.metadata.annotations = { ...existingAnnotations, ...serviceSpec.metadata.annotations };
-      const existingLabels = (existing?.metadata?.labels ?? {}) as Record<string, string>;
-      serviceSpec.metadata.labels = { ...existingLabels, ...serviceSpec.metadata.labels };
-    }
-
-    const svc = await client.replaceServingKnativeDevV1NamespacedService({
-      query: {},
-      path: { name: fnName, namespace: namespaceName },
-      body: serviceSpec,
-    });
-
+    const svc = await mergeAndReplace(client, serviceSpec, fnName, namespaceName);
     const serviceUrl = svc?.status?.url ?? svc?.status?.address?.url ?? null;
     log.info(`updated Knative Service "${fnName}" in namespace "${namespaceName}"`);
 
