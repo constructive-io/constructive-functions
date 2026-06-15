@@ -141,6 +141,35 @@ importers:
         specifier: ^5.1.6
         version: 5.9.3
 
+  generated/sql-example:
+    dependencies:
+      '@constructive-io/knative-job-fn':
+        specifier: workspace:^
+        version: link:../../packages/fn-app
+      '@pgpmjs/logger':
+        specifier: ^1.0.0
+        version: 1.5.0
+      pg:
+        specifier: ^8.11.0
+        version: 8.20.0
+      pg-cache:
+        specifier: ^3.11.0
+        version: 3.12.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.4
+        version: 22.19.3
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.16.0
+      makage:
+        specifier: ^0.1.10
+        version: 0.1.12
+      typescript:
+        specifier: ^5.1.6
+        version: 5.9.3
+    publishDirectory: dist
+
   job/server:
     dependencies:
       '@constructive-io/job-pg':
@@ -1081,8 +1110,8 @@ packages:
   '@pgpmjs/env@2.25.0':
     resolution: {integrity: sha512-oy8vw3XK4eT/TiWD9+IqFjWXSfEmM7zntfi7/FnA7xXlBZr4D8gmzaRDp3UWcXbuekD8uJAzZ1uKv6RMYpHXxg==}
 
-  '@pgpmjs/logger@2.11.0':
-    resolution: {integrity: sha512-OFZwb9d3/GqPvwJqtRhk+D6XrVOAi9WC6J7N13MxRVWCeCz8Sl1V19ff0FwGu7A2QQtQfnxpu48r9qeTv3EmYw==}
+  '@pgpmjs/logger@1.5.0':
+    resolution: {integrity: sha512-R27o5MiOsezI5rAWdJyuOkWUK6zxr8Mg61hPs7uCu//sECoprR4/7CVeFIHwn7+gyrjUk0wBz0dQcJhjYzVDpw==}
 
   '@pgpmjs/logger@2.12.0':
     resolution: {integrity: sha512-yPRZvc6VxpwDl7ZLuvPD2lrrBKYDMFBQP6KyURcvHWuisTwvrWrKOH0HWMPtMIbaBSnz6/KsrkxCz6QM9hC+Bw==}
@@ -1095,9 +1124,6 @@ packages:
 
   '@pgpmjs/types@2.21.0':
     resolution: {integrity: sha512-aeMRRzBr2jsxodU7R6ltvWmsHViftVLt/D+5Z+nuyM4KPECCvM5l+Jp6niB0LMjpDW8/GG+C/45co00zAHAZGQ==}
-
-  '@pgpmjs/types@2.28.0':
-    resolution: {integrity: sha512-XYCcWnxkIrZEHF2oxxtU1yMeMa4bfw5za5CsDnMx0uasdtG0Y5YwDqruuv0uzYdz0id927LMb6svE38vrmPTIg==}
 
   '@pgpmjs/types@2.29.0':
     resolution: {integrity: sha512-iUfNhBTi7PAJlOaptslOEL3uDiWyKyaWzRoFVfn6jxbBvshyUFPUonNJNf9n3eSFG7AYflMy7Z5n85ptceq8xA==}
@@ -3153,9 +3179,6 @@ packages:
   path-to-regexp@8.3.0:
     resolution: {integrity: sha512-7jdwVIRtsP8MYpdXSwOS0YdD0Du+qOoF/AEPIt88PcCFrZCzx41oxku1jD88hZBwbNUIEfpqvuhjFaMAqMTWnA==}
 
-  pg-cache@3.11.0:
-    resolution: {integrity: sha512-2PKoYKbsIeFblbS3Nxh+7RiIudNNN8xfguqi7Z0zAtBBrSzwVFSpF+Kw07lm/iR2KSGksEIzq1Y5p6UvxJwnyw==}
-
   pg-cache@3.12.0:
     resolution: {integrity: sha512-xlQdi1dQQYoKKBRR9L/KRfqOMutaVv7gTZcNt0bUvZVXGOVWegqtlAEEpPaQhxZjVxd0Z1b15lctqYhyX1wgew==}
 
@@ -3167,9 +3190,6 @@ packages:
 
   pg-copy-streams@7.0.0:
     resolution: {integrity: sha512-zBvnY6wtaBRE2ae2xXWOOGMaNVPkXh1vhypAkNSKgMdciJeTyIQAHZaEeRAxUjs/p1El5jgzYmwG5u871Zj3dQ==}
-
-  pg-env@1.15.0:
-    resolution: {integrity: sha512-1bs3pcNOOrA0om3TNJGwbZu7JXKc/tenyVW4KX6ljARxvKtRSUcGl6sbpKVCXJo+Y98W0nRvPgfa/SlqlumRsg==}
 
   pg-env@1.16.0:
     resolution: {integrity: sha512-Jexh/zTP7Tyr5BgP6rcY8RRl1PZu3lUssjyMYbjAhPermtGuHM/dMLlB2MVMyokJvkEDsJZOTrzheadCiJeIpA==}
@@ -4024,7 +4044,7 @@ snapshots:
   '@constructive-io/job-pg@2.5.4':
     dependencies:
       '@constructive-io/job-utils': 2.5.4
-      '@pgpmjs/logger': 2.11.0
+      '@pgpmjs/logger': 2.12.0
       pg: 8.20.0
     transitivePeerDependencies:
       - pg-native
@@ -4033,7 +4053,7 @@ snapshots:
     dependencies:
       '@constructive-io/job-pg': 2.5.4
       '@constructive-io/job-utils': 2.5.4
-      '@pgpmjs/logger': 2.11.0
+      '@pgpmjs/logger': 2.12.0
       node-schedule: 2.1.1
     transitivePeerDependencies:
       - pg-native
@@ -4041,9 +4061,9 @@ snapshots:
   '@constructive-io/job-utils@2.5.4':
     dependencies:
       '@pgpmjs/env': 2.17.0
-      '@pgpmjs/logger': 2.11.0
+      '@pgpmjs/logger': 2.12.0
       '@pgpmjs/types': 2.21.0
-      pg-cache: 3.11.0
+      pg-cache: 3.12.0
       pg-env: 1.8.2
     transitivePeerDependencies:
       - pg-native
@@ -4675,7 +4695,7 @@ snapshots:
       '@pgpmjs/types': 2.29.0
       deepmerge: 4.3.1
 
-  '@pgpmjs/logger@2.11.0':
+  '@pgpmjs/logger@1.5.0':
     dependencies:
       yanse: 0.2.1
 
@@ -4700,10 +4720,6 @@ snapshots:
   '@pgpmjs/types@2.21.0':
     dependencies:
       pg-env: 1.8.2
-
-  '@pgpmjs/types@2.28.0':
-    dependencies:
-      pg-env: 1.15.0
 
   '@pgpmjs/types@2.29.0':
     dependencies:
@@ -7465,16 +7481,6 @@ snapshots:
 
   path-to-regexp@8.3.0: {}
 
-  pg-cache@3.11.0:
-    dependencies:
-      '@pgpmjs/logger': 2.11.0
-      '@pgpmjs/types': 2.28.0
-      lru-cache: 11.3.0
-      pg: 8.21.0
-      pg-env: 1.15.0
-    transitivePeerDependencies:
-      - pg-native
-
   pg-cache@3.12.0:
     dependencies:
       '@pgpmjs/logger': 2.12.0
@@ -7491,8 +7497,6 @@ snapshots:
   pg-connection-string@2.13.0: {}
 
   pg-copy-streams@7.0.0: {}
-
-  pg-env@1.15.0: {}
 
   pg-env@1.16.0: {}
 
