@@ -1,7 +1,6 @@
 import poolManager from '@constructive-io/job-pg';
 import type { PgClientLike } from '@constructive-io/job-utils';
 import * as jobs from '@constructive-io/job-utils';
-import { SecretsLoader } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool, PoolClient } from 'pg';
 
@@ -28,7 +27,6 @@ export default class Worker {
   doNextTimer?: NodeJS.Timeout;
   pgPool: Pool;
   usageClient: UsageClient;
-  secretsLoader: SecretsLoader;
   _initialized?: boolean;
   listenClient?: PoolClient;
   listenRelease?: () => void;
@@ -59,7 +57,6 @@ export default class Worker {
     this.doNextTimer = undefined;
     this.pgPool = pgPool;
     this.usageClient = new UsageClient(pgPool);
-    this.secretsLoader = new SecretsLoader(pgPool);
     poolManager.onClose(async () => {
       await jobs.releaseJobs(pgPool, { workerId: this.workerId });
     });
@@ -111,27 +108,6 @@ export default class Worker {
       `Async task ${job.id} (${job.task_identifier}) to be processed`
     );
   }
-  /**
-   * Resolve secrets/configs from the config_secrets_module and inject into process.env.
-   * Used by the legacy worker for backward compatibility with the new secret resolution flow.
-   */
-  private async resolveAndInjectSecrets(job: JobRow): Promise<void> {
-    try {
-      const resolved = await this.secretsLoader.resolveSecrets(
-        [], // Legacy worker doesn't have function definitions with required_secrets
-        undefined,
-        job.database_id
-      );
-      for (const secret of resolved) {
-        if (secret.value !== undefined && secret.value !== null) {
-          process.env[secret.name] = secret.value;
-        }
-      }
-    } catch {
-      log.debug('secret resolution unavailable (non-fatal)');
-    }
-  }
-
   async doWork(job: JobRow) {
     const { payload, task_identifier } = job;
     log.debug('starting work on job', {
@@ -145,9 +121,6 @@ export default class Worker {
     ) {
       throw new Error('Unsupported task');
     }
-
-    // Resolve secrets from DB before dispatch (no-op if secrets module not provisioned)
-    await this.resolveAndInjectSecrets(job);
 
     const startTime = process.hrtime.bigint();
 

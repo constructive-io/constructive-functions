@@ -280,16 +280,18 @@ export default class ComputeWorker {
     }
   }
 
-  // ─── Secret resolution ──────────────────────────────────────────────
+  // ─── Secret validation ─────────────────────────────────────────────
 
   /**
-   * Resolve required_secrets and required_configs from the config_secrets_module
-   * and inject them into process.env before dispatch.
+   * Validate that required_secrets and required_configs exist in the
+   * config_secrets_module before dispatch.
    *
-   * Secrets are looked up by name within the function's namespace scope.
-   * Only declared secrets/configs are resolved — no wildcard injection.
+   * Does NOT inject values into process.env — secrets are provisioned
+   * into Knative service env vars via K8s secrets by the provisioning
+   * pipeline. This method only checks existence and logs warnings for
+   * missing required entries.
    */
-  private async resolveAndInjectSecrets(
+  private async validateSecrets(
     fn: PlatformFunctionDefinition,
     databaseId?: string
   ): Promise<void> {
@@ -300,26 +302,13 @@ export default class ComputeWorker {
     if (allNames.length === 0) return;
 
     const dbId = databaseId || this.platformDatabaseId;
-    // namespace_id may be present on the function definition; we pass undefined
-    // for global-scoped functions (secrets stored without a namespace)
     const namespaceName = fn.namespace_id ?? undefined;
 
     const resolved = await this.secrets.resolveSecrets(allNames, namespaceName, dbId);
-
-    let injected = 0;
-    for (const secret of resolved) {
-      if (secret.value !== undefined && secret.value !== null) {
-        process.env[secret.name] = secret.value;
-        injected++;
-      }
-    }
-
-    if (injected > 0) {
-      log.info(`injected ${injected} secret(s) for function "${fn.name}"`);
-    }
-
-    // Log warnings for missing required secrets
     const resolvedNames = new Set(resolved.map(s => s.name));
+
+    log.info(`validated ${resolvedNames.size}/${allNames.length} secret(s) for function "${fn.name}"`);
+
     for (const req of fn.required_secrets ?? []) {
       if (req.required && !resolvedNames.has(req.name)) {
         log.warn(`missing required secret "${req.name}" for function "${fn.name}"`);
@@ -371,9 +360,8 @@ export default class ComputeWorker {
       await this.markNodeRunning(payload.execution_id, payload.node_name);
     }
 
-    // Resolve required_secrets and required_configs from the secrets module
-    // and inject them into process.env before dispatch
-    await this.resolveAndInjectSecrets(fn, job.database_id);
+    // Validate that required secrets/configs exist in the secrets module
+    await this.validateSecrets(fn, job.database_id);
 
     // Determine dispatch mode: inline (in-process) vs HTTP
     const isInline = fn.runtime === 'inline' || getInlineImpl(functionName) !== null;
