@@ -3,19 +3,22 @@
  *
  * Tests the full provisioning flow end-to-end:
  *   1. Calls provision() to create K8s namespaces, secrets, and Knative Services
- *   2. Verifies Knative Service reaches Ready state
- *   3. Calls the Knative Service via Kourier gateway
- *   4. Verifies the service_url was written back to the DB
+ *   2. Verifies K8s namespace + secret were created correctly
+ *   3. Verifies Knative Service reaches Ready state
+ *   4. Calls the function via in-cluster curl (kubectl run)
+ *   5. Verifies the service_url was written back to the DB
+ *   6. Re-runs seed to verify idempotency
  *
  * Requires:
  *   - K8S_API_URL pointing to kubectl proxy (e.g. http://localhost:8001)
  *   - PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE for a bootstrapped DB
  *   - Knative Serving + Kourier installed in the kind cluster
- *   - KOURIER_URL for the Kourier gateway (e.g. http://localhost:8090)
  *
  * DB must be bootstrapped with:
  *   tests/e2e/fixtures/provisioning-knative-bootstrap.sql
  */
+
+import { execSync } from 'child_process';
 
 import { provision } from '@constructive-io/provisioning-handlers';
 import { InterwebClient } from '@kubernetesjs/ops';
@@ -24,7 +27,6 @@ import pg from 'pg';
 const { Pool } = pg;
 
 const K8S_API_URL = process.env.K8S_API_URL;
-const KOURIER_URL = process.env.KOURIER_URL || 'http://localhost:8090';
 const DATABASE_ID = '00000000-0000-0000-0000-000000000001';
 
 const describeKnative = K8S_API_URL ? describe : describe.skip;
@@ -164,56 +166,62 @@ describeKnative('Provisioning E2E — Knative in kind', () => {
     expect(ready).toBe(true);
   }, 360_000);
 
-  // ─── Phase 4: Call the Knative Service ───────────────────────────────────
+  // ─── Phase 4: Call the function from inside the cluster ─────────────────
 
-  it('responds to HTTP requests through Kourier gateway', async () => {
-    // Get the ksvc URL to determine the Host header
+  it('responds to HTTP requests (in-cluster curl)', async () => {
+    // Get the ksvc URL from the K8s API
     const resp = await fetch(
       `${K8S_API_URL}/apis/serving.knative.dev/v1/namespaces/test-ns/services/hello-provisioned`
     );
     expect(resp.ok).toBe(true);
     const svc = (await resp.json()) as Record<string, any>;
     const ksvcUrl = (svc?.status?.url || '') as string;
+    console.log(`ksvc URL: ${ksvcUrl}`);
 
-    // Extract hostname from the ksvc URL
-    let hostname: string;
-    try {
-      hostname = new URL(ksvcUrl).hostname;
-    } catch {
-      // Fallback: construct the expected hostname
-      hostname = 'hello-provisioned.test-ns.svc.cluster.local';
-    }
-    console.log(`Calling ksvc via Kourier: Host=${hostname}, URL=${KOURIER_URL}`);
-
-    // Call through Kourier with Host header
+    // Curl from inside the cluster using kubectl run.
+    // The Knative Service has an in-cluster K8s Service that resolves via DNS.
+    const inClusterUrl = `http://hello-provisioned.test-ns.svc.cluster.local`;
     let body = '';
     let success = false;
-    const maxRetries = 10;
+    const maxRetries = 12;
+    const suffix = Math.random().toString(36).slice(2, 8);
 
     for (let i = 0; i < maxRetries; i++) {
       try {
-        const fnResp = await fetch(KOURIER_URL, {
-          headers: { Host: hostname },
-        });
-        body = await fnResp.text();
-        console.log(`  attempt ${i + 1}: status=${fnResp.status} body="${body.slice(0, 200)}"`);
+        const podName = `curl-e2e-${suffix}-${i}`;
+        body = execSync(
+          `kubectl run ${podName} --rm -i --restart=Never ` +
+            `--image=curlimages/curl --request-timeout=60s -- ` +
+            `curl -s --max-time 30 ${inClusterUrl}`,
+          { encoding: 'utf-8', timeout: 120_000 }
+        ).trim();
 
-        if (fnResp.ok) {
+        console.log(`  attempt ${i + 1}: body="${body.slice(0, 200)}"`);
+        if (body.includes('Hello')) {
           success = true;
           break;
         }
-      } catch (err) {
-        console.log(`  attempt ${i + 1}: fetch error — ${err}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        // Extract stdout from the error if available
+        const errWithOutput = err as { stdout?: string; stderr?: string };
+        if (errWithOutput.stdout) {
+          body = errWithOutput.stdout.trim();
+          if (body.includes('Hello')) {
+            console.log(`  attempt ${i + 1}: got body from stdout="${body.slice(0, 200)}"`);
+            success = true;
+            break;
+          }
+        }
+        console.log(`  attempt ${i + 1}: error — ${msg.slice(0, 200)}`);
       }
-      await sleep(5_000);
+      await sleep(10_000);
     }
 
     expect(success).toBe(true);
-    // The helloworld-go container reads TARGET from env (mounted via K8s secret)
-    // and returns "Hello {TARGET}!"
     expect(body).toContain('Hello');
     expect(body).toContain('Provisioning E2E');
-  }, 120_000);
+  }, 240_000);
 
   // ─── Phase 5: Verify DB writeback ────────────────────────────────────────
 
@@ -224,8 +232,6 @@ describeKnative('Provisioning E2E — Knative in kind', () => {
     );
 
     expect(rows).toHaveLength(1);
-    // service_url may or may not be set depending on whether the create response
-    // included it. At minimum, we verify the row still exists.
     console.log(`service_url in DB: ${rows[0].service_url || '(not set yet)'}`);
   });
 

@@ -141,35 +141,17 @@ jobs:
           psql -c "SELECT name FROM metaschema_public.namespace;"
           psql -c "SELECT name, image FROM constructive_compute_public.platform_function_definitions;"
 
-      # ── Start proxies ──────────────────────────────────────────────────
-      - name: Start kubectl proxy and Kourier port-forward
+      # ── Start kubectl proxy ─────────────────────────────────────────────
+      - name: Start kubectl proxy
         run: |
-          # K8s API proxy for @kubernetesjs/ops
           kubectl proxy --port=8001 &
           echo "kubectl proxy started on :8001"
-
-          # Wait for Kourier service to exist
-          echo "Waiting for Kourier service..."
-          for i in $(seq 1 30); do
-            if kubectl get svc kourier -n kourier-system &>/dev/null; then
-              echo "  Kourier service found"
-              break
-            fi
-            echo "  attempt $i: waiting..."
-            sleep 5
-          done
-
-          # Port-forward Kourier for function invocation
-          kubectl port-forward -n kourier-system svc/kourier 8090:80 &
-          echo "Kourier port-forward started on :8090"
-
-          sleep 3
+          sleep 2
 
       # ── Run E2E tests ──────────────────────────────────────────────────
       - name: Run provisioning Knative E2E tests
         env:
           K8S_API_URL: http://localhost:8001
-          KOURIER_URL: http://localhost:8090
           PGHOST: localhost
           PGPORT: "5432"
           PGUSER: postgres

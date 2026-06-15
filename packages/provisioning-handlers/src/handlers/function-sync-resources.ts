@@ -67,6 +67,16 @@ export const handleFunctionSyncResources: ProvisioningHandler = async (
   const serviceSpec = buildKnativeServiceSpec(fnRow, namespaceName);
 
   try {
+    // GET the existing service to retrieve its resourceVersion (required for PUT)
+    const existing = await client.readServingKnativeDevV1NamespacedService({
+      query: {},
+      path: { name: fnName, namespace: namespaceName },
+    });
+    const resourceVersion = existing?.metadata?.resourceVersion;
+    if (resourceVersion && serviceSpec.metadata) {
+      serviceSpec.metadata.resourceVersion = resourceVersion;
+    }
+
     const svc = await client.replaceServingKnativeDevV1NamespacedService({
       query: {},
       path: { name: fnName, namespace: namespaceName },

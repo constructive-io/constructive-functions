@@ -27,7 +27,11 @@ export function buildKnativeServiceSpec(
   return {
     apiVersion: 'serving.knative.dev/v1',
     kind: 'Service',
-    metadata: { name: fnName, namespace: namespaceName },
+    metadata: { name: fnName, namespace: namespaceName } as {
+      name: string;
+      namespace: string;
+      resourceVersion?: string;
+    },
     spec: {
       template: {
         metadata: {
