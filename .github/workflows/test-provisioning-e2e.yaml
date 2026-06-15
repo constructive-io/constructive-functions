@@ -1,0 +1,229 @@
+name: CI Provisioning E2E (Knative)
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+      - release/*
+    paths:
+      - "packages/provisioning-handlers/**"
+      - "tests/e2e/__tests__/provisioning-knative*"
+      - "tests/e2e/fixtures/provisioning-knative*"
+      - ".github/workflows/test-provisioning-e2e.yaml"
+  push:
+    branches:
+      - main
+      - develop
+      - release/*
+      - feat/provisioning-handlers
+    paths:
+      - "packages/provisioning-handlers/**"
+      - "tests/e2e/__tests__/provisioning-knative*"
+      - "tests/e2e/fixtures/provisioning-knative*"
+      - ".github/workflows/test-provisioning-e2e.yaml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-knative:
+    name: Provisioning E2E (Knative + kind)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    # ── PostgreSQL service container ──────────────────────────────────────
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: provisioning_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # ── Node / pnpm ────────────────────────────────────────────────────
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Generate function packages
+        run: node --experimental-strip-types scripts/generate.ts
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build workspace
+        run: pnpm build
+
+      # ── kind cluster ───────────────────────────────────────────────────
+      - name: Setup kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: provisioning-e2e
+          wait: 120s
+
+      - name: Verify cluster
+        run: |
+          kubectl version
+          kubectl get nodes -o wide
+
+      # ── Knative Serving ────────────────────────────────────────────────
+      - name: Install Knative Serving CRDs
+        run: |
+          KNATIVE_VERSION=v1.17.0
+          echo "Installing Knative Serving ${KNATIVE_VERSION} CRDs..."
+          kubectl apply -f "https://github.com/knative/serving/releases/download/knative-${KNATIVE_VERSION}/serving-crds.yaml"
+
+      - name: Install Knative Serving core
+        run: |
+          KNATIVE_VERSION=v1.17.0
+          echo "Installing Knative Serving ${KNATIVE_VERSION} core..."
+          kubectl apply -f "https://github.com/knative/serving/releases/download/knative-${KNATIVE_VERSION}/serving-core.yaml"
+
+      - name: Install Kourier networking
+        run: |
+          KNATIVE_VERSION=v1.17.0
+          echo "Installing Kourier networking layer..."
+          kubectl apply -f "https://github.com/knative/net-kourier/releases/download/knative-${KNATIVE_VERSION}/kourier.yaml"
+
+          kubectl patch configmap/config-network \
+            --namespace knative-serving \
+            --type merge \
+            --patch '{"data":{"ingress-class":"kourier.ingress.networking.knative.dev"}}'
+
+      - name: Wait for Knative Serving pods
+        run: |
+          echo "Waiting for Knative Serving pods..."
+          kubectl wait --for=condition=Available deployment --all \
+            -n knative-serving --timeout=180s || true
+
+          echo "=== Knative Serving pods ==="
+          kubectl get pods -n knative-serving
+          echo "=== Kourier pods ==="
+          kubectl get pods -n kourier-system || true
+
+      - name: Verify Knative CRDs
+        run: |
+          echo "Checking for serving.knative.dev CRDs..."
+          kubectl get crd | grep knative || { echo "No Knative CRDs!"; exit 1; }
+
+      # ── Bootstrap DB ───────────────────────────────────────────────────
+      - name: Bootstrap minimal DB for provisioning
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: provisioning_e2e
+        run: |
+          psql -f tests/e2e/fixtures/provisioning-knative-bootstrap.sql
+          echo "DB bootstrap complete."
+
+          echo "=== Verify seed data ==="
+          psql -c "SELECT name FROM metaschema_public.namespace;"
+          psql -c "SELECT name, image FROM constructive_compute_public.platform_function_definitions;"
+
+      # ── Start proxies ──────────────────────────────────────────────────
+      - name: Start kubectl proxy and Kourier port-forward
+        run: |
+          # K8s API proxy for @kubernetesjs/ops
+          kubectl proxy --port=8001 &
+          echo "kubectl proxy started on :8001"
+
+          # Wait for Kourier service to exist
+          echo "Waiting for Kourier service..."
+          for i in $(seq 1 30); do
+            if kubectl get svc kourier -n kourier-system &>/dev/null; then
+              echo "  Kourier service found"
+              break
+            fi
+            echo "  attempt $i: waiting..."
+            sleep 5
+          done
+
+          # Port-forward Kourier for function invocation
+          kubectl port-forward -n kourier-system svc/kourier 8090:80 &
+          echo "Kourier port-forward started on :8090"
+
+          sleep 3
+
+      # ── Run E2E tests ──────────────────────────────────────────────────
+      - name: Run provisioning Knative E2E tests
+        env:
+          K8S_API_URL: http://localhost:8001
+          KOURIER_URL: http://localhost:8090
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: provisioning_e2e
+        run: |
+          pnpm jest \
+            tests/e2e/__tests__/provisioning-knative-e2e.test.ts \
+            --no-coverage \
+            --testTimeout=360000
+
+      # ── Diagnostics on failure ─────────────────────────────────────────
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          echo "=== Namespaces ==="
+          kubectl get ns || true
+
+          echo ""
+          echo "=== Knative Services (all namespaces) ==="
+          kubectl get ksvc -A || true
+
+          echo ""
+          echo "=== Pods in test-ns ==="
+          kubectl get pods -n test-ns -o wide || true
+
+          echo ""
+          echo "=== Describe ksvc in test-ns ==="
+          kubectl describe ksvc -n test-ns || true
+
+          echo ""
+          echo "=== Events in test-ns ==="
+          kubectl get events -n test-ns --sort-by='.lastTimestamp' || true
+
+          echo ""
+          echo "=== Knative Serving pods ==="
+          kubectl get pods -n knative-serving -o wide || true
+
+          echo ""
+          echo "=== Kourier pods ==="
+          kubectl get pods -n kourier-system -o wide || true
+
+          echo ""
+          echo "=== Pod logs in test-ns ==="
+          for pod in $(kubectl get pods -n test-ns -o jsonpath='{.items[*].metadata.name}' 2>/dev/null); do
+            echo "--- $pod ---"
+            kubectl logs -n test-ns "$pod" --all-containers --tail=100 || true
+          done
+
+          echo ""
+          echo "=== Secrets in test-ns ==="
+          kubectl get secrets -n test-ns || true
+
+          echo ""
+          echo "=== DB function definitions ==="
+          PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD=postgres PGDATABASE=provisioning_e2e \
+            psql -c "SELECT id, name, service_url, image FROM constructive_compute_public.platform_function_definitions;" || true
