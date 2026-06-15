@@ -440,7 +440,7 @@ importers:
   packages/module-loader:
     dependencies:
       pg:
-        specifier: ^8.13.0
+        specifier: '>=8.0.0'
         version: 8.20.0
     devDependencies:
       '@types/node':

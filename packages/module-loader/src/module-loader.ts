@@ -1,6 +1,4 @@
-import type { Pool } from 'pg';
-
-import type { ModuleConfigLoader } from './generic-loader';
+import type { ModuleConfigLoader, Queryable } from './generic-loader';
 import type {
   FunctionModuleConfig,
   InvocationModuleConfig,
@@ -17,7 +15,7 @@ import {
 } from './loaders';
 
 export interface ModuleLoaderOptions {
-  pool: Pool;
+  pool: Queryable;
   ttlMs?: number;
 }
 

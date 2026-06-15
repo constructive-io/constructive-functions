@@ -1,5 +1,4 @@
-import type { Pool } from 'pg';
-
+import type { Queryable } from './generic-loader';
 import { ModuleConfigLoader } from './generic-loader';
 
 // ─── Config Types ────────────────────────────────────────────────────────────
@@ -108,7 +107,7 @@ const INVOCATION_MODULE_SQL = `
 
 // ─── Loader Factories ────────────────────────────────────────────────────────
 
-export function createFunctionLoader(pool: Pool, ttlMs?: number) {
+export function createFunctionLoader(pool: Queryable, ttlMs?: number) {
   return new ModuleConfigLoader<FunctionModuleConfig>({
     pool,
     sql: FUNCTION_MODULE_SQL,
@@ -124,7 +123,7 @@ export function createFunctionLoader(pool: Pool, ttlMs?: number) {
   });
 }
 
-export function createNamespaceLoader(pool: Pool, ttlMs?: number) {
+export function createNamespaceLoader(pool: Queryable, ttlMs?: number) {
   return new ModuleConfigLoader<NamespaceModuleConfig>({
     pool,
     sql: NAMESPACE_MODULE_SQL,
@@ -140,7 +139,7 @@ export function createNamespaceLoader(pool: Pool, ttlMs?: number) {
   });
 }
 
-export function createSecretsLoader(pool: Pool, ttlMs?: number) {
+export function createSecretsLoader(pool: Queryable, ttlMs?: number) {
   return new ModuleConfigLoader<SecretsModuleConfig>({
     pool,
     sql: SECRETS_MODULE_SQL,
@@ -155,7 +154,7 @@ export function createSecretsLoader(pool: Pool, ttlMs?: number) {
   });
 }
 
-export function createStorageLoader(pool: Pool, ttlMs?: number) {
+export function createStorageLoader(pool: Queryable, ttlMs?: number) {
   return new ModuleConfigLoader<StorageModuleConfig>({
     pool,
     sql: STORAGE_MODULE_SQL,
@@ -171,7 +170,7 @@ export function createStorageLoader(pool: Pool, ttlMs?: number) {
   });
 }
 
-export function createInvocationLoader(pool: Pool, ttlMs?: number) {
+export function createInvocationLoader(pool: Queryable, ttlMs?: number) {
   return new ModuleConfigLoader<InvocationModuleConfig>({
     pool,
     sql: INVOCATION_MODULE_SQL,

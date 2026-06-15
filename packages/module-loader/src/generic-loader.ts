@@ -1,4 +1,7 @@
-import type { Pool } from 'pg';
+/** Minimal query interface compatible with both pg.Pool and pg.Client. */
+export interface Queryable {
+  query(text: string, values?: unknown[]): Promise<{ rows: Record<string, unknown>[] }>;
+}
 
 export interface ScopedModuleConfig {
   scope: string;
@@ -37,20 +40,20 @@ interface CacheEntry<T> {
  */
 export class ModuleConfigLoader<T extends ScopedModuleConfig> {
   private cache = new Map<string, CacheEntry<T>>();
-  private pool: Pool;
+  private queryable: Queryable;
   private sql: string;
   private moduleName: string;
   private mapper: (row: Record<string, unknown>) => T;
   private ttlMs: number;
 
   constructor(opts: {
-    pool: Pool;
+    pool: Queryable;
     sql: string;
     moduleName: string;
     mapper: (row: Record<string, unknown>) => T;
     ttlMs?: number;
   }) {
-    this.pool = opts.pool;
+    this.queryable = opts.pool;
     this.sql = opts.sql;
     this.moduleName = opts.moduleName;
     this.mapper = opts.mapper;
@@ -66,7 +69,7 @@ export class ModuleConfigLoader<T extends ScopedModuleConfig> {
       return cached.data;
     }
 
-    const { rows } = await this.pool.query(this.sql, [databaseId]);
+    const { rows } = await this.queryable.query(this.sql, [databaseId]);
     const configs = rows.map(this.mapper);
     this.cache.set(databaseId, { data: configs, expiresAt: Date.now() + this.ttlMs });
     return configs;

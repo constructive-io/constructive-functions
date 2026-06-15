@@ -20,8 +20,12 @@
     "lint": "eslint . --fix",
     "test": "jest"
   },
-  "dependencies": {
-    "pg": "^8.13.0"
+  "dependencies": {},
+  "peerDependencies": {
+    "pg": ">=8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "pg": { "optional": true }
   },
   "devDependencies": {
     "@types/node": "^22.10.4",

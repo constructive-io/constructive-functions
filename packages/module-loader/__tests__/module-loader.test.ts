@@ -14,7 +14,7 @@ import {
  */
 const metaSchemaSeed: SeedAdapter = {
   async seed(ctx) {
-    const { pool } = ctx;
+    const pool = ctx.pg;
 
     await pool.query(`
       CREATE SCHEMA IF NOT EXISTS metaschema_public;
@@ -111,7 +111,7 @@ const metaSchemaSeed: SeedAdapter = {
  */
 const testDataSeed: SeedAdapter = {
   async seed(ctx) {
-    const { pool } = ctx;
+    const pool = ctx.pg;
 
     // Create a test database entry
     await pool.query(`
@@ -198,7 +198,7 @@ describe('ModuleLoader', () => {
   let loader: ModuleLoader;
 
   beforeEach(() => {
-    loader = new ModuleLoader({ pool: pg.pool, ttlMs: 0 });
+    loader = new ModuleLoader({ pool: pg, ttlMs: 0 });
   });
 
   describe('function module', () => {
@@ -303,7 +303,7 @@ describe('ModuleLoader', () => {
 
   describe('caching', () => {
     it('caches results within TTL', async () => {
-      const loaderWithTtl = new ModuleLoader({ pool: pg.pool, ttlMs: 60_000 });
+      const loaderWithTtl = new ModuleLoader({ pool: pg, ttlMs: 60_000 });
 
       const first = await loaderWithTtl.function.loadAll(TEST_DB_ID);
       const second = await loaderWithTtl.function.loadAll(TEST_DB_ID);
@@ -317,7 +317,7 @@ describe('ModuleLoader', () => {
     });
 
     it('invalidate clears cache for specific database', async () => {
-      const loaderWithTtl = new ModuleLoader({ pool: pg.pool, ttlMs: 60_000 });
+      const loaderWithTtl = new ModuleLoader({ pool: pg, ttlMs: 60_000 });
 
       const first = await loaderWithTtl.function.loadAll(TEST_DB_ID);
       loaderWithTtl.function.invalidate(TEST_DB_ID);
@@ -326,7 +326,7 @@ describe('ModuleLoader', () => {
     });
 
     it('facade invalidate clears all sub-loader caches', async () => {
-      const loaderWithTtl = new ModuleLoader({ pool: pg.pool, ttlMs: 60_000 });
+      const loaderWithTtl = new ModuleLoader({ pool: pg, ttlMs: 60_000 });
 
       await loaderWithTtl.function.loadAll(TEST_DB_ID);
       await loaderWithTtl.namespace.loadAll(TEST_DB_ID);
