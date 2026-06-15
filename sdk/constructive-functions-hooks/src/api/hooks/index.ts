@@ -32,8 +32,8 @@
  * ```
  */
 export * from './client';
-export * from './query-keys';
-export * from './mutation-keys';
 export * from './invalidation';
-export * from './queries';
+export * from './mutation-keys';
 export * from './mutations';
+export * from './queries';
+export * from './query-keys';

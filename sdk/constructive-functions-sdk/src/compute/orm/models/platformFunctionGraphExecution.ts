@@ -4,36 +4,33 @@
  * DO NOT EDIT - changes will be overwritten
  */
 import { OrmClient } from '../client';
+import type {
+  CreatePlatformFunctionGraphExecutionInput,
+  PlatformFunctionGraphExecutionFilter,
+  PlatformFunctionGraphExecutionOrderBy,
+  PlatformFunctionGraphExecutionPatch,
+  PlatformFunctionGraphExecutionSelect,
+  PlatformFunctionGraphExecutionWithRelations,
+} from '../input-types';
+import { connectionFieldsMap } from '../input-types';
 import {
-  QueryBuilder,
-  buildFindManyDocument,
-  buildFindFirstDocument,
-  buildFindOneDocument,
   buildCreateDocument,
-  buildUpdateByPkDocument,
   buildDeleteByPkDocument,
+  buildFindFirstDocument,
+  buildFindManyDocument,
+  buildUpdateByPkDocument,
+  QueryBuilder,
 } from '../query-builder';
 import type {
   ConnectionResult,
-  FindManyArgs,
-  FindFirstArgs,
   CreateArgs,
-  UpdateArgs,
   DeleteArgs,
+  FindFirstArgs,
+  FindManyArgs,
   InferSelectResult,
   StrictSelect,
+  UpdateArgs,
 } from '../select-types';
-import type {
-  PlatformFunctionGraphExecution,
-  PlatformFunctionGraphExecutionWithRelations,
-  PlatformFunctionGraphExecutionSelect,
-  PlatformFunctionGraphExecutionFilter,
-  PlatformFunctionGraphExecutionOrderBy,
-  CreatePlatformFunctionGraphExecutionInput,
-  UpdatePlatformFunctionGraphExecutionInput,
-  PlatformFunctionGraphExecutionPatch,
-} from '../input-types';
-import { connectionFieldsMap } from '../input-types';
 export class PlatformFunctionGraphExecutionModel {
   constructor(private client: OrmClient) {}
   findMany<S extends PlatformFunctionGraphExecutionSelect>(
