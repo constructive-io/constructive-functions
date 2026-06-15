@@ -20,7 +20,7 @@ const log = new Logger('compute:discovery');
 const COLUMNS = `
     id, name, task_identifier, service_url,
     is_invocable, is_built_in, max_attempts,
-    priority, queue_name, scope, namespace_id,
+    priority, queue_name, scope, namespace_id, namespace_name,
     required_configs, required_secrets, description,
     runtime, inputs, outputs`;
 

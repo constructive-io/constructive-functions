@@ -302,7 +302,7 @@ export default class ComputeWorker {
     if (allNames.length === 0) return;
 
     const dbId = databaseId || this.platformDatabaseId;
-    const namespaceName = fn.namespace_id ?? undefined;
+    const namespaceName = fn.namespace_name ?? undefined;
 
     const resolved = await this.secrets.resolveSecrets(allNames, namespaceName, dbId);
     const resolvedNames = new Set(resolved.map(s => s.name));

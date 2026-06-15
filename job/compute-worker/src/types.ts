@@ -38,6 +38,7 @@ export interface PlatformFunctionDefinition {
   queue_name: string | null;
   scope: string | null;
   namespace_id: string | null;
+  namespace_name: string | null;
   required_configs: FunctionRequirement[] | null;
   required_secrets: FunctionRequirement[] | null;
   description: string | null;
