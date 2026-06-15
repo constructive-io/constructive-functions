@@ -3,6 +3,9 @@
  *
  * Provides a single instance per pool that lazily resolves:
  * - Compute modules (function definitions, invocations, compute logs, graph execution)
+ * - Namespace modules (platform namespaces + events)
+ * - Secrets modules (config secrets)
+ * - Storage modules (buckets + files)
  * - Usage modules (metering table names)
  * - Billing modules (quota + usage recording)
  *
@@ -10,12 +13,11 @@
  *   const loader = new ModuleLoader({ pool });
  *   loader.compute();             // platform scope (default)
  *   loader.compute(tenantDbId);   // tenant scope
- *   loader.usage(tenantDbId);     // tenant usage tables
  *
- * Scope-aware metering:
- *   loader.logCompute(entry);           // resolves scope from entry.databaseId
- *   loader.logInference(entry);
- *   loader.logStorage(entry);
+ * Scope-aware resolution:
+ *   loader.namespace.load(dbId, scope);   // explicit scope
+ *   loader.namespace.load(dbId);          // unambiguous single-instance
+ *   loader.namespace.loadAll(dbId);       // all scopes
  */
 
 import type { Pool } from 'pg';
@@ -23,6 +25,9 @@ import type { Pool } from 'pg';
 import { BillingLoader } from './billing-loader';
 import { ComputeModuleLoader } from './compute-loader';
 import type { ComputeModuleConfigExtended } from './compute-loader';
+import { NamespaceModuleLoader } from './namespace-loader';
+import { SecretsModuleLoader } from './secrets-loader';
+import { StorageModuleLoader } from './storage-loader';
 import type {
   BillingModuleConfig,
   InferenceEntry,
@@ -38,6 +43,9 @@ export class ModuleLoader {
   readonly computeLoader: ComputeModuleLoader;
   readonly usageLoader: UsageLoader;
   readonly billingLoader: BillingLoader;
+  readonly namespace: NamespaceModuleLoader;
+  readonly secrets: SecretsModuleLoader;
+  readonly storage: StorageModuleLoader;
 
   private pool: Pool;
   private defaultDatabaseId: string;
@@ -50,6 +58,9 @@ export class ModuleLoader {
     this.computeLoader = new ComputeModuleLoader(this.pool, ttl);
     this.usageLoader = new UsageLoader(this.pool, this.defaultDatabaseId, ttl);
     this.billingLoader = new BillingLoader(this.pool, this.defaultDatabaseId, ttl);
+    this.namespace = new NamespaceModuleLoader(this.pool, ttl);
+    this.secrets = new SecretsModuleLoader(this.pool, ttl);
+    this.storage = new StorageModuleLoader(this.pool, ttl);
   }
 
   // ─── Compute Resolution ─────────────────────────────────────────────────
@@ -101,10 +112,16 @@ export class ModuleLoader {
       this.computeLoader.invalidate(databaseId);
       this.usageLoader.invalidate(databaseId);
       this.billingLoader.invalidate(databaseId);
+      this.namespace.invalidate(databaseId);
+      this.secrets.invalidate(databaseId);
+      this.storage.invalidate(databaseId);
     } else {
       this.computeLoader.invalidateAll();
       this.usageLoader.invalidate();
       this.billingLoader.invalidate();
+      this.namespace.invalidate();
+      this.secrets.invalidate();
+      this.storage.invalidate();
     }
   }
 }

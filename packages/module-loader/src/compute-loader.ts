@@ -2,10 +2,11 @@
  * ComputeModuleLoader — resolves compute module schema/table names
  * dynamically from MetaSchema.
  *
- * Queries metaschema_modules_public.function_module,
- * metaschema_modules_public.function_invocation_module, and
- * metaschema_modules_public.compute_log_module, joined with
- * metaschema_public.schema to resolve schema names.
+ * Composes four sub-loaders using the generic ModuleConfigLoader base:
+ *   - FunctionModuleLoader (function_module)
+ *   - InvocationModuleLoader (function_invocation_module)
+ *   - ComputeLogModuleLoader (compute_log_module)
+ *   - GraphExecutionModuleLoader (graph_execution_module)
  *
  * Results are TTL-cached per database_id for multi-tenant support.
  */
@@ -13,6 +14,8 @@
 import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
 
+import { ModuleConfigLoader } from './generic-loader';
+import type { ScopedModuleConfig } from './generic-loader';
 import { TtlCache } from './cache';
 import type {
   ComputeLogModuleConfig,
@@ -70,12 +73,55 @@ const GRAPH_EXECUTION_MODULE_SQL = `
     ps.schema_name AS private_schema,
     gem.node_states_table_name,
     gem.complete_node_function,
-    gem.fail_node_function
+    gem.fail_node_function,
+    gem.scope
   FROM metaschema_modules_public.graph_execution_module gem
   JOIN metaschema_public.schema s  ON gem.schema_id = s.id
   JOIN metaschema_public.schema ps ON gem.private_schema_id = ps.id
   WHERE gem.database_id = $1
 `;
+
+// ─── Row Mappers ─────────────────────────────────────────────────────────────
+
+function mapFunctionRow(row: Record<string, string>): FunctionModuleConfig {
+  return {
+    publicSchema: row.public_schema,
+    privateSchema: row.private_schema,
+    definitionsTable: row.definitions_table_name,
+    secretDefinitionsTable: row.secret_definitions_table_name,
+    scope: row.scope,
+  };
+}
+
+function mapInvocationRow(row: Record<string, string>): InvocationModuleConfig {
+  return {
+    publicSchema: row.public_schema,
+    invocationsTable: row.invocations_table_name,
+    executionLogsTable: row.execution_logs_table_name,
+    scope: row.scope,
+  };
+}
+
+function mapComputeLogRow(row: Record<string, string>): ComputeLogModuleConfig {
+  return {
+    publicSchema: row.public_schema,
+    privateSchema: row.private_schema,
+    computeLogTable: row.compute_log_table_name,
+    usageDailyTable: row.usage_daily_table_name,
+    scope: row.scope,
+  };
+}
+
+function mapGraphExecutionRow(row: Record<string, string>): GraphExecutionModuleConfig & ScopedModuleConfig {
+  return {
+    publicSchema: row.public_schema,
+    privateSchema: row.private_schema,
+    nodeStatesTable: row.node_states_table_name,
+    completeNodeFunction: row.complete_node_function,
+    failNodeFunction: row.fail_node_function,
+    scope: row.scope,
+  };
+}
 
 // ─── Default Configs ─────────────────────────────────────────────────────────
 
@@ -87,123 +133,107 @@ const DEFAULT_GRAPH_EXECUTION: GraphExecutionModuleConfig = {
   failNodeFunction: 'platform_fail_node',
 };
 
-// ─── Loader Class ────────────────────────────────────────────────────────────
+// ─── Sub-Loaders (exposed for direct scope-aware access) ─────────────────────
+
+export class FunctionModuleLoader extends ModuleConfigLoader<FunctionModuleConfig> {
+  constructor(pool: Pool, ttlMs: number = DEFAULT_TTL_MS) {
+    super(pool, 'function', FUNCTION_MODULE_SQL, mapFunctionRow, ttlMs);
+  }
+}
+
+export class InvocationModuleLoader extends ModuleConfigLoader<InvocationModuleConfig> {
+  constructor(pool: Pool, ttlMs: number = DEFAULT_TTL_MS) {
+    super(pool, 'invocation', INVOCATION_MODULE_SQL, mapInvocationRow, ttlMs);
+  }
+}
+
+export class ComputeLogModuleLoader extends ModuleConfigLoader<ComputeLogModuleConfig> {
+  constructor(pool: Pool, ttlMs: number = DEFAULT_TTL_MS) {
+    super(pool, 'compute-log', COMPUTE_LOG_MODULE_SQL, mapComputeLogRow, ttlMs);
+  }
+}
+
+export class GraphExecutionModuleLoader extends ModuleConfigLoader<GraphExecutionModuleConfig & ScopedModuleConfig> {
+  constructor(pool: Pool, ttlMs: number = DEFAULT_TTL_MS) {
+    super(pool, 'graph-execution', GRAPH_EXECUTION_MODULE_SQL, mapGraphExecutionRow, ttlMs);
+  }
+}
+
+// ─── Composite Loader (backwards-compatible facade) ──────────────────────────
 
 export interface ComputeModuleConfigExtended extends ComputeModuleConfig {
   graphExecutionModule: GraphExecutionModuleConfig;
 }
 
 export class ComputeModuleLoader {
-  private cache: TtlCache<ComputeModuleConfigExtended>;
-  private pool: Pool;
+  readonly function: FunctionModuleLoader;
+  readonly invocation: InvocationModuleLoader;
+  readonly computeLog: ComputeLogModuleLoader;
+  readonly graphExecution: GraphExecutionModuleLoader;
+
+  private compositeCache: TtlCache<ComputeModuleConfigExtended>;
 
   constructor(pool: Pool, ttlMs: number = DEFAULT_TTL_MS) {
-    this.pool = pool;
-    this.cache = new TtlCache<ComputeModuleConfigExtended>(ttlMs);
+    this.function = new FunctionModuleLoader(pool, ttlMs);
+    this.invocation = new InvocationModuleLoader(pool, ttlMs);
+    this.computeLog = new ComputeLogModuleLoader(pool, ttlMs);
+    this.graphExecution = new GraphExecutionModuleLoader(pool, ttlMs);
+    this.compositeCache = new TtlCache<ComputeModuleConfigExtended>(ttlMs);
   }
 
   /**
-   * Load the full compute module config for a database.
-   * Cached per database_id. Safe for multi-tenant usage:
-   * - `load(platformId)` → platform scope
-   * - `load(tenantId)` → tenant scope
+   * Load the full composite compute config for a database.
+   * Backwards-compatible with existing callers.
    */
   async load(databaseId: string): Promise<ComputeModuleConfigExtended> {
-    const cached = this.cache.get(databaseId);
+    const cached = this.compositeCache.get(databaseId);
     if (cached !== undefined) {
-      log.debug(`module config cache hit for database ${databaseId}`);
+      log.debug(`composite cache hit for database ${databaseId}`);
       return cached;
     }
 
-    log.debug(`module config cache miss for database ${databaseId}, querying metaschema`);
+    log.debug(`composite cache miss for database ${databaseId}, loading sub-modules`);
 
-    const fnResult = await this.pool.query(FUNCTION_MODULE_SQL, [databaseId]);
-
-    let functionModule: FunctionModuleConfig | null = null;
-    if (fnResult.rows.length > 0) {
-      const row = fnResult.rows[0];
-      functionModule = {
-        publicSchema: row.public_schema,
-        privateSchema: row.private_schema,
-        definitionsTable: row.definitions_table_name,
-        secretDefinitionsTable: row.secret_definitions_table_name,
-        scope: row.scope,
-      };
-    }
-
-    let invocationModules: InvocationModuleConfig[] = [];
-    try {
-      const invResult = await this.pool.query(INVOCATION_MODULE_SQL, [databaseId]);
-      invocationModules = invResult.rows.map(
-        (row: Record<string, string>) => ({
-          publicSchema: row.public_schema,
-          invocationsTable: row.invocations_table_name,
-          executionLogsTable: row.execution_logs_table_name,
-          scope: row.scope,
-        })
-      );
-    } catch {
-      log.debug(`function_invocation_module not available for database ${databaseId}`);
-    }
-
-    let computeLogModule: ComputeLogModuleConfig | null = null;
-    try {
-      const clResult = await this.pool.query(COMPUTE_LOG_MODULE_SQL, [databaseId]);
-      if (clResult.rows.length > 0) {
-        const row = clResult.rows[0];
-        computeLogModule = {
-          publicSchema: row.public_schema,
-          privateSchema: row.private_schema,
-          computeLogTable: row.compute_log_table_name,
-          usageDailyTable: row.usage_daily_table_name,
-          scope: row.scope,
-        };
-      }
-    } catch {
-      log.debug(`compute_log_module not available for database ${databaseId}`);
-    }
-
-    let graphExecutionModule: GraphExecutionModuleConfig = DEFAULT_GRAPH_EXECUTION;
-    try {
-      const geResult = await this.pool.query(GRAPH_EXECUTION_MODULE_SQL, [databaseId]);
-      if (geResult.rows.length > 0) {
-        const row = geResult.rows[0];
-        graphExecutionModule = {
-          publicSchema: row.public_schema,
-          privateSchema: row.private_schema,
-          nodeStatesTable: row.node_states_table_name,
-          completeNodeFunction: row.complete_node_function,
-          failNodeFunction: row.fail_node_function,
-        };
-      }
-    } catch {
-      log.debug(`graph_execution_module not available for database ${databaseId} — using defaults`);
-    }
+    const [fnConfigs, invConfigs, clConfigs, geConfigs] = await Promise.all([
+      this.function.loadAll(databaseId),
+      this.invocation.loadAll(databaseId),
+      this.computeLog.loadAll(databaseId),
+      this.graphExecution.loadAll(databaseId),
+    ]);
 
     const config: ComputeModuleConfigExtended = {
-      functionModule,
-      invocationModules,
-      computeLogModule,
-      graphExecutionModule,
+      functionModule: fnConfigs[0] ?? null,
+      invocationModules: invConfigs,
+      computeLogModule: clConfigs[0] ?? null,
+      graphExecutionModule: geConfigs[0] ?? DEFAULT_GRAPH_EXECUTION,
     };
-    this.cache.set(databaseId, config);
+
+    this.compositeCache.set(databaseId, config);
 
     log.info(
       `loaded compute module config for database ${databaseId}: ` +
-        `fn=${functionModule ? `${functionModule.publicSchema}.${functionModule.definitionsTable}` : 'none'}, ` +
-        `invocations=${invocationModules.length} scope(s), ` +
-        `computeLog=${computeLogModule ? `${computeLogModule.publicSchema}.${computeLogModule.computeLogTable}` : 'none'}, ` +
-        `graph=${graphExecutionModule.publicSchema}.${graphExecutionModule.nodeStatesTable}`
+        `fn=${config.functionModule ? `${config.functionModule.publicSchema}.${config.functionModule.definitionsTable}` : 'none'}, ` +
+        `invocations=${invConfigs.length} scope(s), ` +
+        `computeLog=${config.computeLogModule ? `${config.computeLogModule.publicSchema}.${config.computeLogModule.computeLogTable}` : 'none'}, ` +
+        `graph=${config.graphExecutionModule.publicSchema}.${config.graphExecutionModule.nodeStatesTable}`
     );
 
     return config;
   }
 
   invalidate(databaseId: string): void {
-    this.cache.delete(databaseId);
+    this.compositeCache.delete(databaseId);
+    this.function.invalidate(databaseId);
+    this.invocation.invalidate(databaseId);
+    this.computeLog.invalidate(databaseId);
+    this.graphExecution.invalidate(databaseId);
   }
 
   invalidateAll(): void {
-    this.cache.clear();
+    this.compositeCache.clear();
+    this.function.invalidate();
+    this.invocation.invalidate();
+    this.computeLog.invalidate();
+    this.graphExecution.invalidate();
   }
 }

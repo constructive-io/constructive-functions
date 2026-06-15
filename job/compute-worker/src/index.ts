@@ -346,7 +346,7 @@ export default class ComputeWorker {
   ): Promise<void> {
     const { task_identifier } = job;
     const databaseId = job.database_id || this.platformDatabaseId;
-    const scope = job.entity_id ? 'org' : 'platform';
+    const scope = job.entity_type || null;
 
     await this.setJobGUCs(job);
 
@@ -371,7 +371,7 @@ export default class ComputeWorker {
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
       await this.tracker.complete(
         invocationId, ms, undefined,
-        scope, scope === 'org' ? databaseId : undefined
+        scope, scope ? databaseId : undefined
       );
 
       await this.computeLog.log({
@@ -393,7 +393,7 @@ export default class ComputeWorker {
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
       await this.tracker.fail(
         invocationId, ms, err.message,
-        scope, scope === 'org' ? databaseId : undefined
+        scope, scope ? databaseId : undefined
       );
 
       await this.computeLog.log({
@@ -425,7 +425,7 @@ export default class ComputeWorker {
     const { task_identifier } = job;
     const functionName = fn.task_identifier;
     const databaseId = job.database_id || this.platformDatabaseId;
-    const scope = job.entity_id ? 'org' : 'platform';
+    const scope = job.entity_type || null;
 
     // Inline nodes use inputs directly; props come from the graph node definition
     const inputs = graphNode ? (payload.inputs as Record<string, unknown>) : (payload as Record<string, unknown>);
@@ -459,7 +459,7 @@ export default class ComputeWorker {
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
       await this.tracker.complete(
         invocationId, ms, undefined,
-        scope, scope === 'org' ? databaseId : undefined
+        scope, scope ? databaseId : undefined
       );
 
       await this.computeLog.log({
@@ -487,7 +487,7 @@ export default class ComputeWorker {
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
       await this.tracker.fail(
         invocationId, ms, err.message,
-        scope, scope === 'org' ? databaseId : undefined
+        scope, scope ? databaseId : undefined
       );
 
       await this.computeLog.log({
@@ -533,7 +533,7 @@ export default class ComputeWorker {
     }
 
     const databaseId = job.database_id || this.platformDatabaseId;
-    const scope = job.entity_id ? 'org' : 'platform';
+    const scope = job.entity_type || null;
     const billingEntityId = job.entity_id || job.organization_id;
     const meterSlug = functionName;
 
@@ -583,7 +583,7 @@ export default class ComputeWorker {
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
       await this.tracker.complete(
         invocationId, ms, undefined,
-        scope, scope === 'org' ? databaseId : undefined
+        scope, scope ? databaseId : undefined
       );
 
       // Record billing usage on success
@@ -623,7 +623,7 @@ export default class ComputeWorker {
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
       await this.tracker.fail(
         invocationId, ms, err.message,
-        scope, scope === 'org' ? databaseId : undefined
+        scope, scope ? databaseId : undefined
       );
 
       // Write compute log entry for failures too

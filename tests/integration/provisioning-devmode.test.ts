@@ -16,16 +16,37 @@ afterAll(() => {
   if (origK8sUrl !== undefined) process.env.K8S_API_URL = origK8sUrl;
 });
 
-// Mock the ComputeModuleLoader — the moduleNameMapper resolves
+// Mock the module-loader — the moduleNameMapper resolves
 // @constructive-io/module-loader to packages/module-loader/src/index
 jest.mock('@constructive-io/module-loader', () => ({
-  ComputeModuleLoader: jest.fn().mockImplementation(() => ({
-    load: jest.fn().mockResolvedValue({
+  ModuleLoader: jest.fn().mockImplementation(() => ({
+    compute: jest.fn().mockResolvedValue({
       functionModule: {
         publicSchema: 'constructive_compute_public',
         definitionsTable: 'platform_function_definitions',
       },
     }),
+    namespace: {
+      load: jest.fn().mockResolvedValue({
+        publicSchema: 'constructive_infra_public',
+        namespacesTable: 'platform_namespaces',
+      }),
+      loadAll: jest.fn().mockResolvedValue([]),
+      invalidate: jest.fn(),
+    },
+    secrets: {
+      load: jest.fn().mockResolvedValue({
+        privateSchema: 'constructive_store_private',
+        secretsTable: 'platform_secrets',
+      }),
+      loadAll: jest.fn().mockResolvedValue([]),
+      invalidate: jest.fn(),
+    },
+    storage: {
+      load: jest.fn().mockResolvedValue(null),
+      loadAll: jest.fn().mockResolvedValue([]),
+      invalidate: jest.fn(),
+    },
   })),
 }));
 
@@ -38,12 +59,33 @@ const mockPool = {
 } as unknown as Pool;
 
 const mockLoader = {
-  load: jest.fn().mockResolvedValue({
+  compute: jest.fn().mockResolvedValue({
     functionModule: {
       publicSchema: 'constructive_compute_public',
       definitionsTable: 'platform_function_definitions',
     },
   }),
+  namespace: {
+    load: jest.fn().mockResolvedValue({
+      publicSchema: 'constructive_infra_public',
+      namespacesTable: 'platform_namespaces',
+    }),
+    loadAll: jest.fn().mockResolvedValue([]),
+    invalidate: jest.fn(),
+  },
+  secrets: {
+    load: jest.fn().mockResolvedValue({
+      privateSchema: 'constructive_store_private',
+      secretsTable: 'platform_secrets',
+    }),
+    loadAll: jest.fn().mockResolvedValue([]),
+    invalidate: jest.fn(),
+  },
+  storage: {
+    load: jest.fn().mockResolvedValue(null),
+    loadAll: jest.fn().mockResolvedValue([]),
+    invalidate: jest.fn(),
+  },
 };
 
 describe('Provisioning handlers — dev mode (no K8S_API_URL)', () => {

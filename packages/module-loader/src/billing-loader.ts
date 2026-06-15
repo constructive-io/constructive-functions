@@ -1,72 +1,74 @@
 /**
  * BillingLoader — quota checks and usage recording via the billing_module.
  *
- * Discovers billing configuration from metaschema_modules_public.billing_module.
- * Gracefully no-ops when billing is not provisioned (standalone dev mode).
- *
- * Multi-database: pass different databaseId to resolve billing for
- * platform scope vs tenant scope.
+ * Built on the generic ModuleConfigLoader base for consistent caching
+ * and scope resolution. Gracefully no-ops when billing is not provisioned.
  */
 
 import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
 
-import { TtlCache } from './cache';
+import { ModuleConfigLoader } from './generic-loader';
+import type { ScopedModuleConfig } from './generic-loader';
 import type { BillingModuleConfig } from './types';
 import { DEFAULT_DATABASE_ID, DEFAULT_TTL_MS } from './types';
 
 const log = new Logger('module-loader:billing');
 
+// ─── Extended Config (includes scope) ────────────────────────────────────────
+
+interface BillingModuleConfigScoped extends BillingModuleConfig, ScopedModuleConfig {}
+
+// ─── SQL ─────────────────────────────────────────────────────────────────────
+
 const BILLING_MODULE_SQL = `
   SELECT
     s.schema_name  AS public_schema,
     ps.schema_name AS private_schema,
-    bm.record_usage_function
+    bm.record_usage_function,
+    bm.scope
   FROM metaschema_modules_public.billing_module bm
   JOIN metaschema_public.schema s  ON bm.schema_id = s.id
   JOIN metaschema_public.schema ps ON bm.private_schema_id = ps.id
   WHERE bm.database_id = $1
-  LIMIT 1
 `;
 
+// ─── Row Mapper ──────────────────────────────────────────────────────────────
+
+function mapBillingRow(row: Record<string, string>): BillingModuleConfigScoped {
+  return {
+    publicSchema: row.public_schema,
+    privateSchema: row.private_schema,
+    recordUsageFunction: row.record_usage_function,
+    scope: row.scope,
+  };
+}
+
+// ─── Loader ──────────────────────────────────────────────────────────────────
+
 export class BillingLoader {
+  private loader: ModuleConfigLoader<BillingModuleConfigScoped>;
   private pool: Pool;
-  private cache: TtlCache<BillingModuleConfig | null>;
   private defaultDatabaseId: string;
 
   constructor(pool: Pool, databaseId: string = DEFAULT_DATABASE_ID, ttlMs: number = DEFAULT_TTL_MS) {
     this.pool = pool;
     this.defaultDatabaseId = databaseId;
-    this.cache = new TtlCache<BillingModuleConfig | null>(ttlMs);
+    this.loader = new ModuleConfigLoader<BillingModuleConfigScoped>(
+      pool, 'billing', BILLING_MODULE_SQL, mapBillingRow, ttlMs
+    );
   }
 
   /**
    * Load billing module config for a database.
    * Returns null if billing is not provisioned.
+   * Uses unambiguous single-instance resolution (scope = null).
    */
   async load(databaseId?: string): Promise<BillingModuleConfig | null> {
     const dbId = databaseId ?? this.defaultDatabaseId;
-    const cached = this.cache.get(dbId);
-    if (cached !== undefined) return cached;
-
-    try {
-      const { rows } = await this.pool.query(BILLING_MODULE_SQL, [dbId]);
-      if (!rows.length || !rows[0].record_usage_function) {
-        this.cache.set(dbId, null);
-        return null;
-      }
-      const config: BillingModuleConfig = {
-        publicSchema: rows[0].public_schema,
-        privateSchema: rows[0].private_schema,
-        recordUsageFunction: rows[0].record_usage_function,
-      };
-      log.debug(`loaded billing module: ${config.privateSchema}.${config.recordUsageFunction}`);
-      this.cache.set(dbId, config);
-      return config;
-    } catch {
-      this.cache.set(dbId, null);
-      return null;
-    }
+    const config = await this.loader.load(dbId);
+    if (!config || !config.recordUsageFunction) return null;
+    return config;
   }
 
   /**
@@ -118,10 +120,6 @@ export class BillingLoader {
   }
 
   invalidate(databaseId?: string): void {
-    if (databaseId) {
-      this.cache.delete(databaseId);
-    } else {
-      this.cache.clear();
-    }
+    this.loader.invalidate(databaseId);
   }
 }

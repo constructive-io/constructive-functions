@@ -5,6 +5,9 @@
  * Reads all secrets for a namespace, decrypts them, and creates/replaces
  * the aggregate K8s Secret in the namespace.
  *
+ * Resolves namespace and secrets table locations via the module loader
+ * (scope-aware, multi-database safe).
+ *
  * Assumes the K8s namespace already exists (created by the seed).
  */
 
@@ -24,7 +27,7 @@ const log = new Logger('provisioning:namespace-sync-secrets');
 
 export const namespaceSyncSecrets: ProvisioningHandler<SyncSecretsPayload, SyncSecretsResult> = async (
   payload,
-  { pool }
+  { pool, databaseId, loader }
 ) => {
   const namespaceId = payload.id;
   const namespaceName = payload.namespace_name;
@@ -35,6 +38,24 @@ export const namespaceSyncSecrets: ProvisioningHandler<SyncSecretsPayload, SyncS
     return { skipped: true, reason: 'no-k8s' };
   }
 
+  // Resolve namespace and secrets table locations via module loader
+  const nsConfig = await loader.namespace.load(databaseId);
+  const secretsConfig = await loader.secrets.load(databaseId);
+
+  if (!nsConfig) {
+    log.warn(`namespace_module not provisioned for database ${databaseId}`);
+    return { skipped: true, reason: 'no-namespace-module' };
+  }
+  if (!secretsConfig) {
+    log.warn(`config_secrets_module not provisioned for database ${databaseId}`);
+    return { skipped: true, reason: 'no-secrets-module' };
+  }
+
+  const nsSchema = nsConfig.publicSchema;
+  const nsTable = nsConfig.namespacesTable;
+  const secretsSchema = secretsConfig.privateSchema;
+  const secretsTable = secretsConfig.secretsTable;
+
   // Resolve namespace name from ID if not provided directly
   let resolvedName: string;
   let resolvedId: string | undefined;
@@ -42,7 +63,7 @@ export const namespaceSyncSecrets: ProvisioningHandler<SyncSecretsPayload, SyncS
     resolvedName = namespaceName;
     if (!namespaceId) {
       const { rows } = await pool.query<NamespaceRow>(
-        `SELECT id, name FROM metaschema_public.namespace WHERE name = $1`,
+        `SELECT id, name FROM "${nsSchema}"."${nsTable}" WHERE name = $1`,
         [namespaceName]
       );
       if (rows.length === 0) return { skipped: true, reason: 'namespace-not-found' };
@@ -53,7 +74,7 @@ export const namespaceSyncSecrets: ProvisioningHandler<SyncSecretsPayload, SyncS
   } else if (namespaceId) {
     resolvedId = namespaceId;
     const { rows } = await pool.query<NamespaceRow>(
-      `SELECT id, name FROM metaschema_public.namespace WHERE id = $1`,
+      `SELECT id, name FROM "${nsSchema}"."${nsTable}" WHERE id = $1`,
       [namespaceId]
     );
     if (rows.length === 0) return { skipped: true, reason: 'namespace-not-found' };
@@ -65,7 +86,7 @@ export const namespaceSyncSecrets: ProvisioningHandler<SyncSecretsPayload, SyncS
   // Fetch and decrypt secrets
   const { rows: secretRows } = await pool.query<SecretRow>(
     `SELECT key, pgp_sym_decrypt(value, key_id::text) AS decrypted_value
-     FROM metaschema_public.namespace_secret
+     FROM "${secretsSchema}"."${secretsTable}"
      WHERE namespace_id = $1`,
     [resolvedId]
   );

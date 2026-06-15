@@ -36,10 +36,14 @@ export const functionSyncResources: ProvisioningHandler<SyncResourcesPayload, Sy
     return { skipped: true, reason: 'no-k8s' };
   }
 
-  // Resolve table names via shared module loader (TTL-cached instance)
-  const config = await loader.load(databaseId);
+  // Resolve table names via shared module loader (TTL-cached, scope-aware)
+  const config = await loader.compute(databaseId);
   const publicSchema = config.functionModule?.publicSchema ?? 'constructive_compute_public';
   const definitionsTable = config.functionModule?.definitionsTable ?? 'platform_function_definitions';
+
+  const nsConfig = await loader.namespace.load(databaseId);
+  const nsSchema = nsConfig?.publicSchema ?? 'constructive_infra_public';
+  const nsTable = nsConfig?.namespacesTable ?? 'platform_namespaces';
 
   const { rows } = await pool.query<FunctionDefinitionRow>(
     `SELECT id, name, task_identifier, service_url, runtime, image,
@@ -61,7 +65,7 @@ export const functionSyncResources: ProvisioningHandler<SyncResourcesPayload, Sy
     return { skipped: true, reason: 'inline-or-no-image' };
   }
 
-  const namespaceName = await resolveNamespaceName(pool, fnRow.namespace_id);
+  const namespaceName = await resolveNamespaceName(pool, fnRow.namespace_id, nsSchema, nsTable);
   const serviceSpec = buildKnativeServiceSpec(fnRow, namespaceName);
 
   const svc = await mergeAndReplace(client, serviceSpec, fnRow.name, namespaceName);

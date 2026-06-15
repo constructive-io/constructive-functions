@@ -62,7 +62,7 @@ export interface CreateInvocationInput {
   job_id: string | number;
   database_id?: string;
   actor_id?: string;
-  scope?: string;
+  scope?: string | null;
   graph_execution_id?: string;
 }
 

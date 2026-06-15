@@ -118,7 +118,7 @@ describe('resolveNamespaceName', () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ name: 'my-app' }] });
     expect(await resolveNamespaceName(mockPool, 'ns-123')).toBe('my-app');
     expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining('metaschema_public.namespace'),
+      expect.stringContaining('constructive_infra_public'),
       ['ns-123']
     );
   });

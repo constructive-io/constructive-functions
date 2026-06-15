@@ -2,11 +2,10 @@
  * InvocationTracker — records function invocations in the
  * dynamically-resolved invocations table.
  *
- * Supports both platform-scoped and org-scoped invocations:
- *   - Platform scope: no owner_id column
- *   - Org scope: includes owner_id (entity_id) pointing to the orgs table
- *
- * Schema and table names are resolved via ComputeModuleLoader.
+ * Uses the generic ModuleConfigLoader for scope-aware resolution:
+ *   - scope provided → exact match against invocation module scope
+ *   - scope null + 1 module → use it (unambiguous)
+ *   - scope null + 2+ modules → throws AmbiguousScopeError
  *
  * Lifecycle:
  *   1. `create()` — inserts a row with status='running' before dispatch
@@ -35,22 +34,17 @@ export class InvocationTracker {
 
   /**
    * Resolve the invocation module matching the desired scope.
-   * Falls back to the first available module if no scope match.
+   * Uses the generic loader's scope resolution:
+   *   - scope provided → exact match
+   *   - scope null + 1 module → unambiguous
+   *   - scope null + 0 modules → null
    */
   private async resolveInvocationModule(
-    scope?: string,
+    scope?: string | null,
     targetDatabaseId?: string
   ): Promise<InvocationModuleConfig | null> {
     const dbId = targetDatabaseId ?? this.databaseId;
-    const config = await this.loader.load(dbId);
-    if (!config.invocationModules.length) return null;
-
-    if (scope) {
-      const match = config.invocationModules.find((m) => m.scope === scope);
-      if (match) return match;
-    }
-
-    return config.invocationModules[0];
+    return this.loader.invocation.load(dbId, scope);
   }
 
   /**
@@ -58,11 +52,11 @@ export class InvocationTracker {
    * Returns the invocation ID and start timestamp.
    */
   async create(input: CreateInvocationInput): Promise<{ id: string; started_at: Date }> {
-    const scope = input.scope ?? 'platform';
+    const scope = input.scope ?? null;
     const targetDbId = scope === 'org' ? input.database_id : undefined;
     const mod = await this.resolveInvocationModule(scope, targetDbId);
     if (!mod) {
-      throw new Error(`no invocation module found for scope="${scope}"`);
+      throw new Error(`no invocation module found for scope="${scope ?? 'null'}"`);
     }
 
     const { publicSchema, invocationsTable } = mod;
@@ -85,7 +79,7 @@ export class InvocationTracker {
         input.graph_execution_id ?? null,
       ]);
       const row = rows[0];
-      log.debug(`created ${scope}-scoped invocation ${row.id} for ${input.task_identifier}`);
+      log.debug(`created invocation ${row.id} for ${input.task_identifier} (scope=${scope ?? 'default'})`);
       return { id: row.id, started_at: row.started_at };
     } catch (err: any) {
       log.error(`failed to create invocation for ${input.task_identifier}: ${err.message}`);
@@ -95,18 +89,17 @@ export class InvocationTracker {
 
   /**
    * Mark an invocation as completed with result and duration.
-   * Uses the same scope resolution as create to find the right table.
    */
   async complete(
     invocation_id: string,
     duration_ms: number,
     result?: unknown,
-    scope?: string,
+    scope?: string | null,
     targetDatabaseId?: string
   ): Promise<void> {
     const mod = await this.resolveInvocationModule(scope, targetDatabaseId);
     if (!mod) {
-      log.error(`no invocation module found for complete (scope=${scope})`);
+      log.error(`no invocation module found for complete (scope=${scope ?? 'null'})`);
       return;
     }
 
@@ -132,12 +125,12 @@ export class InvocationTracker {
     invocation_id: string,
     duration_ms: number,
     error: string,
-    scope?: string,
+    scope?: string | null,
     targetDatabaseId?: string
   ): Promise<void> {
     const mod = await this.resolveInvocationModule(scope, targetDatabaseId);
     if (!mod) {
-      log.error(`no invocation module found for fail (scope=${scope})`);
+      log.error(`no invocation module found for fail (scope=${scope ?? 'null'})`);
       return;
     }
 

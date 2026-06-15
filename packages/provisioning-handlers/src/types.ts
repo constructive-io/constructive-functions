@@ -7,7 +7,7 @@
  *   - Context carries shared cached instances (no per-call allocations)
  */
 
-import type { ComputeModuleLoader } from '@constructive-io/module-loader';
+import type { ModuleLoader } from '@constructive-io/module-loader';
 import type { Pool } from 'pg';
 
 // ── Context ──────────────────────────────────────────────────────────────────
@@ -16,7 +16,7 @@ export interface ProvisioningContext {
   pool: Pool;
   databaseId: string;
   /** Shared module loader instance (TTL-cached, do NOT allocate per-call) */
-  loader: ComputeModuleLoader;
+  loader: ModuleLoader;
 }
 
 // ── Handler ──────────────────────────────────────────────────────────────────

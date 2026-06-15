@@ -115,15 +115,18 @@ export function buildKnativeServiceSpec(
 
 /**
  * Resolve a namespace name from a namespace_id. Returns 'default' if null.
+ * Accepts optional schema/table for module-loader-resolved table locations.
  */
 export async function resolveNamespaceName(
   pool: Pool,
-  namespaceId: string | null
+  namespaceId: string | null,
+  nsSchema = 'constructive_infra_public',
+  nsTable = 'platform_namespaces'
 ): Promise<string> {
   if (!namespaceId) return 'default';
 
   const { rows } = await pool.query<NamespaceRow>(
-    `SELECT id, name FROM metaschema_public.namespace WHERE id = $1`,
+    `SELECT id, name FROM "${nsSchema}"."${nsTable}" WHERE id = $1`,
     [namespaceId]
   );
   return rows.length > 0 ? rows[0].name : 'default';

@@ -11,12 +11,12 @@
  *
  * Fully idempotent — safe to re-run at any time.
  *
- * Decomposed into per-step functions following express-context conventions
- * (one concern per function, typed rows, no giant monoliths).
+ * Resolves all table locations via the module loader (scope-aware,
+ * multi-database safe). Falls back to hardcoded defaults in dev mode.
  */
 
 import type { InterwebClient, Namespace, Secret, ServingKnativeDevV1Service } from '@kubernetesjs/ops';
-import { ComputeModuleLoader } from '@constructive-io/module-loader';
+import { ModuleLoader } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
 
@@ -49,11 +49,17 @@ export interface ProvisionSeedResult {
 async function provisionNamespaces(
   client: InterwebClient,
   pool: Pool,
+  databaseId: string,
+  loader: ModuleLoader,
   filterNs?: string
 ): Promise<{ rows: NamespaceRow[]; results: ProvisionSeedResult['namespaces'] }> {
+  const nsConfig = await loader.namespace.load(databaseId);
+  const nsSchema = nsConfig?.publicSchema ?? 'constructive_infra_public';
+  const nsTable = nsConfig?.namespacesTable ?? 'platform_namespaces';
+
   const nsQuery = filterNs
-    ? `SELECT id, name FROM metaschema_public.namespace WHERE name = $1`
-    : `SELECT id, name FROM metaschema_public.namespace`;
+    ? `SELECT id, name FROM "${nsSchema}"."${nsTable}" WHERE name = $1`
+    : `SELECT id, name FROM "${nsSchema}"."${nsTable}"`;
   const nsParams = filterNs ? [filterNs] : [];
   const { rows } = await pool.query<NamespaceRow>(nsQuery, nsParams);
 
@@ -89,14 +95,20 @@ async function provisionNamespaces(
 async function syncNamespaceSecrets(
   client: InterwebClient,
   pool: Pool,
+  databaseId: string,
+  loader: ModuleLoader,
   namespaceRows: NamespaceRow[]
 ): Promise<ProvisionSeedResult['secrets']> {
+  const secretsConfig = await loader.secrets.load(databaseId);
+  const secretsSchema = secretsConfig?.privateSchema ?? 'constructive_store_private';
+  const secretsTable = secretsConfig?.secretsTable ?? 'platform_secrets';
+
   const results: ProvisionSeedResult['secrets'] = [];
 
   for (const ns of namespaceRows) {
     const { rows: secretRows } = await pool.query<SecretRow>(
       `SELECT key, pgp_sym_decrypt(value, key_id::text) AS decrypted_value
-       FROM metaschema_public.namespace_secret
+       FROM "${secretsSchema}"."${secretsTable}"
        WHERE namespace_id = $1`,
       [ns.id]
     );
@@ -151,12 +163,16 @@ async function provisionFunctions(
   client: InterwebClient,
   pool: Pool,
   databaseId: string,
+  loader: ModuleLoader,
   filterFn?: string
 ): Promise<ProvisionSeedResult['functions']> {
-  const loader = new ComputeModuleLoader(pool);
-  const config = await loader.load(databaseId);
+  const config = await loader.compute(databaseId);
   const publicSchema = config.functionModule?.publicSchema ?? 'constructive_compute_public';
   const definitionsTable = config.functionModule?.definitionsTable ?? 'platform_function_definitions';
+
+  const nsConfig = await loader.namespace.load(databaseId);
+  const nsSchema = nsConfig?.publicSchema ?? 'constructive_infra_public';
+  const nsTable = nsConfig?.namespacesTable ?? 'platform_namespaces';
 
   let fnQuery = `SELECT id, name, task_identifier, service_url, runtime, image,
                         concurrency, scale_min, scale_max, scale_target, timeout_seconds, resources,
@@ -173,7 +189,7 @@ async function provisionFunctions(
   const results: ProvisionSeedResult['functions'] = [];
 
   for (const fnRow of fnRows) {
-    const namespaceName = await resolveNamespaceName(pool, fnRow.namespace_id);
+    const namespaceName = await resolveNamespaceName(pool, fnRow.namespace_id, nsSchema, nsTable);
 
     // Ensure namespace exists (may not have been in the namespace table)
     try {
@@ -245,12 +261,14 @@ export async function provision(opts: ProvisionSeedOptions): Promise<ProvisionSe
     return result;
   }
 
-  const { rows: namespaceRows, results: nsResults } = await provisionNamespaces(client, pool, filterNs);
+  const loader = new ModuleLoader({ pool, databaseId });
+
+  const { rows: namespaceRows, results: nsResults } = await provisionNamespaces(client, pool, databaseId, loader, filterNs);
   result.namespaces = nsResults;
 
-  result.secrets = await syncNamespaceSecrets(client, pool, namespaceRows);
+  result.secrets = await syncNamespaceSecrets(client, pool, databaseId, loader, namespaceRows);
 
-  result.functions = await provisionFunctions(client, pool, databaseId, filterFn);
+  result.functions = await provisionFunctions(client, pool, databaseId, loader, filterFn);
 
   log.info(`seed complete: ${result.namespaces.length} namespace(s), ${result.secrets.length} secret set(s), ${result.functions.length} function(s)`);
   return result;
