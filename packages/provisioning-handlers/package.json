@@ -1,0 +1,28 @@
+{
+  "name": "@constructive-io/provisioning-handlers",
+  "version": "0.1.0",
+  "description": "Built-in provisioning handlers — creates K8s namespaces, secrets, and Knative Services from database events",
+  "author": "Constructive <developers@constructive.io>",
+  "license": "SEE LICENSE IN LICENSE",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@constructive-io/module-loader": "workspace:^",
+    "@kubernetesjs/ops": "^0.0.4",
+    "@pgpmjs/logger": "^2.4.3"
+  },
+  "peerDependencies": {
+    "pg": "^8.0.0"
+  }
+}

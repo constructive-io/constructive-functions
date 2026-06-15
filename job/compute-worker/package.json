@@ -15,6 +15,7 @@
     "@constructive-io/job-pg": "^2.5.4",
     "@constructive-io/job-utils": "^2.5.4",
     "@constructive-io/module-loader": "workspace:^",
+    "@constructive-io/provisioning-handlers": "workspace:^",
     "@pgpmjs/logger": "^2.4.3",
     "pg": "8.20.0"
   },

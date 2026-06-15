@@ -214,6 +214,9 @@ importers:
       '@constructive-io/module-loader':
         specifier: workspace:^
         version: link:../../packages/module-loader
+      '@constructive-io/provisioning-handlers':
+        specifier: workspace:^
+        version: link:../../packages/provisioning-handlers
       '@pgpmjs/logger':
         specifier: ^2.4.3
         version: 2.5.2
@@ -621,6 +624,21 @@ importers:
 
   packages/module-loader:
     dependencies:
+      '@pgpmjs/logger':
+        specifier: ^2.4.3
+        version: 2.12.0
+      pg:
+        specifier: ^8.0.0
+        version: 8.21.0
+
+  packages/provisioning-handlers:
+    dependencies:
+      '@constructive-io/module-loader':
+        specifier: workspace:^
+        version: link:../module-loader
+      '@kubernetesjs/ops':
+        specifier: ^0.0.4
+        version: 0.0.4
       '@pgpmjs/logger':
         specifier: ^2.4.3
         version: 2.12.0
@@ -2023,6 +2041,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
+
+  '@kubernetesjs/ops@0.0.4':
+    resolution: {integrity: sha512-L0fG/VlLTWZeYijLpmgsolLMDh3sim7+MLs0sf2hCDIUh08DpsL7BDgjMxoUhMm80i6uQ9XwgJBKmQB4JLu/xw==}
 
   '@launchql/mjml@0.1.1':
     resolution: {integrity: sha512-6+OEmECuu5atRZ43ovsMfFs+T4NWNaKbzNG0uA8HYaBSn3kWR7GH3QnmL3lCIeymLtvgua8aZChYvg6SxrQdnw==}
@@ -8853,6 +8874,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@kubernetesjs/ops@0.0.4': {}
 
   '@launchql/mjml@0.1.1(@babel/core@7.28.5)(react-dom@19.2.7(react@19.2.7))(react-is@18.3.1)(react@19.2.7)':
     dependencies:

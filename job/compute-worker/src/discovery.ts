@@ -8,8 +8,8 @@
  * fetches the function definition and caches it for `ttlMs` (default 60 s).
  */
 
-import { TtlCache } from '@constructive-io/module-loader';
 import type { ComputeModuleLoader } from '@constructive-io/module-loader';
+import { TtlCache } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
 
@@ -22,7 +22,9 @@ const COLUMNS = `
     is_invocable, is_built_in, max_attempts,
     priority, queue_name, scope, namespace_id,
     required_configs, required_secrets, description,
-    runtime, inputs, outputs`;
+    runtime, inputs, outputs,
+    image, concurrency, scale_min, scale_max,
+    timeout_seconds, resources`;
 
 export class FunctionDiscovery {
   private cache: TtlCache<PlatformFunctionDefinition | null>;

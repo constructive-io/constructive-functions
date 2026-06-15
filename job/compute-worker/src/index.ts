@@ -15,8 +15,10 @@
 import poolManager from '@constructive-io/job-pg';
 import type { PgClientLike } from '@constructive-io/job-utils';
 import * as jobs from '@constructive-io/job-utils';
-import { ComputeModuleLoader } from '@constructive-io/module-loader';
 import type { GraphExecutionModuleConfig } from '@constructive-io/module-loader';
+import { ComputeModuleLoader } from '@constructive-io/module-loader';
+import type { ProvisioningContext } from '@constructive-io/provisioning-handlers';
+import { getProvisioningHandler } from '@constructive-io/provisioning-handlers';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool, PoolClient } from 'pg';
 
@@ -61,6 +63,8 @@ export type {
   PlatformFunctionDefinition,
 } from './types';
 export { isGraphNodePayload } from './types';
+export type { ProvisioningContext, ProvisioningHandler } from '@constructive-io/provisioning-handlers';
+export { getProvisioningHandler, registerProvisioningHandler } from '@constructive-io/provisioning-handlers';
 
 const log = new Logger('compute:worker');
 
@@ -299,6 +303,13 @@ export default class ComputeWorker {
     // so the code stays explicit about the source.
     const functionName = graphNode ? payload.node_type : task_identifier;
 
+    // Check for provisioning handler before function discovery
+    const provisioningHandler = getProvisioningHandler(functionName);
+    if (provisioningHandler) {
+      await this.doWorkProvisioning(job, provisioningHandler, payload as Record<string, unknown>);
+      return;
+    }
+
     const fn = await this.discovery.resolve(functionName);
     if (!fn) {
       throw new Error(`Function "${functionName}" is not registered in platform_function_definitions`);
@@ -324,6 +335,83 @@ export default class ComputeWorker {
       await this.doWorkInline(job, fn, graphNode, payload);
     } else {
       await this.doWorkHttp(job, fn, graphNode, payload);
+    }
+  }
+
+  // ─── Provisioning dispatch (in-process, K8s infrastructure) ──────────────
+
+  private async doWorkProvisioning(
+    job: ComputeJobRow,
+    handler: (payload: Record<string, unknown>, context: ProvisioningContext) => Promise<Record<string, unknown>>,
+    payload: Record<string, unknown>
+  ): Promise<void> {
+    const { task_identifier } = job;
+    const databaseId = job.database_id || this.platformDatabaseId;
+    const scope = job.entity_id ? 'org' : 'platform';
+
+    await this.setJobGUCs(job);
+
+    const { id: invocationId } = await this.tracker.create({
+      task_identifier,
+      payload,
+      job_id: job.id,
+      database_id: databaseId,
+      actor_id: job.actor_id,
+      scope,
+    });
+
+    const reqStart = process.hrtime();
+    try {
+      const result = await handler(payload, {
+        pool: this.pgPool,
+        databaseId,
+        k8sApiUrl: process.env.K8S_API_URL || null,
+      });
+
+      const elapsed = process.hrtime(reqStart);
+      const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
+      await this.tracker.complete(
+        invocationId, ms, undefined,
+        scope, scope === 'org' ? databaseId : undefined
+      );
+
+      await this.computeLog.log({
+        task_identifier,
+        job_id: job.id,
+        invocation_id: invocationId,
+        database_id: databaseId,
+        entity_id: job.entity_id,
+        organization_id: job.organization_id,
+        entity_type: job.entity_type,
+        actor_id: job.actor_id,
+        status: 'completed',
+        duration_ms: ms,
+      });
+
+      log.info(`provisioning ${task_identifier} completed in ${ms}ms`, result);
+    } catch (err: any) {
+      const elapsed = process.hrtime(reqStart);
+      const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
+      await this.tracker.fail(
+        invocationId, ms, err.message,
+        scope, scope === 'org' ? databaseId : undefined
+      );
+
+      await this.computeLog.log({
+        task_identifier,
+        job_id: job.id,
+        invocation_id: invocationId,
+        database_id: databaseId,
+        entity_id: job.entity_id,
+        organization_id: job.organization_id,
+        entity_type: job.entity_type,
+        actor_id: job.actor_id,
+        status: 'failed',
+        duration_ms: ms,
+        error: err.message,
+      });
+
+      throw err;
     }
   }
 

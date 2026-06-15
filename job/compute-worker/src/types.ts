@@ -44,6 +44,12 @@ export interface PlatformFunctionDefinition {
   runtime: FunctionRuntime | null;
   inputs: FunctionPortDefinition[] | null;
   outputs: FunctionPortDefinition[] | null;
+  image: string | null;
+  concurrency: number;
+  scale_min: number;
+  scale_max: number;
+  timeout_seconds: number;
+  resources: Record<string, unknown>;
 }
 
 // ─── Invocation Record ───────────────────────────────────────────────────────
