@@ -1,0 +1,138 @@
+name: CI Test Provisioning
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+      - release/*
+    paths:
+      - "packages/provisioning-handlers/**"
+      - "job/compute-worker/**"
+      - "tests/integration/provisioning-*"
+      - "tests/e2e/provisioning-*"
+      - ".github/workflows/test-provisioning.yaml"
+  push:
+    branches:
+      - main
+      - develop
+      - release/*
+    paths:
+      - "packages/provisioning-handlers/**"
+      - "job/compute-worker/**"
+      - "tests/integration/provisioning-*"
+      - "tests/e2e/provisioning-*"
+      - ".github/workflows/test-provisioning.yaml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # =========================================================================
+  # UNIT / INTEGRATION (no K8s needed)
+  # =========================================================================
+  unit-integration:
+    name: Provisioning unit & integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Generate function packages
+        run: node --experimental-strip-types scripts/generate.ts
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build workspace
+        run: pnpm build
+
+      - name: Run provisioning tests
+        run: |
+          pnpm jest \
+            tests/integration/provisioning-registry.test.ts \
+            tests/integration/provisioning-knative.test.ts \
+            tests/integration/provisioning-devmode.test.ts \
+            --no-coverage
+
+  # =========================================================================
+  # E2E with kind cluster (real K8s)
+  # =========================================================================
+  e2e-k8s:
+    name: Provisioning E2E (kind)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Generate function packages
+        run: node --experimental-strip-types scripts/generate.ts
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build workspace
+        run: pnpm build
+
+      - name: Setup kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: provisioning-test
+          wait: 120s
+
+      - name: Verify cluster
+        run: |
+          kubectl version
+          kubectl get nodes -o wide
+
+      - name: Run provisioning E2E tests
+        env:
+          K8S_API_URL: http://localhost:8001
+        run: |
+          # Start kubectl proxy in background for K8s API access
+          kubectl proxy --port=8001 &
+          sleep 2
+
+          pnpm jest \
+            tests/e2e/__tests__/provisioning-seed.e2e.test.ts \
+            --no-coverage
+
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          echo "=== Namespaces ==="
+          kubectl get ns || true
+
+          echo "=== All resources in test namespaces ==="
+          for ns in $(kubectl get ns -o jsonpath='{range .items[?(@.metadata.labels.provisioning-test)]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do
+            echo "--- Namespace: $ns ---"
+            kubectl get all -n "$ns" || true
+            kubectl get secrets -n "$ns" || true
+          done
+
+          echo "=== Events ==="
+          kubectl get events -A --sort-by='.lastTimestamp' | tail -50 || true

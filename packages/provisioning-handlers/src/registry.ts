@@ -1,17 +1,15 @@
 /**
- * ProvisioningRegistry — built-in task handlers that create K8s
- * infrastructure (namespaces, secrets, Knative Services) when
- * function definitions are inserted/updated in the database.
+ * ProvisioningRegistry — built-in task handlers that sync K8s
+ * infrastructure when database state changes.
  *
- * Separate from the FBP inline registry. Provisioning handlers need
- * pool access, K8s client access, and the full job context.
+ * These handlers run inline in the compute-worker. They assume the
+ * underlying K8s resources were already created by the provisioning
+ * seed script — they only handle incremental updates.
  */
 
 import type { ProvisioningHandler } from './types';
 
-import { handleFunctionProvision } from './handlers/function-provision';
 import { handleFunctionSyncResources } from './handlers/function-sync-resources';
-import { handleNamespaceProvision } from './handlers/namespace-provision';
 import { handleNamespaceSyncSecrets } from './handlers/namespace-sync-secrets';
 
 const PROVISIONING_HANDLERS = new Map<string, ProvisioningHandler>();
@@ -29,8 +27,6 @@ export function getProvisioningHandler(
   return PROVISIONING_HANDLERS.get(taskIdentifier) ?? null;
 }
 
-// Register all built-in provisioning handlers at module load time
-registerProvisioningHandler('namespace:provision', handleNamespaceProvision);
+// Register sync handlers at module load time
 registerProvisioningHandler('namespace:sync-secrets', handleNamespaceSyncSecrets);
-registerProvisioningHandler('function:provision', handleFunctionProvision);
 registerProvisioningHandler('function:sync-resources', handleFunctionSyncResources);

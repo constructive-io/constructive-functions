@@ -6,6 +6,9 @@
   "license": "SEE LICENSE IN LICENSE",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "provision": "dist/bin/provision.js"
+  },
   "files": [
     "dist",
     "README.md"
@@ -15,7 +18,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "provision": "node --experimental-strip-types src/bin/provision.ts"
   },
   "dependencies": {
     "@constructive-io/module-loader": "workspace:^",

@@ -22,6 +22,9 @@ const config: Config = {
     '^@constructive-io/postmaster$':
       '<rootDir>/tests/__mocks__/@constructive-io/postmaster',
     '^@constructive-io/knative-job-worker$': '<rootDir>/job/worker/src/usage-client',
+    '^@constructive-io/module-loader$': '<rootDir>/packages/module-loader/src/index',
+    '^@constructive-io/provisioning-handlers$': '<rootDir>/packages/provisioning-handlers/src/index',
+    '^@kubernetesjs/ops$': '<rootDir>/tests/__mocks__/@kubernetesjs/ops',
     '^simple-smtp-server$': '<rootDir>/tests/__mocks__/simple-smtp-server',
     '^@launchql/mjml$': '<rootDir>/tests/__mocks__/@launchql/mjml',
     '^graphql-tag$': '<rootDir>/tests/__mocks__/graphql-tag'

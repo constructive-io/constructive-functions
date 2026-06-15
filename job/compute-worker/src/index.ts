@@ -17,7 +17,6 @@ import type { PgClientLike } from '@constructive-io/job-utils';
 import * as jobs from '@constructive-io/job-utils';
 import type { GraphExecutionModuleConfig } from '@constructive-io/module-loader';
 import { ComputeModuleLoader } from '@constructive-io/module-loader';
-import type { ProvisioningContext } from '@constructive-io/provisioning-handlers';
 import { getProvisioningHandler } from '@constructive-io/provisioning-handlers';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool, PoolClient } from 'pg';
@@ -64,7 +63,7 @@ export type {
 } from './types';
 export { isGraphNodePayload } from './types';
 export type { ProvisioningContext, ProvisioningHandler } from '@constructive-io/provisioning-handlers';
-export { getProvisioningHandler, registerProvisioningHandler } from '@constructive-io/provisioning-handlers';
+export { getProvisioningHandler, provision, registerProvisioningHandler } from '@constructive-io/provisioning-handlers';
 
 const log = new Logger('compute:worker');
 
@@ -342,7 +341,7 @@ export default class ComputeWorker {
 
   private async doWorkProvisioning(
     job: ComputeJobRow,
-    handler: (payload: Record<string, unknown>, context: ProvisioningContext) => Promise<Record<string, unknown>>,
+    handler: (payload: Record<string, unknown>, context: { pool: import('pg').Pool; databaseId: string }) => Promise<Record<string, unknown>>,
     payload: Record<string, unknown>
   ): Promise<void> {
     const { task_identifier } = job;
@@ -365,7 +364,6 @@ export default class ComputeWorker {
       const result = await handler(payload, {
         pool: this.pgPool,
         databaseId,
-        k8sApiUrl: process.env.K8S_API_URL || null,
       });
 
       const elapsed = process.hrtime(reqStart);

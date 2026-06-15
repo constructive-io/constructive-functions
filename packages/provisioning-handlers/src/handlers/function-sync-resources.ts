@@ -2,12 +2,16 @@
  * function:sync-resources — updates an existing Knative Service spec
  * when a function definition's resource config changes.
  * Idempotent: replaces the Service spec in-place.
+ *
+ * Queue handler — triggered by DB trigger on function_definitions UPDATE.
+ * Assumes the Knative Service was already created by the seed script.
  */
 
 import { ComputeModuleLoader } from '@constructive-io/module-loader';
-import { InterwebClient } from '@kubernetesjs/ops';
 import { Logger } from '@pgpmjs/logger';
 
+import { getK8sClient, isNotFound } from '../k8s-client';
+import { buildKnativeServiceSpec, resolveNamespaceName } from '../knative';
 import type { ProvisioningContext, ProvisioningHandler } from '../types';
 
 const log = new Logger('provisioning:function-sync');
@@ -16,7 +20,7 @@ export const handleFunctionSyncResources: ProvisioningHandler = async (
   payload: Record<string, unknown>,
   context: ProvisioningContext
 ): Promise<Record<string, unknown>> => {
-  const { pool, databaseId, k8sApiUrl } = context;
+  const { pool, databaseId } = context;
   const functionId = payload.id as string;
 
   if (!functionId) {
@@ -50,67 +54,17 @@ export const handleFunctionSyncResources: ProvisioningHandler = async (
     return { skipped: true, reason: fnRow.runtime === 'inline' ? 'inline-runtime' : 'no-image' };
   }
 
-  if (!k8sApiUrl) {
+  const client = getK8sClient();
+  if (!client) {
     log.info(
       `[dev-mode] would sync Knative Service resources for "${fnRow.name}" — skipping (no K8S_API_URL)`
     );
     return { skipped: true, reason: 'no-k8s' };
   }
 
-  // Resolve namespace name
-  let namespaceName = 'default';
-  if (fnRow.namespace_id) {
-    const { rows: nsRows } = await pool.query(
-      `SELECT name FROM metaschema_public.namespace WHERE id = $1`,
-      [fnRow.namespace_id]
-    );
-    if (nsRows.length > 0) {
-      namespaceName = nsRows[0].name as string;
-    }
-  }
-
-  const client = new InterwebClient({
-    restEndpoint: k8sApiUrl,
-    kubeconfig: '',
-    namespace: namespaceName,
-    context: '',
-  });
-
-  const image = fnRow.image as string;
-  const concurrency = (fnRow.concurrency as number) ?? 0;
-  const scaleMin = (fnRow.scale_min as number) ?? 0;
-  const scaleMax = (fnRow.scale_max as number) ?? 0;
-  const timeoutSeconds = (fnRow.timeout_seconds as number) ?? 300;
-  const resources = (fnRow.resources as Record<string, unknown>) ?? {};
+  const namespaceName = await resolveNamespaceName(pool, fnRow.namespace_id as string | null);
   const fnName = fnRow.name as string;
-
-  const annotations: Record<string, string> = {};
-  if (scaleMin > 0) annotations['autoscaling.knative.dev/minScale'] = String(scaleMin);
-  if (scaleMax > 0) annotations['autoscaling.knative.dev/maxScale'] = String(scaleMax);
-
-  const serviceSpec = {
-    apiVersion: 'serving.knative.dev/v1',
-    kind: 'Service',
-    metadata: { name: fnName, namespace: namespaceName },
-    spec: {
-      template: {
-        metadata: {
-          annotations: Object.keys(annotations).length > 0 ? annotations : undefined,
-        },
-        spec: {
-          containerConcurrency: concurrency || undefined,
-          timeoutSeconds,
-          containers: [
-            {
-              image,
-              envFrom: [{ secretRef: { name: `${namespaceName}-secrets` } }],
-              ...(Object.keys(resources).length > 0 ? { resources } : {}),
-            },
-          ],
-        },
-      },
-    },
-  };
+  const serviceSpec = buildKnativeServiceSpec(fnRow, namespaceName);
 
   try {
     const svc = await client.replaceServingKnativeDevV1NamespacedService({
@@ -131,10 +85,10 @@ export const handleFunctionSyncResources: ProvisioningHandler = async (
     }
 
     return { synced: true, name: fnName, serviceUrl };
-  } catch (err: any) {
-    if (err?.status === 404 || err?.statusCode === 404 || String(err?.message).includes('NotFound')) {
+  } catch (err: unknown) {
+    if (isNotFound(err)) {
       log.warn(
-        `Knative Service "${fnName}" not found in "${namespaceName}" — cannot sync (run function:provision first)`
+        `Knative Service "${fnName}" not found in "${namespaceName}" — run the provision seed first`
       );
       return { skipped: true, reason: 'service-not-found' };
     }
