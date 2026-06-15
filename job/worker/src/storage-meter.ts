@@ -1,7 +1,7 @@
 /**
  * Storage metering — fire-and-forget usage logging for S3/MinIO operations.
  *
- * Delegates to @constructive-io/usage-loader which resolves table names
+ * Delegates to @constructive-io/module-loader which resolves table names
  * dynamically from MetaSchema module registration tables.
  *
  * All writes are non-blocking: errors are logged and swallowed so
@@ -9,8 +9,8 @@
  */
 
 import type { Pool } from 'pg';
-import { UsageLoader } from '@constructive-io/usage-loader';
-import type { StorageEntry } from '@constructive-io/usage-loader';
+import { UsageLoader } from '@constructive-io/module-loader';
+import type { StorageEntry } from '@constructive-io/module-loader';
 
 export type { StorageEntry };
 

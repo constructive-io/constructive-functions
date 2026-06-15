@@ -1,17 +1,17 @@
 /**
- * Re-export from @constructive-io/usage-loader for backward compatibility.
+ * Re-export from @constructive-io/module-loader for backward compatibility.
  *
- * The canonical implementation is in packages/usage-loader.
+ * The canonical implementation is in packages/module-loader.
  * This file exists so existing imports from within job/worker/ continue working.
  */
 
 export {
   UsageLoader as UsageClient,
   UsageLoader,
-  getLoader,
-  _resetLoaderCache,
-  DEFAULTS,
-} from '@constructive-io/usage-loader';
+  getModuleLoader as getLoader,
+  _resetModuleLoaderCache as _resetLoaderCache,
+  USAGE_DEFAULTS as DEFAULTS,
+} from '@constructive-io/module-loader';
 
 export type {
   UsageTableConfig as UsageModuleConfig,
@@ -19,4 +19,4 @@ export type {
   MeterEntry,
   InferenceEntry,
   StorageEntry,
-} from '@constructive-io/usage-loader';
+} from '@constructive-io/module-loader';

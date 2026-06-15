@@ -1,7 +1,7 @@
 /**
  * Compute metering — fire-and-forget usage logging for every job.
  *
- * Delegates to @constructive-io/usage-loader which resolves table names
+ * Delegates to @constructive-io/module-loader which resolves table names
  * dynamically from MetaSchema module registration tables.
  *
  * All writes are non-blocking: errors are logged and swallowed so
@@ -9,8 +9,8 @@
  */
 
 import type { Pool } from 'pg';
-import { UsageLoader } from '@constructive-io/usage-loader';
-import type { MeterEntry } from '@constructive-io/usage-loader';
+import { UsageLoader } from '@constructive-io/module-loader';
+import type { MeterEntry } from '@constructive-io/module-loader';
 
 export type { MeterEntry };
 
