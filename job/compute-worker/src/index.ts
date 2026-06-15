@@ -16,7 +16,7 @@ import poolManager from '@constructive-io/job-pg';
 import type { PgClientLike } from '@constructive-io/job-utils';
 import * as jobs from '@constructive-io/job-utils';
 import type { GraphExecutionModuleConfig } from '@constructive-io/module-loader';
-import { ComputeModuleLoader } from '@constructive-io/module-loader';
+import { ComputeModuleLoader, ModuleLoader } from '@constructive-io/module-loader';
 import { getProvisioningHandler } from '@constructive-io/provisioning-handlers';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool, PoolClient } from 'pg';
@@ -78,6 +78,7 @@ export default class ComputeWorker {
   stopped?: boolean;
 
   readonly loader: ComputeModuleLoader;
+  readonly moduleLoader: ModuleLoader;
   readonly discovery: FunctionDiscovery;
   readonly tracker: InvocationTracker;
   readonly billing: BillingTracker;
@@ -94,6 +95,7 @@ export default class ComputeWorker {
     this.platformDatabaseId = opts.databaseId ?? DEFAULT_DATABASE_ID;
 
     this.loader = new ComputeModuleLoader(this.pgPool, opts.cacheTtlMs);
+    this.moduleLoader = new ModuleLoader({ pool: this.pgPool, databaseId: this.platformDatabaseId, cacheTtlMs: opts.cacheTtlMs });
     this.discovery = new FunctionDiscovery(this.pgPool, this.loader, this.platformDatabaseId, opts.cacheTtlMs);
     this.tracker = new InvocationTracker(this.pgPool, this.loader, this.platformDatabaseId);
     this.billing = new BillingTracker(this.pgPool, this.platformDatabaseId, opts.cacheTtlMs);
@@ -364,7 +366,7 @@ export default class ComputeWorker {
       const result = await handler(payload, {
         pool: this.pgPool,
         databaseId,
-        loader: this.loader,
+        loader: this.moduleLoader,
       });
 
       const elapsed = process.hrtime(reqStart);
