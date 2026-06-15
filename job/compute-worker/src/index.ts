@@ -341,7 +341,7 @@ export default class ComputeWorker {
 
   private async doWorkProvisioning(
     job: ComputeJobRow,
-    handler: (payload: Record<string, unknown>, context: { pool: import('pg').Pool; databaseId: string }) => Promise<Record<string, unknown>>,
+    handler: (payload: Record<string, unknown>, context: import('@constructive-io/provisioning-handlers').ProvisioningContext) => Promise<Record<string, unknown>>,
     payload: Record<string, unknown>
   ): Promise<void> {
     const { task_identifier } = job;
@@ -364,6 +364,7 @@ export default class ComputeWorker {
       const result = await handler(payload, {
         pool: this.pgPool,
         databaseId,
+        loader: this.loader,
       });
 
       const elapsed = process.hrtime(reqStart);

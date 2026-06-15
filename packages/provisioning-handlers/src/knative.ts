@@ -5,9 +5,14 @@
  * Spec shape mirrors constructive-cloud's Go operator
  * (operator/internal/resources/knative.go) so the two systems
  * produce functionally identical Knative Services.
+ *
+ * Uses types from @kubernetesjs/ops directly — no hand-rolled interfaces.
  */
 
+import type { ServingKnativeDevV1Service } from '@kubernetesjs/ops';
 import type { Pool } from 'pg';
+
+import type { FunctionDefinitionRow, NamespaceRow } from './types';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -16,39 +21,9 @@ const DEFAULT_TIMEOUT = 300;
 const DEFAULT_SCALE_TARGET = 50;
 const MANAGED_BY = 'provisioning-handlers';
 
-// ── Types ────────────────────────────────────────────────────────────────────
+// ── Re-export the library type for downstream convenience ────────────────────
 
-export interface KnativeServiceSpec {
-  apiVersion: 'serving.knative.dev/v1';
-  kind: 'Service';
-  metadata: {
-    name: string;
-    namespace: string;
-    labels: Record<string, string>;
-    annotations: Record<string, string>;
-    resourceVersion?: string;
-  };
-  spec: {
-    template: {
-      metadata: {
-        labels: Record<string, string>;
-        annotations?: Record<string, string>;
-      };
-      spec: {
-        containerConcurrency?: number;
-        timeoutSeconds: number;
-        containers: Array<{
-          image: string;
-          ports: Array<{ containerPort: number }>;
-          envFrom: Array<{ secretRef: { name: string } }>;
-          resources?: Record<string, unknown>;
-          volumeMounts: Array<{ name: string; mountPath: string }>;
-        }>;
-        volumes: Array<{ name: string; emptyDir: Record<string, never> }>;
-      };
-    };
-  };
-}
+export type { ServingKnativeDevV1Service as KnativeServiceSpec } from '@kubernetesjs/ops';
 
 // ── Labels (matches operator/internal/util/labels.go) ────────────────────────
 
@@ -65,6 +40,12 @@ function componentLabels(namespaceName: string, fnName: string): Record<string, 
 
 // ── Builder ──────────────────────────────────────────────────────────────────
 
+/** Fields required from a function_definitions row to build a ksvc spec. */
+export type KnativeBuilderInput = Pick<
+  FunctionDefinitionRow,
+  'name' | 'image' | 'concurrency' | 'scale_min' | 'scale_max' | 'scale_target' | 'timeout_seconds' | 'resources'
+>;
+
 /**
  * Build a Knative Service spec from a function definition row.
  *
@@ -76,17 +57,15 @@ function componentLabels(namespaceName: string, fnName: string): Record<string, 
  *   - envFrom bulk secret ref
  */
 export function buildKnativeServiceSpec(
-  fnRow: Record<string, unknown>,
+  fn: KnativeBuilderInput,
   namespaceName: string
-): KnativeServiceSpec {
-  const fnName = fnRow.name as string;
-  const image = fnRow.image as string;
-  const concurrency = (fnRow.concurrency as number) ?? 0;
-  const scaleMin = (fnRow.scale_min as number) ?? 0;
-  const scaleMax = (fnRow.scale_max as number) ?? 0;
-  const scaleTarget = (fnRow.scale_target as number) ?? 0;
-  const timeoutSeconds = (fnRow.timeout_seconds as number) ?? DEFAULT_TIMEOUT;
-  const resources = (fnRow.resources as Record<string, unknown>) ?? {};
+): ServingKnativeDevV1Service {
+  const concurrency = fn.concurrency ?? 0;
+  const scaleMin = fn.scale_min ?? 0;
+  const scaleMax = fn.scale_max ?? 0;
+  const scaleTarget = fn.scale_target ?? 0;
+  const timeoutSeconds = fn.timeout_seconds ?? DEFAULT_TIMEOUT;
+  const resources = fn.resources ?? {};
 
   // Template-level autoscaling annotations
   const templateAnnotations: Record<string, string> = {};
@@ -96,24 +75,13 @@ export function buildKnativeServiceSpec(
     templateAnnotations['autoscaling.knative.dev/target'] = String(scaleTarget || DEFAULT_SCALE_TARGET);
   }
 
-  const labels = componentLabels(namespaceName, fnName);
-
-  const container: KnativeServiceSpec['spec']['template']['spec']['containers'][0] = {
-    image,
-    ports: [{ containerPort: DEFAULT_PORT }],
-    envFrom: [{ secretRef: { name: `${namespaceName}-secrets` } }],
-    volumeMounts: [{ name: 'tmp', mountPath: '/tmp' }],
-  };
-
-  if (Object.keys(resources).length > 0) {
-    container.resources = resources;
-  }
+  const labels = componentLabels(namespaceName, fn.name);
 
   return {
     apiVersion: 'serving.knative.dev/v1',
     kind: 'Service',
     metadata: {
-      name: fnName,
+      name: fn.name,
       namespace: namespaceName,
       labels: { ...labels },
       annotations: {},
@@ -127,7 +95,15 @@ export function buildKnativeServiceSpec(
         spec: {
           containerConcurrency: concurrency || undefined,
           timeoutSeconds,
-          containers: [container],
+          containers: [
+            {
+              image: fn.image!,
+              ports: [{ containerPort: DEFAULT_PORT }],
+              envFrom: [{ secretRef: { name: `${namespaceName}-secrets` } }],
+              resources: Object.keys(resources).length > 0 ? resources as any : undefined,
+              volumeMounts: [{ name: 'tmp', mountPath: '/tmp' }],
+            },
+          ],
           volumes: [{ name: 'tmp', emptyDir: {} }],
         },
       },
@@ -146,9 +122,9 @@ export async function resolveNamespaceName(
 ): Promise<string> {
   if (!namespaceId) return 'default';
 
-  const { rows } = await pool.query(
-    `SELECT name FROM metaschema_public.namespace WHERE id = $1`,
+  const { rows } = await pool.query<NamespaceRow>(
+    `SELECT id, name FROM metaschema_public.namespace WHERE id = $1`,
     [namespaceId]
   );
-  return rows.length > 0 ? (rows[0].name as string) : 'default';
+  return rows.length > 0 ? rows[0].name : 'default';
 }

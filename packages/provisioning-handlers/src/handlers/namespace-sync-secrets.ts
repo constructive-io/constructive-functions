@@ -1,55 +1,69 @@
 /**
- * namespace:sync-secrets — reads secrets for a namespace from DB,
- * decrypts them via pgp_sym_decrypt, and syncs to a K8s Secret.
- * Idempotent: creates or replaces the K8s Secret resource.
+ * Handler: namespace:sync-secrets
  *
- * Queue handler — triggered by DB trigger on namespace_secret changes.
+ * Queue handler — triggered by DB events on namespace_secret INSERT/UPDATE/DELETE.
+ * Reads all secrets for a namespace, decrypts them, and creates/replaces
+ * the aggregate K8s Secret in the namespace.
+ *
+ * Assumes the K8s namespace already exists (created by the seed).
  */
 
+import type { Secret } from '@kubernetesjs/ops';
 import { Logger } from '@pgpmjs/logger';
 
 import { getK8sClient, isConflict } from '../k8s-client';
-import type { ProvisioningContext, ProvisioningHandler } from '../types';
+import type {
+  NamespaceRow,
+  ProvisioningHandler,
+  SecretRow,
+  SyncSecretsPayload,
+  SyncSecretsResult,
+} from '../types';
 
-const log = new Logger('provisioning:namespace-secrets');
+const log = new Logger('provisioning:namespace-sync-secrets');
 
-export const handleNamespaceSyncSecrets: ProvisioningHandler = async (
-  payload: Record<string, unknown>,
-  context: ProvisioningContext
-): Promise<Record<string, unknown>> => {
-  const { pool } = context;
-  const namespaceId = payload.id as string | undefined;
-  const namespaceName = payload.namespace_name as string | undefined;
+export const namespaceSyncSecrets: ProvisioningHandler<SyncSecretsPayload, SyncSecretsResult> = async (
+  payload,
+  { pool }
+) => {
+  const namespaceId = payload.id;
+  const namespaceName = payload.namespace_name;
 
-  if (!namespaceId && !namespaceName) {
-    throw new Error('namespace:sync-secrets — missing "id" or "namespace_name" in payload');
+  const client = getK8sClient();
+  if (!client) {
+    log.info('[dev-mode] skipping namespace:sync-secrets (no K8S_API_URL)');
+    return { skipped: true, reason: 'no-k8s' };
   }
 
-  // Resolve namespace name from id if not provided directly
-  let resolvedName = namespaceName;
-  let resolvedId = namespaceId;
-  if (!resolvedName && resolvedId) {
-    const { rows } = await pool.query(
-      `SELECT name FROM metaschema_public.namespace WHERE id = $1`,
-      [resolvedId]
-    );
-    if (rows.length === 0) {
-      throw new Error(`namespace:sync-secrets — namespace id=${resolvedId} not found`);
+  // Resolve namespace name from ID if not provided directly
+  let resolvedName: string;
+  let resolvedId: string | undefined;
+  if (namespaceName) {
+    resolvedName = namespaceName;
+    if (!namespaceId) {
+      const { rows } = await pool.query<NamespaceRow>(
+        `SELECT id, name FROM metaschema_public.namespace WHERE name = $1`,
+        [namespaceName]
+      );
+      if (rows.length === 0) return { skipped: true, reason: 'namespace-not-found' };
+      resolvedId = rows[0].id;
+    } else {
+      resolvedId = namespaceId;
     }
-    resolvedName = rows[0].name as string;
-  }
-  if (!resolvedId && resolvedName) {
-    const { rows } = await pool.query(
-      `SELECT id FROM metaschema_public.namespace WHERE name = $1`,
-      [resolvedName]
+  } else if (namespaceId) {
+    resolvedId = namespaceId;
+    const { rows } = await pool.query<NamespaceRow>(
+      `SELECT id, name FROM metaschema_public.namespace WHERE id = $1`,
+      [namespaceId]
     );
-    if (rows.length > 0) {
-      resolvedId = rows[0].id as string;
-    }
+    if (rows.length === 0) return { skipped: true, reason: 'namespace-not-found' };
+    resolvedName = rows[0].name;
+  } else {
+    return { skipped: true, reason: 'missing-id-and-name' };
   }
 
-  // Read and decrypt secrets for this namespace using pgp_sym_decrypt
-  const { rows: secretRows } = await pool.query(
+  // Fetch and decrypt secrets
+  const { rows: secretRows } = await pool.query<SecretRow>(
     `SELECT key, pgp_sym_decrypt(value, key_id::text) AS decrypted_value
      FROM metaschema_public.namespace_secret
      WHERE namespace_id = $1`,
@@ -58,21 +72,13 @@ export const handleNamespaceSyncSecrets: ProvisioningHandler = async (
 
   const secretData: Record<string, string> = {};
   for (const row of secretRows) {
-    secretData[row.key as string] = Buffer.from(row.decrypted_value as string).toString('base64');
-  }
-
-  const client = getK8sClient();
-  if (!client) {
-    log.info(
-      `[dev-mode] would sync ${secretRows.length} secret(s) for namespace "${resolvedName}" — skipping (no K8S_API_URL)`
-    );
-    return { skipped: true, reason: 'no-k8s' };
+    secretData[row.key] = Buffer.from(row.decrypted_value).toString('base64');
   }
 
   const secretName = `${resolvedName}-secrets`;
-  const secretBody = {
-    apiVersion: 'v1' as const,
-    kind: 'Secret' as const,
+  const secretBody: Secret = {
+    apiVersion: 'v1',
+    kind: 'Secret',
     metadata: { name: secretName },
     data: secretData,
     type: 'Opaque',
@@ -81,19 +87,18 @@ export const handleNamespaceSyncSecrets: ProvisioningHandler = async (
   try {
     await client.createCoreV1NamespacedSecret({
       query: {},
-      path: { namespace: resolvedName! },
+      path: { namespace: resolvedName },
       body: secretBody,
     });
-    log.info(`created K8s secret "${secretName}" in namespace "${resolvedName}" with ${secretRows.length} key(s)`);
+    log.info(`created K8s secret "${secretName}" with ${secretRows.length} key(s)`);
   } catch (err: unknown) {
     if (isConflict(err)) {
-      log.info(`K8s secret "${secretName}" already exists — replacing`);
       await client.replaceCoreV1NamespacedSecret({
         query: {},
-        path: { name: secretName, namespace: resolvedName! },
+        path: { name: secretName, namespace: resolvedName },
         body: secretBody,
       });
-      log.info(`replaced K8s secret "${secretName}" in namespace "${resolvedName}"`);
+      log.info(`replaced K8s secret "${secretName}" with ${secretRows.length} key(s)`);
     } else {
       throw err;
     }

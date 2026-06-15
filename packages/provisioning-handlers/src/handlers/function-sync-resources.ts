@@ -1,41 +1,49 @@
 /**
- * function:sync-resources — updates an existing Knative Service spec
- * when a function definition's resource config changes.
- * Idempotent: replaces the Service spec in-place.
+ * Handler: function:sync-resources
  *
- * Queue handler — triggered by DB trigger on function_definitions UPDATE.
- * Assumes the Knative Service was already created by the seed script.
+ * Queue handler — triggered by DB events on function_definitions UPDATE
+ * (scaling changes, image updates, resource adjustments).
+ *
+ * Reads the updated function definition, rebuilds the Knative Service spec,
+ * and replaces it via the merge-and-replace workflow.
+ *
+ * Assumes the Knative Service already exists (created by the seed).
  */
 
-import { ComputeModuleLoader } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 
-import { getK8sClient, isNotFound } from '../k8s-client';
+import { getK8sClient } from '../k8s-client';
+import { mergeAndReplace } from '../k8s-ops';
 import { buildKnativeServiceSpec, resolveNamespaceName } from '../knative';
-import { mergeAndReplace } from '../seed';
-import type { ProvisioningContext, ProvisioningHandler } from '../types';
+import type {
+  FunctionDefinitionRow,
+  ProvisioningHandler,
+  SyncResourcesPayload,
+  SyncResourcesResult,
+} from '../types';
 
-const log = new Logger('provisioning:function-sync');
+const log = new Logger('provisioning:function-sync-resources');
 
-export const handleFunctionSyncResources: ProvisioningHandler = async (
-  payload: Record<string, unknown>,
-  context: ProvisioningContext
-): Promise<Record<string, unknown>> => {
-  const { pool, databaseId } = context;
-  const functionId = payload.id as string;
+export const functionSyncResources: ProvisioningHandler<SyncResourcesPayload, SyncResourcesResult> = async (
+  payload,
+  { pool, databaseId, loader }
+) => {
+  const functionId = payload.id;
 
-  if (!functionId) {
-    throw new Error('function:sync-resources — missing "id" in payload');
+  const client = getK8sClient();
+  if (!client) {
+    log.info('[dev-mode] skipping function:sync-resources (no K8S_API_URL)');
+    return { skipped: true, reason: 'no-k8s' };
   }
 
-  const loader = new ComputeModuleLoader(pool);
+  // Resolve table names via shared module loader (TTL-cached instance)
   const config = await loader.load(databaseId);
   const publicSchema = config.functionModule?.publicSchema ?? 'constructive_compute_public';
   const definitionsTable = config.functionModule?.definitionsTable ?? 'platform_function_definitions';
 
-  const { rows } = await pool.query(
+  const { rows } = await pool.query<FunctionDefinitionRow>(
     `SELECT id, name, task_identifier, service_url, runtime, image,
-            concurrency, scale_min, scale_max, timeout_seconds, resources,
+            concurrency, scale_min, scale_max, scale_target, timeout_seconds, resources,
             namespace_id
      FROM "${publicSchema}"."${definitionsTable}"
      WHERE id = $1`,
@@ -43,51 +51,31 @@ export const handleFunctionSyncResources: ProvisioningHandler = async (
   );
 
   if (rows.length === 0) {
-    throw new Error(`function:sync-resources — function_definition id=${functionId} not found`);
+    log.warn(`function definition not found: ${functionId}`);
+    return { skipped: true, reason: 'not-found' };
   }
 
-  const fnRow = rows[0] as Record<string, unknown>;
-
-  if (fnRow.runtime === 'inline' || !fnRow.image) {
-    log.info(
-      `skipping sync for "${fnRow.name}" — ${fnRow.runtime === 'inline' ? 'inline runtime' : 'no image'}`
-    );
-    return { skipped: true, reason: fnRow.runtime === 'inline' ? 'inline-runtime' : 'no-image' };
+  const fnRow = rows[0];
+  if (!fnRow.image || fnRow.runtime === 'inline') {
+    log.info(`skipping inline/image-less function: ${fnRow.name}`);
+    return { skipped: true, reason: 'inline-or-no-image' };
   }
 
-  const client = getK8sClient();
-  if (!client) {
-    log.info(
-      `[dev-mode] would sync Knative Service resources for "${fnRow.name}" — skipping (no K8S_API_URL)`
-    );
-    return { skipped: true, reason: 'no-k8s' };
-  }
-
-  const namespaceName = await resolveNamespaceName(pool, fnRow.namespace_id as string | null);
-  const fnName = fnRow.name as string;
+  const namespaceName = await resolveNamespaceName(pool, fnRow.namespace_id);
   const serviceSpec = buildKnativeServiceSpec(fnRow, namespaceName);
 
-  try {
-    const svc = await mergeAndReplace(client, serviceSpec, fnName, namespaceName);
-    const serviceUrl = svc?.status?.url ?? svc?.status?.address?.url ?? null;
-    log.info(`updated Knative Service "${fnName}" in namespace "${namespaceName}"`);
+  const svc = await mergeAndReplace(client, serviceSpec, fnRow.name, namespaceName);
+  const serviceUrl = (svc?.status as any)?.url ?? (svc?.status as any)?.address?.url ?? null;
 
-    if (serviceUrl && serviceUrl !== fnRow.service_url) {
-      await pool.query(
-        `UPDATE "${publicSchema}"."${definitionsTable}" SET service_url = $1 WHERE id = $2`,
-        [serviceUrl, functionId]
-      );
-      log.info(`updated service_url for "${fnName}" → ${serviceUrl}`);
-    }
-
-    return { synced: true, name: fnName, serviceUrl };
-  } catch (err: unknown) {
-    if (isNotFound(err)) {
-      log.warn(
-        `Knative Service "${fnName}" not found in "${namespaceName}" — run the provision seed first`
-      );
-      return { skipped: true, reason: 'service-not-found' };
-    }
-    throw err;
+  // Write back updated service_url if available
+  if (serviceUrl && serviceUrl !== fnRow.service_url) {
+    await pool.query(
+      `UPDATE "${publicSchema}"."${definitionsTable}" SET service_url = $1 WHERE id = $2`,
+      [serviceUrl, fnRow.id]
+    );
+    log.info(`updated service_url for "${fnRow.name}" → ${serviceUrl}`);
   }
+
+  log.info(`synced Knative Service "${fnRow.name}" in "${namespaceName}"`);
+  return { synced: true, name: fnRow.name, serviceUrl };
 };

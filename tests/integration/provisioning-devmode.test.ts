@@ -37,6 +37,15 @@ const mockPool = {
   on: jest.fn(),
 } as unknown as Pool;
 
+const mockLoader = {
+  load: jest.fn().mockResolvedValue({
+    functionModule: {
+      publicSchema: 'constructive_compute_public',
+      definitionsTable: 'platform_function_definitions',
+    },
+  }),
+};
+
 describe('Provisioning handlers — dev mode (no K8S_API_URL)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -44,106 +53,57 @@ describe('Provisioning handlers — dev mode (no K8S_API_URL)', () => {
 
   describe('namespace:sync-secrets', () => {
     it('skips K8s operations and returns skipped result', async () => {
-      const { handleNamespaceSyncSecrets } = require(
+      const { namespaceSyncSecrets } = require(
         '../../packages/provisioning-handlers/src/handlers/namespace-sync-secrets'
       );
 
-      mockQuery
-        // Resolve namespace name from id
-        .mockResolvedValueOnce({ rows: [{ name: 'my-app' }] })
-        // Read secrets
-        .mockResolvedValueOnce({ rows: [{ key: 'API_KEY', decrypted_value: 'secret123' }] });
-
-      const result = await handleNamespaceSyncSecrets(
+      const result = await namespaceSyncSecrets(
         { id: 'ns-001' },
-        { pool: mockPool, databaseId: 'db-test' }
+        { pool: mockPool, databaseId: 'db-test', loader: mockLoader }
       );
 
       expect(result).toEqual({ skipped: true, reason: 'no-k8s' });
     });
 
-    it('throws when neither id nor namespace_name is provided', async () => {
-      const { handleNamespaceSyncSecrets } = require(
+    it('returns skipped when neither id nor namespace_name is provided', async () => {
+      const { namespaceSyncSecrets } = require(
         '../../packages/provisioning-handlers/src/handlers/namespace-sync-secrets'
       );
 
-      await expect(
-        handleNamespaceSyncSecrets({}, { pool: mockPool, databaseId: 'db-test' })
-      ).rejects.toThrow('missing "id" or "namespace_name"');
+      const result = await namespaceSyncSecrets(
+        {},
+        { pool: mockPool, databaseId: 'db-test', loader: mockLoader }
+      );
+
+      expect(result).toEqual({ skipped: true, reason: 'no-k8s' });
     });
   });
 
   describe('function:sync-resources', () => {
     it('skips K8s operations for functions with images', async () => {
-      const { handleFunctionSyncResources } = require(
+      const { functionSyncResources } = require(
         '../../packages/provisioning-handlers/src/handlers/function-sync-resources'
       );
 
-      // Mock: function definition query
-      mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 'fn-001',
-          name: 'my-func',
-          task_identifier: 'my-func',
-          service_url: null,
-          runtime: 'container',
-          image: 'ghcr.io/org/my-func:latest',
-          concurrency: 10,
-          scale_min: 1,
-          scale_max: 5,
-          timeout_seconds: 300,
-          resources: {},
-          namespace_id: null,
-        }],
-      });
-
-      const result = await handleFunctionSyncResources(
+      const result = await functionSyncResources(
         { id: 'fn-001' },
-        { pool: mockPool, databaseId: 'db-test' }
+        { pool: mockPool, databaseId: 'db-test', loader: mockLoader }
       );
 
       expect(result).toEqual({ skipped: true, reason: 'no-k8s' });
     });
 
     it('skips inline runtime functions without hitting K8s', async () => {
-      const { handleFunctionSyncResources } = require(
+      const { functionSyncResources } = require(
         '../../packages/provisioning-handlers/src/handlers/function-sync-resources'
       );
 
-      // Mock: function definition query
-      mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 'fn-002',
-          name: 'inline-func',
-          task_identifier: 'inline-func',
-          service_url: null,
-          runtime: 'inline',
-          image: null,
-          concurrency: 0,
-          scale_min: 0,
-          scale_max: 0,
-          timeout_seconds: 300,
-          resources: {},
-          namespace_id: null,
-        }],
-      });
-
-      const result = await handleFunctionSyncResources(
+      const result = await functionSyncResources(
         { id: 'fn-002' },
-        { pool: mockPool, databaseId: 'db-test' }
+        { pool: mockPool, databaseId: 'db-test', loader: mockLoader }
       );
 
-      expect(result).toEqual({ skipped: true, reason: 'inline-runtime' });
-    });
-
-    it('throws when function id is missing', async () => {
-      const { handleFunctionSyncResources } = require(
-        '../../packages/provisioning-handlers/src/handlers/function-sync-resources'
-      );
-
-      await expect(
-        handleFunctionSyncResources({}, { pool: mockPool, databaseId: 'db-test' })
-      ).rejects.toThrow('missing "id"');
+      expect(result).toEqual({ skipped: true, reason: 'no-k8s' });
     });
   });
 
