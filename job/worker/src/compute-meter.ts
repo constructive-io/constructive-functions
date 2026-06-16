@@ -52,8 +52,7 @@ export function logComputeUsage(pool: Pool, entry: MeterEntry): string {
       return await loader.invocation.load(databaseId, entry.scope ?? null);
     } catch (err) {
       if (err instanceof AmbiguousScopeError) {
-        const all = await loader.invocation.loadAll(databaseId);
-        return all[0];
+        return await loader.invocation.loadDefault(databaseId);
       }
       throw err;
     }

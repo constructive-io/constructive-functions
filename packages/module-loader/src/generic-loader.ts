@@ -104,6 +104,31 @@ export class ModuleConfigLoader<T extends ScopedModuleConfig> {
   }
 
   /**
+   * Platform-level scope preferences (app/platform/database are equivalent).
+   * Used by loadDefault() to pick a non-entity instance when ambiguous.
+   */
+  private static readonly PLATFORM_SCOPES = ['platform', 'app', 'database'];
+
+  /**
+   * Load the default (platform-level) module instance.
+   *
+   * When only one instance exists, returns it. When multiple exist,
+   * prefers platform/app/database scope over entity scopes (org, etc.).
+   * Throws ModuleNotProvisionedError only if no instances exist at all.
+   */
+  async loadDefault(databaseId: string): Promise<T> {
+    const all = await this.loadAll(databaseId);
+    if (all.length === 0) {
+      throw new ModuleNotProvisionedError(this.moduleName, databaseId);
+    }
+    if (all.length === 1) return all[0];
+    const platformMatch = all.find((c) =>
+      ModuleConfigLoader.PLATFORM_SCOPES.includes(c.scope)
+    );
+    return platformMatch ?? all[0];
+  }
+
+  /**
    * Invalidate cache for a specific database or all databases.
    */
   invalidate(databaseId?: string): void {
