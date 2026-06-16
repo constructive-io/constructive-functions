@@ -64,6 +64,9 @@ INSERT INTO metaschema_modules_public.graph_module (
     public_schema_name,
     private_schema_name,
     merkle_store_module_id,
+    graphs_table_id,
+    executions_table_id,
+    outputs_table_id,
     scope,
     prefix
 )
@@ -74,6 +77,9 @@ SELECT
     'constructive_platform_function_graph_public',
     'constructive_platform_function_graph_private',
     msm.id,
+    graphs_t.id,
+    exec_t.id,
+    out_t.id,
     'platform',
     'platform_function_graph'
 FROM metaschema_public.schema pub
@@ -83,6 +89,15 @@ JOIN metaschema_public.schema priv
 JOIN metaschema_modules_public.merkle_store_module msm
   ON msm.database_id = '00000000-0000-0000-0000-000000000000'
  AND msm.prefix = 'platform_function_graph'
+JOIN metaschema_public."table" graphs_t
+  ON graphs_t.database_id = '00000000-0000-0000-0000-000000000000'
+ AND graphs_t.name = 'platform_function_graphs'
+JOIN metaschema_public."table" exec_t
+  ON exec_t.database_id = '00000000-0000-0000-0000-000000000000'
+ AND exec_t.name = 'platform_function_graph_executions'
+JOIN metaschema_public."table" out_t
+  ON out_t.database_id = '00000000-0000-0000-0000-000000000000'
+ AND out_t.name = 'platform_function_graph_execution_outputs'
 WHERE pub.database_id = '00000000-0000-0000-0000-000000000000'
   AND pub.schema_name = 'constructive_platform_function_graph_public'
 ON CONFLICT DO NOTHING;

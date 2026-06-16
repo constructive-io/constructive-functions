@@ -33,6 +33,7 @@ SELECT
   t.name
 FROM metaschema_public.schema s
 CROSS JOIN (VALUES
+  ('platform_function_graphs'),
   ('platform_function_graph_executions'),
   ('platform_function_graph_execution_outputs'),
   ('platform_function_graph_execution_node_states')
