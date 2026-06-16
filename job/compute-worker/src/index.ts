@@ -16,7 +16,7 @@ import poolManager from '@constructive-io/job-pg';
 import type { PgClientLike } from '@constructive-io/job-utils';
 import * as jobs from '@constructive-io/job-utils';
 import type { GraphModuleConfig } from '@constructive-io/module-loader';
-import { ModuleLoader } from '@constructive-io/module-loader';
+import { AmbiguousScopeError, ModuleLoader } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool, PoolClient } from 'pg';
 
@@ -613,7 +613,14 @@ export default class ComputeWorker {
   }
 
   private async graphConfig(): Promise<GraphModuleConfig> {
-    return this.loader.graph.load(this.platformDatabaseId, null);
+    try {
+      return await this.loader.graph.load(this.platformDatabaseId, null);
+    } catch (err) {
+      if (err instanceof AmbiguousScopeError) {
+        return await this.loader.graph.loadDefault(this.platformDatabaseId);
+      }
+      throw err;
+    }
   }
 
   /**

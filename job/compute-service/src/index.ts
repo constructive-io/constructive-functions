@@ -400,7 +400,7 @@ export const waitForComputePrereqs = async (): Promise<void> => {
       max: 1,
     });
     const loader = new ModuleLoader({ pool, ttlMs: 0 });
-    const fnConfig = await loader.function.load(databaseId, null);
+    const fnConfig = await loader.function.loadDefault(databaseId);
     await client.query(`SELECT count(*) FROM "${fnConfig.publicSchema}"."${fnConfig.definitionsTable}" LIMIT 1`);
 
     log.info('compute prereqs satisfied (jobs table + compute module present)');

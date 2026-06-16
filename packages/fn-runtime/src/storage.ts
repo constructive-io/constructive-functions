@@ -44,7 +44,7 @@ export const createMeterCallback = (): StorageMeterCallback | undefined => {
   return (info) => {
     if (!info.databaseId) return;
     const databaseId = info.databaseId;
-    getLoader().computeLog.load(databaseId, null)
+    getLoader().computeLog.loadDefault(databaseId)
       .then(async (cfg) => {
         await pool!.query(
           `INSERT INTO "${cfg.publicSchema}"."${cfg.computeLogTable}"

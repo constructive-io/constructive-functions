@@ -6,7 +6,7 @@
  */
 
 import type { BillingModuleConfig } from '@constructive-io/module-loader';
-import { ModuleLoader, ModuleNotProvisionedError } from '@constructive-io/module-loader';
+import { AmbiguousScopeError, ModuleLoader, ModuleNotProvisionedError } from '@constructive-io/module-loader';
 import type { Pool } from 'pg';
 
 export class BillingTracker {
@@ -25,6 +25,9 @@ export class BillingTracker {
       return await this.loader.billing.load(databaseId ?? this.databaseId, null);
     } catch (err) {
       if (err instanceof ModuleNotProvisionedError) return null;
+      if (err instanceof AmbiguousScopeError) {
+        return await this.loader.billing.loadDefault(databaseId ?? this.databaseId);
+      }
       return null;
     }
   }
