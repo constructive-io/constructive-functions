@@ -12,8 +12,9 @@
 
 import express from 'express';
 import http from 'http';
+
 import { createAgenticServer } from '../../packages/agentic-server/src/server';
-import { _resetCache } from '../../packages/agentic-server/src/inference-meter';
+import { createModuleMockQuery, MODULE_CONFIGS } from './helpers/module-mock';
 
 const flush = () => new Promise((r) => setTimeout(r, 30));
 
@@ -131,8 +132,7 @@ describe('Multi-provider routing', () => {
   });
 
   beforeEach(() => {
-    _resetCache();
-    mockQuery = jest.fn().mockResolvedValue({ rows: [] });
+    mockQuery = createModuleMockQuery();
     mockPool = { query: mockQuery } as any;
     openai.calls.length = 0;
     anthropic.calls.length = 0;
@@ -320,14 +320,14 @@ describe('Multi-provider routing', () => {
       await flush();
 
       const insertCalls = mockQuery.mock.calls.filter(
-        ([sql]: [string]) => sql.includes('INSERT INTO') && sql.includes('platform_usage_log_inferences')
+        ([sql]: [string]) => sql.includes('INSERT INTO') && sql.includes(MODULE_CONFIGS.computeLog.compute_log_table_name)
       );
       expect(insertCalls).toHaveLength(1);
       const [, params] = insertCalls[0];
-      expect(params[6]).toBe('anthropic'); // provider
-      expect(params[9]).toBe(15);          // input_tokens
-      expect(params[10]).toBe(8);          // output_tokens
-      expect(params[11]).toBe(23);         // total_tokens
+      expect(params[5]).toBe('anthropic'); // provider
+      expect(params[8]).toBe(15);          // input_tokens
+      expect(params[9]).toBe(8);           // output_tokens
+      expect(params[10]).toBe(23);         // total_tokens
     });
   });
 
@@ -391,8 +391,7 @@ describe('/v1/usage endpoint', () => {
   let mockPool: any;
 
   beforeEach(() => {
-    _resetCache();
-    mockQuery = jest.fn().mockResolvedValue({ rows: [] });
+    mockQuery = createModuleMockQuery();
     mockPool = { query: mockQuery } as any;
   });
 
@@ -473,22 +472,23 @@ describe('/v1/usage endpoint', () => {
       await flush();
 
       const insertCalls = mockQuery.mock.calls.filter(
-        ([sql]: [string]) => sql.includes('INSERT INTO') && sql.includes('platform_usage_log_inferences')
+        ([sql]: [string]) => sql.includes('INSERT INTO') && sql.includes(MODULE_CONFIGS.computeLog.compute_log_table_name)
       );
       expect(insertCalls).toHaveLength(1);
       const [, params] = insertCalls[0];
-      expect(params[1]).toBe('db-python-002');    // database_id
-      expect(params[2]).toBe('entity-usage');     // entity_id
-      expect(params[3]).toBe('actor-usage');      // actor_id
-      expect(params[5]).toBe('huggingface/meta-llama/Llama-3-8B'); // model
-      expect(params[6]).toBe('huggingface');       // provider
-      expect(params[7]).toBe('chat');             // service
-      expect(params[8]).toBe('text-generation');   // operation
-      expect(params[9]).toBe(1000);              // input_tokens
-      expect(params[10]).toBe(500);              // output_tokens
-      expect(params[11]).toBe(1500);             // total_tokens
-      expect(params[12]).toBe(3500);             // latency_ms
-      expect(params[13]).toBe('ok');             // status
+      // params: [database_id, entity_id, actor_id, request_id, model, provider, service, operation, ...]
+      expect(params[0]).toBe('db-python-002');    // database_id
+      expect(params[1]).toBe('entity-usage');     // entity_id
+      expect(params[2]).toBe('actor-usage');      // actor_id
+      expect(params[4]).toBe('huggingface/meta-llama/Llama-3-8B'); // model
+      expect(params[5]).toBe('huggingface');       // provider
+      expect(params[6]).toBe('chat');             // service
+      expect(params[7]).toBe('text-generation');   // operation
+      expect(params[8]).toBe(1000);              // input_tokens
+      expect(params[9]).toBe(500);               // output_tokens
+      expect(params[10]).toBe(1500);             // total_tokens
+      expect(params[11]).toBe(3500);             // latency_ms
+      expect(params[12]).toBe('ok');             // status
     });
   });
 
@@ -530,12 +530,12 @@ describe('/v1/usage endpoint', () => {
       await flush();
 
       const insertCalls = mockQuery.mock.calls.filter(
-        ([sql]: [string]) => sql.includes('INSERT INTO') && sql.includes('platform_usage_log_inferences')
+        ([sql]: [string]) => sql.includes('INSERT INTO') && sql.includes(MODULE_CONFIGS.computeLog.compute_log_table_name)
       );
       expect(insertCalls).toHaveLength(1);
       const [, params] = insertCalls[0];
-      expect(params[13]).toBe('error');          // status
-      expect(params[14]).toBe('rate_limited');   // error_type
+      expect(params[12]).toBe('error');          // status
+      expect(params[13]).toBe('rate_limited');   // error_type
     });
   });
 

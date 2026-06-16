@@ -1,12 +1,12 @@
 /**
- * ComputeLogTracker — writes to the platform_compute_log table
+ * ComputeLogTracker — writes to the compute_log table
  * after every job dispatch (success or failure) and triggers
  * the usage_daily rollup.
  *
- * Gracefully no-ops if compute_log_module is not registered.
+ * Gracefully no-ops if compute_log_module is not provisioned.
  */
 
-import type { ComputeModuleLoader } from '@constructive-io/module-loader';
+import { AmbiguousScopeError, ModuleLoader, ModuleNotProvisionedError } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
 
@@ -28,25 +28,32 @@ export interface ComputeLogEntry {
 
 export class ComputeLogTracker {
   private pool: Pool;
-  private loader: ComputeModuleLoader;
+  private loader: ModuleLoader;
   private databaseId: string;
 
-  constructor(pool: Pool, loader: ComputeModuleLoader, databaseId: string) {
+  constructor(pool: Pool, loader: ModuleLoader, databaseId: string) {
     this.pool = pool;
     this.loader = loader;
     this.databaseId = databaseId;
   }
 
   async log(entry: ComputeLogEntry): Promise<void> {
-    const config = await this.loader.load(this.databaseId);
-    if (!config.computeLogModule) {
-      log.debug('compute_log_module not provisioned — skipping log');
-      return;
+    let cfg;
+    try {
+      cfg = await this.loader.computeLog.load(this.databaseId, null);
+    } catch (err) {
+      if (err instanceof ModuleNotProvisionedError) {
+        log.debug('compute_log_module not provisioned — skipping log');
+        return;
+      }
+      if (err instanceof AmbiguousScopeError) {
+        cfg = await this.loader.computeLog.loadDefault(this.databaseId);
+      } else {
+        throw err;
+      }
     }
 
-    const { publicSchema, computeLogTable } = config.computeLogModule;
-    const qualifiedTable = `"${publicSchema}"."${computeLogTable}"`;
-
+    const qualifiedTable = `"${cfg.publicSchema}"."${cfg.computeLogTable}"`;
     try {
       await this.pool.query(
         `INSERT INTO ${qualifiedTable}
@@ -75,16 +82,24 @@ export class ComputeLogTracker {
   }
 
   async rollup(since?: Date): Promise<number> {
-    const config = await this.loader.load(this.databaseId);
-    if (!config.computeLogModule) {
-      log.debug('compute_log_module not provisioned — skipping rollup');
-      return 0;
+    let cfg;
+    try {
+      cfg = await this.loader.computeLog.load(this.databaseId, null);
+    } catch (err) {
+      if (err instanceof ModuleNotProvisionedError) {
+        log.debug('compute_log_module not provisioned — skipping rollup');
+        return 0;
+      }
+      if (err instanceof AmbiguousScopeError) {
+        cfg = await this.loader.computeLog.loadDefault(this.databaseId);
+      } else {
+        throw err;
+      }
     }
 
-    const { privateSchema } = config.computeLogModule;
     try {
       const result = await this.pool.query(
-        `SELECT count(*) AS n FROM "${privateSchema}".rollup_compute_daily($1)`,
+        `SELECT count(*) AS n FROM "${cfg.privateSchema}".rollup_compute_daily($1)`,
         [since || new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)]
       );
       const n = parseInt(result.rows[0]?.n ?? '0', 10);

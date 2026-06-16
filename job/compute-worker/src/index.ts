@@ -2,7 +2,7 @@
  * ComputeWorker — Platform-aware job worker.
  *
  * Discovers functions and tracks invocations using dynamically-resolved
- * schema/table names from metaschema via ComputeModuleLoader.
+ * schema/table names from metaschema via ModuleLoader.
  *
  * Flow:
  *   1. Poll app_jobs.jobs for the next job
@@ -15,8 +15,8 @@
 import poolManager from '@constructive-io/job-pg';
 import type { PgClientLike } from '@constructive-io/job-utils';
 import * as jobs from '@constructive-io/job-utils';
-import { ComputeModuleLoader } from '@constructive-io/module-loader';
-import type { GraphExecutionModuleConfig } from '@constructive-io/module-loader';
+import type { GraphModuleConfig } from '@constructive-io/module-loader';
+import { AmbiguousScopeError, ModuleLoader } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool, PoolClient } from 'pg';
 
@@ -39,7 +39,7 @@ export { FunctionDiscovery } from './discovery';
 export type { InlineImplFn, InlineNodeDef } from './inline';
 export { executeInline, getInlineImpl, listInlineNodes } from './inline';
 export { InvocationTracker } from './invocation';
-export { ComputeModuleLoader } from './module-loader';
+export { ModuleLoader } from './module-loader';
 export type { ComputeRequestOptions, ComputeRequestResult } from './req';
 export { compute_request } from './req';
 export type {
@@ -47,17 +47,17 @@ export type {
   BillingModuleConfig,
   ComputeJobRow,
   ComputeLogModuleConfig,
-  ComputeModuleConfig,
   ComputeWorkerOptions,
   CreateInvocationInput,
   FunctionModuleConfig,
   FunctionPortDefinition,
   FunctionRequirement,
   FunctionRuntime,
-  GraphExecutionModuleConfig,
+  GraphModuleConfig,
   GraphNodePayload,
   InvocationModuleConfig,
   InvocationStatus,
+  ModuleLoaderOptions,
   PlatformFunctionDefinition,
 } from './types';
 export { isGraphNodePayload } from './types';
@@ -74,7 +74,7 @@ export default class ComputeWorker {
   listenRelease?: () => void;
   stopped?: boolean;
 
-  readonly loader: ComputeModuleLoader;
+  readonly loader: ModuleLoader;
   readonly discovery: FunctionDiscovery;
   readonly tracker: InvocationTracker;
   readonly billing: BillingTracker;
@@ -90,10 +90,10 @@ export default class ComputeWorker {
     this.pgPool = opts.pgPool;
     this.platformDatabaseId = opts.databaseId ?? DEFAULT_DATABASE_ID;
 
-    this.loader = new ComputeModuleLoader(this.pgPool, opts.cacheTtlMs);
+    this.loader = new ModuleLoader({ pool: this.pgPool, ttlMs: opts.cacheTtlMs });
     this.discovery = new FunctionDiscovery(this.pgPool, this.loader, this.platformDatabaseId, opts.cacheTtlMs);
     this.tracker = new InvocationTracker(this.pgPool, this.loader, this.platformDatabaseId);
-    this.billing = new BillingTracker(this.pgPool, this.platformDatabaseId, opts.cacheTtlMs);
+    this.billing = new BillingTracker(this.pgPool, this.platformDatabaseId);
     this.computeLog = new ComputeLogTracker(this.pgPool, this.loader, this.platformDatabaseId);
 
     this.callbackUrl = process.env.COMPUTE_CALLBACK_URL
@@ -338,7 +338,7 @@ export default class ComputeWorker {
     const { task_identifier } = job;
     const functionName = fn.task_identifier;
     const databaseId = job.database_id || this.platformDatabaseId;
-    const scope = job.entity_id ? 'org' : 'platform';
+    const scope = job.entity_type || null;
 
     // Inline nodes use inputs directly; props come from the graph node definition
     const inputs = graphNode ? (payload.inputs as Record<string, unknown>) : (payload as Record<string, unknown>);
@@ -370,10 +370,7 @@ export default class ComputeWorker {
 
       const elapsed = process.hrtime(reqStart);
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
-      await this.tracker.complete(
-        invocationId, ms, undefined,
-        scope, scope === 'org' ? databaseId : undefined
-      );
+      await this.tracker.complete(invocationId, ms, undefined, scope, databaseId);
 
       await this.computeLog.log({
         task_identifier,
@@ -398,10 +395,7 @@ export default class ComputeWorker {
     } catch (err: any) {
       const elapsed = process.hrtime(reqStart);
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
-      await this.tracker.fail(
-        invocationId, ms, err.message,
-        scope, scope === 'org' ? databaseId : undefined
-      );
+      await this.tracker.fail(invocationId, ms, err.message, scope, databaseId);
 
       await this.computeLog.log({
         task_identifier,
@@ -446,7 +440,7 @@ export default class ComputeWorker {
     }
 
     const databaseId = job.database_id || this.platformDatabaseId;
-    const scope = job.entity_id ? 'org' : 'platform';
+    const scope = job.entity_type || null;
     const billingEntityId = job.entity_id || job.organization_id;
     const meterSlug = functionName;
 
@@ -494,10 +488,7 @@ export default class ComputeWorker {
 
       const elapsed = process.hrtime(reqStart);
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
-      await this.tracker.complete(
-        invocationId, ms, undefined,
-        scope, scope === 'org' ? databaseId : undefined
-      );
+      await this.tracker.complete(invocationId, ms, undefined, scope, databaseId);
 
       // Record billing usage on success
       if (billingEntityId) {
@@ -534,10 +525,7 @@ export default class ComputeWorker {
     } catch (err: any) {
       const elapsed = process.hrtime(reqStart);
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
-      await this.tracker.fail(
-        invocationId, ms, err.message,
-        scope, scope === 'org' ? databaseId : undefined
-      );
+      await this.tracker.fail(invocationId, ms, err.message, scope, databaseId);
 
       // Write compute log entry for failures too
       await this.computeLog.log({
@@ -624,12 +612,15 @@ export default class ComputeWorker {
     }
   }
 
-  /**
-   * Resolve graph execution module config (cached via ComputeModuleLoader).
-   */
-  private async graphConfig(): Promise<GraphExecutionModuleConfig> {
-    const config = await this.loader.load(this.platformDatabaseId);
-    return config.graphExecutionModule;
+  private async graphConfig(): Promise<GraphModuleConfig> {
+    try {
+      return await this.loader.graph.load(this.platformDatabaseId, null);
+    } catch (err) {
+      if (err instanceof AmbiguousScopeError) {
+        return await this.loader.graph.loadDefault(this.platformDatabaseId);
+      }
+      throw err;
+    }
   }
 
   /**

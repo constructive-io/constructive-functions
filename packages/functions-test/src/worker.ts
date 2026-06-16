@@ -1,7 +1,7 @@
 import {
   BillingTracker,
   ComputeLogTracker,
-  ComputeModuleLoader,
+  ModuleLoader,
   compute_request,
   FunctionDiscovery,
   InvocationTracker,
@@ -58,7 +58,7 @@ export interface TestWorker {
   /** Set GUCs on the pool connection for a job (same as the real worker) */
   setJobGUCs: (job: ComputeJobRow) => Promise<void>;
   /** Access the module loader for inspection */
-  loader: ComputeModuleLoader;
+  loader: ModuleLoader;
   /** Access the function discovery for inspection */
   discovery: FunctionDiscovery;
   /** Access the invocation tracker for inspection */
@@ -121,11 +121,11 @@ export async function createTestWorker(
     password: pgClient.config.password ?? 'password',
   });
 
-  const loader = new ComputeModuleLoader(pool, cacheTtlMs);
+  const loader = new ModuleLoader({ pool, ttlMs: cacheTtlMs });
   const discovery = new FunctionDiscovery(pool, loader, databaseId, cacheTtlMs);
   const tracker = new InvocationTracker(pool, loader, databaseId);
   const computeLog = new ComputeLogTracker(pool, loader, databaseId);
-  const billing = new BillingTracker(pool, databaseId, cacheTtlMs);
+  const billing = new BillingTracker(pool, databaseId);
 
   async function setJobGUCs(job: ComputeJobRow): Promise<void> {
     const gucs: [string, string][] = [];
@@ -146,7 +146,7 @@ export async function createTestWorker(
     const graphNode = isGraphNodePayload(payload);
     const fnName = graphNode ? payload.node_type : task_identifier;
     const jobDatabaseId = (job.database_id as string) || databaseId;
-    const scope = job.entity_id ? 'org' : 'platform';
+    const scope = job.entity_type || null;
     const billingEntityId = job.entity_id || job.organization_id;
     const meterSlug = fnName;
 
@@ -213,10 +213,7 @@ export async function createTestWorker(
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
 
       // 5. Complete invocation
-      await tracker.complete(
-        invocationId, ms, undefined,
-        scope, scope === 'org' ? jobDatabaseId : undefined
-      );
+      await tracker.complete(invocationId, ms, undefined, scope, jobDatabaseId);
 
       // 6. Record billing usage
       if (billingEntityId) {
@@ -256,10 +253,7 @@ export async function createTestWorker(
       const ms = Math.round((elapsed[0] * 1e9 + elapsed[1]) / 1e6);
       const errorMsg = err instanceof Error ? err.message : String(err);
 
-      await tracker.fail(
-        invocationId, ms, errorMsg,
-        scope, scope === 'org' ? jobDatabaseId : undefined
-      );
+      await tracker.fail(invocationId, ms, errorMsg, scope, jobDatabaseId);
 
       await computeLog.log({
         task_identifier: fnName,

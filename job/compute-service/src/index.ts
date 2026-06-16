@@ -12,7 +12,7 @@
  *   4. A Scheduler for cron-like scheduled jobs
  */
 
-import ComputeWorker, { ComputeModuleLoader } from '@constructive-io/compute-worker';
+import ComputeWorker, { ModuleLoader } from '@constructive-io/compute-worker';
 import poolManager from '@constructive-io/job-pg';
 import Scheduler from '@constructive-io/job-scheduler';
 import {
@@ -399,17 +399,9 @@ export const waitForComputePrereqs = async (): Promise<void> => {
       database: cfg.database,
       max: 1,
     });
-    const loader = new ComputeModuleLoader(pool, 0);
-    const config = await loader.load(databaseId);
-
-    if (config.functionModule) {
-      const { publicSchema, definitionsTable } = config.functionModule;
-      await client.query(`SELECT count(*) FROM "${publicSchema}"."${definitionsTable}" LIMIT 1`);
-    } else {
-      // Metaschema not populated — check the compute schema directly
-      log.info('function_module not in metaschema, checking constructive_compute_public directly');
-      await client.query('SELECT count(*) FROM constructive_compute_public.platform_function_definitions LIMIT 1');
-    }
+    const loader = new ModuleLoader({ pool, ttlMs: 0 });
+    const fnConfig = await loader.function.loadDefault(databaseId);
+    await client.query(`SELECT count(*) FROM "${fnConfig.publicSchema}"."${fnConfig.definitionsTable}" LIMIT 1`);
 
     log.info('compute prereqs satisfied (jobs table + compute module present)');
   } catch (error) {

@@ -13,8 +13,9 @@
 
 import express from 'express';
 import http from 'http';
+
 import { createAgenticServer } from '../../packages/agentic-server/src/server';
-import { _resetCache } from '../../packages/agentic-server/src/inference-meter';
+import { createModuleMockQuery, MODULE_CONFIGS } from './helpers/module-mock';
 
 const flush = () => new Promise((r) => setTimeout(r, 30));
 
@@ -68,8 +69,7 @@ describe('agentic server (first-class service)', () => {
   });
 
   beforeEach(() => {
-    _resetCache();
-    mockQuery = jest.fn().mockResolvedValue({ rows: [] });
+    mockQuery = createModuleMockQuery();
     mockPool = { query: mockQuery } as any;
     mockProvider.calls.length = 0;
   });
@@ -155,24 +155,25 @@ describe('agentic server (first-class service)', () => {
       });
       await flush();
 
-      // 2 calls: 1 config resolution (metaschema) + 1 insert
+      // 1 config resolution (metaschema) + 1 insert
       expect(mockQuery).toHaveBeenCalledTimes(2);
       const insertCall = mockQuery.mock.calls.find(
         ([sql]: [string]) => sql.includes('INSERT INTO')
       );
       expect(insertCall).toBeDefined();
       const [sql, params] = insertCall!;
-      expect(sql).toContain('platform_usage_log_inferences');
-      expect(params[1]).toBe('db-meter');       // database_id
-      expect(params[2]).toBe('entity-meter');   // entity_id
-      expect(params[3]).toBe('actor-meter');     // actor_id
-      expect(params[5]).toBe('gpt-4o');          // model
-      expect(params[6]).toBe('openai');          // provider
-      expect(params[7]).toBe('chat');            // service
-      expect(params[9]).toBe(15);                // input_tokens
-      expect(params[10]).toBe(8);                // output_tokens
-      expect(params[11]).toBe(23);               // total_tokens
-      expect(params[13]).toBe('ok');             // status
+      expect(sql).toContain(MODULE_CONFIGS.computeLog.compute_log_table_name);
+      // params: [database_id, entity_id, actor_id, request_id, model, provider, service, operation, ...]
+      expect(params[0]).toBe('db-meter');       // database_id
+      expect(params[1]).toBe('entity-meter');   // entity_id
+      expect(params[2]).toBe('actor-meter');    // actor_id
+      expect(params[4]).toBe('gpt-4o');         // model
+      expect(params[5]).toBe('openai');         // provider
+      expect(params[6]).toBe('chat');           // service
+      expect(params[8]).toBe(15);              // input_tokens
+      expect(params[9]).toBe(8);               // output_tokens
+      expect(params[10]).toBe(23);              // total_tokens
+      expect(params[12]).toBe('ok');            // status
     });
 
     it('meters latency_ms as positive integer', async () => {
@@ -190,7 +191,7 @@ describe('agentic server (first-class service)', () => {
         ([sql]: [string]) => sql.includes('INSERT INTO')
       );
       const [, params] = insertCall!;
-      const latencyMs = params[12];
+      const latencyMs = params[11]; // latency_ms is at index 11
       expect(typeof latencyMs).toBe('number');
       expect(latencyMs).toBeGreaterThanOrEqual(0);
       expect(Number.isInteger(latencyMs)).toBe(true);
@@ -198,7 +199,13 @@ describe('agentic server (first-class service)', () => {
 
     it('metering never blocks the response', async () => {
       // Make metering slow — response should still be fast
-      mockQuery.mockImplementation(() => new Promise((resolve) => setTimeout(() => resolve({ rows: [] }), 500)));
+      const origImpl = mockQuery.getMockImplementation();
+      mockQuery.mockImplementation((sql: string, ...args: any[]) => {
+        if (typeof sql === 'string' && sql.includes('INSERT INTO')) {
+          return new Promise((resolve) => setTimeout(() => resolve({ rows: [] }), 500));
+        }
+        return origImpl!(sql, ...args);
+      });
 
       const start = Date.now();
       const res = await fetch(`${baseUrl}/v1/chat/completions`, {
@@ -252,16 +259,16 @@ describe('agentic server (first-class service)', () => {
       expect(body.data[0].embedding).toEqual([0.1, 0.2, 0.3]);
 
       await flush();
-      // 2 calls: 1 config resolution (metaschema) + 1 insert
+      // 1 config resolution + 1 insert
       expect(mockQuery).toHaveBeenCalledTimes(2);
       const insertCall = mockQuery.mock.calls.find(
         ([sql]: [string]) => sql.includes('INSERT INTO')
       );
       expect(insertCall).toBeDefined();
       const [sql, params] = insertCall!;
-      expect(sql).toContain('platform_usage_log_inferences');
-      expect(params[7]).toBe('embed');            // service
-      expect(params[8]).toBe('embeddings');        // operation
+      expect(sql).toContain(MODULE_CONFIGS.computeLog.compute_log_table_name);
+      expect(params[6]).toBe('embed');            // service
+      expect(params[7]).toBe('embeddings');        // operation
     });
   });
 
@@ -289,7 +296,7 @@ describe('agentic server (first-class service)', () => {
           ([sql]: [string]) => sql.includes('INSERT INTO')
         );
         const [, params] = insertCall!;
-        expect(params[13]).toBe('error');  // status
+        expect(params[12]).toBe('error');  // status
       } finally {
         await new Promise<void>((resolve) => server.close(() => resolve()));
       }
@@ -344,12 +351,12 @@ describe('agentic server (first-class service)', () => {
         });
         await flush();
 
-        // Metering should have null database_id (stripped → undefined → null via ?? null)
+        // Metering fires but database_id is undefined (header was stripped)
         const insertCall = mockQuery.mock.calls.find(
           ([sql]: [string]) => sql.includes('INSERT INTO')
         );
         const [, params] = insertCall!;
-        expect(params[1]).toBeNull();  // database_id stripped
+        expect(params[0]).toBeUndefined();  // database_id stripped
       } finally {
         await new Promise<void>((resolve) => server.close(() => resolve()));
       }

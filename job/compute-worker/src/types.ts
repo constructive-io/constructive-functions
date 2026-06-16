@@ -4,10 +4,10 @@ import type { Pool } from 'pg';
 export type {
   BillingModuleConfig,
   ComputeLogModuleConfig,
-  ComputeModuleConfig,
   FunctionModuleConfig,
-  GraphExecutionModuleConfig,
+  GraphModuleConfig,
   InvocationModuleConfig,
+  ModuleLoaderOptions,
 } from '@constructive-io/module-loader';
 
 // ─── Platform Function Definition ────────────────────────────────────────────
@@ -56,7 +56,7 @@ export interface CreateInvocationInput {
   job_id: string | number;
   database_id?: string;
   actor_id?: string;
-  scope?: string;
+  scope?: string | null;
   graph_execution_id?: string;
 }
 

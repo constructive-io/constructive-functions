@@ -5,7 +5,7 @@ import {
   PutObjectCommand,
   DeleteObjectCommand
 } from '@aws-sdk/client-s3';
-import { UsageLoader } from '@constructive-io/module-loader';
+import { ModuleLoader } from '@constructive-io/module-loader';
 
 export type StorageMeterCallback = (info: {
   databaseId?: string;
@@ -19,7 +19,7 @@ export type StorageMeterCallback = (info: {
 }) => void;
 
 /**
- * Create a fire-and-forget storage metering callback backed by UsageLoader.
+ * Create a fire-and-forget storage metering callback backed by ModuleLoader.
  *
  * Lazily creates a pg Pool from standard PG* env vars on first invocation.
  * Resolves table names dynamically from MetaSchema (scope-aware).
@@ -30,28 +30,34 @@ export const createMeterCallback = (): StorageMeterCallback | undefined => {
   if (!env.PGHOST && !env.DATABASE_URL) return undefined;
 
   let pool: import('pg').Pool | undefined;
-  let loader: UsageLoader | undefined;
+  let loader: ModuleLoader | undefined;
 
-  const getLoader = (): UsageLoader => {
+  const getLoader = (): ModuleLoader => {
     if (loader) return loader;
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { Pool } = require('pg') as typeof import('pg');
     pool = new Pool({ max: 2 });
-    loader = new UsageLoader(pool);
+    loader = new ModuleLoader({ pool });
     return loader;
   };
 
   return (info) => {
-    getLoader().logStorageUsage({
-      databaseId: info.databaseId,
-      entityId: info.entityId,
-      actorId: info.actorId,
-      operation: info.operation,
-      bucket: info.bucket,
-      key: info.key,
-      sizeBytes: info.sizeBytes,
-      durationMs: info.durationMs
-    });
+    if (!info.databaseId) return;
+    const databaseId = info.databaseId;
+    getLoader().computeLog.loadDefault(databaseId)
+      .then(async (cfg) => {
+        await pool!.query(
+          `INSERT INTO "${cfg.publicSchema}"."${cfg.computeLogTable}"
+           (database_id, entity_id, actor_id, operation, bucket, key, size_bytes, duration_ms)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [
+            databaseId, info.entityId ?? null, info.actorId ?? null,
+            info.operation, info.bucket, info.key,
+            info.sizeBytes, Math.round(info.durationMs),
+          ]
+        );
+      })
+      .catch(() => { /* fire-and-forget */ });
   };
 };
 

@@ -133,11 +133,11 @@ export default class Worker {
       let output: Record<string, any> | undefined;
       try {
         output = await impl(inputs ?? {}, props);
-        await completeNode(this.pgPool, execution_id, node_name, output);
+        await completeNode(this.pgPool, job.database_id ?? '00000000-0000-0000-0000-000000000000', execution_id, node_name, output);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         log.error(`inline node ${task_identifier} failed`, { node_name, message });
-        await failNode(this.pgPool, execution_id, node_name, message);
+        await failNode(this.pgPool, job.database_id ?? '00000000-0000-0000-0000-000000000000', execution_id, node_name, message);
 
         const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
         this.usageClient.logComputeUsage({
@@ -353,5 +353,5 @@ export default class Worker {
 }
 
 export { Worker };
-export type { InferenceEntry, MeterEntry, StorageEntry, UsageModuleConfig, UsageTableConfig } from './usage-client';
-export { UsageClient, UsageLoader, getLoader, _resetLoaderCache } from './usage-client';
+export type { MeterEntry } from './usage-client';
+export { UsageClient } from './usage-client';
