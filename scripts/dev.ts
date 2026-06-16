@@ -63,6 +63,14 @@ const sharedEnv: Record<string, string> = {
   LOCAL_APP_PORT: '3000',
   SEND_VERIFICATION_LINK_DRY_RUN: 'true',
   SEND_EMAIL_DRY_RUN: 'true',
+  // S3/MinIO (matches docker-compose minio on port 9000)
+  CDN_ENDPOINT: 'http://localhost:9000',
+  S3_ENDPOINT: 'http://localhost:9000',
+  AWS_REGION: 'us-east-1',
+  AWS_ACCESS_KEY: 'minioadmin',
+  AWS_SECRET_KEY: 'minioadmin',
+  AWS_ACCESS_KEY_ID: 'minioadmin',
+  AWS_SECRET_ACCESS_KEY: 'minioadmin',
 };
 
 // --- Process definitions (built from manifest) ---
