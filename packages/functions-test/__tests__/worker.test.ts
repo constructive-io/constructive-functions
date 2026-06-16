@@ -65,7 +65,7 @@ beforeEach(async () => {
   await conn.db.beforeEach();
   mockServer.reset();
   // Invalidate caches so each test gets fresh module config
-  worker.loader.invalidateAll();
+  worker.loader.invalidate();
   worker.discovery.invalidateAll();
 });
 

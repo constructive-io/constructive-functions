@@ -46,7 +46,8 @@ async function resolveComputeLog(pool: Pool, databaseId: string, scope: string |
     return await getLoader(pool).computeLog.load(databaseId, scope);
   } catch (err) {
     if (err instanceof AmbiguousScopeError) {
-      return await getLoader(pool).computeLog.load(databaseId, 'app');
+      const all = await getLoader(pool).computeLog.loadAll(databaseId);
+      return all[0];
     }
     throw err;
   }

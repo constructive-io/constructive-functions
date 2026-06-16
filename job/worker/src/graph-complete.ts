@@ -27,7 +27,8 @@ async function resolveGraph(pool: Pool, databaseId: string, scope?: string | nul
     return await getLoader(pool).graph.load(databaseId, scope ?? null);
   } catch (err) {
     if (err instanceof AmbiguousScopeError) {
-      return await getLoader(pool).graph.load(databaseId, 'app');
+      const all = await getLoader(pool).graph.loadAll(databaseId);
+      return all[0];
     }
     throw err;
   }

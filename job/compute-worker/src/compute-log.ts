@@ -47,11 +47,13 @@ export class ComputeLogTracker {
         return;
       }
       if (err instanceof AmbiguousScopeError) {
-        cfg = await this.loader.computeLog.load(this.databaseId, 'app');
+        const all = await this.loader.computeLog.loadAll(this.databaseId);
+        cfg = all[0];
       } else {
         throw err;
       }
     }
+    if (!cfg) return;
 
     const qualifiedTable = `"${cfg.publicSchema}"."${cfg.computeLogTable}"`;
     try {
@@ -91,11 +93,13 @@ export class ComputeLogTracker {
         return 0;
       }
       if (err instanceof AmbiguousScopeError) {
-        cfg = await this.loader.computeLog.load(this.databaseId, 'app');
+        const all = await this.loader.computeLog.loadAll(this.databaseId);
+        cfg = all[0];
       } else {
         throw err;
       }
     }
+    if (!cfg) return 0;
 
     try {
       const result = await this.pool.query(

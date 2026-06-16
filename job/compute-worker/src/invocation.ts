@@ -40,7 +40,8 @@ export class InvocationTracker {
     } catch (err) {
       if (err instanceof ModuleNotProvisionedError) return null;
       if (err instanceof AmbiguousScopeError) {
-        return await this.loader.invocation.load(dbId, 'app');
+        const all = await this.loader.invocation.loadAll(dbId);
+        return all[0] ?? null;
       }
       throw err;
     }

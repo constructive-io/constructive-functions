@@ -39,7 +39,8 @@ export class FunctionDiscovery {
       return await this.loader.function.load(this.databaseId, null);
     } catch (err) {
       if (err instanceof AmbiguousScopeError) {
-        return await this.loader.function.load(this.databaseId, 'app');
+        const all = await this.loader.function.loadAll(this.databaseId);
+        return all[0];
       }
       throw err;
     }
