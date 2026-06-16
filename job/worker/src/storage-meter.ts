@@ -6,7 +6,7 @@
  * metering never affects function execution or storage latency.
  */
 
-import { ModuleLoader } from '@constructive-io/module-loader';
+import { AmbiguousScopeError, ModuleLoader } from '@constructive-io/module-loader';
 import type { Pool } from 'pg';
 
 export interface StorageEntry {
@@ -31,11 +31,22 @@ function getLoader(pool: Pool): ModuleLoader {
   return _loader;
 }
 
+async function resolveComputeLog(pool: Pool, databaseId: string, scope: string | null) {
+  try {
+    return await getLoader(pool).computeLog.load(databaseId, scope);
+  } catch (err) {
+    if (err instanceof AmbiguousScopeError) {
+      return await getLoader(pool).computeLog.load(databaseId, 'app');
+    }
+    throw err;
+  }
+}
+
 /**
  * Log a storage operation. Fire-and-forget: never throws.
  */
 export function logStorageUsage(pool: Pool, entry: StorageEntry): void {
-  getLoader(pool).computeLog.load(entry.databaseId, entry.scope ?? null)
+  resolveComputeLog(pool, entry.databaseId, entry.scope ?? null)
     .then(async (cfg) => {
       await pool.query(
         `INSERT INTO "${cfg.publicSchema}"."${cfg.computeLogTable}"

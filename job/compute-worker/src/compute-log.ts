@@ -6,7 +6,7 @@
  * Gracefully no-ops if compute_log_module is not provisioned.
  */
 
-import { ModuleLoader, ModuleNotProvisionedError } from '@constructive-io/module-loader';
+import { AmbiguousScopeError, ModuleLoader, ModuleNotProvisionedError } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
 
@@ -46,7 +46,11 @@ export class ComputeLogTracker {
         log.debug('compute_log_module not provisioned — skipping log');
         return;
       }
-      throw err;
+      if (err instanceof AmbiguousScopeError) {
+        cfg = await this.loader.computeLog.load(this.databaseId, 'app');
+      } else {
+        throw err;
+      }
     }
 
     const qualifiedTable = `"${cfg.publicSchema}"."${cfg.computeLogTable}"`;
@@ -86,7 +90,11 @@ export class ComputeLogTracker {
         log.debug('compute_log_module not provisioned — skipping rollup');
         return 0;
       }
-      throw err;
+      if (err instanceof AmbiguousScopeError) {
+        cfg = await this.loader.computeLog.load(this.databaseId, 'app');
+      } else {
+        throw err;
+      }
     }
 
     try {

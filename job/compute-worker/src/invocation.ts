@@ -11,7 +11,7 @@
  */
 
 import type { InvocationModuleConfig } from '@constructive-io/module-loader';
-import { ModuleLoader, ModuleNotProvisionedError } from '@constructive-io/module-loader';
+import { ModuleLoader, ModuleNotProvisionedError, AmbiguousScopeError } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
 
@@ -39,6 +39,9 @@ export class InvocationTracker {
       return await this.loader.invocation.load(dbId, scope ?? null);
     } catch (err) {
       if (err instanceof ModuleNotProvisionedError) return null;
+      if (err instanceof AmbiguousScopeError) {
+        return await this.loader.invocation.load(dbId, 'app');
+      }
       throw err;
     }
   }

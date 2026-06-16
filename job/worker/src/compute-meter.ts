@@ -6,7 +6,7 @@
  * metering never affects job throughput or latency.
  */
 
-import { ModuleLoader } from '@constructive-io/module-loader';
+import { AmbiguousScopeError, ModuleLoader } from '@constructive-io/module-loader';
 import { randomUUID } from 'crypto';
 import type { Pool } from 'pg';
 
@@ -47,7 +47,18 @@ export function logComputeUsage(pool: Pool, entry: MeterEntry): string {
   const loader = getLoader(pool);
   const databaseId = entry.databaseId;
 
-  loader.invocation.load(databaseId, entry.scope ?? null)
+  const resolveInvocation = async () => {
+    try {
+      return await loader.invocation.load(databaseId, entry.scope ?? null);
+    } catch (err) {
+      if (err instanceof AmbiguousScopeError) {
+        return await loader.invocation.load(databaseId, 'app');
+      }
+      throw err;
+    }
+  };
+
+  resolveInvocation()
     .then(async (cfg) => {
       const now = new Date();
       const startedAt = new Date(now.getTime() - Math.round(entry.durationMs));

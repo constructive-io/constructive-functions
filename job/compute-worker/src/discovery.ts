@@ -5,7 +5,7 @@
  * Schema and table names are resolved dynamically via ModuleLoader.
  */
 
-import { ModuleLoader } from '@constructive-io/module-loader';
+import { AmbiguousScopeError, ModuleLoader } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
 
@@ -34,12 +34,23 @@ export class FunctionDiscovery {
     this.cache = new TtlCache<PlatformFunctionDefinition | null>(ttlMs);
   }
 
+  private async resolveFunctionModule() {
+    try {
+      return await this.loader.function.load(this.databaseId, null);
+    } catch (err) {
+      if (err instanceof AmbiguousScopeError) {
+        return await this.loader.function.load(this.databaseId, 'app');
+      }
+      throw err;
+    }
+  }
+
   async resolve(taskIdentifier: string): Promise<PlatformFunctionDefinition | null> {
     const cached = this.cache.get(taskIdentifier);
     if (cached !== undefined) return cached;
 
     try {
-      const cfg = await this.loader.function.load(this.databaseId, null);
+      const cfg = await this.resolveFunctionModule();
       const sql = `SELECT ${COLUMNS} FROM "${cfg.publicSchema}"."${cfg.definitionsTable}" WHERE task_identifier = $1 LIMIT 1`;
       const { rows } = await this.pool.query(sql, [taskIdentifier]);
       const def = (rows[0] as PlatformFunctionDefinition) ?? null;
@@ -54,7 +65,7 @@ export class FunctionDiscovery {
 
   async listInvocable(): Promise<PlatformFunctionDefinition[]> {
     try {
-      const cfg = await this.loader.function.load(this.databaseId, null);
+      const cfg = await this.resolveFunctionModule();
       const sql = `SELECT ${COLUMNS} FROM "${cfg.publicSchema}"."${cfg.definitionsTable}" WHERE is_invocable = true ORDER BY name`;
       const { rows } = await this.pool.query(sql);
       return rows as PlatformFunctionDefinition[];

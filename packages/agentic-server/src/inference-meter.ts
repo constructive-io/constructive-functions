@@ -6,8 +6,8 @@
  * metering never affects inference latency or response delivery.
  */
 
+import { AmbiguousScopeError, ModuleLoader } from '@constructive-io/module-loader';
 import type { Pool } from 'pg';
-import { ModuleLoader } from '@constructive-io/module-loader';
 
 export interface InferenceEntry {
   databaseId: string;
@@ -41,8 +41,19 @@ function getLoader(pool: Pool): ModuleLoader {
 /**
  * Log an inference invocation. Fire-and-forget: never throws.
  */
+async function resolveComputeLog(pool: Pool, databaseId: string, scope: string | null) {
+  try {
+    return await getLoader(pool).computeLog.load(databaseId, scope);
+  } catch (err) {
+    if (err instanceof AmbiguousScopeError) {
+      return await getLoader(pool).computeLog.load(databaseId, 'app');
+    }
+    throw err;
+  }
+}
+
 export function logInferenceUsage(pool: Pool, entry: InferenceEntry): void {
-  getLoader(pool).computeLog.load(entry.databaseId, entry.scope ?? null)
+  resolveComputeLog(pool, entry.databaseId, entry.scope ?? null)
     .then(async (cfg) => {
       await pool.query(
         `INSERT INTO "${cfg.publicSchema}"."${cfg.computeLogTable}"

@@ -9,7 +9,7 @@
  */
 
 import type { GraphModuleConfig } from '@constructive-io/module-loader';
-import { ModuleLoader } from '@constructive-io/module-loader';
+import { AmbiguousScopeError, ModuleLoader } from '@constructive-io/module-loader';
 import type { Pool } from 'pg';
 
 let _loader: ModuleLoader | null = null;
@@ -23,7 +23,14 @@ function getLoader(pool: Pool): ModuleLoader {
 }
 
 async function resolveGraph(pool: Pool, databaseId: string, scope?: string | null): Promise<GraphModuleConfig> {
-  return getLoader(pool).graph.load(databaseId, scope ?? null);
+  try {
+    return await getLoader(pool).graph.load(databaseId, scope ?? null);
+  } catch (err) {
+    if (err instanceof AmbiguousScopeError) {
+      return await getLoader(pool).graph.load(databaseId, 'app');
+    }
+    throw err;
+  }
 }
 
 /**
