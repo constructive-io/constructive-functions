@@ -1,0 +1,70 @@
+name: Module Loader Tests
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Module loader integration tests
+    runs-on: ubuntu-latest
+
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: password
+      PGDATABASE: postgres
+
+    services:
+      pg_db:
+        image: constructiveio/postgres-plus:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install pgpm CLI
+        run: npm install -g pgpm@4.7.4
+
+      - name: Bootstrap pgpm admin users
+        run: pgpm admin-users bootstrap --yes
+
+      - name: Install pgpm module dependencies
+        run: |
+          cd extensions/@pgpm/metaschema-modules && npm install --legacy-peer-deps && cd ../../..
+
+      - name: Generate function packages
+        run: node --experimental-strip-types scripts/generate.ts
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build module-loader
+        run: pnpm --filter @constructive-io/module-loader build
+
+      - name: Run module-loader tests
+        run: pnpm --filter @constructive-io/module-loader test
