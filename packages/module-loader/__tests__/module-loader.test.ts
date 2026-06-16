@@ -1,7 +1,7 @@
+import path from 'path';
 import { getConnections, seed } from 'pgsql-test';
 import type { SeedAdapter } from 'pgsql-test/seed/types';
 import type { PgTestClient } from 'pgsql-test/test-client';
-import path from 'path';
 
 import {
   AmbiguousScopeError,

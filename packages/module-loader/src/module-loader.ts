@@ -1,13 +1,19 @@
 import type { ModuleConfigLoader, Queryable } from './generic-loader';
 import type {
+  BillingModuleConfig,
+  ComputeLogModuleConfig,
   FunctionModuleConfig,
+  GraphModuleConfig,
   InvocationModuleConfig,
   NamespaceModuleConfig,
   SecretsModuleConfig,
   StorageModuleConfig,
 } from './loaders';
 import {
+  createBillingLoader,
+  createComputeLogLoader,
   createFunctionLoader,
+  createGraphLoader,
   createInvocationLoader,
   createNamespaceLoader,
   createSecretsLoader,
@@ -31,6 +37,9 @@ export class ModuleLoader {
   readonly namespace: ModuleConfigLoader<NamespaceModuleConfig>;
   readonly secrets: ModuleConfigLoader<SecretsModuleConfig>;
   readonly storage: ModuleConfigLoader<StorageModuleConfig>;
+  readonly computeLog: ModuleConfigLoader<ComputeLogModuleConfig>;
+  readonly graph: ModuleConfigLoader<GraphModuleConfig>;
+  readonly billing: ModuleConfigLoader<BillingModuleConfig>;
 
   constructor(opts: ModuleLoaderOptions) {
     const { pool, ttlMs } = opts;
@@ -39,6 +48,9 @@ export class ModuleLoader {
     this.namespace = createNamespaceLoader(pool, ttlMs);
     this.secrets = createSecretsLoader(pool, ttlMs);
     this.storage = createStorageLoader(pool, ttlMs);
+    this.computeLog = createComputeLogLoader(pool, ttlMs);
+    this.graph = createGraphLoader(pool, ttlMs);
+    this.billing = createBillingLoader(pool, ttlMs);
   }
 
   invalidate(databaseId?: string): void {
@@ -47,5 +59,8 @@ export class ModuleLoader {
     this.namespace.invalidate(databaseId);
     this.secrets.invalidate(databaseId);
     this.storage.invalidate(databaseId);
+    this.computeLog.invalidate(databaseId);
+    this.graph.invalidate(databaseId);
+    this.billing.invalidate(databaseId);
   }
 }

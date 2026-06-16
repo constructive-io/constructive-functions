@@ -2,11 +2,7 @@
  * InvocationTracker — records function invocations in the
  * dynamically-resolved invocations table.
  *
- * Supports both platform-scoped and org-scoped invocations:
- *   - Platform scope: no owner_id column
- *   - Org scope: includes owner_id (entity_id) pointing to the orgs table
- *
- * Schema and table names are resolved via ComputeModuleLoader.
+ * Schema and table names are resolved via ModuleLoader.
  *
  * Lifecycle:
  *   1. `create()` — inserts a row with status='running' before dispatch
@@ -14,7 +10,8 @@
  *   3. `fail()` — updates to status='failed' with error + duration
  */
 
-import type { ComputeModuleLoader, InvocationModuleConfig } from '@constructive-io/module-loader';
+import type { InvocationModuleConfig } from '@constructive-io/module-loader';
+import { ModuleLoader, ModuleNotProvisionedError } from '@constructive-io/module-loader';
 import { Logger } from '@pgpmjs/logger';
 import type { Pool } from 'pg';
 
@@ -24,43 +21,31 @@ const log = new Logger('compute:invocation');
 
 export class InvocationTracker {
   private pool: Pool;
-  private loader: ComputeModuleLoader;
+  private loader: ModuleLoader;
   private databaseId: string;
 
-  constructor(pool: Pool, loader: ComputeModuleLoader, databaseId: string) {
+  constructor(pool: Pool, loader: ModuleLoader, databaseId: string) {
     this.pool = pool;
     this.loader = loader;
     this.databaseId = databaseId;
   }
 
-  /**
-   * Resolve the invocation module matching the desired scope.
-   * Falls back to the first available module if no scope match.
-   */
   private async resolveInvocationModule(
-    scope?: string,
+    scope?: string | null,
     targetDatabaseId?: string
   ): Promise<InvocationModuleConfig | null> {
     const dbId = targetDatabaseId ?? this.databaseId;
-    const config = await this.loader.load(dbId);
-    if (!config.invocationModules.length) return null;
-
-    if (scope) {
-      const match = config.invocationModules.find((m) => m.scope === scope);
-      if (match) return match;
+    try {
+      return await this.loader.invocation.load(dbId, scope ?? null);
+    } catch (err) {
+      if (err instanceof ModuleNotProvisionedError) return null;
+      throw err;
     }
-
-    return config.invocationModules[0];
   }
 
-  /**
-   * Create an invocation record before dispatching the function.
-   * Returns the invocation ID and start timestamp.
-   */
   async create(input: CreateInvocationInput): Promise<{ id: string; started_at: Date }> {
-    const scope = input.scope ?? 'platform';
-    const targetDbId = scope === 'org' ? input.database_id : undefined;
-    const mod = await this.resolveInvocationModule(scope, targetDbId);
+    const scope = input.scope ?? null;
+    const mod = await this.resolveInvocationModule(scope, input.database_id);
     if (!mod) {
       throw new Error(`no invocation module found for scope="${scope}"`);
     }
@@ -85,23 +70,20 @@ export class InvocationTracker {
         input.graph_execution_id ?? null,
       ]);
       const row = rows[0];
-      log.debug(`created ${scope}-scoped invocation ${row.id} for ${input.task_identifier}`);
+      log.debug(`created invocation ${row.id} for ${input.task_identifier}`);
       return { id: row.id, started_at: row.started_at };
-    } catch (err: any) {
-      log.error(`failed to create invocation for ${input.task_identifier}: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.error(`failed to create invocation for ${input.task_identifier}: ${msg}`);
       throw err;
     }
   }
 
-  /**
-   * Mark an invocation as completed with result and duration.
-   * Uses the same scope resolution as create to find the right table.
-   */
   async complete(
     invocation_id: string,
     duration_ms: number,
     result?: unknown,
-    scope?: string,
+    scope?: string | null,
     targetDatabaseId?: string
   ): Promise<void> {
     const mod = await this.resolveInvocationModule(scope, targetDatabaseId);
@@ -120,19 +102,17 @@ export class InvocationTracker {
     try {
       await this.pool.query(sql, [invocation_id, duration_ms, result_json]);
       log.debug(`completed invocation ${invocation_id} (${duration_ms}ms)`);
-    } catch (err: any) {
-      log.error(`failed to complete invocation ${invocation_id}: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.error(`failed to complete invocation ${invocation_id}: ${msg}`);
     }
   }
 
-  /**
-   * Mark an invocation as failed with error and duration.
-   */
   async fail(
     invocation_id: string,
     duration_ms: number,
     error: string,
-    scope?: string,
+    scope?: string | null,
     targetDatabaseId?: string
   ): Promise<void> {
     const mod = await this.resolveInvocationModule(scope, targetDatabaseId);
@@ -150,8 +130,9 @@ export class InvocationTracker {
     try {
       await this.pool.query(sql, [invocation_id, duration_ms, error]);
       log.debug(`failed invocation ${invocation_id}: ${error}`);
-    } catch (err: any) {
-      log.error(`failed to record failure for invocation ${invocation_id}: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.error(`failed to record failure for invocation ${invocation_id}: ${msg}`);
     }
   }
 }

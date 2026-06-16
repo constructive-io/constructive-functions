@@ -41,6 +41,30 @@ export interface InvocationModuleConfig {
   executionLogsTable: string;
 }
 
+export interface ComputeLogModuleConfig {
+  scope: string;
+  publicSchema: string;
+  privateSchema: string;
+  computeLogTable: string;
+  usageDailyTable: string;
+}
+
+export interface GraphModuleConfig {
+  scope: string;
+  publicSchema: string;
+  privateSchema: string;
+  nodeStatesTable: string;
+  completeNodeFunction: string;
+  failNodeFunction: string;
+}
+
+export interface BillingModuleConfig {
+  scope: string;
+  publicSchema: string;
+  privateSchema: string;
+  recordUsageFunction: string;
+}
+
 // ─── SQL Queries ─────────────────────────────────────────────────────────────
 
 const FUNCTION_MODULE_SQL = `
@@ -103,6 +127,45 @@ const INVOCATION_MODULE_SQL = `
   FROM metaschema_modules_public.function_invocation_module im
   LEFT JOIN metaschema_public.schema ps ON ps.id = im.schema_id
   WHERE im.database_id = $1
+`;
+
+const COMPUTE_LOG_MODULE_SQL = `
+  SELECT
+    clm.scope,
+    clm.compute_log_table_name,
+    clm.usage_daily_table_name,
+    ps.schema_name AS public_schema,
+    pvs.schema_name AS private_schema
+  FROM metaschema_modules_public.compute_log_module clm
+  LEFT JOIN metaschema_public.schema ps ON ps.id = clm.schema_id
+  LEFT JOIN metaschema_public.schema pvs ON pvs.id = clm.private_schema_id
+  WHERE clm.database_id = $1
+`;
+
+const GRAPH_MODULE_SQL = `
+  SELECT
+    gem.scope,
+    gem.node_states_table_name,
+    gem.complete_node_function,
+    gem.fail_node_function,
+    COALESCE(gem.public_schema_name, ps.schema_name) AS public_schema,
+    COALESCE(gem.private_schema_name, pvs.schema_name) AS private_schema
+  FROM metaschema_modules_public.graph_execution_module gem
+  LEFT JOIN metaschema_public.schema ps ON ps.id = gem.schema_id
+  LEFT JOIN metaschema_public.schema pvs ON pvs.id = gem.private_schema_id
+  WHERE gem.database_id = $1
+`;
+
+const BILLING_MODULE_SQL = `
+  SELECT
+    bm.scope,
+    ps.schema_name AS public_schema,
+    pvs.schema_name AS private_schema,
+    bm.record_usage_function
+  FROM metaschema_modules_public.billing_module bm
+  LEFT JOIN metaschema_public.schema ps ON ps.id = bm.schema_id
+  LEFT JOIN metaschema_public.schema pvs ON pvs.id = bm.private_schema_id
+  WHERE bm.database_id = $1
 `;
 
 // ─── Loader Factories ────────────────────────────────────────────────────────
@@ -181,6 +244,54 @@ export function createInvocationLoader(pool: Queryable, ttlMs?: number) {
       publicSchema: row.public_schema as string,
       invocationsTable: row.invocations_table_name as string,
       executionLogsTable: row.execution_logs_table_name as string,
+    }),
+  });
+}
+
+export function createComputeLogLoader(pool: Queryable, ttlMs?: number) {
+  return new ModuleConfigLoader<ComputeLogModuleConfig>({
+    pool,
+    sql: COMPUTE_LOG_MODULE_SQL,
+    moduleName: 'compute_log_module',
+    ttlMs,
+    mapper: (row) => ({
+      scope: row.scope as string,
+      publicSchema: row.public_schema as string,
+      privateSchema: row.private_schema as string,
+      computeLogTable: row.compute_log_table_name as string,
+      usageDailyTable: row.usage_daily_table_name as string,
+    }),
+  });
+}
+
+export function createGraphLoader(pool: Queryable, ttlMs?: number) {
+  return new ModuleConfigLoader<GraphModuleConfig>({
+    pool,
+    sql: GRAPH_MODULE_SQL,
+    moduleName: 'graph_execution_module',
+    ttlMs,
+    mapper: (row) => ({
+      scope: row.scope as string,
+      publicSchema: row.public_schema as string,
+      privateSchema: row.private_schema as string,
+      nodeStatesTable: row.node_states_table_name as string,
+      completeNodeFunction: row.complete_node_function as string,
+      failNodeFunction: row.fail_node_function as string,
+    }),
+  });
+}
+
+export function createBillingLoader(pool: Queryable, ttlMs?: number) {
+  return new ModuleConfigLoader<BillingModuleConfig>({
+    pool,
+    sql: BILLING_MODULE_SQL,
+    moduleName: 'billing_module',
+    ttlMs,
+    mapper: (row) => ({
+      scope: row.scope as string,
+      publicSchema: row.public_schema as string,
+      privateSchema: row.private_schema as string,
+      recordUsageFunction: row.record_usage_function as string,
     }),
   });
 }

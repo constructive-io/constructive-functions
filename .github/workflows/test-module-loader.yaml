@@ -54,8 +54,7 @@ jobs:
         run: pgpm admin-users bootstrap --yes
 
       - name: Install pgpm module dependencies
-        run: |
-          cd extensions/@pgpm/metaschema-modules && npm install --legacy-peer-deps && cd ../../..
+        run: cd extensions/@pgpm/metaschema-modules && pgpm install @pgpm/services
 
       - name: Generate function packages
         run: node --experimental-strip-types scripts/generate.ts

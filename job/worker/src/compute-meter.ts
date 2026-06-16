@@ -1,35 +1,76 @@
 /**
  * Compute metering — fire-and-forget usage logging for every job.
  *
- * Delegates to @constructive-io/module-loader which resolves table names
- * dynamically from MetaSchema module registration tables.
- *
+ * Resolves table names dynamically via ModuleLoader from MetaSchema.
  * All writes are non-blocking: errors are logged and swallowed so
  * metering never affects job throughput or latency.
  */
 
+import { ModuleLoader } from '@constructive-io/module-loader';
+import { randomUUID } from 'crypto';
 import type { Pool } from 'pg';
-import { UsageLoader } from '@constructive-io/module-loader';
-import type { MeterEntry } from '@constructive-io/module-loader';
 
-export type { MeterEntry };
+export interface MeterEntry {
+  jobId: number | string;
+  taskIdentifier: string;
+  databaseId?: string;
+  actorId?: string;
+  entityId?: string;
+  durationMs: number;
+  status: 'ok' | 'error';
+  error?: string;
+  payload?: unknown;
+  result?: unknown;
+  graphExecutionId?: string;
+  nodeName?: string;
+  dispatchType: 'inline' | 'http';
+  scope?: string | null;
+}
 
-/** Module-level loader cache — reused across calls within the same pool. */
-let _loader: UsageLoader | null = null;
+let _loader: ModuleLoader | null = null;
 let _pool: Pool | null = null;
 
-function getOrCreateLoader(pool: Pool): UsageLoader {
+function getLoader(pool: Pool): ModuleLoader {
   if (_loader && _pool === pool) return _loader;
-  _loader = new UsageLoader(pool);
+  _loader = new ModuleLoader({ pool });
   _pool = pool;
   return _loader;
 }
 
 /**
- * Log a compute invocation to both the invocations and usage tables.
- * Fire-and-forget: returns immediately, never throws.
+ * Log a compute invocation. Fire-and-forget: never throws.
  * Returns the generated invocation_id (UUID).
  */
 export function logComputeUsage(pool: Pool, entry: MeterEntry): string {
-  return getOrCreateLoader(pool).logComputeUsage(entry);
+  const invocationId = randomUUID();
+  if (!entry.databaseId) return invocationId;
+  const loader = getLoader(pool);
+  const databaseId = entry.databaseId;
+
+  loader.invocation.load(databaseId, entry.scope ?? null)
+    .then(async (cfg) => {
+      const now = new Date();
+      const startedAt = new Date(now.getTime() - Math.round(entry.durationMs));
+      await pool.query(
+        `INSERT INTO "${cfg.publicSchema}"."${cfg.invocationsTable}"
+         (id, database_id, actor_id, task_identifier, job_id,
+          graph_execution_id, status, duration_ms,
+          started_at, completed_at, payload, result, error,
+          entity_id, node_name, dispatch_type)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+        [
+          invocationId, databaseId, entry.actorId ?? null,
+          entry.taskIdentifier, String(entry.jobId),
+          entry.graphExecutionId ?? null, entry.status, Math.round(entry.durationMs),
+          startedAt, now,
+          entry.payload ? JSON.stringify(entry.payload) : null,
+          entry.result ? JSON.stringify(entry.result) : null,
+          entry.error ?? null, entry.entityId ?? null,
+          entry.nodeName ?? null, entry.dispatchType,
+        ]
+      );
+    })
+    .catch(() => { /* fire-and-forget */ });
+
+  return invocationId;
 }

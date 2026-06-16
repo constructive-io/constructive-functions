@@ -1,22 +1,22 @@
 /**
- * Re-export from @constructive-io/module-loader for backward compatibility.
- *
- * The canonical implementation is in packages/module-loader.
- * This file exists so existing imports from within job/worker/ continue working.
+ * Usage client for the job/worker — wraps compute-meter.ts.
  */
 
-export {
-  UsageLoader as UsageClient,
-  UsageLoader,
-  getModuleLoader as getLoader,
-  _resetModuleLoaderCache as _resetLoaderCache,
-  USAGE_DEFAULTS as DEFAULTS,
-} from '@constructive-io/module-loader';
+import type { Pool } from 'pg';
 
-export type {
-  UsageTableConfig as UsageModuleConfig,
-  UsageTableConfig,
-  MeterEntry,
-  InferenceEntry,
-  StorageEntry,
-} from '@constructive-io/module-loader';
+import type { MeterEntry } from './compute-meter';
+import { logComputeUsage } from './compute-meter';
+
+export type { MeterEntry };
+
+export class UsageClient {
+  private pool: Pool;
+
+  constructor(pool: Pool) {
+    this.pool = pool;
+  }
+
+  logComputeUsage(entry: MeterEntry): string {
+    return logComputeUsage(this.pool, entry);
+  }
+}
