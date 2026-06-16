@@ -54,6 +54,8 @@ export interface GraphModuleConfig {
   publicSchema: string;
   privateSchema: string;
   nodeStatesTable: string;
+  executionsTable: string;
+  outputsTable: string;
   completeNodeFunction: string;
   failNodeFunction: string;
 }
@@ -145,9 +147,10 @@ const COMPUTE_LOG_MODULE_SQL = `
 const GRAPH_MODULE_SQL = `
   SELECT
     gem.scope,
+    gem.prefix,
     gem.node_states_table_name,
-    gem.complete_node_function,
-    gem.fail_node_function,
+    gem.executions_table_name,
+    gem.outputs_table_name,
     COALESCE(gem.public_schema_name, ps.schema_name) AS public_schema,
     COALESCE(gem.private_schema_name, pvs.schema_name) AS private_schema
   FROM metaschema_modules_public.graph_execution_module gem
@@ -270,14 +273,19 @@ export function createGraphLoader(pool: Queryable, ttlMs?: number) {
     sql: GRAPH_MODULE_SQL,
     moduleName: 'graph_execution_module',
     ttlMs,
-    mapper: (row) => ({
-      scope: row.scope as string,
-      publicSchema: row.public_schema as string,
-      privateSchema: row.private_schema as string,
-      nodeStatesTable: row.node_states_table_name as string,
-      completeNodeFunction: row.complete_node_function as string,
-      failNodeFunction: row.fail_node_function as string,
-    }),
+    mapper: (row) => {
+      const prefix = (row.prefix as string) || 'platform';
+      return {
+        scope: row.scope as string,
+        publicSchema: row.public_schema as string,
+        privateSchema: row.private_schema as string,
+        nodeStatesTable: row.node_states_table_name as string,
+        executionsTable: row.executions_table_name as string,
+        outputsTable: row.outputs_table_name as string,
+        completeNodeFunction: `${prefix}_complete_node`,
+        failNodeFunction: `${prefix}_fail_node`,
+      };
+    },
   });
 }
 
