@@ -2,29 +2,36 @@
  * Integration tests for inference metering (fire-and-forget usage logging).
  *
  * Verifies that logInferenceUsage:
- *   1. INSERTs into platform_usage_log_inferences with correct columns
- *   2. Captures model, provider, tokens, latency_ms, status
+ *   1. Resolves table names via ModuleLoader (metaschema query)
+ *   2. INSERTs into the resolved compute_log table with correct columns
  *   3. Never throws — metering errors are swallowed
  *   4. Handles both chat and embed services
  *   5. Records error status with error_type for failed inferences
- *   6. Handles null database_id, entity_id, actor_id gracefully
+ *   6. Rounds latency_ms to nearest integer
  */
 
-import { logInferenceUsage, _resetCache } from '../../packages/agentic-server/src/inference-meter';
+import { logInferenceUsage } from '../../packages/agentic-server/src/inference-meter';
+import { createModuleMockQuery, MODULE_CONFIGS } from './helpers/module-mock';
 
 const flush = () => new Promise((r) => setTimeout(r, 20));
+
+/** Filter query calls to INSERT statements */
+function insertCalls(mockQuery: jest.Mock) {
+  return mockQuery.mock.calls.filter(
+    ([sql]: [string]) => sql.includes('INSERT INTO')
+  );
+}
 
 describe('logInferenceUsage', () => {
   let mockQuery: jest.Mock;
   let mockPool: any;
 
   beforeEach(() => {
-    _resetCache();
-    mockQuery = jest.fn().mockResolvedValue({ rows: [] });
+    mockQuery = createModuleMockQuery();
     mockPool = { query: mockQuery } as any;
   });
 
-  it('inserts into platform_usage_log_inferences', async () => {
+  it('resolves table names from MetaSchema and inserts', async () => {
     logInferenceUsage(mockPool, {
       databaseId: 'db-001',
       entityId: 'entity-001',
@@ -41,15 +48,13 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    // 2 calls: 1 config resolution (metaschema) + 1 insert
+    // 1 config resolution (metaschema) + 1 insert
     expect(mockQuery).toHaveBeenCalledTimes(2);
-    const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('INSERT INTO')
-    );
-    expect(insertCall).toBeDefined();
-    const [sql] = insertCall!;
+    const inserts = insertCalls(mockQuery);
+    expect(inserts).toHaveLength(1);
+    const [sql] = inserts[0];
     expect(sql).toContain('INSERT INTO');
-    expect(sql).toContain('platform_usage_log_inferences');
+    expect(sql).toContain(MODULE_CONFIGS.computeLog.compute_log_table_name);
   });
 
   it('passes correct columns for chat completions', async () => {
@@ -70,10 +75,9 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('INSERT INTO')
-    );
-    const [sql, params] = insertCall!;
+    const inserts = insertCalls(mockQuery);
+    expect(inserts).toHaveLength(1);
+    const [sql, params] = inserts[0];
     expect(sql).toContain('model');
     expect(sql).toContain('provider');
     expect(sql).toContain('input_tokens');
@@ -81,31 +85,29 @@ describe('logInferenceUsage', () => {
     expect(sql).toContain('total_tokens');
     expect(sql).toContain('latency_ms');
 
-    // params: [id, database_id, entity_id, actor_id, request_id,
+    // params: [database_id, entity_id, actor_id, request_id,
     //          model, provider, service, operation,
     //          input_tokens, output_tokens, total_tokens,
-    //          latency_ms, status, error_type, raw_usage, created_at]
-    expect(params[0]).toBeDefined();           // id (UUID)
-    expect(params[1]).toBe('db-aaa');          // database_id
-    expect(params[2]).toBe('entity-bbb');      // entity_id
-    expect(params[3]).toBe('actor-ccc');       // actor_id
-    expect(params[4]).toBeDefined();           // request_id (UUID)
-    expect(params[5]).toBe('gpt-4o');          // model
-    expect(params[6]).toBe('openai');          // provider
-    expect(params[7]).toBe('chat');            // service
-    expect(params[8]).toBe('chat/completions'); // operation
-    expect(params[9]).toBe(200);               // input_tokens
-    expect(params[10]).toBe(80);               // output_tokens
-    expect(params[11]).toBe(280);              // total_tokens
-    expect(params[12]).toBe(451);              // latency_ms (rounded)
-    expect(params[13]).toBe('ok');             // status
-    expect(params[14]).toBeNull();             // error_type
-    expect(JSON.parse(params[15])).toEqual({   // raw_usage
+    //          latency_ms, status, error_type, raw_usage]
+    expect(params[0]).toBe('db-aaa');          // database_id
+    expect(params[1]).toBe('entity-bbb');      // entity_id
+    expect(params[2]).toBe('actor-ccc');       // actor_id
+    expect(params[3]).toBeNull();              // request_id (not provided)
+    expect(params[4]).toBe('gpt-4o');          // model
+    expect(params[5]).toBe('openai');          // provider
+    expect(params[6]).toBe('chat');            // service
+    expect(params[7]).toBe('chat/completions'); // operation
+    expect(params[8]).toBe(200);               // input_tokens
+    expect(params[9]).toBe(80);                // output_tokens
+    expect(params[10]).toBe(280);              // total_tokens
+    expect(params[11]).toBe(451);              // latency_ms (rounded)
+    expect(params[12]).toBe('ok');             // status
+    expect(params[13]).toBeNull();             // error_type
+    expect(JSON.parse(params[14])).toEqual({   // raw_usage
       prompt_tokens: 200,
       completion_tokens: 80,
       total_tokens: 280
     });
-    expect(params[16]).toBeInstanceOf(Date);   // created_at
   });
 
   it('logs embed service correctly', async () => {
@@ -123,15 +125,14 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('INSERT INTO')
-    );
-    const [, params] = insertCall!;
-    expect(params[5]).toBe('text-embedding-3-small'); // model
-    expect(params[7]).toBe('embed');                   // service
-    expect(params[8]).toBe('embeddings');               // operation
-    expect(params[9]).toBe(50);                        // input_tokens
-    expect(params[10]).toBe(0);                        // output_tokens
+    const inserts = insertCalls(mockQuery);
+    expect(inserts).toHaveLength(1);
+    const [, params] = inserts[0];
+    expect(params[4]).toBe('text-embedding-3-small'); // model
+    expect(params[6]).toBe('embed');                   // service
+    expect(params[7]).toBe('embeddings');               // operation
+    expect(params[8]).toBe(50);                        // input_tokens
+    expect(params[9]).toBe(0);                         // output_tokens
   });
 
   it('records error status with error_type', async () => {
@@ -150,16 +151,16 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('INSERT INTO')
-    );
-    const [, params] = insertCall!;
-    expect(params[13]).toBe('error');          // status
-    expect(params[14]).toBe('upstream_429');   // error_type
+    const inserts = insertCalls(mockQuery);
+    expect(inserts).toHaveLength(1);
+    const [, params] = inserts[0];
+    expect(params[12]).toBe('error');          // status
+    expect(params[13]).toBe('upstream_429');   // error_type
   });
 
-  it('handles null database_id, entity_id, actor_id gracefully', async () => {
+  it('handles null entity_id, actor_id gracefully', async () => {
     logInferenceUsage(mockPool, {
+      databaseId: 'db-null',
       model: 'llama3',
       provider: 'ollama',
       service: 'chat',
@@ -172,15 +173,12 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    // 2 calls: 1 config resolution (metaschema) + 1 insert
-    expect(mockQuery).toHaveBeenCalledTimes(2);
-    const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('INSERT INTO')
-    );
-    const [, params] = insertCall!;
-    expect(params[1]).toBeNull(); // database_id
-    expect(params[2]).toBeNull(); // entity_id
-    expect(params[3]).toBeNull(); // actor_id
+    const inserts = insertCalls(mockQuery);
+    expect(inserts).toHaveLength(1);
+    const [, params] = inserts[0];
+    expect(params[0]).toBe('db-null');   // database_id
+    expect(params[1]).toBeNull();        // entity_id
+    expect(params[2]).toBeNull();        // actor_id
   });
 
   it('never throws even when pool.query rejects', async () => {
@@ -188,6 +186,7 @@ describe('logInferenceUsage', () => {
 
     expect(() => {
       logInferenceUsage(mockPool, {
+        databaseId: 'db-fail',
         model: 'gpt-4o',
         provider: 'openai',
         service: 'chat',
@@ -201,12 +200,11 @@ describe('logInferenceUsage', () => {
     }).not.toThrow();
 
     await flush();
-    // 2 calls: config resolution + insert (both reject, but no crash)
-    expect(mockQuery).toHaveBeenCalledTimes(2);
   });
 
   it('rounds latency_ms to nearest integer', async () => {
     logInferenceUsage(mockPool, {
+      databaseId: 'db-round',
       model: 'gpt-4o',
       provider: 'openai',
       service: 'chat',
@@ -219,50 +217,15 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('INSERT INTO')
-    );
-    const [, params] = insertCall!;
-    expect(params[12]).toBe(4); // Math.round(3.7)
-  });
-
-  it('generates unique id and request_id per call', async () => {
-    logInferenceUsage(mockPool, {
-      model: 'gpt-4o',
-      provider: 'openai',
-      service: 'chat',
-      operation: 'chat/completions',
-      inputTokens: 0,
-      outputTokens: 0,
-      totalTokens: 0,
-      latencyMs: 1,
-      status: 'ok'
-    });
-    logInferenceUsage(mockPool, {
-      model: 'gpt-4o',
-      provider: 'openai',
-      service: 'chat',
-      operation: 'chat/completions',
-      inputTokens: 0,
-      outputTokens: 0,
-      totalTokens: 0,
-      latencyMs: 1,
-      status: 'ok'
-    });
-    await flush();
-
-    // 3 calls: 1 config resolution (deduped via promise) + 2 inserts
-    const insertCalls = mockQuery.mock.calls.filter(
-      ([sql]: [string]) => sql.includes('INSERT INTO')
-    );
-    expect(insertCalls.length).toBe(2);
-    const id1 = insertCalls[0][1][0];
-    const id2 = insertCalls[1][1][0];
-    expect(id1).not.toBe(id2);
+    const inserts = insertCalls(mockQuery);
+    expect(inserts).toHaveLength(1);
+    const [, params] = inserts[0];
+    expect(params[11]).toBe(4); // Math.round(3.7)
   });
 
   it('uses provided requestId when given', async () => {
     logInferenceUsage(mockPool, {
+      databaseId: 'db-req',
       requestId: 'req-custom-123',
       model: 'gpt-4o',
       provider: 'openai',
@@ -276,15 +239,15 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('INSERT INTO')
-    );
-    const [, params] = insertCall!;
-    expect(params[4]).toBe('req-custom-123'); // request_id
+    const inserts = insertCalls(mockQuery);
+    expect(inserts).toHaveLength(1);
+    const [, params] = inserts[0];
+    expect(params[3]).toBe('req-custom-123'); // request_id
   });
 
   it('stores raw_usage as null when not provided', async () => {
     logInferenceUsage(mockPool, {
+      databaseId: 'db-noraw',
       model: 'gpt-4o',
       provider: 'openai',
       service: 'chat',
@@ -297,10 +260,9 @@ describe('logInferenceUsage', () => {
     });
     await flush();
 
-    const insertCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('INSERT INTO')
-    );
-    const [, params] = insertCall!;
-    expect(params[15]).toBeNull(); // raw_usage
+    const inserts = insertCalls(mockQuery);
+    expect(inserts).toHaveLength(1);
+    const [, params] = inserts[0];
+    expect(params[14]).toBeNull(); // raw_usage
   });
 });

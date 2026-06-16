@@ -2,24 +2,26 @@
  * Integration tests for storage metering (fire-and-forget usage logging).
  *
  * Verifies that logStorageUsage:
- *   1. INSERTs into platform_usage_log_storage with correct columns
- *   2. Captures operation, bucket, key, size_bytes, duration_ms
+ *   1. Resolves table names via ModuleLoader (metaschema query)
+ *   2. INSERTs into the resolved compute_log table with correct columns
  *   3. Never throws — metering errors are swallowed
- *   4. Handles null database_id, entity_id, actor_id gracefully
+ *   4. Captures operation, bucket, key, size_bytes, duration_ms
  *   5. Rounds duration_ms to nearest integer
  *   6. Works for read, write, and delete operations
- *   7. Resolves table names via MetaSchema module loader
  */
 
 import { logStorageUsage } from '../../job/worker/src/storage-meter';
+import { createModuleMockQuery, MODULE_CONFIGS } from './helpers/module-mock';
 
 /** Wait for fire-and-forget promises to settle */
 const flush = () => new Promise((r) => setTimeout(r, 30));
 
-/** Filter query calls to only INSERT statements for storage table */
+/** Filter query calls to only INSERT statements for the compute_log table */
 function storageInserts(mockQuery: jest.Mock) {
   return mockQuery.mock.calls.filter(
-    ([sql]: [string]) => sql.includes('INSERT INTO') && sql.includes('platform_usage_log_storage')
+    ([sql]: [string]) =>
+      sql.includes('INSERT INTO') &&
+      sql.includes(MODULE_CONFIGS.computeLog.compute_log_table_name)
   );
 }
 
@@ -28,11 +30,11 @@ describe('logStorageUsage', () => {
   let mockPool: any;
 
   beforeEach(() => {
-    mockQuery = jest.fn().mockResolvedValue({ rows: [] });
+    mockQuery = createModuleMockQuery();
     mockPool = { query: mockQuery } as any;
   });
 
-  it('inserts into platform_usage_log_storage via module loader', async () => {
+  it('resolves table names from MetaSchema and inserts', async () => {
     logStorageUsage(mockPool, {
       databaseId: 'db-001',
       entityId: 'entity-001',
@@ -45,15 +47,19 @@ describe('logStorageUsage', () => {
     });
     await flush();
 
+    // 1 metaschema lookup + 1 INSERT
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+
     const inserts = storageInserts(mockQuery);
     expect(inserts).toHaveLength(1);
     const [sql] = inserts[0];
     expect(sql).toContain('INSERT INTO');
-    expect(sql).toContain('platform_usage_log_storage');
+    expect(sql).toContain(MODULE_CONFIGS.computeLog.compute_log_table_name);
   });
 
   it('resolves table names from MetaSchema before INSERT', async () => {
     logStorageUsage(mockPool, {
+      databaseId: 'db-meta',
       operation: 'read',
       bucket: 'b',
       key: 'k',
@@ -62,9 +68,8 @@ describe('logStorageUsage', () => {
     });
     await flush();
 
-    // First call is the MetaSchema lookup
     const metaCalls = mockQuery.mock.calls.filter(
-      ([sql]: [string]) => sql.includes('metaschema_public')
+      ([sql]: [string]) => sql.includes('compute_log_module')
     );
     expect(metaCalls.length).toBeGreaterThanOrEqual(1);
   });
@@ -94,18 +99,15 @@ describe('logStorageUsage', () => {
     expect(sql).toContain('size_bytes');
     expect(sql).toContain('duration_ms');
 
-    // params: [id, database_id, entity_id, actor_id, operation,
-    //          bucket, key, size_bytes, duration_ms, created_at]
-    expect(params[0]).toBeDefined();           // id (UUID)
-    expect(params[1]).toBe('db-aaa');          // database_id
-    expect(params[2]).toBe('entity-bbb');      // entity_id
-    expect(params[3]).toBe('actor-ccc');       // actor_id
-    expect(params[4]).toBe('read');            // operation
-    expect(params[5]).toBe('assets');          // bucket
-    expect(params[6]).toBe('images/logo.png'); // key
-    expect(params[7]).toBe(2048);             // size_bytes
-    expect(params[8]).toBe(15);               // duration_ms (rounded)
-    expect(params[9]).toBeInstanceOf(Date);    // created_at
+    // params: [database_id, entity_id, actor_id, operation, bucket, key, size_bytes, duration_ms]
+    expect(params[0]).toBe('db-aaa');          // database_id
+    expect(params[1]).toBe('entity-bbb');      // entity_id
+    expect(params[2]).toBe('actor-ccc');       // actor_id
+    expect(params[3]).toBe('read');            // operation
+    expect(params[4]).toBe('assets');          // bucket
+    expect(params[5]).toBe('images/logo.png'); // key
+    expect(params[6]).toBe(2048);             // size_bytes
+    expect(params[7]).toBe(15);               // duration_ms (rounded)
   });
 
   it('logs write operations correctly', async () => {
@@ -124,11 +126,11 @@ describe('logStorageUsage', () => {
     const inserts = storageInserts(mockQuery);
     expect(inserts).toHaveLength(1);
     const [, params] = inserts[0];
-    expect(params[4]).toBe('write');           // operation
-    expect(params[5]).toBe('uploads');         // bucket
-    expect(params[6]).toBe('docs/report.pdf'); // key
-    expect(params[7]).toBe(1048576);           // size_bytes (1MB)
-    expect(params[8]).toBe(200);              // duration_ms
+    expect(params[3]).toBe('write');           // operation
+    expect(params[4]).toBe('uploads');         // bucket
+    expect(params[5]).toBe('docs/report.pdf'); // key
+    expect(params[6]).toBe(1048576);           // size_bytes (1MB)
+    expect(params[7]).toBe(200);              // duration_ms
   });
 
   it('logs delete operations correctly', async () => {
@@ -145,14 +147,15 @@ describe('logStorageUsage', () => {
     const inserts = storageInserts(mockQuery);
     expect(inserts).toHaveLength(1);
     const [, params] = inserts[0];
-    expect(params[4]).toBe('delete');                 // operation
-    expect(params[5]).toBe('temp');                    // bucket
-    expect(params[6]).toBe('scratch/old-file.tmp');   // key
-    expect(params[7]).toBe(0);                        // size_bytes
+    expect(params[3]).toBe('delete');                 // operation
+    expect(params[4]).toBe('temp');                    // bucket
+    expect(params[5]).toBe('scratch/old-file.tmp');   // key
+    expect(params[6]).toBe(0);                        // size_bytes
   });
 
-  it('handles null database_id, entity_id, actor_id gracefully', async () => {
+  it('handles null entity_id, actor_id gracefully', async () => {
     logStorageUsage(mockPool, {
+      databaseId: 'db-null',
       operation: 'read',
       bucket: 'public',
       key: 'data.json',
@@ -164,9 +167,9 @@ describe('logStorageUsage', () => {
     const inserts = storageInserts(mockQuery);
     expect(inserts).toHaveLength(1);
     const [, params] = inserts[0];
-    expect(params[1]).toBeNull(); // database_id
-    expect(params[2]).toBeNull(); // entity_id
-    expect(params[3]).toBeNull(); // actor_id
+    expect(params[0]).toBe('db-null');  // database_id (always provided)
+    expect(params[1]).toBeNull();       // entity_id
+    expect(params[2]).toBeNull();       // actor_id
   });
 
   it('never throws even when pool.query rejects', async () => {
@@ -174,6 +177,7 @@ describe('logStorageUsage', () => {
 
     expect(() => {
       logStorageUsage(mockPool, {
+        databaseId: 'db-fail',
         operation: 'write',
         bucket: 'test',
         key: 'test.txt',
@@ -183,11 +187,11 @@ describe('logStorageUsage', () => {
     }).not.toThrow();
 
     await flush();
-    // Both MetaSchema lookup and INSERT will fail, but no throw
   });
 
   it('rounds duration_ms to nearest integer', async () => {
     logStorageUsage(mockPool, {
+      databaseId: 'db-round',
       operation: 'read',
       bucket: 'data',
       key: 'file.bin',
@@ -199,30 +203,6 @@ describe('logStorageUsage', () => {
     const inserts = storageInserts(mockQuery);
     expect(inserts).toHaveLength(1);
     const [, params] = inserts[0];
-    expect(params[8]).toBe(4); // Math.round(3.7)
-  });
-
-  it('generates a unique UUID for each log entry', async () => {
-    logStorageUsage(mockPool, {
-      operation: 'read',
-      bucket: 'b1',
-      key: 'k1',
-      sizeBytes: 10,
-      durationMs: 1
-    });
-    logStorageUsage(mockPool, {
-      operation: 'write',
-      bucket: 'b2',
-      key: 'k2',
-      sizeBytes: 20,
-      durationMs: 2
-    });
-    await flush();
-
-    const inserts = storageInserts(mockQuery);
-    expect(inserts).toHaveLength(2);
-    const id1 = inserts[0][1][0];
-    const id2 = inserts[1][1][0];
-    expect(id1).not.toBe(id2);
+    expect(params[7]).toBe(4); // Math.round(3.7)
   });
 });

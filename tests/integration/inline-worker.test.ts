@@ -30,7 +30,9 @@ jest.mock('@constructive-io/job-pg', () => ({
   onClose: jest.fn()
 }));
 
-const mockQuery = jest.fn().mockResolvedValue({ rows: [] });
+import { createModuleMockQuery, MODULE_CONFIGS } from './helpers/module-mock';
+
+const mockQuery = createModuleMockQuery();
 const mockPool = {
   query: mockQuery,
   connect: jest.fn().mockResolvedValue({
@@ -52,16 +54,16 @@ const flushMeter = () => new Promise((r) => setTimeout(r, 10));
 const graphCalls = () =>
   mockQuery.mock.calls.filter(
     ([sql]: [string]) =>
-      sql.includes('platform_complete_node') ||
-      sql.includes('platform_fail_node')
+      sql.includes(MODULE_CONFIGS.graph.complete_node_function) ||
+      sql.includes(MODULE_CONFIGS.graph.fail_node_function)
   );
 
 /** Filter mockQuery calls to metering INSERTs */
 const meterCalls = () =>
   mockQuery.mock.calls.filter(
     ([sql]: [string]) =>
-      sql.includes('platform_function_invocations') ||
-      sql.includes('platform_usage_log_computes')
+      sql.includes('INSERT INTO') &&
+      sql.includes(MODULE_CONFIGS.invocation.invocations_table_name)
   );
 
 describe('Worker inline node dispatch', () => {
@@ -144,7 +146,7 @@ describe('Worker inline node dispatch', () => {
 
     // HTTP path should also produce metering entries
     const mc = meterCalls();
-    expect(mc).toHaveLength(2); // invocations + usage_log
+    expect(mc).toHaveLength(1); // invocations INSERT
   });
 
   it('falls through to HTTP for non-graph inline node payloads', async () => {

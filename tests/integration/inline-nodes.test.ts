@@ -7,13 +7,13 @@
  * the same `complete_node` SQL path is used for both inline and cloud
  * invocations — so the graph execution engine sees no difference.
  */
+import { completeNode, failNode } from '../../job/worker/src/graph-complete';
 import {
-  INLINE_NODES,
+  extractNodeProps,
   getInlineImpl,
-  isGraphJob,
-  extractNodeProps
-} from '../../job/worker/src/inline-nodes';
-import { completeNode, failNode, _resetGraphCompleteCache } from '../../job/worker/src/graph-complete';
+  INLINE_NODES,
+  isGraphJob} from '../../job/worker/src/inline-nodes';
+import { createModuleMockQuery, MODULE_CONFIGS } from './helpers/module-mock';
 
 // ---------------------------------------------------------------------------
 // 1. Inline node registry
@@ -215,14 +215,13 @@ describe('extractNodeProps', () => {
 // ---------------------------------------------------------------------------
 
 describe('completeNode', () => {
-  beforeEach(() => _resetGraphCompleteCache());
-
   it('calls platform_complete_node SQL with correct args', async () => {
-    const mockQuery = jest.fn().mockResolvedValue({ rows: [] });
+    const mockQuery = createModuleMockQuery();
     const mockPool = { query: mockQuery } as any;
 
     await completeNode(
       mockPool,
+      'db-123',
       'exec-uuid-123',
       'add_1',
       { sum: 10 }
@@ -231,7 +230,7 @@ describe('completeNode', () => {
     // Last call is the actual complete_node; earlier calls are MetaSchema resolution
     const lastCall = mockQuery.mock.calls[mockQuery.mock.calls.length - 1];
     const [sql, params] = lastCall;
-    expect(sql).toContain('platform_complete_node');
+    expect(sql).toContain(MODULE_CONFIGS.graph.complete_node_function);
     expect(params).toEqual([
       'exec-uuid-123',
       'add_1',
@@ -241,14 +240,13 @@ describe('completeNode', () => {
 });
 
 describe('failNode', () => {
-  beforeEach(() => _resetGraphCompleteCache());
-
   it('calls platform_fail_node SQL with correct args', async () => {
-    const mockQuery = jest.fn().mockResolvedValue({ rows: [] });
+    const mockQuery = createModuleMockQuery();
     const mockPool = { query: mockQuery } as any;
 
     await failNode(
       mockPool,
+      'db-123',
       'exec-uuid-123',
       'bad_node',
       'impl threw an error'
@@ -257,7 +255,7 @@ describe('failNode', () => {
     // Last call is the actual fail_node; earlier calls are MetaSchema resolution
     const lastCall = mockQuery.mock.calls[mockQuery.mock.calls.length - 1];
     const [sql, params] = lastCall;
-    expect(sql).toContain('platform_fail_node');
+    expect(sql).toContain(MODULE_CONFIGS.graph.fail_node_function);
     expect(params).toEqual([
       'exec-uuid-123',
       'bad_node',

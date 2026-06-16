@@ -4,14 +4,14 @@
  * Three use cases covering the full metering pipeline:
  *
  *   1. Single job trigger (HTTP dispatch) — typical cloud function invocation
- *      Verifies: platform_function_invocations + platform_usage_log_computes
+ *      Verifies: invocations INSERT via ModuleLoader resolution
  *
  *   2. FBP graph execution (inline dispatch) — flow triggers multiple nodes
  *      Verifies: each node metered with correct graph_execution_id,
- *      complete_node SQL called, multiple invocations + usage rows
+ *      complete_node SQL called, multiple invocation rows
  *
  *   3. Inference metering via agentic server — LLM proxy with usage logging
- *      Verifies: platform_usage_log_inferences with model, tokens, latency
+ *      Verifies: compute_log INSERT with model, tokens, latency
  */
 
 // ── Mocks (must be before imports) ────────────────────────────────────────────
@@ -37,7 +37,9 @@ jest.mock('@constructive-io/job-pg', () => ({
   onClose: jest.fn()
 }));
 
-const mockQuery = jest.fn().mockResolvedValue({ rows: [] });
+import { createModuleMockQuery, MODULE_CONFIGS } from './helpers/module-mock';
+
+const mockQuery = createModuleMockQuery();
 const mockPool = {
   query: mockQuery,
   connect: jest.fn().mockResolvedValue({
@@ -53,10 +55,10 @@ const mockPool = {
 
 import express from 'express';
 import http from 'http';
+
 import { Worker } from '../../job/worker/src/index';
 import { request as mockRequest } from '../../job/worker/src/req';
 import { createAgenticServer } from '../../packages/agentic-server/src/server';
-import { _resetCache } from '../../packages/agentic-server/src/inference-meter';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -68,21 +70,22 @@ const queriesMatching = (pattern: string) =>
 
 const invocationInserts = () =>
   mockQuery.mock.calls.filter(
-    ([sql]: [string]) => sql.includes('INSERT INTO') && sql.includes('platform_function_invocations')
+    ([sql]: [string]) =>
+      sql.includes('INSERT INTO') &&
+      sql.includes(MODULE_CONFIGS.invocation.invocations_table_name)
   );
-const computeUsageInserts = () =>
+const inferenceInserts = () =>
   mockQuery.mock.calls.filter(
-    ([sql]: [string]) => sql.includes('INSERT INTO') && sql.includes('platform_usage_log_computes')
+    ([sql]: [string]) =>
+      sql.includes('INSERT INTO') &&
+      sql.includes(MODULE_CONFIGS.computeLog.compute_log_table_name) &&
+      sql.includes('model')
   );
-const inferenceUsageInserts = () =>
-  mockQuery.mock.calls.filter(
-    ([sql]: [string]) => sql.includes('INSERT INTO') && sql.includes('platform_usage_log_inferences')
-  );
-const completeNodeCalls = () => queriesMatching('platform_complete_node');
-const failNodeCalls = () => queriesMatching('platform_fail_node');
+const completeNodeCalls = () => queriesMatching(MODULE_CONFIGS.graph.complete_node_function);
+const failNodeCalls = () => queriesMatching(MODULE_CONFIGS.graph.fail_node_function);
 const metaschemaLookups = () =>
   mockQuery.mock.calls.filter(
-    ([sql]: [string]) => sql.includes('metaschema_public')
+    ([sql]: [string]) => sql.includes('_module')
   );
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -105,7 +108,7 @@ describe('Use Case 1: Single job trigger (HTTP dispatch)', () => {
     await worker.stop();
   });
 
-  it('dispatches job via HTTP and records invocation + compute usage', async () => {
+  it('dispatches job via HTTP and records invocation', async () => {
     await worker.doWork({
       id: 'job-http-1',
       task_identifier: 'send-email',
@@ -134,21 +137,6 @@ describe('Use Case 1: Single job trigger (HTTP dispatch)', () => {
     expect(invParams[5]).toBeNull();               // graph_execution_id (no graph)
     expect(invParams[6]).toBe('ok');               // status
     expect(invParams[7]).toBeGreaterThanOrEqual(0); // duration_ms
-
-    // Compute usage INSERT fired
-    const usage = computeUsageInserts();
-    expect(usage).toHaveLength(1);
-    const [usageSql, usageParams] = usage[0];
-    expect(usageSql).toContain('INSERT INTO');
-    expect(usageParams[1]).toBe('db-tenant-001');   // database_id
-    expect(usageParams[2]).toBe('entity-org-001');  // entity_id
-    expect(usageParams[3]).toBe('actor-admin-001'); // actor_id
-    expect(usageParams[4]).toBe('send-email');      // task_identifier
-    expect(usageParams[7]).toBe('ok');              // status
-
-    // invocation_id links them together
-    const invocationId = invParams[0]; // UUID from invocations INSERT
-    expect(usageParams[6]).toBe(invocationId);
   });
 
   it('records error status when HTTP dispatch fails', async () => {
@@ -172,12 +160,6 @@ describe('Use Case 1: Single job trigger (HTTP dispatch)', () => {
     const [, invParams] = invocations[0];
     expect(invParams[6]).toBe('error');                  // status
     expect(invParams[12]).toContain('ECONNREFUSED');     // error
-
-    const usage = computeUsageInserts();
-    expect(usage).toHaveLength(1);
-    const [, usageParams] = usage[0];
-    expect(usageParams[7]).toBe('error');                // status
-    expect(usageParams[9]).toContain('ECONNREFUSED');    // error
   });
 
   it('includes payload and result in invocation record on success', async () => {
@@ -316,10 +298,6 @@ describe('Use Case 2: FBP graph execution (multiple inline nodes)', () => {
       expect(params[6]).toBe('ok'); // status
     }
 
-    // Each node produced a compute usage row
-    const usageRows = computeUsageInserts();
-    expect(usageRows).toHaveLength(4);
-
     // Verify task identifiers are correct
     const taskIds = invocations.map(([, params]: [string, any[]]) => params[3]);
     expect(taskIds).toEqual(['number', 'number', 'add', 'multiply']);
@@ -361,13 +339,6 @@ describe('Use Case 2: FBP graph execution (multiple inline nodes)', () => {
       expect(params[5]).toBe(EXECUTION_ID);          // graph_execution_id
       expect(params[6]).toBe('error');               // status
       expect(params[12]).toContain('null pointer');   // error message
-
-      // Usage log also records the error
-      const usage = computeUsageInserts();
-      expect(usage).toHaveLength(1);
-      const [, usageParams] = usage[0];
-      expect(usageParams[7]).toBe('error');
-      expect(usageParams[9]).toContain('null pointer');
     } finally {
       inlineNodes.INLINE_NODES.select = origSelect;
     }
@@ -406,18 +377,12 @@ describe('Use Case 2: FBP graph execution (multiple inline nodes)', () => {
     // Inline node: complete_node called, no HTTP
     expect(completeNodeCalls()).toHaveLength(1);
 
-    // HTTP node: request dispatched (send-email doesn't have isGraphJob inputs
-    // in the standard way OR it does since it has execution_id + node_name)
-    // Actually this IS a graph job with execution_id + node_name, but send-email
-    // is not in INLINE_NODES, so it falls through to HTTP dispatch.
+    // HTTP node dispatched
     expect(mockRequest).toHaveBeenCalledTimes(1);
 
-    // Both are metered
+    // Both are metered as invocations
     const invocations = invocationInserts();
     expect(invocations.length).toBeGreaterThanOrEqual(2);
-
-    const usage = computeUsageInserts();
-    expect(usage.length).toBeGreaterThanOrEqual(2);
   });
 });
 
@@ -467,7 +432,6 @@ describe('Use Case 3: Inference metering via agentic server', () => {
   });
 
   beforeEach(() => {
-    _resetCache();
     jest.clearAllMocks();
     mockProvider.calls.length = 0;
   });
@@ -514,26 +478,25 @@ describe('Use Case 3: Inference metering via agentic server', () => {
       expect(metaschemaLookups().length).toBeGreaterThan(0);
 
       // Inference usage INSERT fired
-      const inferences = inferenceUsageInserts();
+      const inferences = inferenceInserts();
       expect(inferences).toHaveLength(1);
       const [sql, params] = inferences[0];
       expect(sql).toContain('INSERT INTO');
-      expect(sql).toContain('platform_usage_log_inferences');
 
-      // Verify all columns
-      expect(params[1]).toBe('db-inference-001');     // database_id
-      expect(params[2]).toBe('entity-inference-001'); // entity_id
-      expect(params[3]).toBe('actor-inference-001');  // actor_id
-      expect(params[5]).toBe('gpt-4o');              // model
-      expect(params[6]).toBe('openai');              // provider
-      expect(params[7]).toBe('chat');                // service
-      expect(params[8]).toBe('chat/completions');     // operation
-      expect(params[9]).toBe(25);                    // input_tokens
-      expect(params[10]).toBe(12);                   // output_tokens
-      expect(params[11]).toBe(37);                   // total_tokens
-      expect(params[12]).toBeGreaterThan(0);          // latency_ms
-      expect(params[13]).toBe('ok');                 // status
-      expect(params[14]).toBeNull();                 // error_type
+      // Verify columns
+      expect(params[0]).toBe('db-inference-001');     // database_id
+      expect(params[1]).toBe('entity-inference-001'); // entity_id
+      expect(params[2]).toBe('actor-inference-001');  // actor_id
+      expect(params[4]).toBe('gpt-4o');              // model
+      expect(params[5]).toBe('openai');              // provider
+      expect(params[6]).toBe('chat');                // service
+      expect(params[7]).toBe('chat/completions');     // operation
+      expect(params[8]).toBe(25);                    // input_tokens
+      expect(params[9]).toBe(12);                    // output_tokens
+      expect(params[10]).toBe(37);                   // total_tokens
+      expect(params[11]).toBeGreaterThan(0);          // latency_ms
+      expect(params[12]).toBe('ok');                 // status
+      expect(params[13]).toBeNull();                 // error_type
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
@@ -566,15 +529,15 @@ describe('Use Case 3: Inference metering via agentic server', () => {
 
       await flush();
 
-      const inferences = inferenceUsageInserts();
+      const inferences = inferenceInserts();
       expect(inferences).toHaveLength(1);
       const [, params] = inferences[0];
-      expect(params[5]).toBe('text-embedding-3-small'); // model
-      expect(params[7]).toBe('embed');                   // service
-      expect(params[8]).toBe('embeddings');               // operation
-      expect(params[9]).toBe(10);                        // input_tokens
-      expect(params[10]).toBe(0);                        // output_tokens
-      expect(params[11]).toBe(10);                       // total_tokens
+      expect(params[4]).toBe('text-embedding-3-small'); // model
+      expect(params[6]).toBe('embed');                   // service
+      expect(params[7]).toBe('embeddings');               // operation
+      expect(params[8]).toBe(10);                        // input_tokens
+      expect(params[9]).toBe(0);                         // output_tokens
+      expect(params[10]).toBe(10);                       // total_tokens
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
@@ -621,11 +584,11 @@ describe('Use Case 3: Inference metering via agentic server', () => {
       await flush();
 
       // Metering still fires with error status
-      const inferences = inferenceUsageInserts();
+      const inferences = inferenceInserts();
       expect(inferences).toHaveLength(1);
       const [, params] = inferences[0];
-      expect(params[13]).toBe('error');  // status
-      expect(params[14]).toBeDefined();  // error_type
+      expect(params[12]).toBe('error');  // status
+      expect(params[13]).toBeDefined();  // error_type
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
       await new Promise<void>((resolve) => errorServer.close(() => resolve()));
@@ -633,12 +596,13 @@ describe('Use Case 3: Inference metering via agentic server', () => {
   });
 
   it('never blocks the response — metering is fire-and-forget', async () => {
-    // Make metering query slow (100ms delay)
-    mockQuery.mockImplementation(([sql]: [string]) => {
-      if (sql.includes('INSERT INTO')) {
+    // Override mock to make INSERT slow (100ms delay) but keep metaschema fast
+    const originalImpl = mockQuery.getMockImplementation();
+    mockQuery.mockImplementation((sql: string, ...args: any[]) => {
+      if (typeof sql === 'string' && sql.includes('INSERT INTO')) {
         return new Promise((resolve) => setTimeout(() => resolve({ rows: [] }), 100));
       }
-      return Promise.resolve({ rows: [] });
+      return originalImpl!(sql, ...args);
     });
 
     const app = createServer();

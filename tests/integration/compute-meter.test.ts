@@ -2,29 +2,40 @@
  * Integration tests for compute metering (fire-and-forget usage logging).
  *
  * Verifies that logComputeUsage:
- *   1. INSERTs into platform_function_invocations with correct columns
- *   2. INSERTs into platform_usage_log_computes linked via invocation_id
+ *   1. Resolves table names via ModuleLoader (metaschema query)
+ *   2. INSERTs into the resolved invocations table with correct columns
  *   3. Never throws — metering errors are swallowed
  *   4. Captures duration_ms, status, database_id, entity_id, actor_id
  *   5. Works for both inline (FBP) and HTTP (cloud function) dispatch types
  *   6. Handles graph execution context (execution_id)
+ *   7. Returns early when databaseId is missing (no queries)
  */
 
 import { logComputeUsage } from '../../job/worker/src/compute-meter';
+import { createModuleMockQuery, MODULE_CONFIGS } from './helpers/module-mock';
 
 /** Wait for fire-and-forget promises to settle */
 const flush = () => new Promise((r) => setTimeout(r, 20));
+
+/** Filter query calls to only INSERT statements for invocations table */
+function invocationInserts(mockQuery: jest.Mock) {
+  return mockQuery.mock.calls.filter(
+    ([sql]: [string]) =>
+      sql.includes('INSERT INTO') &&
+      sql.includes(MODULE_CONFIGS.invocation.invocations_table_name)
+  );
+}
 
 describe('logComputeUsage', () => {
   let mockQuery: jest.Mock;
   let mockPool: any;
 
   beforeEach(() => {
-    mockQuery = jest.fn().mockResolvedValue({ rows: [] });
+    mockQuery = createModuleMockQuery();
     mockPool = { query: mockQuery } as any;
   });
 
-  it('inserts into both invocations and usage_log tables', async () => {
+  it('resolves table names from MetaSchema and inserts into invocations', async () => {
     logComputeUsage(mockPool, {
       jobId: 42,
       taskIdentifier: 'add',
@@ -37,21 +48,14 @@ describe('logComputeUsage', () => {
     });
     await flush();
 
-    // 3 calls: 1 config resolution (metaschema) + 2 inserts (invocations + usage)
-    expect(mockQuery).toHaveBeenCalledTimes(3);
+    // 1 metaschema lookup + 1 INSERT
+    expect(mockQuery).toHaveBeenCalledTimes(2);
 
-    const invocationCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_function_invocations')
-    );
-    const usageCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_usage_log_computes')
-    );
-
-    expect(invocationCall).toBeDefined();
-    expect(usageCall).toBeDefined();
+    const inserts = invocationInserts(mockQuery);
+    expect(inserts).toHaveLength(1);
   });
 
-  it('passes correct columns to platform_function_invocations', async () => {
+  it('passes correct columns to invocations table', async () => {
     logComputeUsage(mockPool, {
       jobId: 100,
       taskIdentifier: 'send-email',
@@ -66,12 +70,10 @@ describe('logComputeUsage', () => {
     });
     await flush();
 
-    const invocationCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_function_invocations')
-    );
-    expect(invocationCall).toBeDefined();
+    const inserts = invocationInserts(mockQuery);
+    expect(inserts).toHaveLength(1);
 
-    const [sql, params] = invocationCall!;
+    const [sql, params] = inserts[0];
     expect(sql).toContain('INSERT INTO');
     expect(sql).toContain('database_id');
     expect(sql).toContain('actor_id');
@@ -81,11 +83,12 @@ describe('logComputeUsage', () => {
 
     // params: [id, database_id, actor_id, task_identifier, job_id,
     //          graph_execution_id, status, duration_ms,
-    //          started_at, completed_at, payload, result, error, created_at]
+    //          started_at, completed_at, payload, result, error,
+    //          entity_id, node_name, dispatch_type]
     expect(params[1]).toBe('db-aaa');        // database_id
     expect(params[2]).toBe('actor-bbb');     // actor_id
     expect(params[3]).toBe('send-email');    // task_identifier
-    expect(params[4]).toBe(100);             // job_id
+    expect(params[4]).toBe('100');           // job_id (stringified)
     expect(params[5]).toBeNull();            // graph_execution_id (no graph)
     expect(params[6]).toBe('ok');            // status
     expect(params[7]).toBe(251);             // duration_ms (rounded)
@@ -94,65 +97,9 @@ describe('logComputeUsage', () => {
     expect(JSON.parse(params[10])).toEqual({ to: 'test@example.com' }); // payload
     expect(JSON.parse(params[11])).toEqual({ sent: true });              // result
     expect(params[12]).toBeNull();           // error
-  });
-
-  it('passes correct columns to platform_usage_log_computes', async () => {
-    logComputeUsage(mockPool, {
-      jobId: 200,
-      taskIdentifier: 'multiply',
-      databaseId: 'db-xyz',
-      actorId: 'actor-xyz',
-      entityId: 'entity-xyz',
-      durationMs: 0.3,
-      status: 'ok',
-      dispatchType: 'inline'
-    });
-    await flush();
-
-    const usageCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_usage_log_computes')
-    );
-    expect(usageCall).toBeDefined();
-
-    const [sql, params] = usageCall!;
-    expect(sql).toContain('INSERT INTO');
-    expect(sql).toContain('entity_id');
-    expect(sql).toContain('invocation_id');
-
-    // params: [id, database_id, entity_id, actor_id, task_identifier,
-    //          job_id, invocation_id, status, duration_ms, error, completed_at]
-    expect(params[1]).toBe('db-xyz');       // database_id
-    expect(params[2]).toBe('entity-xyz');   // entity_id
-    expect(params[3]).toBe('actor-xyz');    // actor_id
-    expect(params[4]).toBe('multiply');     // task_identifier
-    expect(params[5]).toBe(200);            // job_id
-    expect(params[6]).toBeDefined();        // invocation_id (UUID)
-    expect(params[7]).toBe('ok');           // status
-    expect(params[8]).toBe(0);              // duration_ms (rounded)
-    expect(params[9]).toBeNull();           // error
-  });
-
-  it('links usage_log invocation_id to invocations table id', async () => {
-    logComputeUsage(mockPool, {
-      jobId: 1,
-      taskIdentifier: 'add',
-      durationMs: 5,
-      status: 'ok',
-      dispatchType: 'inline'
-    });
-    await flush();
-
-    const invocationCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_function_invocations')
-    );
-    const usageCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_usage_log_computes')
-    );
-
-    // The invocation id (params[0]) should match the usage log's invocation_id (params[6])
-    const invocationId = invocationCall![1][0];
-    const usageInvocationId = usageCall![1][6];
-    expect(invocationId).toBe(usageInvocationId);
+    expect(params[13]).toBe('entity-ccc');   // entity_id
+    expect(params[14]).toBeNull();           // node_name
+    expect(params[15]).toBe('http');         // dispatch_type
   });
 
   it('includes graph_execution_id for graph jobs', async () => {
@@ -168,10 +115,10 @@ describe('logComputeUsage', () => {
     });
     await flush();
 
-    const invocationCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_function_invocations')
-    );
-    expect(invocationCall![1][5]).toBe('11111111-1111-1111-1111-111111111111');
+    const inserts = invocationInserts(mockQuery);
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0][1][5]).toBe('11111111-1111-1111-1111-111111111111');
+    expect(inserts[0][1][14]).toBe('add_1'); // node_name
   });
 
   it('records error status and message for failed jobs', async () => {
@@ -186,20 +133,13 @@ describe('logComputeUsage', () => {
     });
     await flush();
 
-    const invocationCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_function_invocations')
-    );
-    expect(invocationCall![1][6]).toBe('error'); // status
-    expect(invocationCall![1][12]).toBe('Cannot read property x of null'); // error
-
-    const usageCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_usage_log_computes')
-    );
-    expect(usageCall![1][7]).toBe('error');
-    expect(usageCall![1][9]).toBe('Cannot read property x of null');
+    const inserts = invocationInserts(mockQuery);
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0][1][6]).toBe('error'); // status
+    expect(inserts[0][1][12]).toBe('Cannot read property x of null'); // error
   });
 
-  it('handles null database_id, entity_id, actor_id gracefully', async () => {
+  it('returns early with no queries when databaseId is missing', async () => {
     logComputeUsage(mockPool, {
       jobId: 99,
       taskIdentifier: 'number',
@@ -209,31 +149,18 @@ describe('logComputeUsage', () => {
     });
     await flush();
 
-    // 3 calls: 1 config resolution (metaschema) + 2 inserts
-    expect(mockQuery).toHaveBeenCalledTimes(3);
-
-    const invocationCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_function_invocations')
-    );
-    expect(invocationCall![1][1]).toBeNull(); // database_id
-    expect(invocationCall![1][2]).toBeNull(); // actor_id
-
-    const usageCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_usage_log_computes')
-    );
-    expect(usageCall![1][1]).toBeNull(); // database_id
-    expect(usageCall![1][2]).toBeNull(); // entity_id
-    expect(usageCall![1][3]).toBeNull(); // actor_id
+    // No queries — databaseId is undefined so it returns early
+    expect(mockQuery).not.toHaveBeenCalled();
   });
 
   it('never throws even when pool.query rejects', async () => {
     mockQuery.mockRejectedValue(new Error('connection refused'));
 
-    // Should not throw
     expect(() => {
       logComputeUsage(mockPool, {
         jobId: 1,
         taskIdentifier: 'add',
+        databaseId: 'db-reject',
         durationMs: 1,
         status: 'ok',
         dispatchType: 'inline'
@@ -241,40 +168,59 @@ describe('logComputeUsage', () => {
     }).not.toThrow();
 
     await flush();
-    // All calls were attempted (config + 2 inserts), all rejected, but no crash
-    expect(mockQuery).toHaveBeenCalledTimes(3);
   });
 
-  it('parses string job IDs to integers', async () => {
+  it('stores job_id as string', async () => {
     logComputeUsage(mockPool, {
-      jobId: 'job-777',
+      jobId: 777,
       taskIdentifier: 'template',
+      databaseId: 'db-str',
       durationMs: 2,
       status: 'ok',
       dispatchType: 'inline'
     });
     await flush();
 
-    const invocationCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_function_invocations')
-    );
-    // 'job-777' can't parse to int, so defaults to 0
-    expect(invocationCall![1][4]).toBe(0);
+    const inserts = invocationInserts(mockQuery);
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0][1][4]).toBe('777');
   });
 
   it('rounds duration_ms to nearest integer', async () => {
     logComputeUsage(mockPool, {
       jobId: 1,
       taskIdentifier: 'add',
+      databaseId: 'db-round',
       durationMs: 3.7,
       status: 'ok',
       dispatchType: 'inline'
     });
     await flush();
 
-    const invocationCall = mockQuery.mock.calls.find(
-      ([sql]: [string]) => sql.includes('platform_function_invocations')
-    );
-    expect(invocationCall![1][7]).toBe(4); // Math.round(3.7)
+    const inserts = invocationInserts(mockQuery);
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0][1][7]).toBe(4); // Math.round(3.7)
+  });
+
+  it('returns unique invocation_id for each call', () => {
+    const id1 = logComputeUsage(mockPool, {
+      jobId: 1,
+      taskIdentifier: 'a',
+      databaseId: 'db-1',
+      durationMs: 1,
+      status: 'ok',
+      dispatchType: 'inline'
+    });
+    const id2 = logComputeUsage(mockPool, {
+      jobId: 2,
+      taskIdentifier: 'b',
+      databaseId: 'db-2',
+      durationMs: 1,
+      status: 'ok',
+      dispatchType: 'inline'
+    });
+    expect(id1).not.toBe(id2);
+    expect(id1).toMatch(/^[0-9a-f-]{36}$/);
+    expect(id2).toMatch(/^[0-9a-f-]{36}$/);
   });
 });
