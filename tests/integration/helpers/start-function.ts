@@ -21,7 +21,7 @@ export const startFunction = (
         url: `http://localhost:${port}`,
         close: () =>
           new Promise<void>((r, rej) =>
-            server.close((err: any) => (err ? rej(err) : r()))
+            server.close((err?: Error | null) => (err ? rej(err) : r()))
           )
       });
     });
